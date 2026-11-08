@@ -152,6 +152,12 @@
   "beta": {
     "notice": "Lotties is in beta. Read the [Terms of Use](/terms)."
   },
+  "dataChoice": {
+    "title": "Your data, your choice",
+    "body": "By default Lotties keeps your baby's records in its own database and looks after it, and that stays the default. As an option, a baby's Owner can keep that baby's care records in a Postgres database of her own (for example Supabase or Neon) instead, and move them back at any time. The app and the account stay exactly the same.",
+    "honest": "Lotties' servers still read and write those records to run the app, so this is about where the data lives, not end-to-end encryption.",
+    "availability": "Off by default for now and not yet available to every account."
+  },
   "openSource": {
     "title": "Built on open source",
     "body": "Lotties stands on the work of the open-source community and on public health data. Thank you to every author and maintainer.",

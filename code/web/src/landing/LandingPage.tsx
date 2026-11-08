@@ -6,6 +6,7 @@ import { useAuth } from '../auth/useAuth';
 import { useEndedSessionUnsynced } from '../auth/useEndedSessionUnsynced';
 import type { LoginRedirectState } from '../auth/loginRedirect';
 import { useLandingCatalog } from '../i18n/useLandingCatalog';
+import { DataChoiceStrip } from './DataChoiceStrip';
 import { FeatureGrid } from './FeatureGrid';
 import { Hero } from './Hero';
 import { ImportantNotice } from './ImportantNotice';
@@ -108,6 +109,7 @@ export default function LandingPage({
         <FeatureGrid />
         <ShowcaseStrip />
         <StepsStrip />
+        <DataChoiceStrip />
         <ImportantNotice />
         <OpenSourceStrip />
       </Box>

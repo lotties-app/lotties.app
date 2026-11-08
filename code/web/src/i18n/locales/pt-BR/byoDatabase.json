@@ -127,7 +127,7 @@
         "title": "Supabase",
         "step1": "Crie um projeto em supabase.com e escolha uma região perto de você. Havia um plano gratuito quando este texto foi escrito, com limites: confira preços e limites na página do provedor.",
         "step2": "Abra o SQL Editor do projeto, cole o SQL de configuração do Lotties e rode uma vez.",
-        "step3": "Toque em Connect no projeto. Para a conexão do dia a dia use o transaction pooler (porta 6543); para a conexão de migração use o session pooler (porta 5432) ou a conexão direta. Copie o host e o nome do banco (geralmente postgres).",
+        "step3": "Toque em Connect no projeto. Para a conexão do dia a dia use o transaction pooler (porta 6543); para a conexão de migração use o session pooler (porta 5432). A conexão direta pode responder só em IPv6, que os servidores do Lotties podem não alcançar. Copie o host e o nome do banco (geralmente postgres).",
         "step4": "No pooler, o nome de usuário é a função, um ponto e a referência do projeto, por exemplo lotties_app.abcdefgh. Use as senhas do SQL de configuração.",
         "step5": "Projetos gratuitos podem ser pausados depois de alguns dias sem uso: nesse caso abra o projeto, restaure e teste de novo no Lotties. Planos gratuitos podem não ter backups: baixe um backup pelo Lotties (Hub > Exportar dados) de tempos em tempos."
       },
@@ -287,6 +287,34 @@
         "title": "Nada salvo ainda",
         "body": "Salve os dados de conexão primeiro."
       },
+      "moving": {
+        "title": "Registros sendo movidos",
+        "body": "Uma mudança dos registros deste bebê está em andamento. Os registros novos esperam neste aparelho e são salvos quando ela termina, geralmente em menos de um minuto."
+      },
+      "moveInProgress": {
+        "title": "Já está movendo",
+        "body": "Os registros deste bebê já estão sendo movidos. Espere a mudança terminar e veja de novo."
+      },
+      "moveNotNeeded": {
+        "title": "Já estão lá",
+        "body": "Os registros deste bebê já estão nesse banco. Nada foi alterado."
+      },
+      "ownerOnly": {
+        "title": "Só para um bebê que você acompanha sozinho",
+        "body": "Nesta primeira versão seu próprio banco só funciona para um bebê sem outros membros e sem convite pendente. Remova os outros ou o convite antes; para compartilhar o bebê, deixe os registros com o Lotties."
+      },
+      "inUse": {
+        "title": "Ainda em uso",
+        "body": "Este banco ainda guarda os registros do seu bebê. Volte com eles para o Lotties antes e depois esqueça os dados."
+      },
+      "notOwned": {
+        "title": "Não é o seu banco",
+        "body": "Outra conta configurou este banco. Só essa conta pode alterá-lo."
+      },
+      "accountDeleting": {
+        "title": "Conta sendo excluída",
+        "body": "Esta conta está sendo excluída agora, então os registros dos bebês dela não podem ser alterados nem movidos."
+      },
       "unknown": {
         "title": "Algo deu errado",
         "body": "O Lotties não conseguiu verificar o banco. Tente de novo mais tarde."
@@ -299,10 +327,77 @@
       "creates_in_store_schema": "A função pode criar objetos no schema lotties."
     },
     "help": {
-      "title": "Seu próprio banco: guias por provedor",
+      "title": "Seu próprio banco: guia",
       "back": "Voltar para Onde seus dados ficam",
-      "link": "Guias passo a passo para cada provedor",
-      "intro": "Como preparar um banco Postgres para os registros do seu bebê. Você continua usando o Lotties como antes; só muda onde os registros ficam guardados."
+      "link": "Como funciona, passo a passo, e o que fazer quando algo dá errado",
+      "whatToDo": "O que isso quer dizer e o que fazer",
+      "intro": "Uma opção, não uma mudança para todos: o Lotties guardar os dados continua sendo o padrão. Se você escolher, continua usando o app e a sua conta do Lotties exatamente como antes; só muda onde os registros de cuidado de um bebê ficam guardados.",
+      "availability": "Esta opção pode ainda não estar disponível para todas as contas. Se os Ajustes não mostram Onde seus dados ficam, ela não está ligada para você.",
+      "contents": "Nesta página",
+      "fullGuide": "O guia completo, com todos os códigos de erro (docs/BYO-DATABASE.md, em inglês)",
+      "sections": {
+        "about": {
+          "title": "O que é, e o que não é",
+          "p1": "Os registros de cuidado do seu bebê (eventos, remédios, consultas, vacinas, medidas, notas) ficam num banco Postgres que você controla, por exemplo no Supabase ou no Neon. Tudo continua passando pelo Lotties: seu celular nunca se conecta ao seu banco; os servidores do Lotties leem e gravam nele por você.",
+          "p2": "Isto não é criptografia de ponta a ponta. Os servidores do Lotties leem os registros sempre que você usa o app, e as pessoas que operam o Lotties também poderiam lê-los.",
+          "p3": "O Lotties guarda os dados de conexão criptografados no armazenamento e nunca mais os mostra, mas o serviço do Lotties tem a chave e os abre para se conectar. O que você ganha é controle sobre onde os dados ficam: o provedor, a região e as próprias linhas.",
+          "p4": "É uma escolha por bebê e dá para desfazer: volte com os registros para o Lotties guardar quando quiser."
+        },
+        "who": {
+          "title": "Quem pode usar",
+          "p1": "Só o Titular do bebê, e só quando a opção está ligada para a conta.",
+          "p2": "Nesta primeira versão o bebê não pode ter outros membros nem convite pendente: sem parceiro, cuidador, visualizador ou médica. Um banco por conta."
+        },
+        "keeps": {
+          "title": "O que o Lotties continua guardando",
+          "p1": "Sua conta, consentimentos e ajustes; o perfil do bebê, membros, convites e acesso de médica; os ajustes de notificação; os dados de conexão criptografados, o nome do provedor e o resultado da última verificação; o estado da última mudança.",
+          "p2": "Depois de uma mudança, a cópia antiga fica onde os registros estavam por 7 dias (o prazo para desfazer) e depois é apagada."
+        },
+        "limits": {
+          "title": "Limites desta primeira versão",
+          "p1": "Sem lembretes para esse bebê, sem outros membros, sem acesso de médica. Os assistentes de voz continuam funcionando e dizem que a informação está temporariamente indisponível quando seu banco está fora do ar.",
+          "p2": "O Lotties só se conecta nas portas 5432 e 6543, só a um endereço da internet pública e sempre com TLS e certificado verificado. Um endereço que só responde em IPv6 pode não ser alcançado.",
+          "p3": "O banco, os backups dele e os custos são seus. Baixe um backup pelo Lotties (Hub > Exportar dados) de tempos em tempos."
+        },
+        "providers": {
+          "title": "Prepare seu banco",
+          "p1": "O assistente de configuração escreve o SQL de configuração neste aparelho: duas funções que só alcançam um schema chamado lotties, uma para criar as tabelas e outra para ler e gravar no dia a dia. Você pode trocar os nomes. Nunca dê ao Lotties o seu usuário administrador."
+        },
+        "moving": {
+          "title": "Mover os registros para lá, e de volta",
+          "p1": "Depois de um teste aprovado, Mover meus registros para lá inicia uma mudança no servidor. Por um momento os registros novos esperam neste aparelho; a leitura continua.",
+          "p2": "O Lotties copia os registros, confere se a cópia bate e só então passa o bebê para o novo lugar. Se algo falhar, o bebê fica onde estava.",
+          "p3": "Voltar para o Lotties guardar faz o mesmo no sentido contrário.",
+          "p4": "Por 7 dias depois de uma mudança a cópia antiga é mantida, então mover no sentido contrário desfaz a mudança; depois ela é apagada. Até lá o banco do Lotties ainda tem a cópia antiga. O app ainda não mostra essa data."
+        },
+        "down": {
+          "title": "Quando seu banco está fora do ar",
+          "p1": "Um projeto gratuito pausado, uma senha trocada ou um disco cheio deixam seu banco inacessível. O Lotties nunca guarda os registros do seu bebê no banco dele no lugar do seu.",
+          "p2": "Suas alterações esperam neste aparelho, como quando você está sem internet, e são enviadas quando o banco volta. Os outros bebês continuam sincronizando.",
+          "p3": "Esta tela diz o que está errado em palavras simples. Projeto pausado: retome no provedor, espere um minuto e teste de novo."
+        },
+        "disconnect": {
+          "title": "Desconectar",
+          "p1": "Enquanto os registros estão no seu banco, volte com eles para o Lotties antes. Depois, Esquecer os dados salvos remove os dados de conexão do Lotties; seu banco não é tocado.",
+          "p2": "O Lotties apaga a cópia antiga no seu banco depois do prazo para desfazer só se ainda conseguir alcançá-lo. Se você esquecer os dados antes, apague o schema lotties você mesmo.",
+          "p3": "Trocar a senha das funções no provedor para o Lotties na hora, mas aí o Lotties também não consegue trazer os registros de volta para você."
+        },
+        "deletion": {
+          "title": "Excluir sua conta",
+          "p1": "Excluir sua conta sempre apaga o que o Lotties guarda, inclusive os dados de conexão, então o Lotties não consegue mais alcançar seu banco.",
+          "p2": "Os registros no seu banco continuam lá, a não ser que você marque Excluir também os registros destes bebês no meu próprio banco de dados na janela de exclusão (desmarcada por padrão). Aí o Lotties apaga essas linhas, e nenhum schema ou função.",
+          "p3": "Se seu banco não puder ser alcançado nesse momento, a conta é excluída mesmo assim e o app lista os bebês cujos registros continuam no seu banco."
+        },
+        "troubleshooting": {
+          "title": "O que fazer quando algo dá errado",
+          "p1": "Inacessível, sem resposta a tempo ou conexões demais: o banco pode estar pausado ou acordando. Retome no provedor, espere um minuto e teste de novo. Suas alterações esperam neste aparelho.",
+          "p2": "Senha recusada: digite de novo o nome de usuário e a senha (no pooler do Supabase o nome de usuário tem um ponto e a referência do projeto).",
+          "p3": "A função pode fazer demais: rode o SQL de configuração de novo com funções novas. Tabelas inesperadas: use um banco vazio.",
+          "p4": "Endereço não permitido, porta não aceita ou conexão segura falhou: use o endereço público que o provedor dá, na porta 5432 ou 6543; para uma autoridade certificadora privada, cole o certificado dela.",
+          "p5": "Banco cheio: libere espaço ou mude de plano no provedor. Registros sendo movidos, ou conta sendo excluída: espere; nada se perde.",
+          "p6": "Só para um bebê que você acompanha sozinho: remova os outros membros e convites pendentes, ou deixe os registros com o Lotties para compartilhar o bebê."
+        }
+      }
     }
   }
 }

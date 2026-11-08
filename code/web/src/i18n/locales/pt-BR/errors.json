@@ -32,6 +32,8 @@
     "store_role_too_powerful": "O Lotties parou de usar seu próprio banco porque a função dele pode fazer demais. Suas alterações esperam neste aparelho.",
     "store_migrating": "Seu próprio banco está sendo preparado. Suas alterações esperam neste aparelho e sincronizam em breve.",
     "store_migration_failed": "Seu próprio banco ainda não pôde ser preparado. Suas alterações esperam neste aparelho.",
+    "store_moving": "Os registros deste bebê estão sendo movidos entre bancos. Suas alterações esperam neste aparelho e sincronizam quando a mudança terminar.",
+    "store_account_deleting": "Esta conta está sendo excluída, então os registros dos bebês dela não podem ser alterados agora.",
     "request_body_too_large": "Os dados são grandes demais para enviar. Tente uma alteração menor.",
     "import_too_many_medication_names": "Esta importação tem mais de {{maxNames}} nomes de remédios diferentes. Corrija ou divida o arquivo e tente de novo.",
     "measurementValidation": "O servidor recusou alguns valores. Confira a data e se peso, altura e perímetro da cabeça estão dentro dos limites.",

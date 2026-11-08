@@ -127,7 +127,7 @@
         "title": "Supabase",
         "step1": "Create a project at supabase.com and pick a region close to you. A free plan existed at the time of writing, with limits: check the provider's page for prices and limits.",
         "step2": "Open the project's SQL Editor, paste the setup SQL from Lotties and run it once.",
-        "step3": "Press Connect in the project. For the everyday connection use the transaction pooler (port 6543); for the migration connection use the session pooler (port 5432) or the direct connection. Copy the host and the database name (usually postgres).",
+        "step3": "Press Connect in the project. For the everyday connection use the transaction pooler (port 6543); for the migration connection use the session pooler (port 5432). The direct connection may answer only on IPv6, which Lotties' servers may not reach. Copy the host and the database name (usually postgres).",
         "step4": "On a pooler the user name is the role, a dot and your project reference, for example lotties_app.abcdefgh. Use the passwords from the setup SQL.",
         "step5": "Free projects may be paused after some days without use: then open the project, restore it and test again in Lotties. Free plans may keep no backups: download a backup from Lotties (Hub > Export data) from time to time."
       },
@@ -287,6 +287,34 @@
         "title": "Nothing saved yet",
         "body": "Save the connection details first."
       },
+      "moving": {
+        "title": "Records being moved",
+        "body": "A move of this baby's records is running. New records wait on this device and are saved when it ends, usually within a minute."
+      },
+      "moveInProgress": {
+        "title": "Already moving",
+        "body": "This baby's records are already being moved. Wait until the move ends, then look again."
+      },
+      "moveNotNeeded": {
+        "title": "Already there",
+        "body": "This baby's records are already in that database. Nothing was changed."
+      },
+      "ownerOnly": {
+        "title": "Only for a baby you keep alone",
+        "body": "In this first version your own database works only for a baby with no other members and no pending invite. Remove the others or the invite first; to share the baby, keep the records with Lotties."
+      },
+      "inUse": {
+        "title": "Still in use",
+        "body": "This database still holds your baby's records. Move them back to Lotties hosting first, then forget the details."
+      },
+      "notOwned": {
+        "title": "Not your database",
+        "body": "Another account set up this database. Only that account can change it."
+      },
+      "accountDeleting": {
+        "title": "Account being deleted",
+        "body": "This account is being deleted right now, so its babies' records cannot be changed or moved."
+      },
       "unknown": {
         "title": "Something went wrong",
         "body": "Lotties could not check the database. Try again later."
@@ -299,10 +327,77 @@
       "creates_in_store_schema": "The role can create objects in the lotties schema."
     },
     "help": {
-      "title": "Your own database: provider guides",
+      "title": "Your own database: guide",
       "back": "Back to Where your data lives",
-      "link": "Step-by-step guides for each provider",
-      "intro": "How to prepare a Postgres database for your baby's records. You keep using Lotties as before; only where the records are stored changes."
+      "link": "How it works, step by step, and what to do when something goes wrong",
+      "whatToDo": "What this means and what to do",
+      "intro": "An option, not a change for everyone: Lotties hosting stays the default. If you choose it, you keep using the Lotties app and your account exactly as before; only where one baby's care records are stored changes.",
+      "availability": "This option may not be available to every account yet. If Settings does not show Where your data lives, it is not turned on for you.",
+      "contents": "On this page",
+      "fullGuide": "The full guide, with every error code (docs/BYO-DATABASE.md)",
+      "sections": {
+        "about": {
+          "title": "What it is, and what it is not",
+          "p1": "Your baby's care records (events, medicines, appointments, vaccinations, measurements, notes) are stored in a Postgres database you control, for example at Supabase or Neon. Everything still goes through Lotties: your phone never connects to your database; Lotties' servers read and write it for you.",
+          "p2": "This is not end-to-end encryption. Lotties' servers read the records whenever you use the app, and the people who run Lotties could read them too.",
+          "p3": "Lotties keeps the connection details encrypted at rest and never shows them again, but the Lotties service holds the key and opens them to connect. What you gain is control over where the data lives: the provider, the region, and the rows themselves.",
+          "p4": "It is a choice per baby and you can undo it: move the records back to Lotties hosting at any time."
+        },
+        "who": {
+          "title": "Who can use it",
+          "p1": "Only the baby's Owner, and only when the option is turned on for the account.",
+          "p2": "In this first version the baby must have no other members and no pending invite: no partner, caregiver, viewer or doctor. One database per account."
+        },
+        "keeps": {
+          "title": "What Lotties still keeps",
+          "p1": "Your account, consents and settings; the baby's profile, members, invites and doctor access; push settings; the encrypted connection details, the provider name and the result of the last check; the state of the latest move.",
+          "p2": "After a move, the old copy stays where the records came from for 7 days (the undo window) and is then deleted."
+        },
+        "limits": {
+          "title": "Limits of this first version",
+          "p1": "No reminders for that baby, no other members, no doctor access. Voice assistants keep working and say the information is temporarily unavailable when your database is down.",
+          "p2": "Lotties connects only on ports 5432 and 6543, only to an address on the public internet, and always with TLS and a verified certificate. An address that answers only on IPv6 may not be reachable.",
+          "p3": "Your database, its backups and its costs are yours. Download a backup from Lotties (Hub > Export data) from time to time."
+        },
+        "providers": {
+          "title": "Prepare your database",
+          "p1": "The setup wizard writes the setup SQL on this device: two roles that can reach only a schema called lotties, one to create the tables and one for everyday reading and writing. You may rename them. Never give Lotties your admin user."
+        },
+        "moving": {
+          "title": "Moving the records in, and back",
+          "p1": "After a passing test, Move my records there starts a move on the server. For a moment new records wait on this device; reading goes on.",
+          "p2": "Lotties copies the records, checks that the copy matches, and only then switches the baby to the new place. If anything fails, the baby stays where it was.",
+          "p3": "Move back to Lotties hosting does the same the other way.",
+          "p4": "For 7 days after a move the old copy is kept, so moving the other way undoes it; then it is deleted. Until then Lotties' database still holds the old copy. The app does not show that date yet."
+        },
+        "down": {
+          "title": "When your database is down",
+          "p1": "A paused free project, a changed password or a full disk make your database unreachable. Lotties never saves your baby's records in its own database instead.",
+          "p2": "Your changes wait on this device, like when you are offline, and are sent when the database is back. Other babies keep syncing.",
+          "p3": "This screen tells you what is wrong in plain words. A paused project: resume it at your provider, wait a minute and test again."
+        },
+        "disconnect": {
+          "title": "Disconnecting",
+          "p1": "While the records are in your database, move them back to Lotties hosting first. Then Forget the saved details removes the connection details from Lotties; your database is not touched.",
+          "p2": "Lotties deletes the old copy in your database after the undo window only if it can still reach it then. If you forget the details sooner, delete the lotties schema yourself.",
+          "p3": "Changing the roles' password at your provider stops Lotties at once, but then Lotties cannot move the records back for you either."
+        },
+        "deletion": {
+          "title": "Deleting your account",
+          "p1": "Deleting your account always erases what Lotties holds, including the connection details, so Lotties can no longer reach your database.",
+          "p2": "The records in your database stay there unless you tick Also delete these babies' records in my own database in the delete dialog (unticked by default). Lotties then deletes those rows, and no schema or role.",
+          "p3": "If your database cannot be reached at that moment, the account is deleted anyway and the app lists the babies whose records are still in your database."
+        },
+        "troubleshooting": {
+          "title": "What to do when something goes wrong",
+          "p1": "Not reachable, no answer in time, or too many connections: the database may be paused or waking up. Resume it at your provider, wait a minute and test again. Your changes wait on this device.",
+          "p2": "Password refused: type the user name and password again (on a Supabase pooler the user name includes a dot and your project reference).",
+          "p3": "The role can do too much: run the setup SQL again with new roles. Unexpected tables: use an empty database.",
+          "p4": "Address not allowed, port not accepted or secure connection failed: use the public address your provider gives on port 5432 or 6543; for a private certificate authority paste its certificate.",
+          "p5": "Database full: free space or change the plan at your provider. Records being moved, or account being deleted: wait; nothing is lost.",
+          "p6": "Only for a baby you keep alone: remove the other members and pending invites, or keep the records with Lotties to share the baby."
+        }
+      }
     }
   }
 }

@@ -32,6 +32,8 @@
     "store_role_too_powerful": "Lotties stopped using your own database because its role can do too much. Your changes wait on this device.",
     "store_migrating": "Your own database is being prepared. Your changes wait on this device and sync soon.",
     "store_migration_failed": "Your own database could not be prepared yet. Your changes wait on this device.",
+    "store_moving": "This baby's records are being moved between databases. Your changes wait on this device and sync when the move ends.",
+    "store_account_deleting": "This account is being deleted, so its babies' records cannot be changed now.",
     "request_body_too_large": "The data is too large to send. Try a smaller change.",
     "import_too_many_medication_names": "This import has more than {{maxNames}} different medication names. Fix or split the file and try again.",
     "measurementValidation": "The server rejected some values. Check the date and that weight, height and head circumference are within range.",

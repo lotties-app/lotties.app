@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertTitle, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
+import { OwnDatabaseHelpLink } from './OwnDatabaseHelpLink';
 import { knownFindings, resultMessageOf, type ResultMessage } from './storeMessages';
 import type { SavePhase } from './useSaveAndTest';
 
@@ -22,6 +23,11 @@ function ResultAlert({
           {known.map((finding) => (
             <li key={finding}>{t(`byoDatabase.findings.${finding}`)}</li>
           ))}
+        </Box>
+      )}
+      {!ok && (
+        <Box>
+          <OwnDatabaseHelpLink />
         </Box>
       )}
     </Alert>
