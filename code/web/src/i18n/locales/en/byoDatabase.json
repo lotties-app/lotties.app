@@ -27,6 +27,7 @@
       "notE2ee": "This is not end-to-end encryption.",
       "pause": "Free plans of some providers pause a database after some days without use, or stop it when idle; the app then cannot sync until you resume it.",
       "backups": "Free plans may have no backups or keep them only a short time. Your database, its backups and its costs are yours: check the provider's page.",
+      "responsibility": "You are responsible for your database and your account at the provider: keeping it running, its backups, its costs, its security settings, who can access it and the passwords you create there. Lotties is not responsible for records lost, unavailable, deleted or exposed because of your database, your provider or your settings there. Lotties stays responsible for what it does itself: its servers, the data in its own database and how it keeps and uses your connection details.",
       "ownerOnly": "In this first version only you, the Owner, can use a baby whose records are in your own database: no other family members, no doctor access and no reminders for that baby.",
       "leave": "The database provider's terms and region apply. You can disconnect and take your data at any time."
     },
@@ -193,6 +194,7 @@
       "fact4": "The terms, region, limits and costs of {{provider}} apply; free plans may pause and may keep no backups.",
       "fact5": "Your account, your family's roles and the baby's profile stay in Lotties' database, as today.",
       "fact6": "You can move back to Lotties hosting or disconnect at any time.",
+      "fact7": "You are responsible for your database and your account at {{provider}}: availability, backups, costs, security settings, who can access it and the roles you create. Lotties is not responsible for loss, unavailability, deletion or exposure caused by your database, {{provider}} or your settings there; it stays responsible for its own servers, its own database and how it handles your connection details.",
       "agree": "I understand and want to keep this baby's records in my own database at {{provider}}"
     },
     "test": {
@@ -356,6 +358,12 @@
           "title": "What Lotties still keeps",
           "p1": "Your account, consents and settings; the baby's profile, members, invites and doctor access; push settings; the encrypted connection details, the provider name and the result of the last check; the state of the latest move.",
           "p2": "After a move, the old copy stays where the records came from for 7 days (the undo window) and is then deleted."
+        },
+        "responsibility": {
+          "title": "Who is responsible for what",
+          "p1": "You are responsible for your database and your account at the provider: keeping it available, its backups and how long they are kept, its costs, the provider's terms, its security settings and who can access it, the passwords and roles you create (including the two Lotties uses), and anything else you keep in the same database.",
+          "p2": "Copies left in your database are yours too: an old copy after you move the records back, leftovers after you disconnect or replace the details, and the records that stay there after you delete your Lotties account unless you tick the box to delete them. Lotties is not responsible for loss, unavailability, deletion or exposure caused by your database, your provider or your settings there.",
+          "p3": "Lotties stays responsible for what it does itself: how it sends and keeps your connection details (encrypted, never shown again), its own servers and the data in Lotties' own database. This choice does not change your rights under privacy law."
         },
         "limits": {
           "title": "Limits of this first version",

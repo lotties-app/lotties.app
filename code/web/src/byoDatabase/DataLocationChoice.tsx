@@ -2,7 +2,15 @@ import { useTranslation } from 'react-i18next';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import type { DataStoreKind } from './dataStoreApi';
 
-const LIMITS = ['operator', 'notE2ee', 'pause', 'backups', 'ownerOnly', 'leave'] as const;
+const LIMITS = [
+  'operator',
+  'notE2ee',
+  'pause',
+  'backups',
+  'responsibility',
+  'ownerOnly',
+  'leave',
+] as const;
 
 function Option({ kind, current }: { kind: DataStoreKind; current: boolean }) {
   const { t } = useTranslation();

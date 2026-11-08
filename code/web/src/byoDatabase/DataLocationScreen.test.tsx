@@ -97,6 +97,7 @@ async function walkToTest() {
   type(/^Migration password/, MIGRATOR_PASSWORD);
   click('Next');
   expect(screen.getByRole('heading', { name: 'Your agreement' })).toBeTruthy();
+  expect(screen.getByText(/your account at Supabase: availability, backups/)).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   fireEvent.click(screen.getByRole('checkbox'));
   click('Next');
@@ -125,6 +126,8 @@ describe('the choice', () => {
     expect(screen.getByText('This is not end-to-end encryption.')).toBeTruthy();
     expect(screen.getByText(/Free plans may have no backups/)).toBeTruthy();
     expect(screen.getByText(/only you, the Owner/)).toBeTruthy();
+    expect(screen.getByText(/You are responsible for your database and your account/)).toBeTruthy();
+    expect(screen.getByText(/Lotties stays responsible for what it does itself/)).toBeTruthy();
     expect(
       screen.getByText(/Lotties' servers read your data whenever you use the app/),
     ).toBeTruthy();

@@ -1,7 +1,7 @@
-diff --git b/code/web/src/legal/PrivacyPage.test.tsx a/code/web/src/legal/PrivacyPage.test.tsx
+diff --git a/code/web/src/legal/PrivacyPage.test.tsx b/code/web/src/legal/PrivacyPage.test.tsx
 index 230ed6bc..d3ddbdd1 100644
---- b/code/web/src/legal/PrivacyPage.test.tsx
-+++ a/code/web/src/legal/PrivacyPage.test.tsx
+--- a/code/web/src/legal/PrivacyPage.test.tsx
++++ b/code/web/src/legal/PrivacyPage.test.tsx
 @@ -10,7 +10,7 @@ import { AppThemeProvider } from '../theme/AppThemeProvider';
  import { THEME_STORAGE_KEY } from '../theme/themeStorage';
  import { AuthTestWrapper } from '../test/AuthTestWrapper';
@@ -20,12 +20,12 @@ index 230ed6bc..d3ddbdd1 100644
      expect(within(recipients).getByRole('rowheader', { name: 'Amazon (Alexa)' })).toBeTruthy();
    });
  
-diff --git b/code/web/src/legal/byoDatabaseConsent.test.ts a/code/web/src/legal/byoDatabaseConsent.test.ts
+diff --git a/code/web/src/legal/byoDatabaseConsent.test.ts b/code/web/src/legal/byoDatabaseConsent.test.ts
 new file mode 100644
-index 00000000..f9071efc
+index 00000000..6b387e1e
 --- /dev/null
-+++ a/code/web/src/legal/byoDatabaseConsent.test.ts
-@@ -0,0 +1,91 @@
++++ b/code/web/src/legal/byoDatabaseConsent.test.ts
+@@ -0,0 +1,95 @@
 +import { describe, expect, it } from 'vitest';
 +import { LOCALES, type Locale } from '../i18n/config';
 +import {
@@ -54,6 +54,8 @@ index 00000000..f9071efc
 +    chosen: /a company you choose, not one Lotties chooses/,
 +    region: /country or region you picked/,
 +    responsible: /You are responsible for that account/,
++    notLiable: /Lotties is not responsible for loss, unavailability, deletion or exposure/,
++    ownDuty: /Lotties stays responsible for what it does itself/,
 +    pause: /pause/,
 +    backups: /no backups/,
 +    notAvailable: /reminders, invited members and doctor access are not available/,
@@ -72,6 +74,8 @@ index 00000000..f9071efc
 +    chosen: /uma empresa que você escolhe, não o Lotties/,
 +    region: /país ou a região que você escolheu/,
 +    responsible: /Você é responsável por essa conta/,
++    notLiable: /O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição/,
++    ownDuty: /O Lotties continua responsável pelo que ele mesmo faz/,
 +    pause: /pausar/,
 +    backups: /não ter backup/,
 +    notAvailable: /lembretes, membros convidados e o acesso de médicos não estão disponíveis/,
@@ -117,12 +121,12 @@ index 00000000..f9071efc
 +    }
 +  });
 +});
-diff --git b/code/web/src/legal/byoDatabaseConsent.ts a/code/web/src/legal/byoDatabaseConsent.ts
+diff --git a/code/web/src/legal/byoDatabaseConsent.ts b/code/web/src/legal/byoDatabaseConsent.ts
 new file mode 100644
-index 00000000..7d675e46
+index 00000000..bbc4ce51
 --- /dev/null
-+++ a/code/web/src/legal/byoDatabaseConsent.ts
-@@ -0,0 +1,81 @@
++++ b/code/web/src/legal/byoDatabaseConsent.ts
+@@ -0,0 +1,83 @@
 +import type { Locale } from '../i18n/config';
 +import { sectionAnchor } from './privacyPolicy';
 +
@@ -160,7 +164,8 @@ index 00000000..7d675e46
 +      "What moves: the baby's care records (daily entries, your own entry types, medicines and prescriptions, formulas, appointments, saved doctors and clinics, vaccinations, measurements and notes). What stays with Lotties: your account, your consents, who belongs to the baby, the baby's profile and your settings.",
 +      'The records still pass through the Lotties servers every time the app reads or writes them, and the Lotties servers can read them while they do.',
 +      'The connection details you enter are stored encrypted (AES-256-GCM) and are never shown again. The key is held by whoever runs Lotties, so the Lotties servers, and the people who run them, can open them. This is not end-to-end encryption.',
-+      '{provider} is a company you choose, not one Lotties chooses. Its own terms, its prices and the country or region you picked apply to your records there. You are responsible for that account.',
++      '{provider} is a company you choose, not one Lotties chooses. Its own terms, its prices and the country or region you picked apply to your records there. You are responsible for that account and that database: its availability, backups, costs, security settings, who can access it, the roles you create and any copy of the records left in it.',
++      'Lotties is not responsible for loss, unavailability, deletion or exposure of the records caused by your database, {provider} or your settings there. Lotties stays responsible for what it does itself: its servers, its own database and how it sends and stores your connection details.',
 +      'Your provider may pause or close a free database, limit it, or lose data, and free plans may have no backups. Once the records are moved and the undo period the app shows has ended, Lotties keeps no copy of them, so download a backup of the baby from time to time.',
 +      'For this baby, reminders, invited members and doctor access are not available in this first version.',
 +      'You can move the records back to Lotties, or disconnect, at any time.',
@@ -177,7 +182,8 @@ index 00000000..7d675e46
 +      'O que muda de lugar: os registros de cuidado do bebê (os registros do dia a dia, os seus próprios tipos de registro, remédios e receitas, fórmulas, consultas, médicos e clínicas salvos, vacinas, medidas e notas). O que fica com o Lotties: a sua conta, os seus consentimentos, quem participa do bebê, o perfil do bebê e os seus ajustes.',
 +      'Os registros continuam passando pelos servidores do Lotties sempre que o app os lê ou grava, e os servidores do Lotties conseguem lê-los nesse momento.',
 +      'Os dados de conexão que você informa são guardados criptografados (AES-256-GCM) e nunca mais são mostrados. A chave fica com quem opera o Lotties; por isso os servidores do Lotties, e as pessoas que os operam, conseguem abri-los. Isto não é criptografia de ponta a ponta.',
-+      '{provider} é uma empresa que você escolhe, não o Lotties. Os termos dela, os preços dela e o país ou a região que você escolheu valem para os seus registros lá. Você é responsável por essa conta.',
++      '{provider} é uma empresa que você escolhe, não o Lotties. Os termos dela, os preços dela e o país ou a região que você escolheu valem para os seus registros lá. Você é responsável por essa conta e por esse banco: disponibilidade, backups, custos, configurações de segurança, quem tem acesso, as funções que você cria e qualquer cópia dos registros que fique nele.',
++      'O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição dos registros causadas pelo seu banco, por {provider} ou pelas suas configurações lá. O Lotties continua responsável pelo que ele mesmo faz: os servidores dele, o banco dele e como envia e guarda os seus dados de conexão.',
 +      'O seu provedor pode pausar ou encerrar um banco de dados gratuito, limitá-lo ou perder dados, e planos gratuitos podem não ter backup. Depois que os registros forem movidos e o prazo para desfazer que o app mostra terminar, o Lotties não guarda cópia deles, então baixe de vez em quando um backup do bebê.',
 +      'Para este bebê, lembretes, membros convidados e o acesso de médicos não estão disponíveis nesta primeira versão.',
 +      'Você pode trazer os registros de volta para o Lotties, ou desconectar, a qualquer momento.',
@@ -204,10 +210,10 @@ index 00000000..7d675e46
 +    policyLink: fill(text.policyLink),
 +  };
 +}
-diff --git b/code/web/src/legal/consentVersions.test.ts a/code/web/src/legal/consentVersions.test.ts
+diff --git a/code/web/src/legal/consentVersions.test.ts b/code/web/src/legal/consentVersions.test.ts
 index e5512cdd..cd976724 100644
---- b/code/web/src/legal/consentVersions.test.ts
-+++ a/code/web/src/legal/consentVersions.test.ts
+--- a/code/web/src/legal/consentVersions.test.ts
++++ b/code/web/src/legal/consentVersions.test.ts
 @@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
  import { enCatalog } from '../i18n/catalogEn';
  import { ptBRCatalog } from '../i18n/catalogPtBR';
@@ -235,10 +241,10 @@ index e5512cdd..cd976724 100644
      }),
    );
  }
-diff --git b/code/web/src/legal/dataFlows.test.ts a/code/web/src/legal/dataFlows.test.ts
-index 0dac5748..922c0e06 100644
---- b/code/web/src/legal/dataFlows.test.ts
-+++ a/code/web/src/legal/dataFlows.test.ts
+diff --git a/code/web/src/legal/dataFlows.test.ts b/code/web/src/legal/dataFlows.test.ts
+index 0dac5748..dc1b9505 100644
+--- a/code/web/src/legal/dataFlows.test.ts
++++ b/code/web/src/legal/dataFlows.test.ts
 @@ -5,6 +5,7 @@ import {
    CURATED_CREDIT_PRIVACY,
    DATA_CATEGORY_IDS,
@@ -247,7 +253,7 @@ index 0dac5748..922c0e06 100644
    PLANNED_FLOWS,
    THIRD_PARTIES,
    THIRD_PARTY_IDS,
-@@ -58,6 +59,56 @@ const SENSOR_WORDS: Readonly<Record<Locale, Record<string, RegExp>>> = {
+@@ -58,6 +59,62 @@ const SENSOR_WORDS: Readonly<Record<Locale, Record<string, RegExp>>> = {
    },
  };
  
@@ -273,6 +279,9 @@ index 0dac5748..922c0e06 100644
 +    ownerOnly: /Only the baby's owner/,
 +    back: /move the records back/,
 +    staysWithLotties: /With Lotties: your sign-in account, your consent records/,
++    userResponsible: /You are responsible for that account and that database/,
++    notLiable: /Lotties is not responsible for loss, unavailability, deletion or exposure/,
++    ownDuty: /Lotties stays responsible, as this policy describes, for what it does itself/,
 +  },
 +  'pt-BR': {
 +    optional: /desligado por padrão/,
@@ -294,6 +303,9 @@ index 0dac5748..922c0e06 100644
 +    ownerOnly: /Só o titular do bebê/,
 +    back: /trazer os registros de volta/,
 +    staysWithLotties: /Com o Lotties: a sua conta de acesso, os seus registros de consentimento/,
++    userResponsible: /Você é responsável por essa conta e por esse banco/,
++    notLiable: /O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição/,
++    ownDuty: /O Lotties continua responsável, como descreve esta política, pelo que ele mesmo faz/,
 +  },
 +};
 +const OWN_DATABASE_NAME: Readonly<Record<Locale, RegExp>> = {
@@ -304,7 +316,7 @@ index 0dac5748..922c0e06 100644
  const sectionOf = (locale: Locale, id: string) =>
    POLICY_DOCUMENTS[locale].sections.find((section) => section.id === id);
  
-@@ -230,6 +281,62 @@ describe('the data flows behind the privacy policy', () => {
+@@ -230,6 +287,62 @@ describe('the data flows behind the privacy policy', () => {
      },
    );
  
@@ -367,10 +379,10 @@ index 0dac5748..922c0e06 100644
    it('raised the policy version with the cry monitor (version 3 of 2026-10-24 or later)', () => {
      expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(3);
      expect(PRIVACY_POLICY_LAST_UPDATED >= '2026-10-24').toBe(true);
-diff --git b/code/web/src/legal/dataFlows.ts a/code/web/src/legal/dataFlows.ts
+diff --git a/code/web/src/legal/dataFlows.ts b/code/web/src/legal/dataFlows.ts
 index db736062..842e6389 100644
---- b/code/web/src/legal/dataFlows.ts
-+++ a/code/web/src/legal/dataFlows.ts
+--- a/code/web/src/legal/dataFlows.ts
++++ b/code/web/src/legal/dataFlows.ts
 @@ -23,6 +23,7 @@ export const DATA_CATEGORY_IDS = [
    'cryMonitor',
    'assistants',
@@ -533,10 +545,10 @@ index db736062..842e6389 100644
  /*
   * Planned data flows: described in the policy, NOT built (no code collects or uses anything for them).
   * Each has its own policy section that must say it is not active and off by default (dataFlows.test.ts),
-diff --git b/code/web/src/legal/forbiddenClaims.test.ts a/code/web/src/legal/forbiddenClaims.test.ts
+diff --git a/code/web/src/legal/forbiddenClaims.test.ts b/code/web/src/legal/forbiddenClaims.test.ts
 index 54c2a0f8..e2e2e281 100644
---- b/code/web/src/legal/forbiddenClaims.test.ts
-+++ a/code/web/src/legal/forbiddenClaims.test.ts
+--- a/code/web/src/legal/forbiddenClaims.test.ts
++++ b/code/web/src/legal/forbiddenClaims.test.ts
 @@ -1,5 +1,6 @@
  import { describe, expect, it } from 'vitest';
  import { LOCALES, type Locale } from '../i18n/config';
@@ -563,10 +575,10 @@ index 54c2a0f8..e2e2e281 100644
 +    expect(findForbiddenClaims(JSON.stringify(BYO_DATABASE_CONSENT[locale]), locale)).toEqual([]);
 +  });
  });
-diff --git b/code/web/src/legal/forbiddenClaims.ts a/code/web/src/legal/forbiddenClaims.ts
+diff --git a/code/web/src/legal/forbiddenClaims.ts b/code/web/src/legal/forbiddenClaims.ts
 index 96a3dfa2..b2a24597 100644
---- b/code/web/src/legal/forbiddenClaims.ts
-+++ a/code/web/src/legal/forbiddenClaims.ts
+--- a/code/web/src/legal/forbiddenClaims.ts
++++ b/code/web/src/legal/forbiddenClaims.ts
 @@ -6,9 +6,9 @@ import type { Locale } from '../i18n/config';
   * serves, a baby's own database included, and the operator holds the key that opens its connection details:
   * nothing in Lotties is end-to-end encrypted or hidden from the operator. A text that says otherwise is false.
@@ -580,10 +592,10 @@ index 96a3dfa2..b2a24597 100644
   */
  
  /** Phrases that claim more than the code does, per language (case-insensitive). */
-diff --git b/code/web/src/legal/policyTypes.ts a/code/web/src/legal/policyTypes.ts
+diff --git a/code/web/src/legal/policyTypes.ts b/code/web/src/legal/policyTypes.ts
 index 14576e40..2640208c 100644
---- b/code/web/src/legal/policyTypes.ts
-+++ a/code/web/src/legal/policyTypes.ts
+--- a/code/web/src/legal/policyTypes.ts
++++ b/code/web/src/legal/policyTypes.ts
 @@ -71,6 +71,7 @@ export const POLICY_SECTION_IDS = [
    'legal-bases',
    'consent',
@@ -592,10 +604,10 @@ index 14576e40..2640208c 100644
    'children',
    'rights',
    'retention',
-diff --git b/code/web/src/legal/privacy.en.ts a/code/web/src/legal/privacy.en.ts
-index 4efcf15a..bb0a0d9b 100644
---- b/code/web/src/legal/privacy.en.ts
-+++ a/code/web/src/legal/privacy.en.ts
+diff --git a/code/web/src/legal/privacy.en.ts b/code/web/src/legal/privacy.en.ts
+index 4efcf15a..28344162 100644
+--- a/code/web/src/legal/privacy.en.ts
++++ b/code/web/src/legal/privacy.en.ts
 @@ -25,7 +25,7 @@ export const privacyEn: PolicyDocument = {
          items: [
            'No advertising, no analytics or tracking tools, and no selling of data.',
@@ -661,7 +673,7 @@ index 4efcf15a..bb0a0d9b 100644
                  {
                    id: 'addressLookup',
                    cells: [
-@@ -378,6 +395,85 @@ export const privacyEn: PolicyDocument = {
+@@ -378,6 +395,87 @@ export const privacyEn: PolicyDocument = {
          },
        ],
      },
@@ -719,9 +731,11 @@ index 4efcf15a..bb0a0d9b 100644
 +              kind: 'list',
 +              items: [
 +                'The provider is a company you choose. Lotties does not choose it and does not control it. Its terms, its prices and the country or region you pick apply to the records stored there.',
-+                'You are responsible for that account. A provider may pause a free database after a time without use, limit or close it, change its terms or lose data, and free plans may have no backups. While your database cannot be reached, the app shows what is on your device and keeps your new entries until it can send them.',
++                'You are responsible for that account and that database: keeping it available, its backups and how long they are kept, its costs, its security settings and who can access it, the passwords and roles you create (including the ones Lotties uses), anything else you keep in the same database, and any copy of the records left there (an old copy after moving back, leftovers after disconnecting, and the records that stay there after you delete your Lotties account unless you choose that Lotties deletes them).',
++                'A provider may pause a free database after a time without use, limit or close it, change its terms or lose data, and free plans may have no backups. While your database cannot be reached, the app shows what is on your device and keeps your new entries until it can send them.',
++                'Lotties is not responsible for loss, unavailability, deletion or exposure of records caused by your database, your provider or your settings there.',
 +                'Lotties makes no backup of the records stored in your database. Download a backup of the baby regularly in [Hub > Export data](/hub/export).',
-+                'Lotties stays responsible, as this policy describes, for what it does with the records: reading and writing them to run the app.',
++                'Lotties stays responsible, as this policy describes, for what it does itself: reading and writing the records to run the app, how it sends and stores your connection details, its own servers and the data in its own database. Nothing in this section limits the rights the law gives you.',
 +              ],
 +            },
 +          ],
@@ -737,7 +751,7 @@ index 4efcf15a..bb0a0d9b 100644
 +                'In this first version, a baby whose records are in your own database has no reminders, no invited members and no doctor access.',
 +                "When you connect a database you can move the baby's existing records into it. The copy on the Lotties servers is erased after a short undo period whose date the app shows; until then the records are also still with Lotties.",
 +                'You can move the records back to Lotties-hosted storage at any time and then remove the database. Lotties then deletes the connection details it holds; whatever you leave in your database stays there, under your control, until you delete it.',
-+                'Deleting your Lotties account deletes the connection details. The records in your own database are yours: delete them there when you want.',
++                'Deleting your Lotties account deletes the connection details. The records in your own database stay there, yours, unless you choose in the delete dialog that Lotties deletes them first; otherwise delete them there when you want.',
 +              ],
 +            },
 +          ],
@@ -747,7 +761,7 @@ index 4efcf15a..bb0a0d9b 100644
      {
        id: 'children',
        title: 'Children',
-@@ -422,6 +518,7 @@ export const privacyEn: PolicyDocument = {
+@@ -422,6 +520,7 @@ export const privacyEn: PolicyDocument = {
                  'Delete entries: a deleted entry disappears at once on every device. The server keeps it hidden, so that every device learns of the deletion, until the baby or your account is deleted; ask us if you need it erased sooner.',
                  'Stop sharing: the owner removes members and doctors in [Hub > Members and roles](/hub/family), where anyone can also leave a baby.',
                  "Withdraw consent for optional features: turn notifications off in [Settings](/settings#notifications), unlink the skill in the Alexa app, change or end a doctor's access in [Hub > Doctor access](/hub/family#doctor-access), turn the rest estimate off or delete its data in the Rest tab of [Insights](/insights), and withdraw the Cry monitor's consent on its page, [Hub > Cry monitor](/hub/cry-monitor), on each device.",
@@ -755,7 +769,7 @@ index 4efcf15a..bb0a0d9b 100644
                  'Delete your account: [Settings > Account and data](/settings#account) > Delete my account (in the doctor area, [Settings > Account and data](/doctor/settings#account)). Babies only you use are erased with all their records. On a baby other people keep, your access ends; your private notes, reminders and doctor profile are deleted; and what you added stays for them under the name "Former member". If you are the only owner of a baby others use, make someone else an owner first.',
                  'Your sign-in account at our sign-in server is deleted together with your data when our server is set up to do it, and the app says before you confirm whether it will be. When it is not set up, or the sign-in server cannot be reached at that moment, your data is still erased, the app tells you that the sign-in account remains (it holds no baby data), and you can ask us to remove it.',
                ],
-@@ -456,6 +553,7 @@ export const privacyEn: PolicyDocument = {
+@@ -456,6 +555,7 @@ export const privacyEn: PolicyDocument = {
              'Reminders: the delivery record for 14 days; snooze and dismiss choices for 7 days after the last change. A device that does not open the app for 90 days stops getting reminders, and the push address of a device that was switched off is deleted 30 days later.',
              'Doctor access log and invites: kept with the baby until it is erased.',
              'Cry monitor: the sound is never kept. The crying spells it logs are ordinary records (above); its consent stays on the device until you withdraw it or sign out.',
@@ -763,7 +777,7 @@ index 4efcf15a..bb0a0d9b 100644
              'Technical logs: only as long as needed to run and protect the service.',
              'Database copies made before updates: deleted when no longer needed. Until then they still contain data deleted in the meantime.',
              'On your device: until you sign out (the app then deletes its copy) or clear the app data.',
-@@ -479,6 +577,7 @@ export const privacyEn: PolicyDocument = {
+@@ -479,6 +579,7 @@ export const privacyEn: PolicyDocument = {
              "Only Lotties' own pages may use the microphone (a Permissions Policy), and only after you start the Cry monitor; your browser shows when it is in use.",
              "Limits on the number and size of requests; the Alexa connection checks Amazon's signature on every request.",
              "The server uses a database account with limited rights and keeps passwords and keys out of the source code. The app's own logs leave out what you write.",
@@ -771,7 +785,7 @@ index 4efcf15a..bb0a0d9b 100644
              'Administrator access to the servers is limited to the maintainer. We look at stored data only when needed to run the service, solve a problem you reported or comply with the law.',
            ],
          },
-@@ -506,6 +605,7 @@ export const privacyEn: PolicyDocument = {
+@@ -506,6 +607,7 @@ export const privacyEn: PolicyDocument = {
              'Notifications: the push services of Google, Mozilla, Apple and Microsoft, which operate worldwide, including in the United States. They cannot read the content of reminders or alerts.',
              'Alexa: Amazon, which processes voice requests in its own data centers, including in the United States.',
              "Address search: OpenStreetMap's Nominatim is run by the OpenStreetMap Foundation, based in the United Kingdom. BrasilAPI and ViaCEP may also use servers outside Brazil.",
@@ -779,10 +793,10 @@ index 4efcf15a..bb0a0d9b 100644
              'The Apple and Google app stores and GitHub, when you use them, under their own terms.',
            ],
          },
-diff --git b/code/web/src/legal/privacy.pt-BR.ts a/code/web/src/legal/privacy.pt-BR.ts
-index e25a7774..45b5d1da 100644
---- b/code/web/src/legal/privacy.pt-BR.ts
-+++ a/code/web/src/legal/privacy.pt-BR.ts
+diff --git a/code/web/src/legal/privacy.pt-BR.ts b/code/web/src/legal/privacy.pt-BR.ts
+index e25a7774..9f61ea5d 100644
+--- a/code/web/src/legal/privacy.pt-BR.ts
++++ b/code/web/src/legal/privacy.pt-BR.ts
 @@ -26,7 +26,7 @@ export const privacyPtBR: PolicyDocument = {
          items: [
            'Nada de publicidade, de ferramentas de análise ou rastreamento, nem de venda de dados.',
@@ -848,7 +862,7 @@ index e25a7774..45b5d1da 100644
                  {
                    id: 'addressLookup',
                    cells: [
-@@ -382,6 +399,85 @@ export const privacyPtBR: PolicyDocument = {
+@@ -382,6 +399,87 @@ export const privacyPtBR: PolicyDocument = {
          },
        ],
      },
@@ -906,9 +920,11 @@ index e25a7774..45b5d1da 100644
 +              kind: 'list',
 +              items: [
 +                'O provedor é uma empresa que você escolhe. O Lotties não a escolhe e não a controla. Os termos dela, os preços dela e o país ou a região que você escolher valem para os registros guardados lá.',
-+                'Você é responsável por essa conta. Um provedor pode pausar um banco gratuito depois de um tempo sem uso, limitá-lo ou encerrá-lo, mudar os termos ou perder dados, e planos gratuitos podem não ter backup. Enquanto o seu banco não puder ser acessado, o app mostra o que está no seu aparelho e guarda os novos registros até conseguir enviá-los.',
++                'Você é responsável por essa conta e por esse banco: mantê-lo disponível, os backups e por quanto tempo ficam guardados, os custos, as configurações de segurança e quem tem acesso, as senhas e funções que você cria (inclusive as que o Lotties usa), tudo o mais que você guardar no mesmo banco e qualquer cópia dos registros que fique lá (uma cópia antiga depois de trazer os registros de volta, sobras depois de desconectar e os registros que continuam lá depois que você exclui a sua conta no Lotties, a não ser que escolha que o Lotties os apague).',
++                'Um provedor pode pausar um banco gratuito depois de um tempo sem uso, limitá-lo ou encerrá-lo, mudar os termos ou perder dados, e planos gratuitos podem não ter backup. Enquanto o seu banco não puder ser acessado, o app mostra o que está no seu aparelho e guarda os novos registros até conseguir enviá-los.',
++                'O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição de registros causadas pelo seu banco, pelo seu provedor ou pelas suas configurações lá.',
 +                'O Lotties não faz backup dos registros guardados no seu banco. Baixe com frequência um backup do bebê em [Central > Exportar dados](/hub/export).',
-+                'O Lotties continua responsável, como descreve esta política, pelo que faz com os registros: lê-los e gravá-los para o app funcionar.',
++                'O Lotties continua responsável, como descreve esta política, pelo que ele mesmo faz: ler e gravar os registros para o app funcionar, como envia e guarda os seus dados de conexão, os servidores dele e os dados no banco dele. Nada nesta seção limita os direitos que a lei lhe dá.',
 +              ],
 +            },
 +          ],
@@ -924,7 +940,7 @@ index e25a7774..45b5d1da 100644
 +                'Nesta primeira versão, um bebê cujos registros estão no seu próprio banco não tem lembretes, membros convidados nem acesso de médicos.',
 +                'Ao conectar um banco, você pode levar para ele os registros que o bebê já tem. A cópia nos servidores do Lotties é apagada depois de um curto prazo para desfazer, cuja data o app mostra; até lá os registros também continuam com o Lotties.',
 +                'Você pode trazer os registros de volta para o armazenamento do Lotties a qualquer momento e então remover o banco. O Lotties então apaga os dados de conexão que guarda; o que você deixar no seu banco continua lá, sob o seu controle, até você apagar.',
-+                'Excluir a sua conta no Lotties apaga os dados de conexão. Os registros no seu próprio banco são seus: apague-os lá quando quiser.',
++                'Excluir a sua conta no Lotties apaga os dados de conexão. Os registros no seu próprio banco continuam lá, seus, a não ser que você escolha na janela de exclusão que o Lotties os apague antes; caso contrário, apague-os lá quando quiser.',
 +              ],
 +            },
 +          ],
@@ -934,7 +950,7 @@ index e25a7774..45b5d1da 100644
      {
        id: 'children',
        title: 'Crianças',
-@@ -426,6 +522,7 @@ export const privacyPtBR: PolicyDocument = {
+@@ -426,6 +524,7 @@ export const privacyPtBR: PolicyDocument = {
                  'Apagar registros: um registro apagado some na hora em todos os aparelhos. O servidor o mantém oculto, para que todos os aparelhos fiquem sabendo da exclusão, até o bebê ou a sua conta serem excluídos; se você precisar que ele seja eliminado antes, fale com a gente.',
                  'Parar de compartilhar: o titular remove membros e médicos em [Central > Membros e papéis](/hub/family), onde qualquer pessoa também pode sair de um bebê.',
                  'Revogar o consentimento de recursos opcionais: desative as notificações em [Ajustes](/settings#notifications), desvincule a skill no app Alexa, mude ou encerre o acesso de um médico em [Central > Acesso do médico](/hub/family#doctor-access) desligue a estimativa de descanso ou apague os dados dela na aba Descanso de [Insights](/insights), e retire o consentimento do Monitor de choro na página dele, [Central > Monitor de choro](/hub/cry-monitor), em cada aparelho.',
@@ -942,7 +958,7 @@ index e25a7774..45b5d1da 100644
                  'Excluir sua conta: [Ajustes > Conta e dados](/settings#account) > Excluir minha conta (na área do médico, [Ajustes > Conta e dados](/doctor/settings#account)). Bebês que só você usa são apagados com todos os registros. Em um bebê que outras pessoas mantêm, seu acesso termina; suas notas privadas, lembretes e perfil de médico são apagados; e o que você adicionou continua para elas sob o nome "Former member" (ex-membro). Se você for o único titular de um bebê que outras pessoas usam, torne outra pessoa titular antes.',
                  'Sua conta de acesso no nosso servidor de login é excluída junto com seus dados quando o nosso servidor está configurado para isso, e o app diz antes da confirmação se ela será. Quando não está configurado, ou o servidor de login não responde naquele momento, seus dados são apagados mesmo assim, o app avisa que a conta de acesso continua (ela não guarda dados de bebês), e você pode nos pedir a remoção.',
                ],
-@@ -460,6 +557,7 @@ export const privacyPtBR: PolicyDocument = {
+@@ -460,6 +559,7 @@ export const privacyPtBR: PolicyDocument = {
              'Lembretes: o registro de envio por 14 dias; adiamentos e dispensas por 7 dias após a última mudança. Um aparelho que fica 90 dias sem abrir o app para de receber lembretes, e o endereço de push de um aparelho desativado é apagado 30 dias depois.',
              'Registro de acessos de médicos e convites: ficam com o bebê até ele ser excluído.',
              'Monitor de choro: o som nunca é guardado. Os períodos de choro que ele registra são registros comuns (acima); o consentimento fica no aparelho até você retirá-lo ou sair da conta.',
@@ -950,7 +966,7 @@ index e25a7774..45b5d1da 100644
              'Registros técnicos (logs): só pelo tempo necessário para operar e proteger o serviço.',
              'Cópias do banco feitas antes de atualizações: apagadas quando não forem mais necessárias. Até lá, ainda contêm dados apagados nesse meio-tempo.',
              'No seu aparelho: até você sair da conta (o app então apaga a cópia) ou limpar os dados do app.',
-@@ -483,6 +581,7 @@ export const privacyPtBR: PolicyDocument = {
+@@ -483,6 +583,7 @@ export const privacyPtBR: PolicyDocument = {
              'Só as páginas do próprio Lotties podem usar o microfone (uma Política de Permissões), e só depois que você liga o Monitor de choro; o navegador mostra quando ele está em uso.',
              'Limites de quantidade e de tamanho de pedidos; a conexão com a Alexa confere a assinatura da Amazon em cada pedido.',
              'O servidor usa uma conta de banco de dados com permissões limitadas e mantém senhas e chaves fora do código-fonte. Os logs do próprio app deixam de fora o que você escreve.',
@@ -958,7 +974,7 @@ index e25a7774..45b5d1da 100644
              'O acesso de administrador aos servidores é restrito ao mantenedor. Só olhamos os dados guardados quando é preciso para operar o serviço, resolver um problema que você relatou ou cumprir a lei.',
            ],
          },
-@@ -510,6 +609,7 @@ export const privacyPtBR: PolicyDocument = {
+@@ -510,6 +611,7 @@ export const privacyPtBR: PolicyDocument = {
              'Notificações: os serviços de push do Google, da Mozilla, da Apple e da Microsoft, que funcionam no mundo todo, inclusive nos Estados Unidos. Eles não conseguem ler o conteúdo dos lembretes nem dos alertas.',
              'Alexa: a Amazon, que processa os pedidos de voz nos próprios data centers, inclusive nos Estados Unidos.',
              'Busca de endereço: o Nominatim do OpenStreetMap é mantido pela OpenStreetMap Foundation, sediada no Reino Unido. A BrasilAPI e o ViaCEP também podem usar servidores fora do Brasil.',
@@ -966,10 +982,10 @@ index e25a7774..45b5d1da 100644
              'As lojas de apps da Apple e do Google e o GitHub, quando você os usa, segundo os termos deles.',
            ],
          },
-diff --git b/code/web/src/legal/privacyPolicy.ts a/code/web/src/legal/privacyPolicy.ts
+diff --git a/code/web/src/legal/privacyPolicy.ts b/code/web/src/legal/privacyPolicy.ts
 index 0ec6241b..be6c63d3 100644
---- b/code/web/src/legal/privacyPolicy.ts
-+++ a/code/web/src/legal/privacyPolicy.ts
+--- a/code/web/src/legal/privacyPolicy.ts
++++ b/code/web/src/legal/privacyPolicy.ts
 @@ -5,10 +5,10 @@
   */
  

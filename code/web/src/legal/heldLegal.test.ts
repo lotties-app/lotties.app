@@ -13,7 +13,8 @@ import { POLICY_SECTION_IDS } from './policyTypes';
  */
 
 const SRC = path.resolve(__dirname, '..');
-const SPECIFIER = /(?:\bfrom\s+|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)['"]([^'"]+)['"]/gm;
+const SPECIFIER =
+  /(?:\bfrom\s+|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)['"]([^'"]+)['"]/gm;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

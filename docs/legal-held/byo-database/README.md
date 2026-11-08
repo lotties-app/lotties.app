@@ -29,7 +29,17 @@ The PR that held it restored every shipped legal file to its state before #63 (`
   - `forbiddenClaims.test.ts`: scans the own-database consent again; `forbiddenClaims.ts`: comment only;
   - `PrivacyPage.test.tsx`: the recipients table length follows `THIRD_PARTY_IDS`;
   - `privacyPolicy.ts`: version 13, date 2026-11-07 (**change both at release**, see below).
+- Edits made while held (2026-11-08, owner request), already in the patch: the policy subsection "Your provider and your
+  responsibility" and the consent text split who is responsible for what (the person: her database, its provider
+  account, availability, backups, costs, security settings, access, the roles she creates and any copy left there;
+  Lotties: not responsible for loss, unavailability, deletion or exposure caused by her database, provider or settings,
+  and still responsible for its own processing, servers, database and the sealed connection details; "nothing in this
+  section limits the rights the law gives you"). The account-deletion line now mentions the opt-in wipe (T10). The
+  wording awaits legal review (docs/PRIVACY-LAWYER-BRIEF.md item 19): liability exclusion may be limited by law.
 - The patch does **not** contain a consent version entry on purpose: the release adds a new MATERIAL entry (below).
+  Right after `git apply`, exactly three tests fail, as guards until steps 3, 4 and 7 are done: the two version/digest
+  checks of `consentVersions.test.ts` and the "not in the shipped policy" check of `heldLegal.test.ts` (checked
+  2026-11-08: every other test in `src/legal` passes with the patch applied).
 - The audit text (docs/design/33-privacy-audit.md section 17) and the lawyer question
   (docs/PRIVACY-LAWYER-BRIEF.md item 19) stayed in their files, marked as held.
 
@@ -43,7 +53,7 @@ policy statement and not part of the consent digest). The landing page and in-ap
 - No shipped text may say the privacy policy covers own databases. The user guide (docs/BYO-DATABASE.md) says the policy
   update comes with the general release.
 - The setup wizard's consent step (`code/web/src/byoDatabase/ConsentStep.tsx`) shows its own short facts from the i18n
-  catalog (`byoDatabase.consent.*`), not `byoDatabaseConsent.ts`. Those strings are shipped (the wizard is reachable
+  catalog (`byoDatabase.consent.fact1..7`, fact7 is the responsibility split), not `byoDatabaseConsent.ts`. Those strings are shipped (the wizard is reachable
   only where the feature is on) and are not part of the core consent digest.
 
 ## How to release (general release of the feature)
@@ -52,7 +62,9 @@ policy statement and not part of the consent digest). The landing page and in-ap
    changed since, resolve the conflicts by hand (the source is also in commit `ae6d8d3`:
    `git show ae6d8d3 -- code/web/src/legal`).
 2. Re-check every fact in the section and in `byoDatabaseConsent.ts` against the code at that time (design 47 status:
-   members, reminders and doctors for such a baby, the undo window, the cipher, what moves and what stays). Never claim
+   members, reminders and doctors for such a baby, the undo window, the cipher, what moves and what stays). Known
+   mismatch found while holding: the held texts say the app shows the date the undo period ends, and docs/BYO-DATABASE.md
+   section 9 says the app does not show it yet; fix whichever is wrong at release. Never claim
    what the code does not do; `forbiddenClaims.test.ts` and `dataFlows.test.ts` must pass.
 3. `code/web/src/legal/privacyPolicy.ts`: `PRIVACY_POLICY_VERSION` = the next number after the shipped one (13 if the
    shipped one is still 12), `PRIVACY_POLICY_LAST_UPDATED` = the release date. If the number is not 13, update the test
