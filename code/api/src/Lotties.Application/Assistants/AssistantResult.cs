@@ -259,6 +259,13 @@ public enum AssistantResultCode
     /// </summary>
     InvalidValue,
 
+    /// <summary>
+    /// Lotties cannot use the baby's records right now (the data store is unreachable, slow or refusing; docs/design/47-bring-your-own-database.md
+    /// section 2.2, task T8): try again later. No detail about why or where; the command did not run, or its outcome is unknown and
+    /// repeating it is safe (writes are idempotent by the request's id).
+    /// </summary>
+    TemporarilyUnavailable,
+
     }
 
 /// <summary>Which days a count covers.</summary>

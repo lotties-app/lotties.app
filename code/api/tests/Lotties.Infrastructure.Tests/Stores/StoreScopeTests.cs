@@ -255,6 +255,50 @@ public sealed class StoreScopeTests : IDisposable
         Assert.NotNull(builtIn.Model);
     }
 
+    [Fact]
+    public async Task EnterAsync_AfterThreeConnectionFailuresOfAStore_FailsAtOnceWithoutAskingTheMigratorAgain()
+    {
+        _migrator.Failure = new StoreTimeoutException();
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            await Assert.ThrowsAsync<StoreTimeoutException>(() => Stores.EnterAsync(BabyInX));
+        }
+
+        var rejected = await Assert.ThrowsAsync<StoreTimeoutException>(() => Stores.EnterAsync(BabyInX));
+
+        Assert.Equal(3, _migrator.Asked.Count);
+        Assert.NotNull(rejected.RetryAfter);
+        await Stores.EnterAsync(HostedBaby);
+        _migrator.Failure = null;
+        await Stores.EnterAsync(BabyInY);
+    }
+
+    [Fact]
+    public async Task EnterAsync_StoreThatCannotBeFound_CountsTowardsItsBreaker()
+    {
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            await Assert.ThrowsAsync<StoreUnavailableException>(() => Stores.EnterAsync(BabyInGone));
+        }
+
+        var rejected = await Assert.ThrowsAsync<StoreUnavailableException>(() => Stores.EnterAsync(BabyInGone));
+
+        Assert.Equal(3, _migrator.Asked.Count(storeId => storeId == StoreGone));
+        Assert.NotNull(rejected.RetryAfter);
+    }
+
+    [Fact]
+    public async Task EnterAsync_NotAConnectionFailure_NeverOpensTheBreaker()
+    {
+        _migrator.Failure = new StoreSchemaAheadException();
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await Assert.ThrowsAsync<StoreSchemaAheadException>(() => Stores.EnterAsync(BabyInX));
+        }
+
+        Assert.Equal(5, _migrator.Asked.Count);
+    }
+
     private sealed class FakeResolver(IReadOnlyDictionary<Guid, StoreRoute> routes) : IStoreResolver
     {
         private readonly Dictionary<Guid, int> _calls = [];

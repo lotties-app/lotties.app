@@ -179,14 +179,47 @@ public sealed class StoreMigratorTests
     }
 
     [Fact]
-    public async Task EnsureReady_StoreCannotBeOpened_IsUnreachableAndStoreUnavailable()
+    public async Task EnsureReady_StoreCannotBeOpenedInTime_IsUnreachableAndStoreTimeout()
     {
         var store = _rows.Add();
         _sessions.OpenFailure = new TimeoutException();
 
-        await Assert.ThrowsAsync<StoreUnavailableException>(() => Migrator().EnsureReadyAsync(store.Id));
+        await Assert.ThrowsAsync<StoreTimeoutException>(() => Migrator().EnsureReadyAsync(store.Id));
 
         Assert.Equal([DataStoreState.Unreachable], _rows.Recorded(store.Id));
+    }
+
+    [Fact]
+    public async Task EnsureReady_StoreRefusesTheCredentials_IsUnreachableAndCredentialsRejected()
+    {
+        var store = _rows.Add();
+        _sessions.OpenFailure = new Npgsql.PostgresException("password authentication failed for user \"someone\"", "FATAL", "FATAL", "28P01");
+
+        var error = await Assert.ThrowsAsync<StoreCredentialsRejectedException>(() => Migrator().EnsureReadyAsync(store.Id));
+
+        Assert.Equal([DataStoreState.Unreachable], _rows.Recorded(store.Id));
+        Assert.DoesNotContain("someone", error.Message, StringComparison.Ordinal);
+        Assert.Null(error.InnerException);
+    }
+
+    [Fact]
+    public async Task EnsureReady_EndpointTlsRefused_IsUnreachableAndTlsFailed()
+    {
+        var store = _rows.Add();
+        _sessions.OpenFailure = new StoreEndpointRejectedException(StoreEndpointFailure.TlsFailed);
+
+        await Assert.ThrowsAsync<StoreTlsFailedException>(() => Migrator().EnsureReadyAsync(store.Id));
+
+        Assert.Equal([DataStoreState.Unreachable], _rows.Recorded(store.Id));
+    }
+
+    [Fact]
+    public async Task EnsureReady_TooManyConnections_IsRateLimited()
+    {
+        var store = _rows.Add();
+        _sessions.AuditFailure = new Npgsql.PostgresException("too many connections for role", "FATAL", "FATAL", "53300");
+
+        await Assert.ThrowsAsync<StoreRateLimitedException>(() => Migrator().EnsureReadyAsync(store.Id));
     }
 
     [Fact]
@@ -207,17 +240,18 @@ public sealed class StoreMigratorTests
         _sessions.OpenFailure = new TimeoutException();
         var migrator = Migrator();
 
-        await Assert.ThrowsAsync<StoreUnavailableException>(() => migrator.EnsureReadyAsync(store.Id));
+        await Assert.ThrowsAsync<StoreTimeoutException>(() => migrator.EnsureReadyAsync(store.Id));
         _clock.Advance(TimeSpan.FromSeconds(_options.FailureRetryInitialSeconds) - TimeSpan.FromTicks(1));
-        await Assert.ThrowsAsync<StoreUnavailableException>(() => migrator.EnsureReadyAsync(store.Id));
+        var replayed = await Assert.ThrowsAsync<StoreTimeoutException>(() => migrator.EnsureReadyAsync(store.Id));
         Assert.Equal(1, _sessions.Opened);
+        Assert.Equal(TimeSpan.FromTicks(1), replayed.RetryAfter);
 
         _clock.Advance(TimeSpan.FromTicks(1));
-        await Assert.ThrowsAsync<StoreUnavailableException>(() => migrator.EnsureReadyAsync(store.Id));
+        await Assert.ThrowsAsync<StoreTimeoutException>(() => migrator.EnsureReadyAsync(store.Id));
         Assert.Equal(2, _sessions.Opened);
 
         _clock.Advance(TimeSpan.FromSeconds(_options.FailureRetryInitialSeconds));
-        await Assert.ThrowsAsync<StoreUnavailableException>(() => migrator.EnsureReadyAsync(store.Id));
+        await Assert.ThrowsAsync<StoreTimeoutException>(() => migrator.EnsureReadyAsync(store.Id));
         Assert.Equal(2, _sessions.Opened);
         _clock.Advance(TimeSpan.FromSeconds(_options.FailureRetryInitialSeconds));
         _sessions.OpenFailure = null;
@@ -238,6 +272,21 @@ public sealed class StoreMigratorTests
         Assert.NotSame(first, second);
         Assert.Equal(first.Findings, second.Findings);
         Assert.Equal(1, _sessions.Opened);
+    }
+
+    [Fact]
+    public async Task Forget_DuringTheBackoff_LetsTheNextRunTryTheStore()
+    {
+        var store = _rows.Add();
+        _sessions.OpenFailure = new TimeoutException();
+        var migrator = Migrator();
+        await Assert.ThrowsAsync<StoreTimeoutException>(() => migrator.EnsureReadyAsync(store.Id));
+        _sessions.OpenFailure = null;
+
+        migrator.Forget(store.Id);
+        await migrator.EnsureReadyAsync(store.Id);
+
+        Assert.Equal(2, _sessions.Opened);
     }
 
     [Fact]
