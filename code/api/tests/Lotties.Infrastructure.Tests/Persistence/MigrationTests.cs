@@ -93,6 +93,11 @@ public sealed class MigrationTests
         "20261101173651_FeedingSettings",
         "20261107005201_TryItDemo",
         "20261107064418_PrivacyFirstOnboarding",
+        "20261107124403_DataStores",
+        "20261107234401_DataStoreSchemaVersion",
+        "20261108010930_DataStoreManagement",
+        "20261108025621_DataStoreMoves",
+        "20261108135326_AccountDeletionBlock",
     ];
 
     [Fact]
