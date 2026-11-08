@@ -735,7 +735,11 @@ update relies on the agreement already given). **Save new details and test** is 
 is `POST /test` alone. A store in trouble also says that moving back needs a readable database, so the way out of a rotated
 password is: update the details, test, then move back. Known limit: an empty database is accepted as the same store (only a database
 set up for another store is refused, `store_schema_conflict`), so the guide says to use it only for the database that already holds
-the records.
+the records. Same branch: the home-lab kit now carries the flag, the allowlist and the keys (`deploy/homelab/deploy.sh` puts
+`Stores__Enabled`, `Stores__Allowlist__<n>`, `Stores__CurrentKeyId` and `Stores__KeyEncryptionKeys__<id>` only in the Secret
+`lotties-secrets` and passes them as `secretKeyRef`s; with the flag on it stops early on a missing current key or a key that
+is not base64 of 32 bytes; keys already in the Secret are kept; tests in `deploy.test.sh`; docs/DEPLOY.md "Bring your own
+database: turning it on").
 
 **Status (2026-11-07): T12 is written** (branch `feat/byo-t12-privacy-legal`): privacy policy 13 (section "Your own database", en + pt-BR), `OWN_DATABASE_FLOW` and the user-chosen recipient in `legal/dataFlows.ts`, the `byo_database` consent text in `legal/byoDatabaseConsent.ts`, `legal/forbiddenClaims.ts` with its test, consent entry `2026-11-07.1` (minor; reason in design 33 section 17), audit 33 section 17, lawyer brief item 19.
 
