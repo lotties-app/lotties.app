@@ -26,6 +26,7 @@ Open-source baby event-tracking PWA. Log feeds, sleep, diapers and other routine
   <td align="center"><img src="code/web/public/showcase/vaccines-light-en.webp" alt="Vaccines" width="150"><br><sub>Vaccines</sub></td>
   <td align="center"><img src="code/web/public/showcase/sharing-light-en.webp" alt="Sharing with a caregiver" width="150"><br><sub>Sharing with a caregiver</sub></td>
   <td align="center"><img src="code/web/public/showcase/doctor-light-en.webp" alt="Doctor view" width="150"><br><sub>Doctor view</sub></td>
+  <td align="center"><img src="code/web/public/showcase/data-location-light-en.webp" alt="Where your data lives" width="150"><br><sub>Where your data lives</sub></td>
 </tr>
 </table>
 
@@ -131,7 +132,7 @@ on for listed accounts; the provider steps have not yet been tested on a real Su
 - Operators: [docs/DEPLOY.md](docs/DEPLOY.md) ("Bring your own database: turning it on" and the sections after it).
 - Design: [docs/design/47-bring-your-own-database.md](docs/design/47-bring-your-own-database.md).
 
-The screen is captured for the showcase as `data-location` (tests/e2e/showcase) once the media are regenerated.
+The screen is in the showcase as `data-location`, in light and dark mode ([`code/web/public/showcase/`](code/web/public/showcase/)).
 
 ## Credits and open-source acknowledgements
 
