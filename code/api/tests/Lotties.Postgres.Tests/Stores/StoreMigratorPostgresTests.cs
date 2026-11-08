@@ -251,7 +251,7 @@ public sealed class StoreMigratorPostgresTests(PostgresFixture postgres)
     {
         if (!await postgres.ScalarAsync<bool>("SELECT to_regclass('lotties.__ef_data_migrations') IS NOT NULL", store.Admin))
             return [];
-        await using var command = store.Admin.CreateCommand("SELECT \"MigrationId\" FROM lotties.__ef_data_migrations ORDER BY \"MigrationId\" COLLATE \"C\"");
+        await using var command = store.Admin.CreateCommand("SELECT migration_id FROM lotties.__ef_data_migrations ORDER BY migration_id COLLATE \"C\"");
         await using var reader = await command.ExecuteReaderAsync();
         var ids = new List<string>();
         while (await reader.ReadAsync())
