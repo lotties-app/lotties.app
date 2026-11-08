@@ -722,6 +722,25 @@ descriptor sealed for a real store behind an in-process TLS front door with the 
 and not in Lotties', the runtime sessions are the app role's, two babies on two stores never read each other's records, a stopped store
 opens the breaker). The egress `NetworkPolicy` (section 3.2 step 7) is still not applied: see `docs/DEPLOY.md`.
 
+**Status (2026-11-08): "Update connection details" is built** (branch `feat/byo-replace-credentials`, not deployed; no migration, no new
+route). Section 8.1 item 7's "Replace credentials" for a baby whose records already live in the Owner's database: the API needed no
+change (`PUT /data-store` already replaces the sealed descriptor of the same store, keeps the store id, the baby's pointer and epoch and
+the rows, puts the store back to `pending`, forgets the breaker, the migrator's ready flag and the pool through `IStoreHealth.Forget`,
+and the next request's migrator check brings it back to `ready`); new tests in `DataStoreEndpointTests` pin that for a baby in her
+Owner's store (pointer and epoch unchanged, one store row, descriptor replaced, forgotten once more) and that the test route runs on it.
+The web (`byoDatabase/UpdateConnectionDetails.tsx`) shows the wizard's connection fields (`ConnectionStep`, `connectionForm.ts`) on
+the Data location screen for a baby on her own database, and for a saved database whose banner is a warning or an error; nothing is
+prefilled from the server, the passwords are typed again and forgotten once saved, and the optional consent is not re-sent (the
+update relies on the agreement already given). **Save new details and test** is `PUT` then `POST /test`; **Test the saved details**
+is `POST /test` alone. A store in trouble also says that moving back needs a readable database, so the way out of a rotated
+password is: update the details, test, then move back. Known limit: an empty database is accepted as the same store (only a database
+set up for another store is refused, `store_schema_conflict`), so the guide says to use it only for the database that already holds
+the records. Same branch: the home-lab kit now carries the flag, the allowlist and the keys (`deploy/homelab/deploy.sh` puts
+`Stores__Enabled`, `Stores__Allowlist__<n>`, `Stores__CurrentKeyId` and `Stores__KeyEncryptionKeys__<id>` only in the Secret
+`lotties-secrets` and passes them as `secretKeyRef`s; with the flag on it stops early on a missing current key or a key that
+is not base64 of 32 bytes; keys already in the Secret are kept; tests in `deploy.test.sh`; docs/DEPLOY.md "Bring your own
+database: turning it on").
+
 **Status (2026-11-07): T12 is written** (branch `feat/byo-t12-privacy-legal`): privacy policy 13 (section "Your own database", en + pt-BR), `OWN_DATABASE_FLOW` and the user-chosen recipient in `legal/dataFlows.ts`, the `byo_database` consent text in `legal/byoDatabaseConsent.ts`, `legal/forbiddenClaims.ts` with its test, consent entry `2026-11-07.1` (minor; reason in design 33 section 17), audit 33 section 17, lawyer brief item 19.
 
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.

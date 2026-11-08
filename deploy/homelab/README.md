@@ -107,8 +107,11 @@ is not rebuilt keeps the release that built it (docs/DEPLOY.md "Versions").
   `PUSH_VAPID_PUBLIC_KEY`/`PRIVATE_KEY`/`SUBJECT` (all three or none: none turns push off),
   `DEMO_SIGNING_KEY` (32+ characters; without it the try-it demo is off; shorter is refused),
   `AUTH_ADMIN_CLIENT_ID`/`AUTH_ADMIN_CLIENT_SECRET` (both or none: with none, deleting an account in the app keeps the
-  Keycloak user; setup and rotation in docs/KEYCLOAK-ACCOUNT-DELETION.md) and, only with `DB_AUTO_MIGRATE=true`,
-  `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD`.
+  Keycloak user; setup and rotation in docs/KEYCLOAK-ACCOUNT-DELETION.md), only with `DB_AUTO_MIGRATE=true`,
+  `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD`, and the bring-your-own-database settings `Stores__Enabled`,
+  `Stores__Allowlist__<n>`, `Stores__CurrentKeyId` and `Stores__KeyEncryptionKeys__<id>` (off by default; checked before
+  anything changes; key-encryption keys already in the Secret are kept; docs/DEPLOY.md "Bring your own database: turning
+  it on").
 - Values come from `deploy/homelab/.env`; a key not set there keeps what the Secret already has, a key set to an empty
   value is removed. The script writes each value to a file in a private temporary directory and builds the Secret from
   those files (server-side apply): values never appear on a command line or in the output.

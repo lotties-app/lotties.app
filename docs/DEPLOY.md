@@ -570,12 +570,36 @@ openssl rand -base64 32    # one KEK; keep it in your secret store, never in the
 | `StoreEndpointGuard__DeniedNetworks__0` | Extra refused network, at least the lab's public address (`<ip>/32`) |
 
 With the flag on, startup fails on a missing current key, an unknown current key id, a malformed id or a key that is not
-32 bytes (the messages name ids only). Put the KEKs in the API's Secret, never in a ConfigMap or `values` file. **The
-home-lab kit does not carry these keys yet**: `deploy/homelab/deploy.sh` builds `lotties-secrets` from a fixed list of keys
-(no `Stores__*`), so turning the feature on there needs that list extended (or a second Secret added to the API's
-environment) first. Back up the KEKs with the database backups' secrets: without the KEK that sealed a row, that family's
-baby is unreachable (`store_unavailable`; the seal failure kind is logged) until she enters her details again, and the app
-offers that only while the records are with Lotties.
+32 bytes (the messages name ids only). Put the KEKs in the API's Secret, never in a ConfigMap or `values` file. Back up
+the KEKs with the database backups' secrets: without the KEK that sealed a row, that family's baby is unreachable
+(`store_unavailable`; the seal failure kind is logged) until the Owner enters her details again (Settings > Where your data
+lives: **Update connection details** while the records are in her database, **Replace the connection details** while they
+are with Lotties).
+
+**Home lab (`deploy/homelab/deploy.sh`).** Set these in `deploy/homelab/.env` (placeholders in `.env.example`); the script
+puts every `Stores__*` value only in the Secret `lotties-secrets` and gives the API pod each one as a `secretKeyRef` of the
+same name (only the names are on the helm command line; the values are never printed):
+
+```bash
+Stores__Enabled=true
+Stores__Allowlist=<owner users.id or sub>[,<another>]   # comma-separated; stored as Stores__Allowlist__0, __1, ...
+Stores__CurrentKeyId=k1
+Stores__KeyEncryptionKeys__k1=<openssl rand -base64 32>
+```
+
+- With `Stores__Enabled=true` the run stops before it changes anything when `Stores__CurrentKeyId` is missing or not a
+  valid id, when the key it names is missing, or when any key is not base64 of exactly 32 bytes.
+- Like the other Secret keys, a setting left out of `.env` keeps what the Secret has, and one set to empty removes it
+  (`Stores__Allowlist=` clears the list). Keys already in the Secret are kept even when `.env` does not list them, so a
+  rotation only adds the new key and changes `Stores__CurrentKeyId`; remove an old key (set it to empty) only when the query
+  below no longer lists it. If the script cannot read the Secret (other than "not found"), it stops: applying without the
+  old keys would drop them.
+- In `.env` a key id must be letters and digits only (it is part of a shell variable name); the API also accepts dashes.
+- `Stores__Enabled=false` (or left out on a new Secret) keeps the feature off; the keys stay in the Secret.
+- The tuning settings (`Stores__Moves__*`, `Stores__DataSources__*`) are not secrets: uncomment them in
+  `deploy/homelab/values/api.yaml`. `StoreEndpointGuard__DeniedNetworks__0` (the lab's public address) is not carried by
+  the script: it names the lab's address, so it does not belong in the repository's values file; add it before
+  allowlisting anyone but the owner (step 4).
 
 **3. Rotating a key.** Add the new KEK beside the old one, point `Stores__CurrentKeyId` at it and restart. New saves are
 sealed under the new key; existing rows keep opening with the old one. **No job re-wraps existing rows yet**

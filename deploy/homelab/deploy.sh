@@ -39,6 +39,19 @@
 # VITE_SUPPORT_URL and VITE_PRIVACY_* (public, baked into the web image), DB_*, PUSH_VAPID_*, DEMO_SIGNING_KEY and AUTH_ADMIN_CLIENT_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
 # CORS_ALLOWED_ORIGINS.
 #
+# Bring your own database (docs/DEPLOY.md "Bring your own database: turning it on"; off by default). Every one of these
+# goes only to the Secret lotties-secrets (never a ConfigMap, a values file or a command line; values are never printed)
+# and reaches the API pod as the environment variable of the same name:
+#   Stores__Enabled                  true turns the feature on. Default false (left out: the Secret's value is kept).
+#   Stores__Allowlist                Comma-separated accounts (users.id guid or OIDC sub, at most 100) that may use it,
+#                                    stored as Stores__Allowlist__0, __1, ... Left out keeps the Secret's list; empty clears it.
+#   Stores__CurrentKeyId             The id of the key every new seal uses (1 to 32 lower-case letters, digits or dashes).
+#   Stores__KeyEncryptionKeys__<id>  A key-encryption key: base64 of exactly 32 bytes (openssl rand -base64 32). In .env the
+#                                    id is letters and digits only (a shell name). A key already in the Secret is kept unless
+#                                    set to empty here: never remove one that still seals a row (DEPLOY.md "Rotating a key").
+# With Stores__Enabled=true the run stops before changing anything when Stores__CurrentKeyId is missing or malformed, when
+# its key is missing, or when any key is not base64 of 32 bytes (messages name key ids only, never key material).
+#
 # Only what changed is built: each image is tagged src-<hash> of the files it is built from (working tree included, and
 # for the web image the VITE_* values). A tag already in the registry is not rebuilt and its pods are not restarted.
 #
@@ -138,6 +151,20 @@ parse_bool() { # value
 
 # Whether a value still contains a <placeholder> of .env.example.
 is_placeholder() { local pattern='<[a-z][a-z0-9@._/-]*>'; [[ "$1" =~ $pattern ]]; }
+
+# Bring your own database: a key id as the API accepts it, and a key-encryption key (padded base64 of exactly 32 bytes).
+is_store_key_id() { [[ "$1" =~ ^[a-z0-9][a-z0-9-]{0,31}$ ]]; }
+is_store_kek() { [[ "$1" =~ ^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=$ ]]; }
+
+# The entries of a comma-separated list, one per line, without the spaces around them; empty entries are dropped.
+split_list() { # list
+  local entry entries
+  IFS=, read -r -a entries <<< "$1"
+  for entry in "${entries[@]}"; do
+    entry="${entry#"${entry%%[![:space:]]*}"}"; entry="${entry%"${entry##*[![:space:]]}"}"
+    [ -z "$entry" ] || printf '%s\n' "$entry"
+  done
+}
 
 # A value for helm --set-string: a comma or a backslash would otherwise be read as syntax.
 helm_escape() { local value=${1//\\/\\\\}; printf '%s' "${value//,/\\,}"; }
@@ -263,6 +290,69 @@ put_secret() { # key value
   ( umask 077; printf '%s' "$2" > "$SECRET_DIR/$1" )
 }
 secret_keys() { (cd "$SECRET_DIR" && ls | tr '\n' ' '); }
+# The Stores__* keys the Secret already has, one per line (none when it does not exist yet). Any other failure to read it
+# stops the run: the keys left out of a run are removed from the Secret, and a lost key-encryption key loses families' data.
+existing_store_keys() {
+  local listed
+  if listed=$(k -n "$NS" get secret "$APP_SECRET" -o 'go-template={{range $key, $value := .data}}{{$key}}{{"\n"}}{{end}}' 2>&1); then
+    printf '%s\n' "$listed" | grep -E '^Stores__' || true
+    return 0
+  fi
+  [[ "$listed" == *NotFound* || "$listed" == *"not found"* ]] \
+    || die "could not read Secret $APP_SECRET to keep its Stores__* keys (kubectl failed); nothing was changed"
+}
+
+# The allowlist, one entry per line: from Stores__Allowlist (comma-separated) when it is set, else what the Secret has.
+store_allowlist() { # existing keys
+  local key
+  if [ -n "${Stores__Allowlist+x}" ]; then split_list "$Stores__Allowlist"; return 0; fi
+  printf '%s\n' "$1" | grep -E '^Stores__Allowlist__[0-9]+$' | sort -t_ -k5,5n | while IFS= read -r key; do
+    secret_value "$NS" "$APP_SECRET" "$key"
+    printf '\n'
+  done
+}
+
+# A key-encryption key from the environment or .env (when its id makes a shell name), else from the Secret.
+store_kek() { # key
+  if [[ "$1" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then setting_or_secret "$1"; else secret_value "$NS" "$APP_SECRET" "$1"; fi
+}
+
+# Bring your own database (see the header): the flag, the allowlist and the keys, all into the Secret, values never printed.
+collect_store_secrets() {
+  local enabled current key id value existing count=0 keys=0
+  existing=$(existing_store_keys)
+  enabled=$(parse_bool "$(setting_or_secret Stores__Enabled)") || die "Stores__Enabled must be true or false"
+  [ "$enabled" = false ] || put_secret Stores__Enabled true
+  while IFS= read -r value; do
+    [ -n "$value" ] || continue
+    [[ "$value" =~ ^[^[:space:],]+$ ]] || die "Stores__Allowlist entry $count has a space or a comma in it"
+    put_secret "Stores__Allowlist__$count" "$value"
+    count=$((count + 1))
+  done < <(store_allowlist "$existing")
+  [ "$count" -le 100 ] || die "Stores__Allowlist has $count entries; the API takes at most 100"
+  current=$(setting_or_secret Stores__CurrentKeyId)
+  [ -z "$current" ] || is_store_key_id "$current" || die "Stores__CurrentKeyId is not 1 to 32 lower-case letters, digits or dashes"
+  put_secret Stores__CurrentKeyId "$current"
+  # Keys set here (environment or .env) and keys only in the Secret (kept); a key set to empty here is removed.
+  for key in $( { compgen -e; printf '%s\n' "$existing"; } | grep -E '^Stores__KeyEncryptionKeys__' | sort -u); do
+    id=${key#Stores__KeyEncryptionKeys__}
+    is_store_key_id "$id" || die "$key: the key id is not 1 to 32 lower-case letters, digits or dashes"
+    value=$(store_kek "$key")
+    [ -n "$value" ] || continue
+    ! is_placeholder "$value" || die "$key is still the .env.example placeholder"
+    is_store_kek "$value" || die "$key must be base64 of exactly 32 bytes (openssl rand -base64 32)"
+    put_secret "$key" "$value"
+    keys=$((keys + 1))
+  done
+  if [ "$enabled" = false ]; then
+    echo "own database: off (Stores__Enabled is not true)$([ "$keys" -eq 0 ] || echo "; $keys key(s) kept in the Secret")"
+    return 0
+  fi
+  [ -n "$current" ] || die "Stores__Enabled=true needs Stores__CurrentKeyId (the id of the key new seals use)"
+  [ -f "$SECRET_DIR/Stores__KeyEncryptionKeys__$current" ] \
+    || die "Stores__Enabled=true needs Stores__KeyEncryptionKeys__$current (named by Stores__CurrentKeyId): base64 of 32 bytes"
+  echo "own database: on ($keys key(s), $count allowlisted account(s))"
+}
 
 collect_secrets() {
   local key value demo_key push_count=0 admin_count=0 missing=()
@@ -290,6 +380,7 @@ collect_secrets() {
     [ -z "$value" ] || admin_count=$((admin_count + 1))
     put_secret "$key" "$value"
   done
+  collect_store_secrets
   if [ "$DB_AUTO_MIGRATE" = true ]; then
     for key in DB_MIGRATOR_USER DB_MIGRATOR_PASSWORD; do
       value=$(setting_or_secret "$key")
@@ -511,6 +602,11 @@ releases() {
   )
   [ -z "$FORWARDED_HEADERS_TRUSTED_NETWORKS" ] \
     || api_args+=(--set-string "env.FORWARDED_HEADERS_TRUSTED_NETWORKS=$(helm_escape "$FORWARDED_HEADERS_TRUSTED_NETWORKS")")
+  # Bring your own database: each Stores__* key of the Secret becomes the API's variable of the same name (names only).
+  local key
+  for key in $(cd "$SECRET_DIR" && ls | grep -E '^Stores__' || true); do
+    api_args+=(--set-string "secretEnv.$key.secretName=$APP_SECRET" --set-string "secretEnv.$key.key=$key")
+  done
   release lotties-api api lotties-api "$API_TAG" "${api_args[@]}"
   release lotties-web web lotties-web "$WEB_TAG" --set-string "env.API_UPSTREAM=$API_UPSTREAM"
 }

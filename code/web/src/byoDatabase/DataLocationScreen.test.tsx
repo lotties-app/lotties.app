@@ -58,7 +58,7 @@ function render(server: Server = {}, baby: Baby = OWNER) {
     }
     if (call.path === PATH && call.method === 'PUT') {
       if (server.save) throw server.save;
-      view = { kind: 'hosted', store: store() };
+      view = { kind: view.kind, store: store() };
       return view;
     }
     if (call.path === `${PATH}/test`) {
@@ -344,6 +344,148 @@ describe('a baby on her own database', () => {
     render({ view: { kind: 'hosted', store: store({ lastCheckResult: 'ok' }) } });
     fireEvent.click(await screen.findByRole('button', { name: 'Move my records there' }));
     expect(await screen.findByText(/not available yet/)).toBeTruthy();
+  });
+});
+
+describe('update connection details', () => {
+  const OWN_TROUBLED: DataStoreView = {
+    kind: 'own',
+    store: store({ state: 'unreachable', lastCheckResult: 'store_credentials_rejected' }),
+  };
+
+  async function openForm() {
+    fireEvent.click(await screen.findByRole('button', { name: 'Update connection details' }));
+  }
+
+  function typeNewDetails() {
+    type(/^Host/, 'aws-1-sa-east-1.pooler.supabase.com');
+    type(/^Password/, APP_PASSWORD);
+    type(/^Migration host/, 'db.abcdefgh.supabase.co');
+    type(/^Migration password/, MIGRATOR_PASSWORD);
+  }
+
+  const valueOf = (label: RegExp) => (screen.getByLabelText(label) as HTMLInputElement).value;
+
+  it('is offered on her own database, not while Lotties hosts a working one', async () => {
+    const first = render({ view: { kind: 'own', store: store({ state: 'ready' }) } });
+    expect(await screen.findByRole('button', { name: 'Update connection details' })).toBeTruthy();
+    first.unmount();
+
+    const second = render({ view: { kind: 'hosted', store: store({ lastCheckResult: 'ok' }) } });
+    await screen.findByRole('heading', { name: 'Lotties hosts it' });
+    expect(screen.queryByRole('button', { name: 'Update connection details' })).toBeNull();
+    second.unmount();
+
+    render({ view: { kind: 'hosted', store: null } });
+    await screen.findByRole('heading', { name: 'Lotties hosts it' });
+    expect(screen.queryByRole('button', { name: 'Update connection details' })).toBeNull();
+  });
+
+  it('is offered for a saved database in an error state', async () => {
+    render({
+      view: {
+        kind: 'hosted',
+        store: store({ state: 'pending', lastCheckResult: 'store_credentials_rejected' }),
+      },
+    });
+    expect(await screen.findByRole('button', { name: 'Update connection details' })).toBeTruthy();
+  });
+
+  it('prefills no password and no host, and sends nothing until the fields are valid', async () => {
+    const { calls } = render({ view: OWN_TROUBLED });
+    await openForm();
+    expect(valueOf(/^Password/)).toBe('');
+    expect(valueOf(/^Migration password/)).toBe('');
+    expect(valueOf(/^Host/)).toBe('');
+    expect((screen.getByLabelText(/^Password/) as HTMLInputElement).type).toBe('password');
+    click('Save new details and test');
+    expect(screen.getAllByText('Required').length).toBeGreaterThan(0);
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([`GET ${PATH}`]);
+  });
+
+  it('replaces the details, tests them, confirms, and forgets the passwords', async () => {
+    const { calls } = render({ view: OWN_TROUBLED });
+    await openForm();
+    typeNewDetails();
+    click('Save new details and test');
+
+    expect(await screen.findByText('Connected again')).toBeTruthy();
+    const sent = calls.slice(1).map((c) => `${c.method} ${c.path}`);
+    expect(sent.slice(0, 2)).toEqual([`PUT ${PATH}`, `POST ${PATH}/test`]);
+    expect(sent.some((c) => c.includes('/consents/'))).toBe(false);
+    expect(calls[1].body).toMatchObject({
+      providerLabel: 'Supabase',
+      app: { host: 'aws-1-sa-east-1.pooler.supabase.com', port: 6543, password: APP_PASSWORD },
+      migrator: { host: 'db.abcdefgh.supabase.co', port: 5432, password: MIGRATOR_PASSWORD },
+      tls: { sslMode: 'verify_full' },
+    });
+    expect(valueOf(/^Password/)).toBe('');
+    expect(valueOf(/^Migration password/)).toBe('');
+    const stored = await everythingStored();
+    expect(stored).not.toContain(APP_PASSWORD);
+    expect(stored).not.toContain(MIGRATOR_PASSWORD);
+  });
+
+  it('says in plain words when the database refuses the new details', async () => {
+    render({
+      view: OWN_TROUBLED,
+      test: {
+        ok: false,
+        result: 'store_credentials_rejected',
+        findings: [],
+        checkedAt: '2026-11-07T10:00:00Z',
+      },
+    });
+    await openForm();
+    typeNewDetails();
+    click('Save new details and test');
+    expect(await screen.findByText('User name or password rejected')).toBeTruthy();
+    expect(screen.queryByText('Connected again')).toBeNull();
+    expect(document.body.textContent).not.toContain('store_credentials_rejected');
+  });
+
+  it('keeps the typed details when the save is refused, so they can be fixed', async () => {
+    render({ view: OWN_TROUBLED, save: httpError(422, 'endpoint_blocked_address') });
+    await openForm();
+    typeNewDetails();
+    click('Save new details and test');
+    expect(await screen.findByText('Address not allowed')).toBeTruthy();
+    expect(valueOf(/^Password/)).toBe(APP_PASSWORD);
+  });
+
+  it('tests the saved details on their own with the test route', async () => {
+    const { calls } = render({
+      view: OWN_TROUBLED,
+      test: new ApiError(503, { code: 'store_paused_or_unreachable' }, undefined, 30_000),
+    });
+    await openForm();
+    click('Test the saved details');
+    expect(await screen.findByText('Database not reachable')).toBeTruthy();
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toContain(`POST ${PATH}/test`);
+    expect(calls.some((c) => c.method === 'PUT')).toBe(false);
+  });
+
+  it('says moving back needs a readable database while the store is in trouble', async () => {
+    const first = render({ view: OWN_TROUBLED });
+    expect(
+      await screen.findByText(/Update the connection details until the test passes/),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Move back to Lotties hosting' })).toBeTruthy();
+    first.unmount();
+
+    render({ view: { kind: 'own', store: store({ state: 'ready' }) } });
+    await screen.findByText('Your database is working');
+    expect(screen.queryByText(/Update the connection details until the test passes/)).toBeNull();
+  });
+
+  it('has no accessibility violations with the form open', async () => {
+    const { container } = render({ view: OWN_TROUBLED });
+    await openForm();
+    const results = await axe.run(container, {
+      runOnly: ['wcag2a', 'wcag2aa'],
+      rules: { 'color-contrast': { enabled: false } },
+    });
+    expect(results.violations.map((v) => v.id)).toEqual([]);
   });
 });
 

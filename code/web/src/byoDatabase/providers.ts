@@ -26,3 +26,15 @@ export const GUIDE_STEP_COUNT: Readonly<Record<ProviderId, number>> = {
   neon: 5,
   other: 4,
 };
+
+/** The provider name the server stores (shown back as "your Supabase database"), not translated. */
+export const PROVIDER_LABELS: Readonly<Record<ProviderId, string>> = {
+  supabase: 'Supabase',
+  neon: 'Neon',
+  other: 'Postgres',
+};
+
+/** The provider a saved label names (for its default ports); `other` for an unknown label. */
+export function providerOfLabel(label: string | null | undefined): ProviderId {
+  return PROVIDERS.find((provider) => PROVIDER_LABELS[provider] === label) ?? 'other';
+}

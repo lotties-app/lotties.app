@@ -58,6 +58,20 @@ check "placeholder: <spa-client-id> is one" is_placeholder '<spa-client-id>'
 check "placeholder: mailto:<operator@example.com> is one" is_placeholder 'mailto:<operator@example.com>'
 check "placeholder: a real value is not" bash -c "! (source '$DEPLOY'; is_placeholder 'lotties-web')"
 
+KEK_A=$(head -c 32 /dev/urandom | base64 | tr -d '\n')
+KEK_B=$(head -c 32 /dev/urandom | base64 | tr -d '\n')
+check "store key: base64 of 32 random bytes is one" is_store_kek "$KEK_A"
+check "store key: 31 bytes is not" bash -c "! (source '$DEPLOY'; is_store_kek '$(head -c 31 /dev/urandom | base64 | tr -d '\n')')"
+check "store key: 33 bytes is not" bash -c "! (source '$DEPLOY'; is_store_kek '$(head -c 33 /dev/urandom | base64 | tr -d '\n')')"
+check "store key: unpadded is not" bash -c "! (source '$DEPLOY'; is_store_kek '${KEK_A%=}')"
+check "store key: a passphrase is not" bash -c "! (source '$DEPLOY'; is_store_kek 'correct horse battery staple')"
+check "store key id: k1 is one" is_store_key_id k1
+check "store key id: dashes are allowed inside" is_store_key_id 2026-11-a
+check "store key id: upper case is not" bash -c "! (source '$DEPLOY'; is_store_key_id K1)"
+check "store key id: 33 characters is not" bash -c "! (source '$DEPLOY'; is_store_key_id '$(printf 'a%.0s' {1..33})')"
+check "list: entries are trimmed and empty ones dropped" equals "$(split_list ' a , b,,c ' | tr '\n' ' ')" 'a b c '
+check "list: a star is not expanded" equals "$(cd "$WORK" && split_list '*')" '*'
+
 # Source tags in a throw-away repository.
 REPO="$WORK/repo"
 mkdir -p "$REPO/code/web/src" "$REPO/code/web/dist"
@@ -106,7 +120,16 @@ case "$args" in
   *" -n shared-ns get secret pull-test "*"{.type}"*) printf 'kubernetes.io/dockerconfigjson' ;;
   *" -n shared-ns get secret pull-test "*dockerconfigjson*) printf '%s' 'eyJhdXRocyI6e319' ;;
   *" get secret pull-test "*"{.type}"*) [ "${STUB_PULL_SECRET:-yes}" = yes ] && printf 'kubernetes.io/dockerconfigjson' || exit 1 ;;
-  *" get secret lotties-secrets "*) exit 1 ;;
+  # The API's Secret in the cluster: STUB_SECRET_FILE (KEY=value lines) when given, else none; STUB_SECRET_FAIL=1 cannot read it.
+  *" get secret lotties-secrets "*)
+    [ "${STUB_SECRET_FAIL:-0}" = 1 ] && { echo 'Unable to connect to the server' >&2; exit 1; }
+    [ -n "${STUB_SECRET_FILE:-}" ] || { echo 'Error from server (NotFound): secrets "lotties-secrets" not found' >&2; exit 1; }
+    case "$args" in
+      *go-template*) cut -d= -f1 "$STUB_SECRET_FILE" ;;
+      *) key=$(printf '%s' "$*" | sed -n "s/.*{\.data\['\([^']*\)'\]}.*/\1/p")
+         line=$(grep -m1 "^$key=" "$STUB_SECRET_FILE") || exit 0
+         printf '%s' "${line#*=}" | base64 | tr -d '\n' ;;
+    esac ;;
   *" create secret generic "*)
     dir=$(printf '%s\n' "$@" | sed -n 's/^--from-file=//p')
     printf 'secret-keys: %s\n' "$(cd "$dir" && ls | tr '\n' ' ')" >> "$STUB_LOG"
@@ -314,6 +337,72 @@ run "native app origins" CORS_ALLOWED_ORIGINS=https://lotties.app,https://localh
 
 EXPECT_FAIL=1 run "bad CORS origin" CORS_ALLOWED_ORIGINS='https://lotties.app/app, https://localhost' SKIP_BUILD=1
 check "CORS: a path or a space is refused" out_has 'CORS_ALLOWED_ORIGINS must be comma-separated origins'
+
+# Bring your own database: the Stores__* settings go to the Secret only and reach the API as secretEnv references.
+store_secret_hidden() { ! grep -qF -- "$KEK_A" "$WORK/log" "$WORK/out" && ! grep -qF -- "$KEK_B" "$WORK/log" "$WORK/out" \
+  && ! grep -qF -- 'owner-sub-1' "$WORK/out"; }
+
+run "own database off by default" SKIP_BUILD=1 && {
+  check "own database: off and says so" out_has 'own database: off'
+  check "own database: no Stores__ key in the Secret" log_lacks '^secret-keys: .*Stores__'
+  check "own database: no Stores__ variable on the API" log_lacks 'secretEnv\.Stores__'
+}
+
+run "own database on" Stores__Enabled=true Stores__CurrentKeyId=k1 Stores__KeyEncryptionKeys__k1="$KEK_A" \
+  Stores__Allowlist='owner-sub-1, 3f2b1c9e-0000-4000-8000-000000000001' SKIP_BUILD=1 && {
+  check "own database: on, with counts only" out_has 'own database: on \(1 key\(s\), 2 allowlisted account\(s\)\)'
+  check "own database: the keys go to the Secret" \
+    log_has '^secret-keys: .*Stores__Allowlist__0 Stores__Allowlist__1 Stores__CurrentKeyId Stores__Enabled Stores__KeyEncryptionKeys__k1 '
+  check "own database: the API reads the key from the Secret" \
+    log_has 'secretEnv\.Stores__KeyEncryptionKeys__k1\.secretName=lotties-secrets --set-string secretEnv\.Stores__KeyEncryptionKeys__k1\.key=Stores__KeyEncryptionKeys__k1'
+  check "own database: the flag is a Secret reference, not a plain env value" \
+    bash -c "grep -q 'secretEnv\.Stores__Enabled\.key=Stores__Enabled' '$WORK/log' && ! grep -q 'env\.Stores__' <(grep -v secretEnv '$WORK/log')"
+  check "own database: no key or allowlist value is on a command line or printed" store_secret_hidden
+}
+
+run "own database dry run" DRY_RUN=1 DRY_RUN_DIR="$WORK/rendered-byo" Stores__Enabled=true Stores__CurrentKeyId=k1 \
+  Stores__KeyEncryptionKeys__k1="$KEK_A" SKIP_BUILD=1 && {
+  check "own database dry run: nothing secret is printed" store_secret_hidden
+  check "own database dry run: the Secret keys are listed by name" out_has 'keys: .*Stores__KeyEncryptionKeys__k1'
+}
+
+EXPECT_FAIL=1 run "own database without a current key" Stores__Enabled=true Stores__KeyEncryptionKeys__k1="$KEK_A" SKIP_BUILD=1
+check "own database: on without Stores__CurrentKeyId stops the run" out_has 'Stores__Enabled=true needs Stores__CurrentKeyId'
+check "own database: it stops before anything is changed" log_lacks '(create secret generic|^helm )'
+
+EXPECT_FAIL=1 run "own database without its key" Stores__Enabled=true Stores__CurrentKeyId=k2 Stores__KeyEncryptionKeys__k1="$KEK_A" SKIP_BUILD=1
+check "own database: a current key id without its key stops the run" out_has 'needs Stores__KeyEncryptionKeys__k2'
+
+EXPECT_FAIL=1 run "own database short key" Stores__Enabled=true Stores__CurrentKeyId=k1 Stores__KeyEncryptionKeys__k1=c2hvcnQ= SKIP_BUILD=1
+check "own database: a key that is not 32 bytes stops the run" out_has 'Stores__KeyEncryptionKeys__k1 must be base64 of exactly 32 bytes'
+check "own database: the bad key is not printed" out_lacks 'c2hvcnQ='
+
+EXPECT_FAIL=1 run "own database bad flag" Stores__Enabled=yes SKIP_BUILD=1
+check "own database: a flag that is not true or false stops the run" out_has 'Stores__Enabled must be true or false'
+
+EXPECT_FAIL=1 run "own database bad key id" Stores__Enabled=true Stores__CurrentKeyId=K1 SKIP_BUILD=1
+check "own database: an upper-case key id stops the run" out_has 'Stores__CurrentKeyId is not 1 to 32 lower-case'
+
+printf 'DB_HOST=db.example.test\nStores__Enabled=true\nStores__CurrentKeyId=k2\nStores__KeyEncryptionKeys__k1=%s\nStores__KeyEncryptionKeys__k2=%s\nStores__Allowlist__0=owner-sub-1\n' \
+  "$KEK_A" "$KEK_B" > "$WORK/cluster-secret"
+run "own database keeps the Secret's keys" STUB_SECRET_FILE="$WORK/cluster-secret" SKIP_BUILD=1 && {
+  check "keep: an old key and the current one stay in the Secret" \
+    log_has '^secret-keys: .*Stores__KeyEncryptionKeys__k1 Stores__KeyEncryptionKeys__k2 '
+  check "keep: the allowlist and the flag stay" log_has '^secret-keys: .*Stores__Allowlist__0 Stores__CurrentKeyId Stores__Enabled '
+  check "keep: on, from the Secret" out_has 'own database: on \(2 key\(s\), 1 allowlisted account\(s\)\)'
+  check "keep: nothing secret is printed" store_secret_hidden
+}
+
+run "own database removes a key set to empty" STUB_SECRET_FILE="$WORK/cluster-secret" Stores__KeyEncryptionKeys__k1= \
+  Stores__Allowlist= SKIP_BUILD=1 && {
+  check "remove: the emptied key is gone, the current one stays" \
+    bash -c "grep -E '^secret-keys: ' '$WORK/log' | grep -q 'Stores__KeyEncryptionKeys__k2' && ! grep -E '^secret-keys: ' '$WORK/log' | grep -q 'Stores__KeyEncryptionKeys__k1'"
+  check "remove: an empty allowlist clears it" log_lacks '^secret-keys: .*Stores__Allowlist__'
+}
+
+EXPECT_FAIL=1 run "own database cannot read the Secret" STUB_SECRET_FAIL=1 SKIP_BUILD=1
+check "own database: a Secret that cannot be read stops the run (its keys would be lost)" out_has 'could not read Secret lotties-secrets'
+check "own database: nothing is applied then" log_lacks 'create secret generic'
 
 # The cluster-specific settings have no defaults: without them the run stops before calling anything.
 : > "$WORK/log"

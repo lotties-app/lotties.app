@@ -1,7 +1,8 @@
 # The API (.NET 10, image lotties-api built from code/api/Dockerfile). The Ingress sends https://<PUBLIC_HOST>/api/...
 # here unchanged: the routes already start with /api/v1. Only /api is public; /health is for the probes.
 # Set by deploy.sh: image, imagePullSecrets (PULL_SECRET), AUTH_AUTHORITY, AUTH_AUDIENCE, CORS_ALLOWED_ORIGINS,
-# DB_AUTO_MIGRATE, FORWARDED_HEADERS_TRUSTED_NETWORKS (when set in .env) and podAnnotations.checksum/secrets.
+# DB_AUTO_MIGRATE, FORWARDED_HEADERS_TRUSTED_NETWORKS (when set in .env), podAnnotations.checksum/secrets and one
+# secretEnv entry per Stores__* key of the Secret (bring your own database; only names, the values stay in the Secret).
 
 # "app" in the .NET images (since .NET 8; still 1654 in the .NET 10 Ubuntu images).
 runAsUser: 1654
@@ -32,6 +33,12 @@ env:
   # Demo__MaxLiveAccounts: "200"
   # Demo__StartPermitsPerHour: "3"
   # Demo__CleanupMinutes: "30"
+  # Bring your own database tuning (not secrets; the flag, allowlist and keys are in secretEnv, set by deploy.sh). Defaults
+  # shown; uncomment to change (docs/DEPLOY.md "Moving a baby between databases" and "Connections to user stores").
+  # Stores__Moves__UndoWindowDays: "7"
+  # Stores__Moves__BatchSize: "500"
+  # Stores__DataSources__IdleMinutes: "10"
+  # Stores__DataSources__MaxCount: "50"
   # MCP server for AI assistants and the iPhone Siri intents (docs/MCP.md sections 2 to 4, 3.4). Not secrets. Needs the Keycloak
   # client scopes lotties.read/lotties.write with the audience mapper set to the same Audience first. Remove all three to switch it off.
   Mcp__Enabled: "true"

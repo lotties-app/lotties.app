@@ -19,18 +19,11 @@ import {
 } from './setupSql';
 import { SqlStep } from './SqlStep';
 import { TestStep } from './TestStep';
-import type { ProviderId } from './providers';
+import { PROVIDER_LABELS, type ProviderId } from './providers';
 import { useSaveAndTest } from './useSaveAndTest';
 
 const STEPS = ['provider', 'sql', 'connection', 'consent', 'test'] as const;
 type Step = (typeof STEPS)[number];
-
-/** What the server stores as the provider (shown back as "your Supabase database"), not translated. */
-const PROVIDER_LABELS: Readonly<Record<ProviderId, string>> = {
-  supabase: 'Supabase',
-  neon: 'Neon',
-  other: 'Postgres',
-};
 
 const freshRoles = (): SetupRoles => ({
   appRole: DEFAULT_APP_ROLE,

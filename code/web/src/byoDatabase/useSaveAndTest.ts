@@ -26,12 +26,17 @@ export type SavePhase =
   | { kind: 'testFailed'; message: ResultMessage; retryAfterSeconds: number | null };
 
 /**
- * The only network calls of the setup wizard, in the order the server needs (docs/design/47
- * section 3.4 and API task T6): the optional consent `byo_database`, then `PUT /data-store`, then
- * `POST /data-store/test`. `onSaved` runs as soon as the server holds the details (the wizard
- * forgets the passwords there).
+ * The only network calls of the setup wizard and of "Update connection details", in the order the
+ * server needs (docs/design/47 section 3.4 and API task T6): the optional consent `byo_database`
+ * (only when `grantConsent`: the wizard, where the person just agreed; an update relies on the
+ * agreement she already gave), then `PUT /data-store`, then `POST /data-store/test`. `onSaved`
+ * runs as soon as the server holds the details (the caller forgets the passwords there).
  */
-export function useSaveAndTest(babyId: string, onSaved: () => void) {
+export function useSaveAndTest(
+  babyId: string,
+  onSaved: () => void,
+  { grantConsent = true }: { grantConsent?: boolean } = {},
+) {
   const api = useApiClient();
   const queryClient = useQueryClient();
   const { locale } = useLocale();
@@ -56,7 +61,7 @@ export function useSaveAndTest(babyId: string, onSaved: () => void) {
   const saveAndTest = async (request: SaveDataStoreRequest) => {
     setPhase({ kind: 'busy' });
     try {
-      await setOptionalConsent(api, 'byo_database', true, locale);
+      if (grantConsent) await setOptionalConsent(api, 'byo_database', true, locale);
       await saveDataStore(api, babyId, request);
     } catch (error) {
       setPhase({ kind: 'saveFailed', message: errorMessageOf(error) });
