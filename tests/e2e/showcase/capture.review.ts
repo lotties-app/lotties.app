@@ -40,7 +40,7 @@ export const SCREENS: Screen[] = [
   { id: 'vaccines', route: '/dev/vaccines?state=timeline' },
   { id: 'sharing', route: '/dev/roles' },
   { id: 'doctor', route: '/dev/doctor-dashboard?state=summary' },
-  { id: 'data-location', route: '/dev/data-location?state=hosted' },
+  { id: 'data-location', route: '/dev/data-location?state=hosted', schemes: ['light', 'dark'] },
 ];
 
 const pick = (env: string | undefined, all: readonly string[]) =>

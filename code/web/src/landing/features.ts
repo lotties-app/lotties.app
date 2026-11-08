@@ -31,9 +31,7 @@ export const SHOWCASE_SCREENS = [
   { id: 'vaccines', dark: false },
   { id: 'sharing', dark: false },
   { id: 'doctor', dark: false },
-  // `data-location` (Settings > Where your data lives) joins with the next media regeneration: its
-  // capture is in tests/e2e/showcase (SCREENS) and its caption in `landing.*.json`, but its files do
-  // not exist yet, and the landing test fails for a screen without its files.
+  { id: 'data-location', dark: true },
 ] as const;
 
 /** Pixel size of the screenshots (a 390x844 phone at 2x). */

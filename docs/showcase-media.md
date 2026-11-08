@@ -45,6 +45,7 @@ committing: open the new files, or the landing page at `/welcome` in a dev serve
 | `vaccines` | `/dev/vaccines?state=timeline` | the vaccine timeline |
 | `sharing` | `/dev/roles` | members, roles and the invite form |
 | `doctor` | `/dev/doctor-dashboard?state=summary` | the pediatrician's summary of what was shared |
+| `data-location` (light and dark) | `/dev/data-location?state=hosted` | Settings > Where your data lives: Lotties hosting or your own database |
 
 Files are named `<stem>-<light|dark>-<en|pt-BR>.webp`, 780x1688 (a 390x844 phone at 2x). The video is
 `demo-<en|pt-BR>.mp4` and `.webm` (390x844, about 50 s) with `demo-<lang>-poster.webp`, and `demo-<lang>-anim.webp` (240 px, 8 fps, about 2 MB), an animated WebP that the README shows inline because GitHub cannot play a repo video in a README (a native player would need an upload through github.com's editor). The tour in
@@ -69,7 +70,8 @@ regenerate: the scripts need no edits unless a preview route or its labels chang
 
 ## Known limits
 
-- The pictures are light mode (the Now screen also in dark); other screens in dark are not captured.
+- The pictures are light mode (the Now and Where your data lives screens also in dark); other screens in dark are not
+  captured.
 - The video has no sound and no captions; it is a visual tour.
 - The static files are also bundled into the native (Capacitor) builds because they live in `public/`; they are about
   3.5 MB.
