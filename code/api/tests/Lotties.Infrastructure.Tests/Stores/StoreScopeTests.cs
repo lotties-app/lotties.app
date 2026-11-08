@@ -209,6 +209,51 @@ public sealed class StoreScopeTests : IDisposable
         await Stores.RequireBuiltInAsync([HostedBaby]);
 
         await Assert.ThrowsAsync<StoreUnavailableException>(() => Stores.RequireBuiltInAsync([HostedBaby, BabyInX]));
+        Assert.Empty(_migrator.Asked);
+        Assert.Equal(0, _externals.Lookups);
+    }
+
+    [Fact]
+    public async Task TryEnterBuiltInAsync_HostedBaby_BindsItToTheBuiltInStore()
+    {
+        Assert.True(await Stores.TryEnterBuiltInAsync(HostedBaby));
+
+        Assert.Equal(StoreRoute.BuiltInDefault, Stores.RouteOf(HostedBaby));
+        Assert.NotNull(Stores.ContextFor(HostedBaby));
+        Assert.Empty(_migrator.Asked);
+    }
+
+    [Fact]
+    public async Task TryEnterBuiltInAsync_BabyOfAnExternalStore_IsFalseAndNeverOpensOrBindsTheStore()
+    {
+        Assert.False(await Stores.TryEnterBuiltInAsync(BabyInX));
+        Assert.False(await Stores.TryEnterBuiltInAsync(BabyInGone));
+
+        Assert.Empty(_migrator.Asked);
+        Assert.Equal(0, _externals.Lookups);
+        Assert.Empty(_externals.ContextsOf(StoreX));
+        Assert.Throws<StoreScopeMissingException>(() => Stores.RouteOf(BabyInX));
+    }
+
+    [Fact]
+    public async Task TryEnterBuiltInAsync_FlagOff_BabyOfAnExternalStoreIsFalseWithoutAnError()
+    {
+        _routing.Enabled = false;
+
+        Assert.False(await Stores.TryEnterBuiltInAsync(BabyInX));
+        Assert.True(await Stores.TryEnterBuiltInAsync(HostedBaby));
+    }
+
+    [Fact]
+    public async Task TryEnterBuiltInAsync_BabyAlreadyEntered_AnswersFromItsBoundRouteWithoutResolvingAgain()
+    {
+        await Stores.EnterAsync(BabyInX);
+        await Stores.EnterAsync(HostedBaby);
+
+        Assert.False(await Stores.TryEnterBuiltInAsync(BabyInX));
+        Assert.True(await Stores.TryEnterBuiltInAsync(HostedBaby));
+        Assert.Equal(1, _resolver.Calls(BabyInX));
+        Assert.Equal(1, _resolver.Calls(HostedBaby));
     }
 
     [Fact]
@@ -418,8 +463,14 @@ public sealed class StoreScopeTests : IDisposable
 
         public IReadOnlyList<LottiesDataDbContext> ContextsOf(Guid storeId) => _stores[storeId].Created;
 
-        public ValueTask<IDataStore?> FindAsync(Guid storeId, CancellationToken cancellationToken = default) =>
-            ValueTask.FromResult<IDataStore?>(_stores.GetValueOrDefault(storeId));
+        /// <summary>How many times a store was looked up (opened).</summary>
+        public int Lookups { get; private set; }
+
+        public ValueTask<IDataStore?> FindAsync(Guid storeId, CancellationToken cancellationToken = default)
+        {
+            Lookups++;
+            return ValueTask.FromResult<IDataStore?>(_stores.GetValueOrDefault(storeId));
+        }
     }
 
     private sealed class FakeStore(DataStoreKey key) : IDataStore

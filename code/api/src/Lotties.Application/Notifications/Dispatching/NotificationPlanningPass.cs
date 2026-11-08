@@ -9,8 +9,10 @@ namespace Lotties.Application.Notifications.Dispatching;
 /// subscription), each planned by the pure <see cref="NotificationPlanner"/> with the recipients' settings, their
 /// snoozes and dismissals and the keys already claimed for them. A baby whose data cannot be planned is logged and
 /// skipped so the other babies still get their reminders. Each baby is entered in the tick's <see cref="IStoreScope"/> before its
-/// data is read (a job has no request to do it; docs/design/47-bring-your-own-database.md section 2.2): a baby on an external
-/// store is skipped like any baby that cannot be planned (reminders for those are task T11).
+/// data is read (a job has no request to do it). Reminders are not available for a baby on a family's own database in the first
+/// version (docs/design/47-bring-your-own-database.md D9 and section 2.2, task T11): the candidates query already leaves such a
+/// baby out by its pointer, and a baby that moved since is skipped here by its pointer in the control plane, before any data-plane
+/// read and without opening its store.
 /// </summary>
 internal sealed class NotificationPlanningPass(
     IBabyNotificationPreferencesRepository preferences,
@@ -67,7 +69,12 @@ internal sealed class NotificationPlanningPass(
     {
         try
         {
-            await stores.EnterAsync(babyId, cancellationToken);
+            if (!await stores.TryEnterBuiltInAsync(babyId, cancellationToken))
+            {
+                logger.LogDebug("Push planning skipped baby {BabyId}: its records are on an external store (no reminders)", babyId);
+                return [];
+            }
+
             var recipients = candidates
                 .Select(candidate => NotificationRecipient.From(candidate.UserId, candidate.Role, candidate.Preferences, settingsByUser.GetValueOrDefault(candidate.UserId), now))
                 .ToArray();

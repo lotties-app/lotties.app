@@ -19,6 +19,9 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// Viewer is left out. Doctor suggestions (off by default) make a stored row a candidate while the baby has a pending
 /// proposal or a shared recommendation created in the last 24 hours. Cry monitor alerts (off by default) make a stored row a
 /// candidate while the baby has a fussy spell, not deleted, started within the stale cutoff (the monitor marks are read later).
+/// A baby whose pointer names an external store is never a candidate (no reminders for a family's own database in the first
+/// version, docs/design/47-bring-your-own-database.md D9, task T11), so the <c>EXISTS</c> tests on data tables only ever look at
+/// babies whose records are in this database.
 /// </remarks>
 internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext context, UniqueViolations uniqueViolations) : IBabyNotificationPreferencesRepository
 {
@@ -59,6 +62,7 @@ internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext c
         return from preferences in context.BabyNotificationPreferences.AsNoTracking()
             join member in context.BabyMembers.AsNoTracking()
                 on new { preferences.BabyId, preferences.UserId } equals new { member.BabyId, member.UserId }
+            where !context.BabyStoreAssignments.Any(assignment => assignment.BabyId == preferences.BabyId && assignment.DataStoreId != null)
             where (preferences.DoseDue || preferences.NapWindow || preferences.BellyPainPattern || preferences.OvertiredWarning || preferences.FussyPattern
                     || preferences.DiaperWetHeadsUp || preferences.DiaperDirtyHeadsUp || preferences.VaccineReminders
                     || (preferences.AppointmentReminders && context.Appointments.Any(appointment =>
@@ -99,6 +103,7 @@ internal sealed class EfBabyNotificationPreferencesRepository(LottiesDbContext c
         var horizon = now + NotificationRules.AppointmentReminderHorizon;
         return from member in context.BabyMembers.AsNoTracking()
             where !context.BabyNotificationPreferences.Any(preferences => preferences.BabyId == member.BabyId && preferences.UserId == member.UserId)
+                && !context.BabyStoreAssignments.Any(assignment => assignment.BabyId == member.BabyId && assignment.DataStoreId != null)
                 && context.Appointments.Any(appointment =>
                     appointment.BabyId == member.BabyId
                     && appointment.Status == AppointmentStatus.Upcoming

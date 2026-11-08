@@ -18,6 +18,14 @@ public interface IStoreScope
     /// </summary>
     Task EnterAsync(Guid babyId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Binds <paramref name="babyId"/> only when its pointer (read in the control plane) names the built-in store, and returns
+    /// <c>true</c>; for a baby on an external store returns <c>false</c> without binding it and without opening that store (no
+    /// connection, no migrator, no circuit breaker). For work that never runs on a family's own database: the push reminders
+    /// (docs/design/47-bring-your-own-database.md D9, task T11) and the data-table work done through the control context.
+    /// </summary>
+    Task<bool> TryEnterBuiltInAsync(Guid babyId, CancellationToken cancellationToken = default);
+
     /// <summary>The route bound for <paramref name="babyId"/>; <c>store_scope_missing</c> when the baby was not entered.</summary>
     StoreRoute RouteOf(Guid babyId);
 }

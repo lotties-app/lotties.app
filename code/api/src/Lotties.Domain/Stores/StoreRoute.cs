@@ -21,4 +21,19 @@ public sealed record StoreRoute
     public DataStoreKey Store { get; }
 
     public int Epoch { get; }
+
+    /// <summary>
+    /// Whether people other than the Owner may be invited to or join the baby: only on the built-in store. A family's own database
+    /// is Owner only in the first version (design 47 D11): no members, no doctors.
+    /// </summary>
+    public bool AllowsOtherPeople => Store.Kind == DataStoreKind.BuiltIn;
+
+    /// <summary>Throws <see cref="Exceptions.StoreOwnerOnlyException"/> when <see cref="AllowsOtherPeople"/> is false.</summary>
+    public void EnsureAllowsOtherPeople(Guid babyId)
+    {
+        if (!AllowsOtherPeople)
+        {
+            throw new Exceptions.StoreOwnerOnlyException(babyId);
+        }
+    }
 }

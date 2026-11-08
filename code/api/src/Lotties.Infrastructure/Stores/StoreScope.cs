@@ -76,6 +76,24 @@ internal sealed class StoreScope(
         return ContextOf(store);
     }
 
+    public async Task<bool> TryEnterBuiltInAsync(Guid babyId, CancellationToken cancellationToken = default)
+    {
+        if (_routes.TryGetValue(babyId, out var bound))
+        {
+            return bound.Store == DataStoreKey.BuiltIn;
+        }
+
+        var route = await resolver.ResolveForBabyAsync(babyId, cancellationToken);
+        if (route.Store != DataStoreKey.BuiltIn)
+        {
+            return false;
+        }
+
+        await OpenAsync(route.Store, cancellationToken);
+        _routes[babyId] = route;
+        return true;
+    }
+
     public StoreRoute RouteOf(Guid babyId) =>
         _routes.TryGetValue(babyId, out var route) ? route : throw new StoreScopeMissingException(babyId);
 
@@ -84,7 +102,7 @@ internal sealed class StoreScope(
 
     /// <summary>
     /// Enters every baby of <paramref name="babyIds"/> and requires each to be on the built-in store (<c>store_unavailable</c>
-    /// otherwise): for work that reaches the data tables through the control context, which only the built-in database has
+    /// otherwise, without opening the external store): for work that reaches the data tables through the control context, which only the built-in database has
     /// (account erasure, until task T10 erases a family's store).
     /// </summary>
     public async Task RequireBuiltInAsync(IEnumerable<Guid> babyIds, CancellationToken cancellationToken = default)
@@ -148,10 +166,10 @@ internal sealed class StoreScope(
         _contexts.Clear();
     }
 
+    /// <summary>A baby on an external store fails with <c>store_unavailable</c> before its store is opened (task T11).</summary>
     private async Task EnterBuiltInAsync(Guid babyId, CancellationToken cancellationToken)
     {
-        await EnterAsync(babyId, cancellationToken);
-        if (RouteOf(babyId).Store != DataStoreKey.BuiltIn)
+        if (!await TryEnterBuiltInAsync(babyId, cancellationToken))
         {
             throw new StoreUnavailableException();
         }

@@ -609,6 +609,27 @@ fails `store_unavailable` until that piece lands; the Postgres container tests (
 CI only) move a baby both ways against a real external store with a fixture-built opener. `docs/DEPLOY.md` "Moving a baby between
 databases" is the operator's view.
 
+**Status (2026-11-07): T11 is built** (branch `feat/byo-t11-assistants-jobs`, stacked on T8, not deployed; no migration, no new route, no
+voice command changed). *Assistants*: Alexa and MCP already resolved the baby's store through `AssistantSubjects` (T2) and answered any
+store failure with `temporarily_unavailable` (T8); T11 adds the tests that a baby on its own store is read and written there only (a bottle,
+the last feed, `LogMedication` of a registered medicine, the medication reminder) and that with the store down every data command, through
+both adapters, answers the existing sentence with no baby, medicine, store or reason in it (also with `sayBabyName`/`sayMedicineNames` on)
+and writes nothing; listing the family needs only the control plane and still answers. *Reminders*: off for a BYO baby (D9). The candidate
+queries leave out every baby whose `babies.data_store_id` is set (so their `EXISTS` tests on data tables only see babies of the Lotties
+database, which closes the T1 note above), and the planning pass checks the pointer again with `IStoreScope.TryEnterBuiltInAsync`, which
+binds a baby only on the built-in store and never opens, migrates or counts an external one; a test with stores that throw on open shows
+the scheduler never touches them, also for a baby that moved after the candidates were read. *Background work* (every hosted service):
+`PushSchedulerService` (tick: lease, retry, plan, claim, send, housekeeping; only the planning pass reads data-plane tables, built-in babies
+only; the retry pass re-sends stored deliveries without reading the data plane) and `DemoCleanupService` (expired demo accounts through
+`EfAccountDataEraser`, which now refuses a baby on an external store with `store_unavailable` before opening it, so the run fails closed for
+that account and goes on). There is no aggregate or statistics job (community insights is not built), no other `BackgroundService`,
+`IHostedService` or timer; startup migration (`DB_AUTO_MIGRATE`) touches the control database only. *Members and doctors*: the first version
+is Owner only (D11, privacy policy section 17 of design 33): creating an invite of any role (family or Doctor) for a baby on an external store,
+or accepting one issued before it moved, is `409 store_owner_only` (`StoreRoute.AllowsOtherPeople`, checked in `InviteService` from the
+pointer, never from the store), so no member or doctor can join; there is no other way in (doctor access is a Doctor invite, assistant
+linking is per account). Not covered here: refusing to move a baby that has members onto a store belongs to the move-in (T7; T6's route answers 501); the web has no message for
+`store_owner_only` yet (T9).
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 

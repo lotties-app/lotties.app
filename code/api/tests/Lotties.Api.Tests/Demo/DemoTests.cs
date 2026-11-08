@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -277,6 +278,39 @@ public sealed class DemoTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.False(await InScopeAsync(host, (context, _) => context.Events.IgnoreQueryFilters().AnyAsync(row => row.BabyId == expired.BabyId)));
         Assert.True(await InScopeAsync(host, (context, _) => context.Babies.AnyAsync(baby => baby.Id == alive.BabyId)));
         Assert.True(await InScopeAsync(host, (context, _) => context.Babies.AnyAsync(baby => baby.Id == realUser.BabyId)));
+    }
+
+    [Fact]
+    public async Task Cleanup_ExpiredDemoWhoseBabyPointsAtAnExternalStore_FailsClosedWithoutOpeningThatStore()
+    {
+        using var own = new ApiFactory();
+        var stores = new Stores.ThrowingDataStores();
+        using var host = own.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("Demo:SigningKey", SigningKey);
+            builder.ConfigureTestServices(services =>
+            {
+                services.Configure<Lotties.Infrastructure.Stores.StoreRoutingOptions>(options => options.Enabled = true);
+                services.AddSingleton<Lotties.Infrastructure.Stores.IExternalDataStores>(stores);
+                services.AddSingleton<Lotties.Application.Stores.IStoreMigrator>(stores);
+            });
+        });
+        var expired = await StartAsync(host.CreateClient());
+        var subject = new JsonWebTokenHandler().ReadJsonWebToken(expired.AccessToken).Subject;
+        var userId = await InScopeAsync(host, async (context, _) =>
+        {
+            var user = await context.Users.SingleAsync(candidate => candidate.Subject == subject);
+            context.Entry(user).Property(nameof(User.DemoExpiresAt)).CurrentValue = (DateTimeOffset?)DateTimeOffset.UtcNow.AddMinutes(-5);
+            await context.SaveChangesAsync();
+            return user.Id;
+        });
+        await own.AssignStoreAsync(expired.BabyId, userId, Guid.NewGuid());
+
+        var result = await InScopeAsync(host, (_, services) => services.GetRequiredService<IDemoCleanup>().RunOnceAsync(DateTimeOffset.UtcNow));
+
+        Assert.Equal(new DemoCleanupResult(0, 1), result);
+        Assert.Equal(0, stores.Attempts);
+        Assert.True(await InScopeAsync(host, (context, _) => context.Babies.AnyAsync(baby => baby.Id == expired.BabyId)));
     }
 
     [Fact]
