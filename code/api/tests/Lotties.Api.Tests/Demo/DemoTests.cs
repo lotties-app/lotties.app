@@ -288,6 +288,7 @@ public sealed class DemoTests(ApiFactory factory) : IClassFixture<ApiFactory>
         using var host = own.WithWebHostBuilder(builder =>
         {
             builder.UseSetting("Demo:SigningKey", SigningKey);
+            builder.UseSetting("Demo:CleanupMinutes", "0"); // the hosted run stays off: only the run below may see the account
             builder.ConfigureTestServices(services =>
             {
                 services.Configure<Lotties.Infrastructure.Stores.StoreRoutingOptions>(options => options.Enabled = true);
@@ -297,14 +298,14 @@ public sealed class DemoTests(ApiFactory factory) : IClassFixture<ApiFactory>
         });
         var expired = await StartAsync(host.CreateClient());
         var subject = new JsonWebTokenHandler().ReadJsonWebToken(expired.AccessToken).Subject;
-        var userId = await InScopeAsync(host, async (context, _) =>
-        {
-            var user = await context.Users.SingleAsync(candidate => candidate.Subject == subject);
-            context.Entry(user).Property(nameof(User.DemoExpiresAt)).CurrentValue = (DateTimeOffset?)DateTimeOffset.UtcNow.AddMinutes(-5);
-            await context.SaveChangesAsync();
-            return user.Id;
-        });
+        var userId = await InScopeAsync(host, (context, _) => context.Users.Where(candidate => candidate.Subject == subject).Select(user => user.Id).SingleAsync());
         await own.AssignStoreAsync(expired.BabyId, userId, Guid.NewGuid());
+        await InScopeAsync(host, async (context, _) =>
+        {
+            var user = await context.Users.SingleAsync(candidate => candidate.Id == userId);
+            context.Entry(user).Property(nameof(User.DemoExpiresAt)).CurrentValue = (DateTimeOffset?)DateTimeOffset.UtcNow.AddMinutes(-5);
+            return await context.SaveChangesAsync();
+        });
 
         var result = await InScopeAsync(host, (_, services) => services.GetRequiredService<IDemoCleanup>().RunOnceAsync(DateTimeOffset.UtcNow));
 
