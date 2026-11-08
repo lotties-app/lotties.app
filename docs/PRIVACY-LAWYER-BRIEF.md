@@ -127,8 +127,11 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
     pergunta 5)
 18. **Foro e lei aplicável**, e se um e-mail e uma empresa ou CPF precisam aparecer nos Termos. A cláusula 14 diz hoje só
     "lei brasileira"; o foro ficou de fora até a sua resposta. (rascunho, pergunta 6)
-19. **Banco de dados próprio do usuário** (política versão 13, `docs/design/47-bring-your-own-database.md` seção 10,
-    auditoria seção 17). Recurso opcional, por bebê, desligado por padrão e ainda atrás de uma flag: o titular do bebê
+19. **Banco de dados próprio do usuário** (texto **retido**, ainda fora da política publicada; `docs/design/47-bring-your-own-database.md`
+    seção 10, auditoria seção 17). Por decisão do responsável (2026-11-08), a produção continua com a política 12 e a
+    versão de consentimento `2026-11-06.1`; o texto da política, o consentimento `byo_database` e os fatos ficam em
+    `docs/legal-held/byo-database/` e entram juntos no lançamento geral do recurso, como **uma única versão material**
+    (todos aceitam de novo). Recurso opcional, por bebê, desligado por padrão e ainda atrás de uma flag: o titular do bebê
     conecta um PostgreSQL dele (Supabase, Neon ou outro, escolhido e contratado por ele, na região que ele escolher) e os
     registros de cuidado do bebê passam a ficar lá; o app e a conta continuam iguais, e a API do Lotties lê e grava
     esses registros lá. Conta, consentimentos, membros, o perfil do bebê e os ajustes ficam no Lotties. Os dados de
@@ -147,14 +150,31 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
     - Transferência internacional (art. 33) quando a região escolhida pelo usuário é fora do Brasil: quem é o
       responsável pela transferência, e a base citada na política (art. 33, IX, "para fazer o que você pediu") serve
       também para este caso?
-    - O consentimento opcional `byo_database` (texto em `code/web/src/legal/byoDatabaseConsent.ts`, dado só pelo titular
+    - O consentimento opcional `byo_database` (texto retido em `docs/legal-held/byo-database/`, arquivo
+      `byoDatabaseConsent.ts` do patch, dado só pelo titular
       do bebê antes de conectar) basta, ou é preciso algo mais (por exemplo, um aviso aos outros membros quando a
       etapa 2 permitir membros)?
-    - A mudança da política foi marcada como **menor** (aviso dispensável, sem novo aceite de todos), porque ninguém é
-      afetado sem optar pelo recurso e quem opta dá um consentimento próprio antes de qualquer dado ir ao provedor. A
-      regra interna diz que "um novo destinatário" é mudança relevante (material). Deve ser material?
+    - A mudança da política tinha sido marcada como **menor** (ninguém é afetado sem optar pelo recurso, e quem opta dá
+      um consentimento próprio antes de qualquer dado ir ao provedor); o responsável decidiu que ela sai como
+      **material**, no lançamento geral. Há algum motivo legal para ser diferente?
     - O texto que diz o que o provedor pode fazer (pausar, limitar, encerrar, perder dados; planos gratuitos sem backup) e
       que "você é responsável por essa conta" é adequado, ou soa como renúncia de responsabilidade que a lei não permite?
+    - **Divisão de responsabilidades (pedido do responsável, 2026-11-08; precisa de revisão jurídica).** O responsável
+      quer dizer com clareza que o Lotties não responde pelos dados quando o usuário escolhe o próprio banco. Foi escrito
+      como divisão de deveres, não como isenção geral: o usuário responde pelo banco e pela conta no provedor
+      (disponibilidade, backups e retenção, custos, termos do provedor, configurações de segurança e acesso, credenciais
+      e funções que cria, o que mais guardar no mesmo banco, e cópias que ficam lá: cópia antiga, sobras, e os registros
+      que continuam lá depois de excluir a conta se ele não pediu a exclusão); o Lotties "não é responsável por perda,
+      indisponibilidade, exclusão ou exposição causadas pelo seu banco, pelo seu provedor ou pelas suas configurações lá"
+      e "continua responsável pelo que ele mesmo faz" (como envia e guarda os dados de conexão, os próprios servidores e o
+      próprio banco); a política retida diz ainda "nada nesta seção limita os direitos que a lei lhe dá". Já aparece,
+      em linguagem simples, no guia do usuário (`docs/BYO-DATABASE.md`), na tela de escolha, na etapa de consentimento e
+      no guia dentro do app (só visíveis onde o recurso está ligado). Perguntas: a exclusão de responsabilidade pode ser
+      limitada pela lei (CDC, se houver relação de consumo; LGPD arts. 42 a 45, responsabilidade e excludentes do art.
+      43), então o texto não pode prometer mais do que a lei permite: a redação está dentro desse limite? O art. 43, III
+      (culpa exclusiva do titular ou de terceiro) é a base certa para a parte "causadas pelo seu banco, provedor ou
+      configurações"? Algo precisa sair, ser suavizado ou ser acrescentado (por exemplo, o dever de segurança do art. 46
+      do lado do Lotties)?
 
 ## 8. O que levar à reunião
 

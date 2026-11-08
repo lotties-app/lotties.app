@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { LOCALES, type Locale } from '../i18n/config';
-import { BYO_DATABASE_CONSENT } from './byoDatabaseConsent';
 import { FORBIDDEN_CLAIMS, findForbiddenClaims } from './forbiddenClaims';
 import { POLICY_DOCUMENTS } from './policyDocuments';
 import { termsEn } from './terms.en';
@@ -10,6 +9,9 @@ import { termsPtBR } from './terms.pt-BR';
  * No legal text claims more than the code does about who can read people's data
  * (docs/design/47-bring-your-own-database.md section 10). The scan is shared: any test of a user-facing
  * text about privacy can call findForbiddenClaims(text, locale).
+ *
+ * The own-database policy section and its consent text are held for the general release
+ * (docs/legal-held/byo-database/README.md); when they are re-applied, this test scans that consent again.
  */
 
 const locales = LOCALES.map((locale) => locale.code) as Locale[];
@@ -88,9 +90,5 @@ describe('forbidden privacy claims', () => {
 
   it.each(locales)('finds none in the %s terms of use', (locale) => {
     expect(findForbiddenClaims(JSON.stringify(TERMS[locale]), locale)).toEqual([]);
-  });
-
-  it.each(locales)('finds none in the %s own-database consent', (locale) => {
-    expect(findForbiddenClaims(JSON.stringify(BYO_DATABASE_CONSENT[locale]), locale)).toEqual([]);
   });
 });

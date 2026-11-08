@@ -376,7 +376,18 @@ makes the demo collect anything about the visitor (an e-mail for follow-up, anal
 consent is recorded with capacity `demo` (never `guardian`); the visitor is told on the landing button that continuing accepts the
 terms and the privacy policy and that no real data should be typed.
 
-## 17. Bring your own database (2026-11-07, policy 13, docs/design/47-bring-your-own-database.md)
+## 17. Bring your own database (2026-11-07, HELD: not in the shipped policy; docs/design/47-bring-your-own-database.md)
+
+> **Held (owner decision, 2026-11-08).** The policy section, the data and recipient rows, `OWN_DATABASE_FLOW`, the
+> `byo_database` consent text and the consent entry below were written in #63 but are **not shipped**: production keeps
+> policy **12** (2026-11-06) and consent version **`2026-11-06.1`**, and the feature stays off there (`Stores:Enabled=false`,
+> allowlist). The privacy change ships later as **one material consent version** at the general release of the feature.
+> The held texts are in `docs/legal-held/byo-database/` (a patch and a README with the release steps); nothing in the app
+> imports them (`code/web/src/legal/heldLegal.test.ts`). `legal/forbiddenClaims.ts` stays shipped (a test helper, not a
+> policy statement). This section describes the held text: read "policy 13" and "the policy says" below as "the held
+> text says". The own-database screens (choice list, setup consent step, in-app guide; `locales/*/byoDatabase.json`)
+> are shipped but reachable only where the feature is on; their consent-step facts are not part of the core consent
+> digest.
 
 Status: the sealed descriptor (T3), the endpoint guard (T4) and the store routing (T2) are on `main`; the management
 endpoints and the `byo_database` consent kind (T6) are on a branch; the move in and out (T7), the reminder and assistant
@@ -422,19 +433,37 @@ MVP; the facts below are the ones the text is held to (`legal/dataFlows.ts` `OWN
 - **Not available for such a baby in the MVP**: reminders, invited members, doctor access (design 47 D9, D11). BYO
   babies are also left out of any aggregate (design 47 section 2.2), which today has nothing to leave out (community
   insights is not built).
-- **Consent**: the optional consent `byo_database`, given by the Owner before a descriptor is saved. Its text lives in
-  `code/web/src/legal/byoDatabaseConsent.ts` (en, pt-BR; legal-owned, part of the consent `textDigest`), names the
-  provider and states the facts above.
+- **Consent**: the optional consent `byo_database`, given by the Owner before a descriptor is saved. Its legal text was
+  `code/web/src/legal/byoDatabaseConsent.ts` (en, pt-BR; legal-owned, part of the consent `textDigest`), now held with the
+  policy; it names the provider and states the facts above. The setup wizard shows its own shorter facts from the i18n
+  catalog (`byoDatabase.consent.fact1..7`), which are shipped and not part of the core digest; the release decides which
+  text the wizard shows (held README step 5).
+- **Who is responsible for what (owner request, 2026-11-08)**: the person is responsible for her database and her
+  account at the provider (availability, backups and retention, costs, provider terms, security settings and access, the
+  credentials and roles she creates, anything else in the same database, and any copy left there: an old copy after a
+  move back, leftovers after disconnecting or replacing the details, the records left after deleting the account unless
+  she asked for the wipe). Lotties is not responsible for loss, unavailability, deletion or exposure caused by her
+  database, provider or settings, and stays responsible for its own processing: how it sends and stores the sealed
+  details, its servers and the data in its own database; the held policy adds "nothing in this section limits the rights
+  the law gives you". It is written as a split of duties, not a blanket disclaimer: a blanket "not responsible" would be
+  a claim the code cannot back (the API reads and writes the records and holds the key) and weak under LGPD arts. 42-45
+  and consumer law. Shipped wording: docs/BYO-DATABASE.md (box at the top, section 1), the choice screen list
+  (`byoDatabase.limits.responsibility`), the setup consent step (`byoDatabase.consent.fact7`) and the in-app guide
+  (`byoDatabase.help.sections.responsibility`); held wording: the policy section "Your provider and your responsibility"
+  and the consent text. Not reviewed by a lawyer yet (brief item 19).
 - **What the texts must never say**: `code/web/src/legal/forbiddenClaims.ts` (`findForbiddenClaims`) lists the claims
   ("end-to-end", "only you can read", "Lotties cannot see", "zero-knowledge", "never touches our servers", "we do not
   store your data", pt-BR equivalents) with the honest negation "this is not end-to-end encryption" allowed;
   `forbiddenClaims.test.ts` scans the policy, the terms and the consent text, and the own-database screens' tests can
   reuse it.
-- **Policy**: version 13 (2026-11-07) adds the section "Your own database", a data row, a recipient row and lines in
-  legal bases, consent, rights, retention, security and transfers, in both languages.
-- **Consent version**: a `minor` entry (`2026-11-07.1`, policy 13). The material rule (`ConsentVersions`: new data
+- **Policy (held)**: the held version 13 (written 2026-11-07) adds the section "Your own database", a data row, a recipient
+  row and lines in legal bases, consent, rights, retention, security and transfers, in both languages. At release it takes
+  the next policy number and the release date.
+- **Consent version (held; superseded by the owner decision)**: #63 added a `minor` entry (`2026-11-07.1`, policy 13); it
+  was removed before production and the release adds one **material** entry instead. The reasoning #63 gave for minor,
+  kept for the lawyer: The material rule (`ConsentVersions`: new data
   collected, a new recipient or purpose, a change in rights or in who is responsible) is read here per person: for
   everyone who does not opt in, nothing is collected, sent or changed, so a new acceptance from everyone would ask them
   to agree to something that does not touch them. The one person whose data does go to the new recipient gives the
   separate `byo_database` consent, with the provider named, before anything is sent. Design 47 section 10 recommends
-  minor; the lawyer is asked (brief item 19) and the owner may promote it to material (a later entry, never an edit).
+  minor; the lawyer is asked (brief item 19). The owner chose material (2026-11-08).

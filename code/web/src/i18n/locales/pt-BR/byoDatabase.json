@@ -27,6 +27,7 @@
       "notE2ee": "Isto não é criptografia de ponta a ponta.",
       "pause": "Planos gratuitos de alguns provedores pausam o banco depois de alguns dias sem uso, ou o desligam quando ocioso; aí o app não sincroniza até você retomá-lo.",
       "backups": "Planos gratuitos podem não ter backups ou guardá-los por pouco tempo. O banco, os backups dele e os custos são seus: confira a página do provedor.",
+      "responsibility": "Você é responsável pelo seu banco de dados e pela sua conta no provedor: mantê-lo funcionando, os backups, os custos, as configurações de segurança, quem tem acesso e as senhas que você cria lá. O Lotties não é responsável por registros perdidos, indisponíveis, apagados ou expostos por causa do seu banco, do seu provedor ou das suas configurações lá. O Lotties continua responsável pelo que ele mesmo faz: os servidores dele, os dados no banco dele e como guarda e usa os seus dados de conexão.",
       "ownerOnly": "Nesta primeira versão só você, como Titular, pode usar um bebê cujos registros estão no seu banco: sem outros membros da família, sem acesso de médica e sem lembretes para esse bebê.",
       "leave": "Valem os termos e a região do provedor do banco. Você pode desconectar e levar seus dados a qualquer momento."
     },
@@ -193,6 +194,7 @@
       "fact4": "Valem os termos, a região, os limites e os custos do {{provider}}; planos gratuitos podem pausar e podem não ter backups.",
       "fact5": "Sua conta, os papéis da sua família e o perfil do bebê continuam no banco do Lotties, como hoje.",
       "fact6": "Você pode voltar para o Lotties ou desconectar a qualquer momento.",
+      "fact7": "Você é responsável pelo seu banco de dados e pela sua conta em {{provider}}: disponibilidade, backups, custos, configurações de segurança, quem tem acesso e as funções que você cria. O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição causadas pelo seu banco, por {{provider}} ou pelas suas configurações lá; ele continua responsável pelos próprios servidores, pelo próprio banco e por como trata os seus dados de conexão.",
       "agree": "Entendo e quero guardar os registros deste bebê no meu próprio banco no {{provider}}"
     },
     "test": {
@@ -356,6 +358,12 @@
           "title": "O que o Lotties continua guardando",
           "p1": "Sua conta, consentimentos e ajustes; o perfil do bebê, membros, convites e acesso de médica; os ajustes de notificação; os dados de conexão criptografados, o nome do provedor e o resultado da última verificação; o estado da última mudança.",
           "p2": "Depois de uma mudança, a cópia antiga fica onde os registros estavam por 7 dias (o prazo para desfazer) e depois é apagada."
+        },
+        "responsibility": {
+          "title": "Quem é responsável pelo quê",
+          "p1": "Você é responsável pelo seu banco de dados e pela sua conta no provedor: mantê-lo disponível, os backups e por quanto tempo ficam guardados, os custos, os termos do provedor, as configurações de segurança e quem tem acesso, as senhas e funções que você cria (inclusive as duas que o Lotties usa) e tudo o mais que você guardar no mesmo banco.",
+          "p2": "As cópias que ficam no seu banco também são suas: uma cópia antiga depois que você traz os registros de volta, sobras depois que você desconecta ou troca os dados de conexão, e os registros que continuam lá depois que você exclui sua conta do Lotties, a não ser que marque a opção para apagá-los. O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição causadas pelo seu banco, pelo seu provedor ou pelas suas configurações lá.",
+          "p3": "O Lotties continua responsável pelo que ele mesmo faz: como envia e guarda os seus dados de conexão (criptografados, nunca mais mostrados), os servidores dele e os dados no banco do próprio Lotties. Esta escolha não muda os seus direitos pela lei de proteção de dados."
         },
         "limits": {
           "title": "Limites desta primeira versão",

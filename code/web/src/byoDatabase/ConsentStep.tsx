@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Box, Checkbox, FormControlLabel, Stack, Typography } from '@mui/material';
 
-const FACTS = ['fact1', 'fact2', 'fact3', 'fact4', 'fact5', 'fact6'] as const;
+const FACTS = ['fact1', 'fact2', 'fact3', 'fact4', 'fact5', 'fact6', 'fact7'] as const;
 
 /**
  * Step 4: the optional consent `byo_database` (docs/design/47-bring-your-own-database.md section

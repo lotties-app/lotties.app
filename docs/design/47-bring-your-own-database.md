@@ -765,6 +765,18 @@ database: turning it on").
 
 **Status (2026-11-07): T12 is written** (branch `feat/byo-t12-privacy-legal`): privacy policy 13 (section "Your own database", en + pt-BR), `OWN_DATABASE_FLOW` and the user-chosen recipient in `legal/dataFlows.ts`, the `byo_database` consent text in `legal/byoDatabaseConsent.ts`, `legal/forbiddenClaims.ts` with its test, consent entry `2026-11-07.1` (minor; reason in design 33 section 17), audit 33 section 17, lawyer brief item 19.
 
+**Status (2026-11-08): T12 is HELD, not shipped** (owner decision). Production keeps privacy policy 12 and consent version
+`2026-11-06.1`, with no policy text about own databases, while the feature is off there (`Stores:Enabled=false`,
+allowlist). The privacy change ships at the general release of the feature as **one material consent version**. Every
+shipped legal file is back to its state before #63; the policy section, `OWN_DATABASE_FLOW`, the `chosenBy` recipient
+field, `byoDatabaseConsent.ts` and their tests are kept as a patch in `docs/legal-held/byo-database/` (the README there has
+the release steps: apply, re-check the facts, next policy number and date, one material entry in both version lists with
+the new digest, update audit 33 section 17, the lawyer brief, this status and docs/BYO-DATABASE.md, delete the folder and
+`heldLegal.test.ts`). `legal/forbiddenClaims.ts` stays shipped. Same change (owner request): a plain split of who is
+responsible for what (the person for her database, its provider account, settings, access and copies left there; Lotties
+for its own processing, servers, database and the sealed details), in docs/BYO-DATABASE.md, the choice screen, the setup
+consent step, the in-app guide and the held policy and consent texts; flagged for legal review (brief item 19).
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 

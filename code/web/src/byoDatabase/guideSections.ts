@@ -10,6 +10,7 @@ export const GUIDE_SECTIONS = [
   { id: 'about', paragraphs: 4 },
   { id: 'who', paragraphs: 2 },
   { id: 'keeps', paragraphs: 2 },
+  { id: 'responsibility', paragraphs: 3 },
   { id: 'limits', paragraphs: 3 },
   { id: 'providers', paragraphs: 1 },
   { id: 'moving', paragraphs: 4 },

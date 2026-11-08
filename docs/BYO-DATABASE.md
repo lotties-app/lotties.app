@@ -13,6 +13,20 @@ sections after it), the design in [design/47-bring-your-own-database.md](design/
 > pages and checked against Lotties' own automated tests with a plain Postgres, not on a real Supabase or Neon account.
 > Screens, names and limits there may differ. Lines marked *(not yet tested on a real account)* are the ones most likely to.
 
+> **Who is responsible for what.** When you choose your own database, **you are responsible for that database and your
+> account at its provider**: keeping it available, its backups and how long they are kept, its costs, the provider's terms,
+> its security settings and who can access it, the passwords and roles you create (including the two Lotties uses),
+> anything else you keep in the same database, and any copy of the records left there (an old copy after a move back,
+> leftovers after you disconnect or replace the details, and the records that stay there after you delete your Lotties
+> account unless you ticked the box to delete them, section 12). Lotties is **not responsible for loss, unavailability,
+> deletion or exposure of records caused by your database, your provider or your settings there**. Lotties **stays
+> responsible for what it does itself**: how it sends and keeps your connection details (sealed, section 1), its own servers
+> and the data in Lotties' own database. This choice does not change your rights under privacy law.
+
+> **Privacy policy.** The current Lotties privacy policy does not yet have a section about keeping records in your own
+> database. That section, and the agreement that goes with it, come with the general release of this option; until then
+> the option stays off for most accounts (note above).
+
 ## Contents
 
 1. [What it is, and what it is not](#1-what-it-is-and-what-it-is-not)
@@ -53,6 +67,9 @@ It is a choice **per baby**, and **reversible**: you can move the records back t
   anyone again, you included.
 - **Not a backup.** Your database, its backups and its costs are yours. Some free plans keep no backups. Download a backup
   from Lotties (Hub > Export data) from time to time.
+- **Not a database Lotties looks after.** Its availability, security settings, access and any copy left in it are your
+  responsibility, not Lotties' (box at the top). Lotties answers for its own servers, its own database and how it handles
+  your connection details.
 
 What you gain is **control over where the data lives**: which provider, which region, which account, and the ability to see,
 copy or delete the rows yourself.
@@ -359,4 +376,5 @@ Download a backup from Lotties (Hub > Export data) regularly. Your phone also ke
 delete Lotties' tables by hand: Lotties may refuse a database it no longer recognizes (`store_schema_conflict`).
 
 **Which region should I choose?** One close to you. If it is outside your country, the transfer rules of your country's
-privacy law apply (Lotties' privacy policy, section "Your own database").
+privacy law apply. The Lotties privacy policy section about your own database comes with the general release of this
+option (note at the top).
