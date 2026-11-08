@@ -41,9 +41,10 @@ public static class DemoSampleData
 
         void Add(Guid typeId, DateTimeOffset start, TimeSpan? length, object payload)
         {
-            var end = length is null ? (DateTimeOffset?)null : start + length.Value;
+            // An instant record (diaper, bath) ends when it starts, as the app logs it; a null end would show as a running timer.
+            var end = start + (length ?? TimeSpan.Zero);
             var thisSlot = slot++;
-            if ((end ?? start) > latestEnd || start < earliest)
+            if (end > latestEnd || start < earliest)
             {
                 return;
             }
@@ -54,7 +55,7 @@ public static class DemoSampleData
                 StartedAt = start,
                 EndedAt = end,
                 Payload = EventPayload.From(JsonSerializer.Serialize(payload)),
-                UpdatedAt = end ?? start,
+                UpdatedAt = end,
             }));
         }
 

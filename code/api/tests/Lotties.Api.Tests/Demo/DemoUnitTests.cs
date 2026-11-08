@@ -21,7 +21,9 @@ public sealed class DemoUnitTests
         Assert.Equal(first.Select(item => (item.Slot, item.Request.StartedAt, item.Request.EndedAt, item.Request.Payload.Value)), second.Select(item => (item.Slot, item.Request.StartedAt, item.Request.EndedAt, item.Request.Payload.Value)));
         Assert.All(first, item =>
         {
-            Assert.True((item.Request.EndedAt ?? item.Request.StartedAt) <= Now);
+            // Every record is finished: an open end would show as a running timer in Now.
+            Assert.NotNull(item.Request.EndedAt);
+            Assert.True(item.Request.EndedAt <= Now);
             Assert.True(item.Request.StartedAt >= Now - TimeSpan.FromDays(DemoSampleData.Days));
         });
         Assert.NotEqual(first.Select(item => item.Request.StartedAt), DemoSampleData.Build(Guid.NewGuid(), Now).Select(item => item.Request.StartedAt));
