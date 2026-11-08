@@ -280,6 +280,22 @@ public sealed class NotificationsModelTests
         Assert.Contains("dose_due OR", sql, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void CandidateQueries_LeaveOutBabiesWhosePointerNamesAnExternalStore()
+    {
+        using var context = ModelTestContext.Create();
+        var now = DateTimeOffset.UtcNow;
+
+        var stored = EfBabyNotificationPreferencesRepository.CandidatesQuery(context, now).ToQueryString();
+        var defaults = EfBabyNotificationPreferencesRepository.DefaultCandidatesQuery(context, now).ToQueryString();
+
+        Assert.All(new[] { stored, defaults }, sql =>
+        {
+            Assert.Matches(@"NOT\s*\(?\s*EXISTS", sql);
+            Assert.Matches(@"\.data_store_id IS NOT NULL", sql);
+        });
+    }
+
     private static string Columns(IEnumerable<IReadOnlyProperty> properties) =>
         string.Join(',', properties.Select(property => property.GetColumnName()));
 }
