@@ -252,6 +252,45 @@ public sealed class DataStoreMoveTests
         Assert.Equal(3, source.RecordCount);
     }
 
+    [Fact]
+    public void OwnStoreThatMayHoldRecords_MoveIn_IsTheTargetUntilAFailedMovesLeftoversAreGone()
+    {
+        var copying = Started();
+        var moved = Moved();
+        var failed = Started();
+        failed.Fail("store_unavailable", leftoversPending: true, Start);
+        var cleaned = Started();
+        cleaned.Fail("store_unavailable", leftoversPending: true, Start);
+        cleaned.LeftoversRemoved(Start);
+
+        Assert.Equal(OwnStore, copying.OwnStoreThatMayHoldRecords);
+        Assert.Equal(OwnStore, moved.OwnStoreThatMayHoldRecords);
+        Assert.Equal(OwnStore, failed.OwnStoreThatMayHoldRecords);
+        Assert.Null(cleaned.OwnStoreThatMayHoldRecords);
+    }
+
+    [Fact]
+    public void OwnStoreThatMayHoldRecords_MoveOut_IsTheSourceUntilTheOldCopyWasDeleted()
+    {
+        var undoWindow = MovedOut();
+        var unreachable = MovedOut();
+        unreachable.OldCopyRemoved(deleted: false, Start);
+        var deleted = MovedOut();
+        deleted.OldCopyRemoved(deleted: true, Start);
+
+        Assert.Equal(OwnStore, undoWindow.OwnStoreThatMayHoldRecords);
+        Assert.Equal(OwnStore, unreachable.OwnStoreThatMayHoldRecords);
+        Assert.Null(deleted.OwnStoreThatMayHoldRecords);
+    }
+
+    private static DataStoreMove MovedOut()
+    {
+        var move = DataStoreMove.Start(BabyId, DataStoreMoveDirection.Out, OwnStore, Worker, Start, Lease);
+        move.BeginVerify(Worker, Start, Lease);
+        move.Complete(Worker, Start, Window);
+        return move;
+    }
+
     private static DataStoreMove Started() => DataStoreMove.Start(BabyId, DataStoreMoveDirection.In, OwnStore, Worker, Start, Lease);
 
     private static DataStoreMove Moved()

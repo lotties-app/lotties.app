@@ -13,6 +13,28 @@ public sealed class StoreMovingException(TimeSpan? retryAfter = null)
 {
 }
 
+/// <summary>
+/// The account that alone keeps this baby is being deleted (task T10): saves of its records are refused with a retriable
+/// <c>503 store_account_deleting</c> and <c>Retry-After</c> (the outbox keeps the change; the account and the baby are gone a moment
+/// later), reads keep working.
+/// </summary>
+public sealed class StoreAccountDeletingException(TimeSpan? retryAfter = null)
+    : StoreFailureException(StoreFailureClass.AccountDeleting, "This account is being deleted. Changes to this baby's records are not saved.", retryAfter)
+{
+}
+
+/// <summary>
+/// The account deletion of this baby is already running (409): a second deletion of the same account, or a move of a baby whose
+/// account is being deleted. It ends within seconds (or, if that deletion failed, the block is cleared).
+/// </summary>
+public sealed class AccountDeletionInProgressException : DomainException
+{
+    public AccountDeletionInProgressException()
+        : base("account_deletion_in_progress", "This account is being deleted right now. Wait a moment.")
+    {
+    }
+}
+
 /// <summary>A move of this baby's records is already running (409): wait for it to end.</summary>
 public sealed class DataStoreMoveInProgressException : DomainException
 {

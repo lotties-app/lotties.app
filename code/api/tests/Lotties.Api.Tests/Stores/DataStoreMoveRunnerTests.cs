@@ -154,6 +154,23 @@ public sealed class DataStoreMoveRunnerTests
     }
 
     [Fact]
+    public async Task ProcessDue_StoppedMoveOfABabyWhoseAccountIsBeingDeleted_IsNotResumed()
+    {
+        StartMove(DataStoreMoveDirection.In);
+        using var stop = new CancellationTokenSource();
+        _copier.AfterCopy = _ => stop.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Runner().RunStartedAsync(BabyId, stop.Token));
+        _copier.AfterCopy = null;
+        _clock.Advance(_options.Lease);
+        _moves.Deleting = true;
+
+        await Runner(holder: "another-worker").ProcessDueAsync(BabyId);
+
+        Assert.Equal(DataStoreKey.BuiltIn, _stores.Assignment.Store);
+        Assert.NotEqual(DataStoreMoveState.Moved, _moves.Move!.State);
+    }
+
+    [Fact]
     public async Task ProcessDue_StoppedOnTheLastAttempt_GivesUpAndEmptiesTheTarget()
     {
         StartMove(DataStoreMoveDirection.In);
@@ -303,8 +320,8 @@ public sealed class DataStoreMoveRunnerTests
 
         public Task<DataStoreMove?> FindAsync(Guid babyId, CancellationToken cancellationToken = default) => Task.FromResult(Move);
 
-        public Task<bool> BlocksWritesAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default) =>
-            Task.FromResult(Move?.BlocksWrites(now) ?? false);
+        public Task<StoreWriteBlock> WriteBlockAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Move?.BlocksWrites(now) == true ? StoreWriteBlock.Moving : StoreWriteBlock.None);
 
         public Task<IReadOnlyList<Guid>> ListDueAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<Guid>>(Move is null ? [] : [Move.BabyId]);
@@ -313,6 +330,12 @@ public sealed class DataStoreMoveRunnerTests
 
         public Task<bool> TrySaveAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(++_saves != RefuseSaveNumber);
+
+        /// <summary>The baby's account is being deleted: a claim is refused (task T10).</summary>
+        public bool Deleting { get; set; }
+
+        public async Task<DataStoreMoveSave> TrySaveUnlessDeletingAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default) =>
+            Deleting ? DataStoreMoveSave.AccountDeleting : await TrySaveAsync(cancellationToken) ? DataStoreMoveSave.Saved : DataStoreMoveSave.Conflict;
     }
 
     /// <summary>The baby's pointer and the owner's store row.</summary>

@@ -135,6 +135,87 @@ describe('delete account in settings', () => {
     },
   );
 
+  it('offers to delete the records in her own database only when a baby is there', async () => {
+    renderSection((path) => (path === '/api/v1/me/deletion-preview' ? preview() : undefined));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete my account…' }));
+
+    expect(await screen.findByText('Lia')).toBeTruthy();
+    expect(screen.queryByText(/in your own database/)).toBeNull();
+    expect(
+      screen.queryByRole('checkbox', {
+        name: "Also delete these babies' records in my own database",
+      }),
+    ).toBeNull();
+  });
+
+  it.each([
+    [false, '/api/v1/me'],
+    [true, '/api/v1/me?wipeOwnDatabase=true'],
+  ])(
+    'deletes the records in her own database only when she ticks the box (%s)',
+    async (tick, deletePath) => {
+      const { calls } = renderSection((path, method) =>
+        method === 'DELETE'
+          ? { identityRemoved: true, identity: 'removed' }
+          : path === '/api/v1/me/deletion-preview'
+            ? preview({ ownDatabaseBabies: [{ id: 'b1', name: 'Lia' }] })
+            : undefined,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete my account…' }));
+      const wipe = await screen.findByRole('checkbox', {
+        name: "Also delete these babies' records in my own database",
+      });
+      expect((wipe as HTMLInputElement).checked).toBe(false);
+      expect(
+        screen.getByText(/The records of these babies are in your own database/),
+      ).toBeTruthy();
+      if (tick) fireEvent.click(wipe);
+      fireEvent.click(
+        screen.getByRole('checkbox', { name: 'I understand that this is permanent.' }),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Delete everything' }));
+
+      expect(await screen.findByText('Account deleted')).toBeTruthy();
+      expect(calls.filter((call) => call.method === 'DELETE').map((call) => call.path)).toEqual([
+        deletePath,
+      ]);
+      expect(screen.queryByText(/could not reach your own database/)).toBeNull();
+    },
+  );
+
+  it('lists the babies whose records in her own database could not be deleted', async () => {
+    renderSection((path, method) =>
+      method === 'DELETE'
+        ? {
+            identityRemoved: true,
+            identity: 'removed',
+            ownDatabaseWiped: [],
+            ownDatabaseNotWiped: ['b1'],
+          }
+        : path === '/api/v1/me/deletion-preview'
+          ? preview({ ownDatabaseBabies: [{ id: 'b1', name: 'Lia' }] })
+          : undefined,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete my account…' }));
+    fireEvent.click(
+      await screen.findByRole('checkbox', {
+        name: "Also delete these babies' records in my own database",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'I understand that this is permanent.' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete everything' }));
+
+    expect(await screen.findByText('Account deleted')).toBeTruthy();
+    const notice = screen.getByRole('alert');
+    expect(notice.textContent).toMatch(/could not reach your own database/);
+    expect(notice.textContent).toMatch(/Lia/);
+  });
+
   it('keeps the dialog open with the error when the server refuses', async () => {
     renderSection((path, method) => {
       if (method === 'DELETE') throw httpError(409, 'account_deletion_blocked');
@@ -148,6 +229,25 @@ describe('delete account in settings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete everything' }));
 
     expect(await screen.findByText(/only owner of a baby that other people use/)).toBeTruthy();
+    expect(screen.queryByText('Account deleted')).toBeNull();
+  });
+
+  it.each([
+    ['store_move_in_progress', /being moved between Lotties and your own database/],
+    ['account_deletion_in_progress', /This account is already being deleted/],
+  ])('says why the server refused the deletion (%s)', async (code, text) => {
+    renderSection((path, method) => {
+      if (method === 'DELETE') throw httpError(409, code);
+      return path === '/api/v1/me/deletion-preview' ? preview() : undefined;
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete my account…' }));
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'I understand that this is permanent.' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete everything' }));
+
+    expect(await screen.findByText(text)).toBeTruthy();
     expect(screen.queryByText('Account deleted')).toBeNull();
   });
 });

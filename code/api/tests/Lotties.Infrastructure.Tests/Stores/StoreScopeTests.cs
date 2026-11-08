@@ -316,6 +316,31 @@ public sealed class StoreScopeTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveChanges_RecordOfABabyWhoseAccountIsBeingDeleted_ThrowsAccountDeletingBeforeTheDatabase()
+    {
+        _moves.Deleting.Add(BabyInX);
+        await Stores.EnterAsync(BabyInX);
+        var context = Stores.ContextFor(BabyInX);
+        context.Events.Add(Diaper(BabyInX));
+
+        var error = await Assert.ThrowsAsync<StoreAccountDeletingException>(() => context.SaveChangesAsync());
+
+        Assert.Equal(("store_account_deleting", StoreFailureClass.AccountDeleting), (error.Code, error.Failure));
+        Assert.False(StoreFailureCodes.CountsAsConnectionFailure(StoreFailureClass.AccountDeleting));
+    }
+
+    [Fact]
+    public async Task TryEnterBuiltInAsync_BabyWhoseAccountIsBeingDeleted_BlocksItsWritesToo()
+    {
+        _moves.Deleting.Add(HostedBaby);
+        Assert.True(await Stores.TryEnterBuiltInAsync(HostedBaby));
+        var context = Stores.ContextFor(HostedBaby);
+        context.Events.Add(Diaper(HostedBaby));
+
+        await Assert.ThrowsAsync<StoreAccountDeletingException>(() => context.SaveChangesAsync());
+    }
+
+    [Fact]
     public async Task EnterAsync_FlagOff_NeverAsksWhetherAMoveRuns()
     {
         _routing.Enabled = false;
@@ -407,20 +432,28 @@ public sealed class StoreScopeTests : IDisposable
     private static Event Diaper(Guid babyId) =>
         Event.Create(Guid.NewGuid(), babyId, BuiltInEventTypes.DiaperId, Guid.NewGuid(), DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, EventPayload.From("""{"content":"WET"}"""), null, DateTimeOffset.UnixEpoch);
 
-    /// <summary>Moves of no database: <see cref="Moving"/> are the babies whose writes are blocked; every question is remembered.</summary>
+    /// <summary>
+    /// Moves of no database: <see cref="Moving"/> are the babies whose writes a move blocks, <see cref="Deleting"/> those whose account
+    /// is being deleted; every question is remembered.
+    /// </summary>
     private sealed class FakeMoves : IDataStoreMoveRepository
     {
         public HashSet<Guid> Moving { get; } = [];
+
+        public HashSet<Guid> Deleting { get; } = [];
 
         public List<Guid> Asked { get; } = [];
 
         public Task<DataStoreMove?> FindAsync(Guid babyId, CancellationToken cancellationToken = default) => Task.FromResult<DataStoreMove?>(null);
 
-        public Task<bool> BlocksWritesAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default)
+        public Task<StoreWriteBlock> WriteBlockAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default)
         {
             Asked.Add(babyId);
-            return Task.FromResult(Moving.Contains(babyId));
+            return Task.FromResult(Deleting.Contains(babyId) ? StoreWriteBlock.AccountDeleting : Moving.Contains(babyId) ? StoreWriteBlock.Moving : StoreWriteBlock.None);
         }
+
+        public Task<DataStoreMoveSave> TrySaveUnlessDeletingAsync(Guid babyId, DateTimeOffset now, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
 
         public Task<IReadOnlyList<Guid>> ListDueAsync(DateTimeOffset now, int limit, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<Guid>>([]);

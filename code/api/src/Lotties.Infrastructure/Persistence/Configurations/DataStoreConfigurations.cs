@@ -67,6 +67,7 @@ internal sealed class BabyStoreAssignmentConfiguration : IEntityTypeConfiguratio
         builder.Property(assignment => assignment.BabyId).HasColumnName(KeyColumn).ValueGeneratedNever();
         builder.Property(assignment => assignment.DataStoreId);
         builder.Property(assignment => assignment.Epoch).HasColumnName("store_epoch").IsRequired().HasDefaultValue(0);
+        builder.Property(assignment => assignment.AccountDeletionStartedAt).HasColumnName("account_deletion_started_at");
         builder.Ignore(assignment => assignment.Store);
         builder.Ignore(assignment => assignment.Route);
         builder.HasOne<Baby>().WithOne().HasForeignKey<BabyStoreAssignment>(assignment => assignment.BabyId).OnDelete(DeleteBehavior.Cascade);

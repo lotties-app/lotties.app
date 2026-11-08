@@ -36,12 +36,20 @@ public sealed class AccountDeletionPreviewResponse
     /// </summary>
     public bool IdentityRemovable { get; set; }
 
-    public static AccountDeletionPreviewResponse For(AccountDeletionPlan plan, bool identityRemovable)
+    /// <summary>
+    /// The babies of <see cref="DeletedBabies"/> whose records (or a copy a move left) are in the user's own database
+    /// (docs/design/47-bring-your-own-database.md section 9): the app offers to delete them there too (<c>wipeOwnDatabase</c>).
+    /// </summary>
+    public IReadOnlyList<AccountDeletionBabyResponse> OwnDatabaseBabies { get; set; } = [];
+
+    public static AccountDeletionPreviewResponse For(AccountDeletionPlan plan, bool identityRemovable, IReadOnlyCollection<Guid> ownDatabaseBabyIds)
     {
         ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(ownDatabaseBabyIds);
         return new AccountDeletionPreviewResponse
         {
             DeletedBabies = [.. plan.Deleted.Select(baby => (AccountDeletionBabyResponse)baby)],
+            OwnDatabaseBabies = [.. plan.Deleted.Where(baby => ownDatabaseBabyIds.Contains(baby.Id)).Select(baby => (AccountDeletionBabyResponse)baby)],
             SharedBabies = [.. plan.Left.Select(baby => (AccountDeletionBabyResponse)baby)],
             BlockedBabies = [.. plan.Blocked.Select(baby => (AccountDeletionBabyResponse)baby)],
             CanDelete = plan.Blocked.Count == 0,
@@ -51,13 +59,29 @@ public sealed class AccountDeletionPreviewResponse
 }
 
 /// <summary>
+/// <c>DELETE /api/v1/me</c> options (query string). <see cref="WipeOwnDatabase"/> (default false, opt-in): also delete, in the user's own
+/// database, the records of the babies erased with the account (docs/design/47-bring-your-own-database.md section 9). Without it her
+/// database is left as it is.
+/// </summary>
+public sealed class AccountDeletionRequest
+{
+    public bool WipeOwnDatabase { get; set; }
+}
+
+/// <summary>
 /// <c>DELETE /api/v1/me</c> result. The Lotties data is always erased by then; <see cref="Identity"/> says what happened to
 /// the sign-in account (<c>removed</c>, <c>not_configured</c>, <c>failed</c>) and <see cref="IdentityRemoved"/> is its
-/// boolean form (kept for older clients).
+/// boolean form (kept for older clients). With <c>wipeOwnDatabase</c>, <see cref="OwnDatabaseWiped"/> and
+/// <see cref="OwnDatabaseNotWiped"/> list the babies whose records in her own database were deleted, or could not be (the database
+/// was unreachable, slow or refused; they are still there and Lotties can no longer reach it); both are empty otherwise.
 /// </summary>
 public sealed class AccountDeletionResponse
 {
     public bool IdentityRemoved => Identity == IdentityRemoval.Removed;
 
     public IdentityRemoval Identity { get; set; }
+
+    public IReadOnlyList<Guid> OwnDatabaseWiped { get; set; } = [];
+
+    public IReadOnlyList<Guid> OwnDatabaseNotWiped { get; set; } = [];
 }

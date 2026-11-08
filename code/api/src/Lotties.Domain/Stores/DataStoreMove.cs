@@ -129,6 +129,21 @@ public sealed class DataStoreMove
     public bool IsInProgress => State is DataStoreMoveState.Copying or DataStoreMoveState.Verifying;
 
     /// <summary>
+    /// The owner's store this move may have left records of the baby in, else <c>null</c> (account deletion, task T10, deletes them there
+    /// before the row goes when the person asks for it): the target of a move in (the baby's records once it switched, a partial copy
+    /// while or after it failed, unless its leftovers were already deleted) and the source of a move out (the baby's records before it
+    /// switched, the old copy in the undo window or after a cleanup that could not reach it, unless that copy was deleted). It can be the
+    /// store the baby points at; deleting there twice is harmless.
+    /// </summary>
+    public Guid? OwnStoreThatMayHoldRecords => this switch
+    {
+        { Direction: DataStoreMoveDirection.In, State: DataStoreMoveState.Failed, LeftoversPending: false } => null,
+        { Direction: DataStoreMoveDirection.In } => TargetStoreId,
+        { State: DataStoreMoveState.Completed, OldCopyDeletedAt: not null } => null,
+        _ => SourceStoreId,
+    };
+
+    /// <summary>
     /// A new move of <paramref name="babyId"/> between the built-in store and the owner's store <paramref name="ownStoreId"/>, held by
     /// <paramref name="holder"/> for <paramref name="lease"/>: it blocks the baby's writes from now on.
     /// </summary>

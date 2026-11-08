@@ -2,6 +2,7 @@ using Lotties.Domain.Babies;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Notes;
 using Lotties.Domain.Proposals;
+using Lotties.Domain.Stores;
 using Lotties.Domain.Users;
 using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
@@ -17,14 +18,18 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// Every column of the model that points at a baby or a user has a rule in <c>AccountErasureTests.Rules</c> (Lotties.Api.Tests):
 /// a new one fails that test until it gets a rule here and a row in its fixture. Most foreign keys to <c>babies</c> are
 /// <c>RESTRICT</c>, so a table missing below makes the deletion fail (on PostgreSQL and SQLite alike) instead of leaving rows.
-/// The data tables are erased through the control context, which only the built-in database has: before anything is deleted,
-/// every baby whose records are touched is entered in the <see cref="StoreScope"/> and must be on the built-in store, else the
-/// erasure fails with <c>store_unavailable</c> and changes nothing (a family's own database is erased by task T10). Her
-/// <c>data_stores</c> rows go with her personal records (docs/design/47-bring-your-own-database.md section 9), and an erased baby's
-/// <c>data_store_moves</c> row goes with the baby. Hook for task T10: a baby moved back to Lotties can still have its old copy (undo
-/// window) or a failed move's leftovers in her own database; that row names the store (<c>DataStoreMove.Source</c> of a
-/// <c>moved</c> move, <c>Target</c> of a <c>failed</c> one with leftovers), and T10 must delete them there with
-/// <c>IStoreRecordCopier.WipeAsync</c> before the row and the descriptor go (today they stay in her database, under her control).
+/// The data tables are erased through the control context, which only the built-in database has (there they also hold the old
+/// copy of a baby that moved into her own database during the undo window). A baby on an external store
+/// (docs/design/47-bring-your-own-database.md section 9, task T10): with <see cref="ExternalStoreErasure.Refuse"/> (the demo cleanup)
+/// every baby whose records are touched is entered in the <see cref="StoreScope"/> and must be on the built-in store, else the erasure
+/// fails with <c>store_unavailable</c> and changes nothing; with <see cref="ExternalStoreErasure.LottiesSideOnly"/> (account deletion) a
+/// baby erased with the account is erased here whatever its store, because <c>AccountDeletionService</c> already deleted its records in
+/// her own database when she asked for it (<see cref="FindOwnStoreCopiesAsync"/> names them), and only the babies that stay for other
+/// members must be on the built-in store. Her <c>data_stores</c> rows (sealed descriptors) go with her personal records in every case,
+/// and an erased baby's <c>data_store_moves</c> row goes with the baby. The eraser never opens an external store itself.
+/// No table holds anonymous aggregates derived from babies today (no statistics or insights table exists); a future one is kept on
+/// deletion only if it holds no identifier and cannot be traced back to a baby or an account, and needs a rule saying so in
+/// <c>AccountErasureTests.Rules</c> (design 47 section 9).
 /// </summary>
 internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope stores) : IAccountDataEraser
 {
@@ -65,15 +70,78 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope s
         return new AccountDeletionPlan(deleted, left, blocked);
     }
 
-    public async Task EraseAsync(Guid userId, string anonymousName, DateTimeOffset now, CancellationToken cancellationToken = default)
+    public async Task<OwnStoreCopies> FindOwnStoreCopiesAsync(Guid userId, IReadOnlyCollection<Guid> babyIds, CancellationToken cancellationToken = default)
     {
-        var plan = await PlanAsync(userId, cancellationToken);
-        if (plan.Blocked.Count > 0)
+        ArgumentNullException.ThrowIfNull(babyIds);
+        var storeIds = await context.DataStores.AsNoTracking().Where(store => store.OwnerUserId == userId).Select(store => store.Id).ToListAsync(cancellationToken);
+        var pointers = await context.BabyStoreAssignments.AsNoTracking()
+            .Where(row => babyIds.Contains(row.BabyId) && row.DataStoreId != null)
+            .Select(row => new OwnStoreCopy(row.BabyId, row.DataStoreId!.Value))
+            .ToListAsync(cancellationToken);
+        var moves = await context.DataStoreMoves.AsNoTracking().Where(row => babyIds.Contains(row.BabyId)).ToListAsync(cancellationToken);
+        var leftovers = moves
+            .Where(move => move.OwnStoreThatMayHoldRecords is not null)
+            .Select(move => new OwnStoreCopy(move.BabyId, move.OwnStoreThatMayHoldRecords!.Value));
+        IReadOnlyList<OwnStoreCopy> copies = [.. pointers.Concat(leftovers).Where(copy => storeIds.Contains(copy.StoreId)).Distinct()];
+        return new OwnStoreCopies(copies, storeIds);
+    }
+
+    /// <remarks>
+    /// On PostgreSQL the update takes the babies' row locks: a move start that holds one is waited for, and the check that follows (a
+    /// new statement, so a new snapshot) then sees its committed move row; a move start that comes after waits for this transaction
+    /// and then matches nothing (<c>IDataStoreMoveRepository.TrySaveUnlessDeletingAsync</c>). A stale block (older than
+    /// <c>AccountDeletionBlock.MaxAge</c>) is taken over.
+    /// </remarks>
+    public async Task BeginDeletionAsync(IReadOnlyCollection<Guid> babyIds, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(babyIds);
+        if (babyIds.Count == 0)
         {
-            throw new AccountDeletionBlockedException([.. plan.Blocked.Select(baby => baby.Id)]);
+            return;
         }
 
-        await stores.RequireBuiltInAsync([.. plan.Deleted.Select(baby => baby.Id), .. plan.Left.Select(baby => baby.Id)], cancellationToken);
+        var staleBefore = AccountDeletionBlock.StaleBefore(now);
+        DateTimeOffset? startedAt = now.ToUniversalTime();
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        var blocked = await context.BabyStoreAssignments
+            .Where(row => babyIds.Contains(row.BabyId) && (row.AccountDeletionStartedAt == null || row.AccountDeletionStartedAt <= staleBefore))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.AccountDeletionStartedAt, startedAt), cancellationToken);
+        EnsureAllBlocked(blocked, babyIds.Count);
+        await EnsureNoMoveRunningAsync(babyIds, now, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    public async Task CancelDeletionAsync(IReadOnlyCollection<Guid> babyIds, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(babyIds);
+        await context.BabyStoreAssignments
+            .Where(row => babyIds.Contains(row.BabyId))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.AccountDeletionStartedAt, (DateTimeOffset?)null), cancellationToken);
+    }
+
+    private static void EnsureAllBlocked(int blocked, int babies)
+    {
+        if (blocked != babies)
+        {
+            throw new AccountDeletionInProgressException();
+        }
+    }
+
+    /// <summary>A move whose worker holds the row (copying, verifying, or deleting an old copy or leftovers) refuses the deletion.</summary>
+    private async Task EnsureNoMoveRunningAsync(IReadOnlyCollection<Guid> babyIds, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var at = now.ToUniversalTime();
+        if (await context.DataStoreMoves.AnyAsync(move => babyIds.Contains(move.BabyId) && move.LeaseUntil != null && move.LeaseUntil > at, cancellationToken))
+        {
+            throw new DataStoreMoveInProgressException();
+        }
+    }
+
+    public async Task EraseAsync(Guid userId, string anonymousName, DateTimeOffset now, ExternalStoreErasure externalStores, CancellationToken cancellationToken = default)
+    {
+        var plan = await PlanAsync(userId, cancellationToken);
+        plan.EnsureNotBlocked();
+        await stores.RequireBuiltInAsync(BabiesThatMustBeBuiltIn(plan, externalStores), cancellationToken);
         var user = await context.Users.SingleAsync(candidate => candidate.Id == userId, cancellationToken);
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         await DeleteBabiesAsync([.. plan.Deleted.Select(baby => baby.Id)], cancellationToken);
@@ -83,6 +151,12 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope s
         await context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
+
+    /// <summary>The babies whose records the erasure reaches through the control context only, so they must be on the built-in store.</summary>
+    private static IReadOnlyList<Guid> BabiesThatMustBeBuiltIn(AccountDeletionPlan plan, ExternalStoreErasure externalStores) =>
+        externalStores == ExternalStoreErasure.Refuse
+            ? [.. plan.DeletedIds, .. plan.Left.Select(baby => baby.Id)]
+            : [.. plan.Left.Select(baby => baby.Id)];
 
     private async Task DeleteBabiesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
     {

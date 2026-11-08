@@ -2591,6 +2591,10 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTimeOffset?>("AccountDeletionStartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("account_deletion_started_at");
+
                     b.Property<Guid?>("DataStoreId")
                         .HasColumnType("uuid")
                         .HasColumnName("data_store_id");

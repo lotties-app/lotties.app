@@ -98,16 +98,18 @@ public sealed class StoreRoutingFlagOffTests(StoreRoutingFlagOffHost routing) : 
     }
 
     [Fact]
-    public async Task DeleteAccount_OwnerOfABabyOnAnExternalStore_Is503AndErasesNothing()
+    public async Task DeleteAccount_OwnerOfABabyOnAnExternalStoreAskingForTheWipe_ErasesLottiesSideAndReportsTheStoreNotReached()
     {
         var (baby, ownerId, storeId) = await SeedExternalBabyAsync();
 
-        var response = await Host.ClientFor(baby.OwnerSubject).DeleteAsync("/api/v1/me");
+        var response = await Host.ClientFor(baby.OwnerSubject).DeleteAsync("/api/v1/me?wipeOwnDatabase=true");
 
-        await response.AssertProblemAsync(HttpStatusCode.ServiceUnavailable, "store_unavailable");
-        Assert.True(await Factory.QueryAsync(context => context.Babies.AnyAsync(item => item.Id == baby.BabyId)));
-        Assert.True(await Factory.QueryAsync(context => context.DataStores.AnyAsync(store => store.Id == storeId)));
-        Assert.Null(await Factory.QueryAsync(context => context.Users.Where(user => user.Id == ownerId).Select(user => user.DeletedAt).SingleAsync()));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.ReadAsync<JsonElement>();
+        Assert.Equal([baby.BabyId], result.GetProperty("ownDatabaseNotWiped").EnumerateArray().Select(item => item.GetGuid()));
+        Assert.False(await Factory.QueryAsync(context => context.Babies.AnyAsync(item => item.Id == baby.BabyId)));
+        Assert.False(await Factory.QueryAsync(context => context.DataStores.AnyAsync(store => store.Id == storeId)));
+        Assert.NotNull(await Factory.QueryAsync(context => context.Users.Where(user => user.Id == ownerId).Select(user => user.DeletedAt).SingleAsync()));
     }
 
     [Fact]

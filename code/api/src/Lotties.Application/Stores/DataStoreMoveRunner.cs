@@ -82,8 +82,9 @@ internal sealed class DataStoreMoveRunner(
         });
     }
 
+    /// <summary>Takes the row for <paramref name="work"/>; never while the baby's account is being deleted (task T10).</summary>
     private async Task<bool> ClaimAsync(DataStoreMove move, DataStoreMoveWork work, CancellationToken cancellationToken) =>
-        move.TryClaim(work, Holder, Now, options.Lease) && await moves.TrySaveAsync(cancellationToken);
+        move.TryClaim(work, Holder, Now, options.Lease) && await moves.TrySaveUnlessDeletingAsync(move.BabyId, Now, cancellationToken) == DataStoreMoveSave.Saved;
 
     private async Task CopyAndSwitchAsync(DataStoreMove move, CancellationToken cancellationToken)
     {

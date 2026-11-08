@@ -181,7 +181,7 @@ public sealed class StoreRoutingTests(StoreRoutingHost routing) : IClassFixture<
     }
 
     [Fact]
-    public async Task DeleteAccount_OwnerOfABabyOnAnExternalStore_FailsClosedAndErasesNothing()
+    public async Task DeleteAccount_OwnerOfABabyOnAnExternalStoreWithoutWipe_ErasesLottiesSideAndLeavesHerStore()
     {
         var family = await SeedFamilyAsync(1);
         var storeX = await AssignNewStoreAsync(family, family.Babies[0]);
@@ -189,10 +189,10 @@ public sealed class StoreRoutingTests(StoreRoutingHost routing) : IClassFixture<
 
         var response = await Host.ClientFor(family.Subject).DeleteAsync("/api/v1/me");
 
-        await response.AssertProblemAsync(HttpStatusCode.ServiceUnavailable, "store_unavailable");
-        Assert.True(await Factory.QueryAsync(context => context.Babies.AnyAsync(baby => baby.Id == family.Babies[0])));
-        Assert.True(await Factory.QueryAsync(context => context.DataStores.AnyAsync(store => store.Id == storeX)));
-        Assert.Null(await Factory.QueryAsync(context => context.Users.Where(user => user.Id == family.OwnerId).Select(user => user.DeletedAt).SingleAsync()));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(await Factory.QueryAsync(context => context.Babies.AnyAsync(baby => baby.Id == family.Babies[0])));
+        Assert.False(await Factory.QueryAsync(context => context.DataStores.AnyAsync(store => store.Id == storeX)));
+        Assert.NotNull(await Factory.QueryAsync(context => context.Users.Where(user => user.Id == family.OwnerId).Select(user => user.DeletedAt).SingleAsync()));
         Assert.Single(await IdsInStoreAsync(storeX));
     }
 

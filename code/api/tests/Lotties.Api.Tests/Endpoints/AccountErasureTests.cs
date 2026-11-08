@@ -25,7 +25,8 @@ namespace Lotties.Api.Tests.Endpoints;
 /// named like a reference), and <see cref="Rules"/> says what deletion does to it. A new table or column with such a
 /// reference fails <see cref="Rules_CoverEveryBabyAndUserReferenceInTheModel"/> until it gets a rule, an erasure step in
 /// <c>EfAccountDataEraser</c> and a row in the fixture below (<see cref="Delete_AloneOnABabyWithARowInEveryTable_ErasesEverything"/>
-/// fails when a scoped table has no row before the deletion).
+/// fails when a scoped table has no row before the deletion). The other half, what deletion does in a family's own database (the 12
+/// data tables there), is <c>Stores/AccountErasureOwnStoreTests.OwnStoreTables</c> and its fixture.
 /// </summary>
 public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
@@ -48,6 +49,15 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
 
         /// <summary>Some rows go and some stay (private notes, pending proposals, unaccepted invites go); asserted one by one.</summary>
         Partial,
+
+        /// <summary>
+        /// Kept, anonymous: reserved for a future table of aggregates derived from babies (statistics, community insights; none
+        /// exists today). Allowed only for a table that holds no identifier (no baby, account or record id, no name or free text)
+        /// and cannot be traced back to a baby or a family (for example, every group has a minimum size); the rule's line here must
+        /// say why. An aggregate that fails either test is personal data and gets <see cref="Erase"/> (design 47 section 9,
+        /// design 33). Keyed by the table name alone; the table must exist and have no column this test finds as a reference.
+        /// </summary>
+        KeepAnonymous,
     }
 
     /// <summary>Every reference to a baby or a user in the model, by <c>table.column</c>.</summary>
@@ -89,7 +99,8 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["board_items.created_by_user_id"] = Rule.Clear,
         ["care_providers.created_by"] = Rule.KeepForTheFamily,
 
-        // Her bring-your-own-database stores (sealed descriptors) go with her (docs/design/47 section 9).
+        // Her bring-your-own-database stores (sealed descriptors) go with her in every case (docs/design/47 section 9); the
+        // erased babies' rows in that database go only when she asks for it (wipeOwnDatabase): AccountErasureOwnStoreTests.
         ["data_stores.owner_user_id"] = Rule.Erase,
         ["events.created_by"] = Rule.KeepForTheFamily,
         ["formulas.created_by"] = Rule.KeepForTheFamily,
@@ -129,9 +140,12 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
     public async Task Rules_CoverEveryBabyAndUserReferenceInTheModel()
     {
         var references = await factory.QueryAsync(context => Task.FromResult(ReferencesIn(context.Model).Select(reference => reference.Key).ToHashSet(StringComparer.Ordinal)));
+        var tables = await factory.QueryAsync(context => Task.FromResult(context.Model.GetEntityTypes().Select(entity => entity.GetTableName()).ToHashSet(StringComparer.Ordinal)));
+        var anonymous = Rules.Where(rule => rule.Value == Rule.KeepAnonymous).Select(rule => rule.Key).ToList();
 
         Assert.Empty(references.Except(Rules.Keys).Order(StringComparer.Ordinal));
-        Assert.Empty(Rules.Keys.Except(references).Order(StringComparer.Ordinal));
+        Assert.Empty(Rules.Keys.Except(anonymous).Except(references).Order(StringComparer.Ordinal));
+        Assert.All(anonymous, table => Assert.True(tables.Contains(table) && !references.Any(key => key.StartsWith(table + ".", StringComparison.Ordinal)), $"{table}: kept anonymous, so it must exist and hold no reference"));
     }
 
     [Fact]

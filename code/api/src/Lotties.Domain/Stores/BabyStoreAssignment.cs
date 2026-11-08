@@ -22,6 +22,12 @@ public sealed class BabyStoreAssignment
     /// <summary>Changes with every move to another store; never goes back.</summary>
     public int Epoch { get; private set; }
 
+    /// <summary>
+    /// When the deletion of the account that alone keeps the baby started (<see cref="AccountDeletionBlock"/>, task T10), else
+    /// <c>null</c>. Set and cleared by conditional updates of the account eraser, never through this entity.
+    /// </summary>
+    public DateTimeOffset? AccountDeletionStartedAt { get; private set; }
+
     public DataStoreKey Store => DataStoreKey.Of(DataStoreId);
 
     public StoreRoute Route => new(Store, Epoch);
