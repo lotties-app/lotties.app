@@ -65,16 +65,27 @@ public sealed class StoreDescriptorTests
     }
 
     [Theory]
-    [InlineData("pw;Options=-c x")]
-    [InlineData("pw=1")]
     [InlineData("pw\r\n")]
     [InlineData("pw\0")]
-    public void StoreEndpointCreate_PasswordWithForbiddenCharacter_ThrowsWithoutEchoingIt(string password)
+    [InlineData("pw\tx")]
+    public void StoreEndpointCreate_PasswordWithControlCharacter_ThrowsWithoutEchoingIt(string password)
     {
         var exception = Assert.Throws<DomainValidationException>(() => StoreEndpoint.Create("h", 5432, "db", "user", password));
 
         Assert.Equal("app.password", exception.Field);
         Assert.DoesNotContain(password.TrimEnd('\r', '\n', '\0'), exception.Message);
+    }
+
+    [Theory]
+    [InlineData("pw;Options=-c x")]
+    [InlineData("pw=1")]
+    [InlineData("p'w\"x y")]
+    public void StoreEndpointCreate_PasswordWithSeparatorsOrQuotes_IsKeptExactly(string password)
+    {
+        var app = StoreEndpoint.Create("h", 5432, "db", "user", password);
+        var migrator = StoreMigratorEndpoint.Create("h", 5432, "user", password);
+
+        Assert.Equal((password, password), (app.Password.Reveal(), migrator.Password.Reveal()));
     }
 
     [Theory]

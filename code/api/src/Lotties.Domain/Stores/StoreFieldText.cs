@@ -4,8 +4,10 @@ namespace Lotties.Domain.Stores;
 
 /// <summary>
 /// Shape rules for the typed fields of a <see cref="StoreDescriptor"/> (docs/design/47-bring-your-own-database.md section
-/// 3.2 step 1): bounded length, no control characters and none of <c>;</c> <c>=</c>, so no connection-string option can
-/// be smuggled in. Error messages name the field only, never the value.
+/// 3.2 step 1): bounded length, no control characters and, for hosts, databases, user names and labels, none of <c>;</c>
+/// <c>=</c>, so no connection-string option can be smuggled in. A password may hold any character but a control character:
+/// real provider passwords contain <c>=</c> and <c>;</c>, and the connection string is built by
+/// <c>NpgsqlConnectionStringBuilder</c>, which quotes and escapes every value. Error messages name the field only, never the value.
 /// </summary>
 internal static class StoreFieldText
 {
@@ -32,12 +34,12 @@ internal static class StoreFieldText
         return trimmed!;
     }
 
-    /// <summary>A secret: kept exactly as typed (not trimmed), required, spaces allowed.</summary>
+    /// <summary>A secret: kept exactly as typed (not trimmed), required, any character but a control character.</summary>
     public static string Secret(string? value, string field, int maxLength)
     {
         EnsurePresent(value, field);
         EnsureLength(value!, field, maxLength);
-        EnsureNoForbiddenCharacters(value!, field, allowSpaces: true);
+        EnsureNoControlCharacters(value!, field);
         return value!;
     }
 
@@ -65,6 +67,14 @@ internal static class StoreFieldText
     private static void EnsureNoForbiddenCharacters(string value, string field, bool allowSpaces)
     {
         if (value.Any(character => IsForbidden(character, allowSpaces)))
+        {
+            throw new DomainValidationException(field, $"{field} contains a character that is not allowed.");
+        }
+    }
+
+    private static void EnsureNoControlCharacters(string value, string field)
+    {
+        if (value.Any(char.IsControl))
         {
             throw new DomainValidationException(field, $"{field} contains a character that is not allowed.");
         }

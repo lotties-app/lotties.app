@@ -13,11 +13,10 @@ public sealed class StoreConnectionFieldsTests
     [InlineData("username", "postgres", "lotties'app", "secret")]
     [InlineData("username", "postgres", "lotties\"app", "secret")]
     [InlineData("username", "postgres", null, "secret")]
-    [InlineData("password", "postgres", "lotties_app", "pa=ss")]
-    [InlineData("password", "postgres", "lotties_app", "pa;Passfile=/etc/passwd")]
-    [InlineData("password", "postgres", "lotties_app", "pa\\ss")]
     [InlineData("password", "postgres", "lotties_app", "pa\0ss")]
-    [InlineData("password", "postgres", "lotties_app", "senhaçã")]
+    [InlineData("password", "postgres", "lotties_app", "pa\r\nss")]
+    [InlineData("password", "postgres", "lotties_app", "pa\u007fss")]
+    [InlineData("password", "postgres", "lotties_app", null)]
     public void Create_ForbiddenValue_ThrowsInvalidFieldNamingOnlyTheField(string field, string? database, string? username, string? password)
     {
         var exception = Assert.Throws<StoreEndpointRejectedException>(() => StoreConnectionFields.Create(database, username, password));
@@ -42,6 +41,27 @@ public sealed class StoreConnectionFieldsTests
 
         Assert.Equal("lotties_app.abcdefghijklmnopqrst", fields.Username);
         Assert.Equal("Xk9-p_Q.r!t@z#", fields.Password);
+    }
+
+    [Theory]
+    [InlineData("pa=ss")]
+    [InlineData("pa;Passfile=/etc/passwd")]
+    [InlineData("pa\\ss")]
+    [InlineData("it's \"quoted\" with spaces")]
+    [InlineData("senhaçã")]
+    public void Create_PasswordWithAnyPrintableCharacter_KeepsItExactly(string password)
+    {
+        var fields = StoreConnectionFields.Create("postgres", "lotties_app", password);
+
+        Assert.Equal(password, fields.Password);
+    }
+
+    [Fact]
+    public void Create_PasswordTooLong_ThrowsInvalidField()
+    {
+        var exception = Assert.Throws<StoreEndpointRejectedException>(() => StoreConnectionFields.Create("db", "u", new string('p', StoreConnectionFields.MaxPasswordLength + 1)));
+
+        Assert.Equal("password", exception.Details["field"]);
     }
 
     [Fact]
