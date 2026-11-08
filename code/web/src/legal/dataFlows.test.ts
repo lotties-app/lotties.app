@@ -5,6 +5,7 @@ import {
   CURATED_CREDIT_PRIVACY,
   DATA_CATEGORY_IDS,
   ON_DEVICE_FLOWS,
+  OWN_DATABASE_FLOW,
   PLANNED_FLOWS,
   THIRD_PARTIES,
   THIRD_PARTY_IDS,
@@ -56,6 +57,56 @@ const SENSOR_WORDS: Readonly<Record<Locale, Record<string, RegExp>>> = {
     alert: /Choro detectado/,
     neverAsks: /não pede[^.]*microfone/,
   },
+};
+
+/* The facts the own-database section must state (dataFlows.ts OWN_DATABASE_FLOW), per language. */
+const OWN_DATABASE_WORDS: Readonly<Record<Locale, Record<string, RegExp>>> = {
+  en: {
+    optional: /off by default/,
+    perBaby: /for each baby/,
+    postgres: /PostgreSQL/,
+    sameApp: /exactly as before/,
+    through: /through the Lotties servers/,
+    serversRead: /can read them/,
+    cipher: /AES-256-GCM/,
+    operator: /people who run them, can open them/,
+    notE2E: /not end-to-end encryption/,
+    neverShown: /never shown again/,
+    logs: /out of our logs/,
+    chosen: /Lotties does not choose it/,
+    region: /region you pick/,
+    pause: /pause/,
+    backups: /no backups/,
+    notAvailable: /no reminders, no invited members and no doctor access/,
+    ownerOnly: /Only the baby's owner/,
+    back: /move the records back/,
+    staysWithLotties: /With Lotties: your sign-in account, your consent records/,
+  },
+  'pt-BR': {
+    optional: /desligado por padrão/,
+    perBaby: /para cada bebê/,
+    postgres: /PostgreSQL/,
+    sameApp: /exatamente como antes/,
+    through: /por meio dos servidores do Lotties/,
+    serversRead: /conseguem lê-los/,
+    cipher: /AES-256-GCM/,
+    operator: /pessoas que os operam, conseguem abri-los/,
+    notE2E: /não é criptografia de ponta a ponta/,
+    neverShown: /nunca mais são mostrados/,
+    logs: /fora dos nossos logs/,
+    chosen: /O Lotties não a escolhe/,
+    region: /região que você escolher/,
+    pause: /pausar/,
+    backups: /não ter backup/,
+    notAvailable: /não tem lembretes, membros convidados nem acesso de médicos/,
+    ownerOnly: /Só o titular do bebê/,
+    back: /trazer os registros de volta/,
+    staysWithLotties: /Com o Lotties: a sua conta de acesso, os seus registros de consentimento/,
+  },
+};
+const OWN_DATABASE_NAME: Readonly<Record<Locale, RegExp>> = {
+  en: /own database/i,
+  'pt-BR': /próprio banco de dados/i,
 };
 
 const sectionOf = (locale: Locale, id: string) =>
@@ -229,6 +280,62 @@ describe('the data flows behind the privacy policy', () => {
       );
     },
   );
+
+  describe('the own-database flow (docs/design/47, docs/design/33 section 17)', () => {
+    const flow = OWN_DATABASE_FLOW;
+
+    it('is opt-in per baby, reversible, Owner only, to a provider the person chooses', () => {
+      expect(flow.trigger).toBe('optIn');
+      expect(flow.defaultOn).toBe(false);
+      expect(flow.per).toBe('baby');
+      expect(flow.reversible).toBe(true);
+      expect(flow.consentBy).toEqual(['Owner']);
+      expect(flow.consentKind).toBe('byo_database');
+      expect(DATA_CATEGORY_IDS as readonly string[]).toContain(flow.dataCategory);
+      const party = THIRD_PARTIES.find((candidate) => candidate.id === flow.recipient);
+      expect(party).toMatchObject({ trigger: 'optIn', abroad: true, chosenBy: 'user' });
+      // Every other recipient is named by Lotties itself.
+      expect(THIRD_PARTIES.filter((p) => p.chosenBy === 'user').map((p) => p.id)).toEqual([
+        flow.recipient,
+      ]);
+    });
+
+    it('states the honest limits: through our servers, readable by the operator, not end-to-end', () => {
+      expect(flow.throughLottiesServers).toBe(true);
+      expect(flow.connectionDetails).toEqual({
+        cipher: 'AES-256-GCM',
+        keyHeldBy: 'operator',
+        readableByLottiesServer: true,
+        endToEnd: false,
+        shownAgain: false,
+        logged: false,
+      });
+      expect(flow.notAvailable).toEqual(['reminders', 'members', 'doctors']);
+      expect(flow.backupsBy).toBe('user');
+    });
+
+    it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
+      'is described in the %s policy: its section, its data row, its recipient, basis, retention, security and transfers',
+      (locale) => {
+        const words = OWN_DATABASE_WORDS[locale];
+        const section = JSON.stringify(sectionOf(locale, flow.sectionId));
+        for (const [name, pattern] of Object.entries(words)) expect(section, name).toMatch(pattern);
+        const first = sectionOf(locale, flow.sectionId)?.blocks[0];
+        expect(first?.kind).toBe('note');
+        const link = `#privacy-${flow.sectionId}`;
+        expect(JSON.stringify(dataRow(locale, flow.dataCategory))).toContain(link);
+        expect(JSON.stringify(recipientRow(locale, flow.recipient))).toContain(link);
+        for (const id of ['legal-bases', 'retention', 'security', 'transfers', 'rights'] as const) {
+          expect(JSON.stringify(sectionOf(locale, id)), id).toMatch(OWN_DATABASE_NAME[locale]);
+        }
+      },
+    );
+  });
+
+  it('raised the policy version with the own database (version 13 of 2026-11-07 or later)', () => {
+    expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(13);
+    expect(PRIVACY_POLICY_LAST_UPDATED >= '2026-11-07').toBe(true);
+  });
 
   it('raised the policy version with the cry monitor (version 3 of 2026-10-24 or later)', () => {
     expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(3);

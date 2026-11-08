@@ -71,6 +71,7 @@ export const POLICY_SECTION_IDS = [
   'legal-bases',
   'consent',
   'sharing',
+  'own-database',
   'children',
   'rights',
   'retention',

@@ -61,6 +61,7 @@ I; **LI** = art. 7, IX (legitimate interest, never for sensitive data); **Legal*
 | 22a | Feeding settings (`user_feeding_settings`, 2026-11-01, docs/design/20-feeding-amounts.md section 3) | one boolean per user ("Time bottle feedings") and the time it changed; not sensitive, no baby data | lets the web and the voice assistants start a bottle as a timer the same way | Contract (the service the user asked for) | the user | until changed or account deletion | account deletion (`EfAccountDataEraser`, a rule and a fixture row in `AccountErasureTests`); never in the baby backup file | no |
 | 23 | Consent records (`user_consents`, `user_consent_history`, 2026-10-27, policy 9, docs/design/38-consent-and-terms.md) | per person and kind (`core`, `push`, `alexa`, `mcp`): internal user id, the consent version (the pair terms version + policy version), when it was given or withdrawn, the language of the text she read and, for the core consent, the capacity she declared (the child's parent or legal guardian, or an adult they authorised); an append-only history line for each grant or withdrawal. **No IP address, no device data**; not baby data | to show that a person consented to the terms and the policy before any baby data was reached, to ask again after a material change, to keep the optional choices (reminders, Alexa, AI assistants) | Legal / Contract (proof of the consent that is the basis of the health data: art. 11, I, art. 14, §1; `OWNER TO CONFIRM`) | the person herself (`GET /me/consents`, Settings > Privacy and data); the server uses the core record to gate every baby route | until the account is deleted (a minimal proof kept after deletion is a question for the lawyer, docs/PRIVACY-LAWYER-BRIEF.md) | erased by account deletion (`EfAccountDataEraser`, rules in `AccountErasureTests`) | shown in Settings > Privacy and data; a request to the contact |
 | 24 | Caregiver rest estimate (`user_rest_settings`, `user_rest_mornings`, 2026-10-30, policy 10, docs/design/41-caregiver-rest.md; **off by default for everyone**) | per person: on/off, time zone, work windows, night window, two minute values; optionally one "I am up" time per night. The **estimate is not data held**: the server computes it on request from the baby's log (rows of categories 4 and 5), returns it only to the caller and stores it nowhere. It can say when an adult works and rested, so it may be read as health-adjacent | show the person, and only her, a rough range of when she may have rested | Consent (art. 7, I; art. 11, I if read as health data) given by the person's own toggle, `OWNER TO CONFIRM` with the lawyer whether a separate explicit consent is needed (doc 41 sections 6 and 10 item 5) | the person herself only; never another member, the Owner, a Doctor, an assistant (Alexa, MCP), the backup file, the sync or a log line; no third party, nothing leaves our infrastructure | until changed, deleted by the person, or account deletion | `DELETE /me/rest-settings` (settings and every morning answer); account deletion (`EfAccountDataEraser`, rules and fixture rows in `AccountErasureTests`); never in the baby backup | no |
+| 25 | Own database connection (`data_stores`, `babies.data_store_id`, `babies.store_epoch`, 2026-11-07, policy 13, docs/design/47-bring-your-own-database.md; **off by default, behind `Stores:Enabled` and `Stores:Allowlist`**) | per Owner account: the provider label she types, the sealed descriptor (host, port, database, the app and migrator user names and passwords, an optional CA certificate; AES-256-GCM envelope, data key wrapped by a key from a Secret, `ConfiguredKeyWrapper`/`StoreCredentials`), state, schema version, last check time and coarse result; per baby: the store pointer and a sync epoch. No baby record. The baby's care records (design 47 D2) then live in **her** database, schema `lotties` | read and write that baby's records in the database she chose; tell her when it is unreachable | Consent (art. 7, I; art. 11, I) given by the Owner with the optional consent `byo_database` before a descriptor is saved (`403 byo_consent_required` otherwise); `OWNER TO CONFIRM` with the lawyer (brief item 19) | the Owner sees the label, state and check result (`GET /babies/{id}/data-store`), never the host, user, database, password or CA; the API opens the descriptor to connect; **the operator holds the key and can open it** | until the store is removed or account deletion | `DELETE /babies/{id}/data-store`; account deletion (`AccountErasureTests.Rules` for `data_stores`); never in the baby backup file | no (the Owner removes it) |
 
 ## 3. Third parties and requests that leave our servers
 
@@ -78,6 +79,7 @@ I; **LI** = art. 7, IX (legitimate interest, never for sensitive data); **Legal*
 | Let's Encrypt, Cloudflare (DNS) | certificate issuance (no user data); DNS | infrastructure | | Cloudflare proxying `OWNER TO CONFIRM` |
 | Origin marker of assistant writes (2026-10-25, policy 5) | the event payload members `via` / `updated_via` = the adapter name (`alexa`, `mcp`), no text, id or token | marks entries made by voice or AI in the app | no new data flow: it is part of the event the user already stores and syncs; the deletion request adds `delete_requested_via` (adapter name) and `delete_requested_at` (a time) to the same event, nothing else | stored with the event | with the event | with the event |
 | AI assistants through an MCP server | the tool results (text and structured JSON) of the facts the assistant asks for, to the provider of the client the user connects; since policy version 7 with **no baby name unless `sayBabyName`** and no free text or names of people (same rule as Alexa, docs/design/32-assistants.md section 7); since version 8 no doctor or clinic data but the specialty code, the logging tools take only the built-in options of each field, and there is no medication tool (a medicine name would only be in a result with `sayMedicineNames`) | the user connects a client and grants `lotties.read` (and `lotties.write`) | the provider's (for Claude: Anthropic) | built; **off** unless `Mcp__Enabled` is set (docs/MCP.md) |
+| The database provider the Owner chooses (Supabase, Neon, any PostgreSQL host; **named by the user, not by Lotties**) | the baby's care records (design 47 D2: events, custom event types, medications, prescriptions, formulas, appointments, care providers, vaccinations, measurements, notes, proposals, note reads), written and read by the API with the Owner's least-privilege roles; the TCP/TLS connection from the API's address. The phone never connects to it | the Owner connects a database for a baby and gives the `byo_database` consent (section 17) | the provider's, in the region the Owner picked (may be abroad, art. 33) | T3/T4 built on `main`; endpoints (T6) on a branch; move in/out (T7) not built; **off** (`Stores:Enabled` false by default) |
 | Community insights: opt-in pooled statistics (includes the bottle amount aggregate of docs/design/10 phase 2) | nothing | **not built** (section 11, docs/design/34-community-insights.md) | none planned (own servers) | no |
 
 Analytics, telemetry, ads, crash SDKs, third-party fonts and CDNs: **none**. Evidence: no such dependency in
@@ -373,3 +375,45 @@ new recipient and no new sensor. The policy text, `legal/dataFlows.ts` and the c
 makes the demo collect anything about the visitor (an e-mail for follow-up, analytics), it is a policy change first. The demo core
 consent is recorded with capacity `demo` (never `guardian`); the visitor is told on the landing button that continuing accepts the
 terms and the privacy policy and that no real data should be typed.
+
+## 17. Bring your own database (2026-11-07, policy 13, docs/design/47-bring-your-own-database.md)
+
+Status: the sealed descriptor (T3), the endpoint guard (T4) and the store routing (T2) are on `main`; the management
+endpoints and the `byo_database` consent kind (T6) are on a branch; the move in and out (T7), the reminder and assistant
+handling (T11) and the account-deletion half in the user's database (T10) are not built. Everything is behind
+`Stores:Enabled` (off by default) and a per-account allowlist. The policy describes the feature as built to design 47's
+MVP; the facts below are the ones the text is held to (`legal/dataFlows.ts` `OWN_DATABASE_FLOW`, `dataFlows.test.ts`).
+
+- **What changes for the person**: nothing about the app or the account. Only where one baby's care records are stored
+  changes: in a PostgreSQL database the baby's Owner picks (inventory row 25, section 3), read and written by the API.
+  Opt-in, per baby, reversible; Lotties-hosted storage stays the default for everyone.
+- **What stays with Lotties**: accounts, consents, memberships and roles, invites, doctor access, push, settings, the
+  `babies` row (design 47 D3), and the sealed connection details.
+- **Who can read**: the records pass through the API on every read and write (in memory only; the design forbids a
+  persistent cache of health values in the Lotties database). The descriptor is AES-256-GCM sealed: a dump or backup of
+  the control database alone does not reveal it, but **the API and the operator, who hold the key, can open it**. Not
+  end-to-end encryption, not operator-blind (design 47 sections 3.3, 3.5, 11). The descriptor is never returned by an
+  endpoint and is kept out of logs (`StoreCredentialsRedactionTests`).
+- **The recipient**: a provider the person names and contracts herself (`THIRD_PARTIES` `ownDatabaseProvider`,
+  `chosenBy: 'user'`), under its own terms, in the region she picked (art. 33 when abroad). It sees the API's address,
+  never the phone's. It may pause, throttle or close a free database and may have no backups; Lotties keeps no copy
+  after the move and its undo window (design 47 section 6, T7), and points to the export (design 24).
+- **Not available for such a baby in the MVP**: reminders, invited members, doctor access (design 47 D9, D11). BYO
+  babies are also left out of any aggregate (design 47 section 2.2), which today has nothing to leave out (community
+  insights is not built).
+- **Consent**: the optional consent `byo_database`, given by the Owner before a descriptor is saved. Its text lives in
+  `code/web/src/legal/byoDatabaseConsent.ts` (en, pt-BR; legal-owned, part of the consent `textDigest`), names the
+  provider and states the facts above.
+- **What the texts must never say**: `code/web/src/legal/forbiddenClaims.ts` (`findForbiddenClaims`) lists the claims
+  ("end-to-end", "only you can read", "Lotties cannot see", "zero-knowledge", "never touches our servers", "we do not
+  store your data", pt-BR equivalents) with the honest negation "this is not end-to-end encryption" allowed;
+  `forbiddenClaims.test.ts` scans the policy, the terms and the consent text, and the own-database screens' tests can
+  reuse it.
+- **Policy**: version 13 (2026-11-07) adds the section "Your own database", a data row, a recipient row and lines in
+  legal bases, consent, rights, retention, security and transfers, in both languages.
+- **Consent version**: a `minor` entry (`2026-11-07.1`, policy 13). The material rule (`ConsentVersions`: new data
+  collected, a new recipient or purpose, a change in rights or in who is responsible) is read here per person: for
+  everyone who does not opt in, nothing is collected, sent or changed, so a new acceptance from everyone would ask them
+  to agree to something that does not touch them. The one person whose data does go to the new recipient gives the
+  separate `byo_database` consent, with the provider named, before anything is sent. Design 47 section 10 recommends
+  minor; the lawyer is asked (brief item 19) and the owner may promote it to material (a later entry, never an edit).

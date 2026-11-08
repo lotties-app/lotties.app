@@ -26,7 +26,7 @@ export const privacyPtBR: PolicyDocument = {
         items: [
           'Nada de publicidade, de ferramentas de análise ou rastreamento, nem de venda de dados.',
           'Nada de orientação médica: o Lotties não é um dispositivo médico.',
-          'Seus dados só chegam a outras empresas quando você usa um recurso que depende delas, como lembretes ou a Alexa.',
+          'Seus dados só chegam a outras empresas quando você usa um recurso que depende delas, como lembretes ou a Alexa, ou quando você conecta um banco de dados seu para um bebê.',
         ],
       },
       {
@@ -92,7 +92,7 @@ export const privacyPtBR: PolicyDocument = {
               id: 'consent',
               cells: [
                 'Seus registros de consentimento',
-                'Quando você aceita os termos de uso e esta política: seu identificador interno de usuário, a versão que você aceitou, a data e a hora, o idioma em que você leu e se você declarou ser pai, mãe ou responsável legal da criança ou um adulto autorizado por eles. O mesmo para cada recurso opcional que você liga ou desliga (lembretes, a skill da Alexa, assistentes de IA). Sem endereço IP e sem dados do aparelho.',
+                'Quando você aceita os termos de uso e esta política: seu identificador interno de usuário, a versão que você aceitou, a data e a hora, o idioma em que você leu e se você declarou ser pai, mãe ou responsável legal da criança ou um adulto autorizado por eles. O mesmo para cada recurso opcional que você liga ou desliga (lembretes, a skill da Alexa, assistentes de IA, seu próprio banco de dados). Sem endereço IP e sem dados do aparelho.',
                 'Para comprovar que você consentiu, para pedir de novo depois de uma mudança relevante e para guardar as escolhas opcionais que você fez. Apagados junto com a sua conta.',
               ],
             },
@@ -185,6 +185,14 @@ export const privacyPtBR: PolicyDocument = {
               ],
             },
             {
+              id: 'ownDatabase',
+              cells: [
+                'Seu próprio banco de dados (opcional, desligado por padrão)',
+                'Só se o titular de um bebê conectar um banco de dados próprio para esse bebê: o nome do provedor que ele digita, os dados de conexão (endereço do servidor, porta, nome do banco, dois nomes de usuário e as senhas deles, e um certificado, se ele adicionar), guardados criptografados, e o estado da conexão com o resultado e o horário da última verificação. Os registros de cuidado desse bebê passam então a ficar no banco dele, e não no nosso (veja [Seu próprio banco de dados](#privacy-own-database)).',
+                'Para ler e gravar os registros desse bebê no banco que ele escolheu, e para avisar quando o banco não puder ser acessado.',
+              ],
+            },
+            {
               id: 'technical',
               cells: [
                 'Registros técnicos (logs)',
@@ -251,6 +259,7 @@ export const privacyPtBR: PolicyDocument = {
             'Recursos opcionais que você ativa (lembretes, a skill da Alexa, a busca de endereço): seu consentimento (art. 7º, I, e art. 11, I quando o lembrete for de um remédio ou de uma vacina). Para revogá-lo, desative o recurso ou desvincule a skill.',
             'A estimativa de descanso: seu consentimento, dado quando você a liga para você em Insights, porque ela pode revelar quando você trabalha e descansa (art. 7, I, e art. 11, I, por poder ser lida como informação de saúde). Ninguém pode ligá-la por você. Você a revoga desligando-a, e pode apagar os ajustes e as respostas ali mesmo.',
             'O Monitor de choro: seu consentimento específico, pedido em cada aparelho antes de ligar, a um membro que pode registrar para o bebê (art. 11, I, e art. 14, § 1º). Você o revoga na página do monitor; os períodos já registrados continuam como registros comuns até você apagá-los.',
+            'Guardar os registros de um bebê no seu próprio banco de dados: o consentimento específico do titular do bebê, dado numa tela própria antes de o banco ser conectado (art. 7º, I, e art. 11, I). Ele o revoga trazendo os registros de volta para o Lotties e removendo o banco.',
             'Registros técnicos e proteção do serviço: nosso legítimo interesse em mantê-lo funcionando e seguro (art. 7º, IX), limitado ao necessário e sem usar informações de saúde.',
             'Quando a lei ou uma autoridade exigir que guardemos ou entreguemos dados: cumprimento de obrigação legal (art. 7º, II, e art. 11, II, a).',
           ],
@@ -274,7 +283,7 @@ export const privacyPtBR: PolicyDocument = {
           items: [
             'O que registramos: seu identificador de usuário, a versão, a data e a hora, o idioma do texto e a condição que você declarou. Não registramos seu endereço IP. Os registros são apagados junto com a sua conta.',
             'Enquanto você não aceitar, o servidor recusa qualquer pedido de dados de um bebê, e os lembretes, a skill da Alexa e os assistentes de IA não funcionam para você. Você sempre pode abrir os ajustes da conta, baixar seus dados e apagar sua conta.',
-            'Os recursos opcionais (lembretes, a skill da Alexa, assistentes de IA) têm consentimento próprio, desligado por padrão, registrado quando você liga ou desliga, com uma frase ao lado do botão dizendo o que sai do nosso controle.',
+            'Os recursos opcionais (lembretes, a skill da Alexa, assistentes de IA, guardar os registros de um bebê no seu próprio banco de dados) têm consentimento próprio, desligado por padrão, registrado quando você liga ou desliga, com uma frase ao lado do botão dizendo o que sai do nosso controle.',
             'Uma mudança relevante (novos dados coletados, um novo destinatário ou finalidade, uma mudança nos seus direitos ou em quem é o responsável) pede seu consentimento de novo antes de você continuar. Uma mudança pequena mostra um aviso com um link para esta página.',
             'Você pode retirar o consentimento a qualquer momento. Como o Lotties não funciona sem ele, retirar significa baixar seus dados e apagar sua conta em Ajustes > Privacidade e dados. Se você recusar no início, sai do app e nada sobre uma criança é guardado.',
             'O Lotties está em fase de teste: pode ter falhas, ficar fora do ar e perder dados, e nenhum sistema é totalmente seguro, então não dá para descartar um vazamento. Adotamos as medidas de segurança descritas abaixo e, se algo relevante acontecer, avisamos você e a ANPD, como a lei exige.',
@@ -341,6 +350,14 @@ export const privacyPtBR: PolicyDocument = {
                   ],
                 },
                 {
+                  id: 'ownDatabaseProvider',
+                  cells: [
+                    'O provedor de banco de dados que você escolhe (como Supabase, Neon ou qualquer outro serviço de PostgreSQL)',
+                    'Os registros de cuidado do bebê, gravados e lidos pelos servidores do Lotties, e o endereço de rede desses servidores. Não é o Lotties que escolhe essa empresa: é você, e os termos dela e a região que você escolher valem para o que ela guarda.',
+                    'Só se o titular do bebê conectar um banco de dados próprio para esse bebê (veja [Seu próprio banco de dados](#privacy-own-database)).',
+                  ],
+                },
+                {
                   id: 'addressLookup',
                   cells: [
                     'Busca de endereço: BrasilAPI, ViaCEP e o Nominatim do OpenStreetMap',
@@ -377,6 +394,85 @@ export const privacyPtBR: PolicyDocument = {
             {
               kind: 'p',
               text: 'Também podemos revelar dados quando a lei ou uma ordem judicial exigir.',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // Banco de dados próprio (dataFlows.ts OWN_DATABASE_FLOW, docs/design/47-bring-your-own-database.md):
+      // os fatos são conferidos por dataFlows.test.ts; forbiddenClaims.ts lista o que nunca pode afirmar.
+      id: 'own-database',
+      title: 'Seu próprio banco de dados (opcional)',
+      blocks: [
+        {
+          kind: 'note',
+          text: 'Opcional, escolhido para cada bebê e desligado por padrão. A menos que o titular de um bebê conecte um banco de dados próprio, o Lotties hospeda todos os dados desse bebê, como descreve o resto desta política. O recurso pode ainda não estar disponível para a sua conta.',
+        },
+        {
+          kind: 'p',
+          text: 'O titular de um bebê pode escolher guardar os registros de cuidado desse bebê em um banco de dados PostgreSQL próprio, num provedor que ele escolhe (como Supabase, Neon ou outro). Você continua usando o app Lotties e a sua conta exatamente como antes: só muda onde os registros de cuidado do bebê ficam guardados. O Lotties lê e grava esses registros lá, por meio dos servidores do Lotties, para o app funcionar.',
+        },
+      ],
+      subsections: [
+        {
+          id: 'where',
+          title: 'O que fica onde',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'No seu banco: os registros de cuidado do bebê, ou seja, os registros do dia a dia, os seus próprios tipos de registro, remédios e receitas, fórmulas, consultas, médicos e clínicas salvos, vacinas, medidas e notas.',
+                'Com o Lotties: a sua conta de acesso, os seus registros de consentimento, quem participa do bebê e com qual papel, o perfil do bebê, os seus ajustes e os dados de conexão do seu banco (abaixo).',
+                'No seu aparelho: a mesma cópia offline que o app guarda para qualquer bebê.',
+              ],
+            },
+          ],
+        },
+        {
+          id: 'who-reads',
+          title: 'Quem consegue ler',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'Sempre que o app lê ou grava os registros, eles passam pelos servidores do Lotties, que conseguem lê-los nesse momento e podem mantê-los por pouco tempo na memória dos servidores.',
+                'Os dados de conexão que você informa são guardados criptografados (AES-256-GCM) e nunca mais são mostrados, nem para você. A chave fica com quem opera o Lotties; por isso os servidores do Lotties, e as pessoas que os operam, conseguem abri-los. Uma cópia do banco de dados do Lotties sozinha não os revela.',
+                'Isto não é criptografia de ponta a ponta. Escolher o seu próprio banco muda onde os registros ficam guardados, não quem consegue lê-los por meio do Lotties.',
+                'Os dados de conexão e os registros ficam fora dos nossos logs; uma linha de log sobre o seu banco guarda só um identificador interno, o tipo de problema e quanto tempo levou.',
+                'O seu provedor consegue acessar o que fica guardado com ele, segundo os termos dele. Só os servidores do Lotties se conectam a ele, por uma conexão criptografada cujo certificado eles conferem; o seu celular nunca se conecta.',
+              ],
+            },
+          ],
+        },
+        {
+          id: 'provider',
+          title: 'O seu provedor e a sua responsabilidade',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'O provedor é uma empresa que você escolhe. O Lotties não a escolhe e não a controla. Os termos dela, os preços dela e o país ou a região que você escolher valem para os registros guardados lá.',
+                'Você é responsável por essa conta. Um provedor pode pausar um banco gratuito depois de um tempo sem uso, limitá-lo ou encerrá-lo, mudar os termos ou perder dados, e planos gratuitos podem não ter backup. Enquanto o seu banco não puder ser acessado, o app mostra o que está no seu aparelho e guarda os novos registros até conseguir enviá-los.',
+                'O Lotties não faz backup dos registros guardados no seu banco. Baixe com frequência um backup do bebê em [Central > Exportar dados](/hub/export).',
+                'O Lotties continua responsável, como descreve esta política, pelo que faz com os registros: lê-los e gravá-los para o app funcionar.',
+              ],
+            },
+          ],
+        },
+        {
+          id: 'limits',
+          title: 'O que não está disponível, e como levar e trazer os dados',
+          blocks: [
+            {
+              kind: 'list',
+              items: [
+                'Só o titular do bebê pode conectar um banco, depois de concordar com um consentimento separado que cita o provedor e diz estes fatos. Ele é registrado como os outros consentimentos opcionais.',
+                'Nesta primeira versão, um bebê cujos registros estão no seu próprio banco não tem lembretes, membros convidados nem acesso de médicos.',
+                'Ao conectar um banco, você pode levar para ele os registros que o bebê já tem. A cópia nos servidores do Lotties é apagada depois de um curto prazo para desfazer, cuja data o app mostra; até lá os registros também continuam com o Lotties.',
+                'Você pode trazer os registros de volta para o armazenamento do Lotties a qualquer momento e então remover o banco. O Lotties então apaga os dados de conexão que guarda; o que você deixar no seu banco continua lá, sob o seu controle, até você apagar.',
+                'Excluir a sua conta no Lotties apaga os dados de conexão. Os registros no seu próprio banco são seus: apague-os lá quando quiser.',
+              ],
             },
           ],
         },
@@ -426,6 +522,7 @@ export const privacyPtBR: PolicyDocument = {
                 'Apagar registros: um registro apagado some na hora em todos os aparelhos. O servidor o mantém oculto, para que todos os aparelhos fiquem sabendo da exclusão, até o bebê ou a sua conta serem excluídos; se você precisar que ele seja eliminado antes, fale com a gente.',
                 'Parar de compartilhar: o titular remove membros e médicos em [Central > Membros e papéis](/hub/family), onde qualquer pessoa também pode sair de um bebê.',
                 'Revogar o consentimento de recursos opcionais: desative as notificações em [Ajustes](/settings#notifications), desvincule a skill no app Alexa, mude ou encerre o acesso de um médico em [Central > Acesso do médico](/hub/family#doctor-access) desligue a estimativa de descanso ou apague os dados dela na aba Descanso de [Insights](/insights), e retire o consentimento do Monitor de choro na página dele, [Central > Monitor de choro](/hub/cry-monitor), em cada aparelho.',
+                'Seu próprio banco de dados: traga os registros de um bebê de volta para o Lotties, ou remova o banco, na tela onde ele foi conectado; o que você deixar nesse banco fica sob o seu controle.',
                 'Excluir sua conta: [Ajustes > Conta e dados](/settings#account) > Excluir minha conta (na área do médico, [Ajustes > Conta e dados](/doctor/settings#account)). Bebês que só você usa são apagados com todos os registros. Em um bebê que outras pessoas mantêm, seu acesso termina; suas notas privadas, lembretes e perfil de médico são apagados; e o que você adicionou continua para elas sob o nome "Former member" (ex-membro). Se você for o único titular de um bebê que outras pessoas usam, torne outra pessoa titular antes.',
                 'Sua conta de acesso no nosso servidor de login é excluída junto com seus dados quando o nosso servidor está configurado para isso, e o app diz antes da confirmação se ela será. Quando não está configurado, ou o servidor de login não responde naquele momento, seus dados são apagados mesmo assim, o app avisa que a conta de acesso continua (ela não guarda dados de bebês), e você pode nos pedir a remoção.',
               ],
@@ -460,6 +557,7 @@ export const privacyPtBR: PolicyDocument = {
             'Lembretes: o registro de envio por 14 dias; adiamentos e dispensas por 7 dias após a última mudança. Um aparelho que fica 90 dias sem abrir o app para de receber lembretes, e o endereço de push de um aparelho desativado é apagado 30 dias depois.',
             'Registro de acessos de médicos e convites: ficam com o bebê até ele ser excluído.',
             'Monitor de choro: o som nunca é guardado. Os períodos de choro que ele registra são registros comuns (acima); o consentimento fica no aparelho até você retirá-lo ou sair da conta.',
+            'Seu próprio banco de dados: os dados de conexão até o banco ser removido ou você excluir sua conta; os registros guardados nele pelo tempo que você e o seu provedor os mantiverem.',
             'Registros técnicos (logs): só pelo tempo necessário para operar e proteger o serviço.',
             'Cópias do banco feitas antes de atualizações: apagadas quando não forem mais necessárias. Até lá, ainda contêm dados apagados nesse meio-tempo.',
             'No seu aparelho: até você sair da conta (o app então apaga a cópia) ou limpar os dados do app.',
@@ -483,6 +581,7 @@ export const privacyPtBR: PolicyDocument = {
             'Só as páginas do próprio Lotties podem usar o microfone (uma Política de Permissões), e só depois que você liga o Monitor de choro; o navegador mostra quando ele está em uso.',
             'Limites de quantidade e de tamanho de pedidos; a conexão com a Alexa confere a assinatura da Amazon em cada pedido.',
             'O servidor usa uma conta de banco de dados com permissões limitadas e mantém senhas e chaves fora do código-fonte. Os logs do próprio app deixam de fora o que você escreve.',
+            'Se o titular de um bebê conectar um banco de dados próprio: os servidores do Lotties só o acessam num endereço público da internet, por uma conexão criptografada cujo certificado eles conferem, e guardam os dados de conexão criptografados (veja [Seu próprio banco de dados](#privacy-own-database)).',
             'O acesso de administrador aos servidores é restrito ao mantenedor. Só olhamos os dados guardados quando é preciso para operar o serviço, resolver um problema que você relatou ou cumprir a lei.',
           ],
         },
@@ -510,6 +609,7 @@ export const privacyPtBR: PolicyDocument = {
             'Notificações: os serviços de push do Google, da Mozilla, da Apple e da Microsoft, que funcionam no mundo todo, inclusive nos Estados Unidos. Eles não conseguem ler o conteúdo dos lembretes nem dos alertas.',
             'Alexa: a Amazon, que processa os pedidos de voz nos próprios data centers, inclusive nos Estados Unidos.',
             'Busca de endereço: o Nominatim do OpenStreetMap é mantido pela OpenStreetMap Foundation, sediada no Reino Unido. A BrasilAPI e o ViaCEP também podem usar servidores fora do Brasil.',
+            'Seu próprio banco de dados: o provedor que você escolhe guarda os registros de cuidado de um bebê no país ou na região que você escolher, que pode ser fora do Brasil.',
             'As lojas de apps da Apple e do Google e o GitHub, quando você os usa, segundo os termos deles.',
           ],
         },

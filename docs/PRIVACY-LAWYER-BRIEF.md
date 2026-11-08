@@ -127,6 +127,34 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
     pergunta 5)
 18. **Foro e lei aplicável**, e se um e-mail e uma empresa ou CPF precisam aparecer nos Termos. A cláusula 14 diz hoje só
     "lei brasileira"; o foro ficou de fora até a sua resposta. (rascunho, pergunta 6)
+19. **Banco de dados próprio do usuário** (política versão 13, `docs/design/47-bring-your-own-database.md` seção 10,
+    auditoria seção 17). Recurso opcional, por bebê, desligado por padrão e ainda atrás de uma flag: o titular do bebê
+    conecta um PostgreSQL dele (Supabase, Neon ou outro, escolhido e contratado por ele, na região que ele escolher) e os
+    registros de cuidado do bebê passam a ficar lá; o app e a conta continuam iguais, e a API do Lotties lê e grava
+    esses registros lá. Conta, consentimentos, membros, o perfil do bebê e os ajustes ficam no Lotties. Os dados de
+    conexão ficam guardados criptografados (AES-256-GCM), mas a chave fica com o operador: o servidor do Lotties e quem
+    o opera conseguem abri-los (não é criptografia de ponta a ponta, e a política diz isso). Perguntas, sem resposta
+    pressuposta:
+    - Qual é o papel do provedor escolhido pelo usuário: operador de quem (do usuário? do Lotties?), um controlador
+      separado, ou outra figura? O Lotties não escolhe nem contrata o provedor; isso muda algum dever do Lotties sobre
+      ele (art. 39, contrato, instruções)?
+    - O usuário passa a ser controlador da própria cópia guardada no banco dele (inclusive dados de saúde de uma criança,
+      arts. 11 e 14)? Isso cabe na exceção de tratamento por pessoa natural para fins particulares (art. 4º, I) ou não,
+      já que o Lotties continua tratando os dados?
+    - O Lotties continua controlador do tratamento que faz (ler e gravar os registros para o app funcionar), como a
+      política afirma hoje ("o Lotties continua responsável... pelo que faz com os registros")? A redação está correta e
+      suficiente?
+    - Transferência internacional (art. 33) quando a região escolhida pelo usuário é fora do Brasil: quem é o
+      responsável pela transferência, e a base citada na política (art. 33, IX, "para fazer o que você pediu") serve
+      também para este caso?
+    - O consentimento opcional `byo_database` (texto em `code/web/src/legal/byoDatabaseConsent.ts`, dado só pelo titular
+      do bebê antes de conectar) basta, ou é preciso algo mais (por exemplo, um aviso aos outros membros quando a
+      etapa 2 permitir membros)?
+    - A mudança da política foi marcada como **menor** (aviso dispensável, sem novo aceite de todos), porque ninguém é
+      afetado sem optar pelo recurso e quem opta dá um consentimento próprio antes de qualquer dado ir ao provedor. A
+      regra interna diz que "um novo destinatário" é mudança relevante (material). Deve ser material?
+    - O texto que diz o que o provedor pode fazer (pausar, limitar, encerrar, perder dados; planos gratuitos sem backup) e
+      que "você é responsável por essa conta" é adequado, ou soa como renúncia de responsabilidade que a lei não permite?
 
 ## 8. O que levar à reunião
 

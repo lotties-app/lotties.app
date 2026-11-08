@@ -657,6 +657,8 @@ descriptor sealed for a real store behind an in-process TLS front door with the 
 and not in Lotties', the runtime sessions are the app role's, two babies on two stores never read each other's records, a stopped store
 opens the breaker). The egress `NetworkPolicy` (section 3.2 step 7) is still not applied: see `docs/DEPLOY.md`.
 
+**Status (2026-11-07): T12 is written** (branch `feat/byo-t12-privacy-legal`): privacy policy 13 (section "Your own database", en + pt-BR), `OWN_DATABASE_FLOW` and the user-chosen recipient in `legal/dataFlows.ts`, the `byo_database` consent text in `legal/byoDatabaseConsent.ts`, `legal/forbiddenClaims.ts` with its test, consent entry `2026-11-07.1` (minor; reason in design 33 section 17), audit 33 section 17, lawyer brief item 19.
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 
