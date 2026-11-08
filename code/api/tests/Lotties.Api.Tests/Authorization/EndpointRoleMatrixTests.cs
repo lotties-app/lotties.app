@@ -19,9 +19,10 @@ namespace Lotties.Api.Tests.Authorization;
 /// (any status but 401/403/5xx: the requests carry an empty JSON body, so validation may answer 400).
 /// On top of the role decision, <see cref="Scopes"/> holds the doctor scope each route needs from a Doctor
 /// (docs/design/16-doctor-access.md "scopes"): <see cref="Scopes_EveryRouteADoctorMayCallHasAScopeDecision"/> fails when a
-/// route a Doctor may call has neither a scope nor an entry in <see cref="OpenToEveryDoctor"/>.
+/// route a Doctor may call has neither a scope nor an entry in <see cref="OpenToEveryDoctor"/>. The host has bring-your-own-database
+/// on (<see cref="StoresApiFactory"/>) so the data-store routes answer instead of a flat 404; hosted babies are unaffected by it.
 /// </summary>
-public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClassFixture<ApiFactory>
+public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : IClassFixture<StoresApiFactory>
 {
     /// <summary>Who may call a route.</summary>
     public enum Access
@@ -241,6 +242,18 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         ["POST /api/v1/babies/import/preview"] = Access.SignedIn,
         ["POST /api/v1/babies/import"] = Access.SignedIn,
 
+        // The baby's own database (docs/design/47-bring-your-own-database.md, task T6): Owner only, every other member 403. Doctor
+        // scope decision: none needed, she is refused by role whatever her scopes (the store, its credentials and moving the records
+        // are the family's, never a clinical section). 404 while Stores:Enabled is off (before any 401) and for an Owner whose
+        // account is not on Stores:Allowlist (this host turns the flag on; its Owners are not listed, so they get 404: past
+        // authorization). Blocked in the demo; rate limited per account.
+        ["GET /api/v1/babies/{babyId:guid}/data-store"] = Access.Owner,
+        ["PUT /api/v1/babies/{babyId:guid}/data-store"] = Access.Owner,
+        ["DELETE /api/v1/babies/{babyId:guid}/data-store"] = Access.Owner,
+        ["POST /api/v1/babies/{babyId:guid}/data-store/test"] = Access.Owner,
+        ["POST /api/v1/babies/{babyId:guid}/data-store/move-in"] = Access.Owner,
+        ["POST /api/v1/babies/{babyId:guid}/data-store/move-out"] = Access.Owner,
+
         ["GET /api/v1/push/config"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions/revoke"] = Access.SignedIn,
@@ -408,6 +421,12 @@ public sealed partial class EndpointRoleMatrixTests(ApiFactory factory) : IClass
         "GET /api/v1/babies/{babyId:guid}/export",
         "POST /api/v1/babies/{babyId:guid}/import/backup/preview",
         "POST /api/v1/babies/{babyId:guid}/import/backup",
+        "GET /api/v1/babies/{babyId:guid}/data-store",
+        "PUT /api/v1/babies/{babyId:guid}/data-store",
+        "DELETE /api/v1/babies/{babyId:guid}/data-store",
+        "POST /api/v1/babies/{babyId:guid}/data-store/test",
+        "POST /api/v1/babies/{babyId:guid}/data-store/move-in",
+        "POST /api/v1/babies/{babyId:guid}/data-store/move-out",
     };
 
     public static TheoryData<string, Caller> Cases()

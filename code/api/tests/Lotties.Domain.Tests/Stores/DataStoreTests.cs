@@ -106,4 +106,41 @@ public sealed class DataStoreTests
         Assert.Throws<ArgumentException>(() => DataStore.Create(Guid.Empty, BabyId, DateTimeOffset.UnixEpoch));
         Assert.Throws<ArgumentException>(() => DataStore.Create(StoreX, Guid.Empty, DateTimeOffset.UnixEpoch));
     }
+
+    [Fact]
+    public void DataStore_ReplaceDescriptor_StoresItGoesPendingAndForgetsTheLastTest()
+    {
+        var store = DataStore.Create(StoreX, BabyId, DateTimeOffset.UnixEpoch);
+        store.RecordMigrationState(DataStoreState.Ready, "v1", DateTimeOffset.UnixEpoch);
+        store.RecordCheck("ok", DateTimeOffset.UnixEpoch);
+
+        store.ReplaceDescriptor(SealedDescriptor.FromBytes([1, 2, 3]), "Example Cloud", DateTimeOffset.UnixEpoch.AddHours(1));
+
+        Assert.Equal((DataStoreState.Pending, "Example Cloud", true, "v1"), (store.State, store.ProviderLabel, store.HasDescriptor, store.SchemaVersion));
+        Assert.Equal([1, 2, 3], store.SealedDescriptor);
+        Assert.Equal((null, null), (store.LastCheckedAt, store.LastCheckResult));
+        Assert.Equal(DateTimeOffset.UnixEpoch.AddHours(1), store.UpdatedAt);
+    }
+
+    [Fact]
+    public void DataStore_ReplaceDescriptorOfADisabledStore_StaysDisabled()
+    {
+        var store = DataStore.Create(StoreX, BabyId, DateTimeOffset.UnixEpoch);
+        typeof(DataStore).GetProperty(nameof(DataStore.State))!.SetValue(store, DataStoreState.Disabled);
+
+        store.ReplaceDescriptor(SealedDescriptor.FromBytes([1]), "x", DateTimeOffset.UnixEpoch);
+
+        Assert.Equal(DataStoreState.Disabled, store.State);
+    }
+
+    [Fact]
+    public void DataStore_RecordCheck_KeepsTheStateAndRecordsTheCodeInUtc()
+    {
+        var store = DataStore.Create(StoreX, BabyId, DateTimeOffset.UnixEpoch);
+
+        store.RecordCheck("store_credentials_rejected", new DateTimeOffset(2026, 1, 10, 9, 0, 0, TimeSpan.FromHours(-3)));
+
+        Assert.Equal((DataStoreState.Pending, "store_credentials_rejected"), (store.State, store.LastCheckResult));
+        Assert.Equal(new DateTimeOffset(2026, 1, 10, 12, 0, 0, TimeSpan.Zero), store.LastCheckedAt);
+    }
 }

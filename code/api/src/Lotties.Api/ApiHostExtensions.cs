@@ -13,6 +13,7 @@ using Lotties.Api.Limits;
 using Lotties.Api.Proxy;
 using Lotties.Api.Push;
 using Lotties.Api.Serialization;
+using Lotties.Api.Stores;
 using Lotties.Application;
 using Lotties.Application.Push;
 using Lotties.Infrastructure;
@@ -44,6 +45,8 @@ public static class ApiHostExtensions
         builder.Services.AddAddressLookup(builder.Configuration);
         builder.Services.AddStoreCredentials(builder.Configuration);
         builder.Services.AddStoreMigrator(builder.Configuration);
+        builder.Services.AddDataStoreAccess(builder.Configuration);
+        builder.Services.AddStoreManagementFallbacks();
         builder.Services.AddNotificationScheduler();
         builder.Services.AddOidcAuthentication(builder.Configuration);
         builder.Services.AddTryItDemo(builder.Configuration);
@@ -63,7 +66,7 @@ public static class ApiHostExtensions
     /// <summary>
     /// Adds the trusted proxy headers (client address and scheme), CORS, problem details (exception and status-code
     /// mapping), the request body limit, authentication, the MCP request guard (404 while disabled, origin, the MCP token's
-    /// user), the board MCP guard (404 unless the board and its MCP endpoint are on, origin), the board guard (404 while disabled, the board API key's identity), the per-user rate limiter and request timeouts, authorization, and the MCP scope gate, in that order.
+    /// user), the board MCP guard (404 unless the board and its MCP endpoint are on, origin), the board guard (404 while disabled, the board API key's identity), the data-store guard (404 while <c>Stores:Enabled</c> is off), the per-user rate limiter and request timeouts, authorization, and the MCP scope gate, in that order.
     /// </summary>
     public static WebApplication UseLottiesApi(this WebApplication app)
     {
@@ -76,6 +79,7 @@ public static class ApiHostExtensions
         app.UseMcpRequestGuard();
         app.UseBoardMcpRequestGuard();
         app.UseBoardRequestGuard();
+        app.UseDataStoreRequestGuard();
         app.UseRequestRateAndTimeLimits();
         app.UseAuthorization();
         app.UseConsentGate();

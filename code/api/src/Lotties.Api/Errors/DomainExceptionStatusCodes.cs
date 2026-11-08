@@ -103,6 +103,12 @@ internal static class DomainExceptionStatusCodes
         [typeof(StoreScopeMissingException)] = StatusCodes.Status500InternalServerError,
         [typeof(StoreScopeAmbiguousException)] = StatusCodes.Status500InternalServerError,
         [typeof(DataStoreStateTransitionException)] = StatusCodes.Status500InternalServerError,
+        [typeof(StoreEndpointRejectedException)] = StatusCodes.Status422UnprocessableEntity,
+        [typeof(DataStoreNotOwnedException)] = StatusCodes.Status403Forbidden,
+        [typeof(DataStoreNotConfiguredException)] = StatusCodes.Status409Conflict,
+        [typeof(DataStoreInUseException)] = StatusCodes.Status409Conflict,
+        [typeof(ByoDatabaseConsentRequiredException)] = StatusCodes.Status403Forbidden,
+        [typeof(DataStoreMoveNotImplementedException)] = StatusCodes.Status501NotImplemented,
     }.ToFrozenDictionary();
 
     public static int For(DomainException exception)

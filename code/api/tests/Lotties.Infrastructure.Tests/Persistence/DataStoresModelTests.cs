@@ -28,6 +28,22 @@ public sealed class DataStoresModelTests
     }
 
     [Fact]
+    public void DataStores_HaveTheDisplayAndLastTestColumns()
+    {
+        using var context = ModelTestContext.Create();
+        var stores = context.Entity<DataStore>();
+
+        var label = stores.FindProperty(nameof(DataStore.ProviderLabel))!;
+        var result = stores.FindProperty(nameof(DataStore.LastCheckResult))!;
+        var checkedAt = stores.FindProperty(nameof(DataStore.LastCheckedAt))!;
+
+        Assert.Equal(("provider_label", 64, true), (label.GetColumnName(), label.GetMaxLength(), label.IsNullable));
+        Assert.Equal(("last_check_result", 48, true), (result.GetColumnName(), result.GetMaxLength(), result.IsNullable));
+        Assert.Equal(("last_checked_at", true), (checkedAt.GetColumnName(), checkedAt.IsNullable));
+        Assert.Null(stores.FindProperty(nameof(DataStore.HasDescriptor)));
+    }
+
+    [Fact]
     public void BabyStoreAssignment_IsTheRoutingColumnsOfTheBabyRow()
     {
         using var context = ModelTestContext.Create();

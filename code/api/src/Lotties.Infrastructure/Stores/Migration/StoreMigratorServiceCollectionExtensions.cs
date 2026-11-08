@@ -12,7 +12,8 @@ public static class StoreMigratorServiceCollectionExtensions
     /// When <c>Stores:Enabled</c> is true: binds and validates (at startup) <see cref="StoreMigratorOptions"/> (<c>Stores:Migrator</c>)
     /// and registers the store migrator (task T5) with what it needs: the egress guard and pinned data sources (task T4), the
     /// <c>data_stores</c> rows, the sealed-descriptor connection source (it needs <see cref="IStoreCredentials"/>, registered by
-    /// <c>AddStoreCredentials</c> under the same flag). When the flag is off or absent (the default) it registers nothing: the
+    /// <c>AddStoreCredentials</c> under the same flag), plus the descriptor checks and the connection test of the owner's data-store
+    /// routes (task T6). When the flag is off or absent (the default) it registers nothing: the
     /// routing keeps the <see cref="IStoreMigrator"/> that refuses every store (registered by <c>AddInfrastructure</c>).
     /// </summary>
     public static IServiceCollection AddStoreMigrator(this IServiceCollection services, IConfiguration configuration)
@@ -32,6 +33,8 @@ public static class StoreMigratorServiceCollectionExtensions
         services.TryAddSingleton<IStoreConnectionSource, SealedStoreConnectionSource>();
         services.TryAddSingleton<IStoreMigrationSessionFactory>(provider => new NpgsqlStoreMigrationSessionFactory(provider.GetRequiredService<IStoreConnectionSource>()));
         services.Replace(ServiceDescriptor.Singleton<IStoreMigrator, StoreMigrator>());
+        services.TryAddSingleton<IStoreDescriptorGuard, StoreDescriptorGuard>();
+        services.TryAddSingleton<IStoreConnectionTester, StoreConnectionTester>();
         return services;
     }
 }

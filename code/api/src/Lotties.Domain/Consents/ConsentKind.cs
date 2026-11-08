@@ -14,13 +14,16 @@ public enum ConsentKind
 
     /// <summary>The MCP assistant connection.</summary>
     Mcp,
+
+    /// <summary>Keeping a baby's records in a database of the person's own (docs/design/47-bring-your-own-database.md section 10).</summary>
+    ByoDatabase,
 }
 
-/// <summary>Wire names of <see cref="ConsentKind"/>: <c>core</c>, <c>push</c>, <c>alexa</c>, <c>mcp</c>.</summary>
+/// <summary>Wire names of <see cref="ConsentKind"/>: <c>core</c>, <c>push</c>, <c>alexa</c>, <c>mcp</c>, <c>byo_database</c>.</summary>
 public static class ConsentKinds
 {
     /// <summary>The optional kinds, in the order the API lists them.</summary>
-    public static IReadOnlyList<ConsentKind> Optional { get; } = [ConsentKind.Push, ConsentKind.Alexa, ConsentKind.Mcp];
+    public static IReadOnlyList<ConsentKind> Optional { get; } = [ConsentKind.Push, ConsentKind.Alexa, ConsentKind.Mcp, ConsentKind.ByoDatabase];
 
     public static string NameOf(ConsentKind kind) => kind switch
     {
@@ -28,6 +31,7 @@ public static class ConsentKinds
         ConsentKind.Push => "push",
         ConsentKind.Alexa => "alexa",
         ConsentKind.Mcp => "mcp",
+        ConsentKind.ByoDatabase => "byo_database",
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
     };
 

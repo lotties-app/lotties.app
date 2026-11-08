@@ -27,6 +27,12 @@ public static class RequestLimitPolicies
     /// <summary>Rate limit policy of the project board routes (per user, or per board API key).</summary>
     public const string Board = "board";
 
+    /// <summary>Rate limit policy of data store saves and move requests (per user, per hour, <see cref="RequestLimitsOptions.DataStoreWritePermitsPerHour"/>).</summary>
+    public const string DataStoreWrite = "data-store-write";
+
+    /// <summary>Rate limit policy of data store connection tests (per user, per hour, <see cref="RequestLimitsOptions.DataStoreTestPermitsPerHour"/>).</summary>
+    public const string DataStoreTest = "data-store-test";
+
     /// <summary>
     /// Gives an import endpoint the import body size limit (<see cref="RequestLimitsOptions.ImportMaxRequestBodyBytes"/>),
     /// timeout and rate limit instead of the defaults.

@@ -47,6 +47,18 @@ public sealed class RequestLimitsOptions
     /// <summary>Project board requests per user or per board API key per fixed one-minute window (default 120).</summary>
     public int BoardPermitsPerMinute { get; set; } = 120;
 
+    /// <summary>
+    /// Saves of a data store's connection details plus move requests per user per fixed one-hour window (default 10; docs/design/47
+    /// task T6): every save resolves the typed host names.
+    /// </summary>
+    public int DataStoreWritePermitsPerHour { get; set; } = 10;
+
+    /// <summary>
+    /// Data store connection tests per user per fixed one-hour window (default 5; docs/design/47 section 3.4: a test connects to a host
+    /// the user chose, so it must not become a port scanner or a password oracle). Successes count too.
+    /// </summary>
+    public int DataStoreTestPermitsPerHour { get; set; } = 5;
+
     /// <summary>Largest project board request body in bytes (default 256 KiB).</summary>
     public long BoardMaxRequestBodyBytes { get; set; } = 256 * 1024;
 
@@ -70,6 +82,8 @@ public sealed class RequestLimitsOptions
             (nameof(PushActionPermitsPerMinute), PushActionPermitsPerMinute),
             (nameof(AssistantPermitsPerMinute), AssistantPermitsPerMinute),
             (nameof(BoardPermitsPerMinute), BoardPermitsPerMinute),
+            (nameof(DataStoreWritePermitsPerHour), DataStoreWritePermitsPerHour),
+            (nameof(DataStoreTestPermitsPerHour), DataStoreTestPermitsPerHour),
             (nameof(BoardMaxRequestBodyBytes), BoardMaxRequestBodyBytes),
             (nameof(BoardBulkMaxRequestBodyBytes), BoardBulkMaxRequestBodyBytes),
         }

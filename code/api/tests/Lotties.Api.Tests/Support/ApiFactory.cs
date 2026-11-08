@@ -29,7 +29,7 @@ namespace Lotties.Api.Tests.Support;
 /// The data plane's context runs on the control context's connection, as in production, and <see cref="PlaneSaveGuard"/> fails
 /// a save of one plane that would leave the other plane's changes behind.
 /// </remarks>
-public sealed class ApiFactory : WebApplicationFactory<Program>
+public class ApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _databasePath = Path.Combine(Path.GetTempPath(), $"lotties-tests-{Guid.NewGuid():N}.db");
 

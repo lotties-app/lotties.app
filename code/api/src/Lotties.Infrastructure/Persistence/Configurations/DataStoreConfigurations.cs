@@ -11,7 +11,9 @@ namespace Lotties.Infrastructure.Persistence.Configurations;
 /// account. The state is stored by name; the sealed descriptor is opaque bytes (task T3), nullable until the owner saves one.
 /// Deleting the account deletes its rows (<c>EfAccountDataEraser</c>); the user key is <c>RESTRICT</c> like the other keys
 /// erasure handles explicitly. <c>schema_version</c> mirrors the store's <c>lotties.store_meta</c> (task T5, the store migrator).
-/// Empty until the bring-your-own-database endpoints exist (task T6).
+/// The owner's routes (task T6) write it: one store per account in the MVP (D11, kept by the service, not by an index, so
+/// per-baby stores of one account stay possible later), the provider label (the one
+/// readable field of the descriptor, display only) and the last connection test (time and coarse code).
 /// </remarks>
 internal sealed class DataStoreConfiguration : IEntityTypeConfiguration<DataStore>
 {
@@ -19,6 +21,9 @@ internal sealed class DataStoreConfiguration : IEntityTypeConfiguration<DataStor
 
     /// <summary>A data migration id (EF's own history column is at most 150).</summary>
     public const int SchemaVersionMaxLength = 150;
+
+    /// <summary>A coarse test result code (<c>ok</c>, <c>store_*</c>, <c>endpoint_*</c>).</summary>
+    public const int CheckResultMaxLength = 48;
 
     public void Configure(EntityTypeBuilder<DataStore> builder)
     {
@@ -28,6 +33,10 @@ internal sealed class DataStoreConfiguration : IEntityTypeConfiguration<DataStor
         builder.Property(store => store.State).HasConversion<string>().HasMaxLength(StateMaxLength).IsRequired();
         builder.Property(store => store.SealedDescriptor);
         builder.Property(store => store.SchemaVersion).HasMaxLength(SchemaVersionMaxLength);
+        builder.Property(store => store.ProviderLabel).HasMaxLength(StoreDescriptor.MaxProviderLabelLength);
+        builder.Property(store => store.LastCheckedAt);
+        builder.Property(store => store.LastCheckResult).HasMaxLength(CheckResultMaxLength);
+        builder.Ignore(store => store.HasDescriptor);
         builder.Property(store => store.CreatedAt).IsRequired();
         builder.Property(store => store.UpdatedAt).IsRequired();
         builder.HasOne<User>().WithMany().HasForeignKey(store => store.OwnerUserId).OnDelete(DeleteBehavior.Restrict);
