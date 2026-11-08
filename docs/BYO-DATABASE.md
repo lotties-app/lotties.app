@@ -78,6 +78,31 @@ In Lotties' own database, as today:
 
 For 7 days after a move (the undo window, see section 9) the **old copy** of the records also stays where they came from.
 
+### What Lotties can and cannot reach in your database
+
+Lotties is meant to work **only inside one schema of your database, called `lotties`**, and to leave everything else alone,
+including any other data you keep in the same database or project.
+
+- You run the setup SQL once, **with your own admin account**. Lotties never receives your admin account. The SQL creates two
+  login roles (`lotties_migrator` and `lotties_app`, or the names you chose) that can reach the `lotties` schema only.
+- Lotties creates and changes **only its own tables in the `lotties` schema**: the care-record tables, a small `store_meta`
+  table that says which store the database belongs to, and the migration history. It does not create anything in `public` or
+  in your other schemas.
+- To check that it is talking to the right database, Lotties reads `store_meta` in the `lotties` schema. It does not list,
+  read or change your other schemas or tables.
+- When Lotties connects, it checks the roles you gave it. If the everyday role is a superuser, can create roles or databases,
+  bypasses row-level security, owns objects, or can create things in `public`, Lotties **refuses the store**
+  (`store_role_too_powerful`) until you fix it.
+
+What this depends on, and what Lotties cannot promise on its own:
+
+- **Do not give Lotties your admin or owner connection string** (for example the `postgres` user, or the "owner" role your
+  provider shows first). A role with that much power could technically reach everything in the database, and Lotties' check
+  covers the common cases, not every possible kind of broad access. Use the roles the setup SQL creates.
+- Your provider's own defaults still apply on top of the roles. On Supabase, do not add the `lotties` schema to the exposed
+  schemas of the Data API (section 6). For anything else you keep in the same database, check the provider's privileges.
+- If you want your other data to be certain to stay out of reach, use a **separate database or project** for Lotties.
+
 ## 4. Limits of this first version
 
 - **No reminders** (push notifications) for a baby whose records are in your own database.
