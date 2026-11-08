@@ -355,6 +355,34 @@ public sealed class StoreMigratorTests
         Assert.True(validator.Validate(null, new StoreMigratorOptions { ReadyRecheckSeconds = 5 }).Failed);
     }
 
+    [Fact]
+    public async Task Forget_StoreFoundReady_TheNextUseChecksTheStoreAgain()
+    {
+        var store = _rows.Add();
+        var migrator = Migrator();
+        await migrator.EnsureReadyAsync(store.Id);
+
+        migrator.Forget(store.Id);
+        await migrator.EnsureReadyAsync(store.Id);
+
+        Assert.Equal(2, _sessions.Opened);
+    }
+
+    [Fact]
+    public async Task Forget_StoreBackingOffAfterAFailure_TheNextUseTriesAtOnce()
+    {
+        var store = _rows.Add();
+        var migrator = Migrator();
+        _sessions.OpenFailure = new InvalidOperationException("down");
+        await Assert.ThrowsAsync<StoreUnavailableException>(() => migrator.EnsureReadyAsync(store.Id));
+        _sessions.OpenFailure = null;
+
+        migrator.Forget(store.Id);
+        await migrator.EnsureReadyAsync(store.Id);
+
+        Assert.Equal(DataStoreState.Ready, _rows.Find(store.Id).State);
+    }
+
     private StoreMigrator Migrator() =>
         new(_rows, _sessions, Options.Create(_options), _clock, NullLogger<StoreMigrator>.Instance, () => 0d);
 

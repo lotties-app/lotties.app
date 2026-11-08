@@ -46,6 +46,7 @@ public static class ApiEndpoints
         api.MapBabyScopedGroup().MapImportEndpoints();
         api.MapBabyScopedGroup().MapBackupEndpoints();
         api.MapBackupRestoreEndpoints();
+        api.MapDataStoreEndpoints();
         api.MapPushEndpoints();
         api.MapBabyScopedGroup().MapNotificationPreferenceEndpoints();
         api.MapAlexaEndpoints();

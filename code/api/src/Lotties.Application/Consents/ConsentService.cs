@@ -9,7 +9,7 @@ namespace Lotties.Application.Consents;
 public sealed record ConsentStateResponse(bool Accepted, string Version, DateTimeOffset AcceptedAt, string? Capacity, string Locale, DateTimeOffset? WithdrawnAt);
 
 /// <summary>The optional consents by kind; each is <c>null</c> until the person first turned the feature on.</summary>
-public sealed record OptionalConsentsResponse(ConsentStateResponse? Push, ConsentStateResponse? Alexa, ConsentStateResponse? Mcp);
+public sealed record OptionalConsentsResponse(ConsentStateResponse? Push, ConsentStateResponse? Alexa, ConsentStateResponse? Mcp, ConsentStateResponse? ByoDatabase);
 
 /// <summary>
 /// <c>GET /me/consents</c>: the version in force, the core consent (<c>null</c> before the first), the optional ones,
@@ -207,7 +207,7 @@ internal sealed class ConsentService(
             current.TermsVersion,
             current.PrivacyPolicyVersion,
             core,
-            new OptionalConsentsResponse(OptionalOf(rows, ConsentKind.Push), OptionalOf(rows, ConsentKind.Alexa), OptionalOf(rows, ConsentKind.Mcp)),
+            new OptionalConsentsResponse(OptionalOf(rows, ConsentKind.Push), OptionalOf(rows, ConsentKind.Alexa), OptionalOf(rows, ConsentKind.Mcp), OptionalOf(rows, ConsentKind.ByoDatabase)),
             requires,
             !requires && ConsentVersions.HasMinorChangeSince(core!.Version) ? current.Version : null);
     }

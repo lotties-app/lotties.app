@@ -537,6 +537,25 @@ classification table and the providers' read-only over-quota mode is simulated i
 `Lotties.Postgres.Tests/Stores/StoreFailurePostgresTests.cs` (paused database: timeout, breaker, recovery; stopped and restarted
 database; killed backend; role connection limit; wrong password; command and statement timeouts; read-only database).
 
+**Status (2026-11-08): T6 is built** (branch `feat/byo-t6-store-endpoints`, not deployed; control migration `DataStoreManagement`
+adds `data_stores.provider_label`, `last_checked_at`, `last_check_result`, additive, empty table). The Owner's routes
+`GET|PUT|DELETE /babies/{id}/data-store`, `POST .../test`, `.../move-in`, `.../move-out` (501 until T7) answer a bare 404 while
+`Stores:Enabled` is off (before any 401) and, after authorization, to an Owner whose account is not on `Stores:Allowlist` (account
+ids or OIDC subjects; e-mail is not matched because the API never reads that claim). One store per account in the MVP, without a
+unique index on the owner (so per-baby stores stay possible in stage 3): the first store's id is derived from the owner
+(`DataStore.FirstStoreIdOf`, UUID v5), so two simultaneous first saves meet on the primary key and the second replaces the first's
+descriptor. A baby's store is the one its pointer names (it must be the caller's, else 403 `store_not_owned`), else the caller's own.
+`PUT`, the test and the move-in need the optional consent `byo_database` (section 3.4; the onboarding order of section 8.1 puts the
+consent after the test, so the web must ask for it before "Test", task T9). The test reuses the migrator's session (unseal, pin
+both endpoints, app role audit, control/other-store/schema-ahead checks) without migrating, writing or locking, within 10 s, and
+records only the coarse code on the row (the state stays the migrator's). Its outcomes: `ok`, an egress guard code (`endpoint_*`), or
+a T8 failure class. A store that is down for now (unavailable, timeout, paused or unreachable, too many connections, migrating)
+answers like every store failure, 503 with `Retry-After` (`StoreFailureResponses`); an answer about the setup (credentials rejected,
+TLS failed, role too powerful with its findings, schema conflict or ahead, quota full, migration failed) is a 200 with the code, as
+section 3.4 lists them as the test's results. Saving or removing a descriptor calls T8's `IStoreHealth.Forget`. A password may now
+hold any character but a control character (T3 and T4 alike; the string is built by `NpgsqlConnectionStringBuilder`). Per-account
+limits: 10 saves or moves and 5 tests per hour.
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 

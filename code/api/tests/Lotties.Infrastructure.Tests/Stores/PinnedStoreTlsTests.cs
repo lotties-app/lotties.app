@@ -174,6 +174,24 @@ public sealed class PinnedStoreTlsTests : IDisposable
     }
 
     [Theory]
+    [InlineData("pw;Options=-c statement_timeout=0")]
+    [InlineData("a=b;Passfile=/etc/passwd;Include Error Detail=true")]
+    [InlineData("it's \"quoted\"; Host=10.0.0.1")]
+    [InlineData(" pw with spaces= ")]
+    public void ConnectionString_PasswordWithSeparatorsAndQuotes_StaysOneValueAndAddsNoOption(string password)
+    {
+        var endpoint = new PinnedEndpoint(IPAddress.Parse("1.1.1.1"), StoreHostName.Parse(TypedName), 5432);
+
+        var settings = new NpgsqlConnectionStringBuilder(PinnedStoreDataSourceFactory.ConnectionString(endpoint, StoreConnectionFields.Create("db", "lotties_app", password)));
+
+        Assert.Equal(password, settings.Password);
+        Assert.Equal("1.1.1.1", settings.Host);
+        Assert.Null(settings.Options);
+        Assert.Null(settings.Passfile);
+        Assert.False(settings.IncludeErrorDetail);
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("not a certificate")]
     [InlineData("-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----")]

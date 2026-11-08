@@ -12,7 +12,8 @@ namespace Lotties.Api.Limits;
 /// every request counts against <see cref="RequestLimitsOptions.PermitsPerMinute"/>, import requests also against
 /// <see cref="RequestLimitsOptions.ImportPermitsPerMinute"/>, catalog product creations against
 /// <see cref="RequestLimitsOptions.CatalogWritePermitsPerMinute"/>, push writes and tests against their per-user limits, and
-/// the anonymous push action route against <see cref="RequestLimitsOptions.PushActionPermitsPerMinute"/> per remote address. A rejected request is a 429 problem with <c>code</c>
+/// the anonymous push action route against <see cref="RequestLimitsOptions.PushActionPermitsPerMinute"/> per remote address, and the
+/// data store saves and tests against their per-user hourly limits. A rejected request is a 429 problem with <c>code</c>
 /// <see cref="ErrorCode"/> and a <c>Retry-After</c> header.
 /// </summary>
 internal static class UserRateLimits
@@ -20,6 +21,8 @@ internal static class UserRateLimits
     public const string ErrorCode = "rate_limited";
 
     private static readonly TimeSpan Window = TimeSpan.FromMinutes(1);
+
+    private static readonly TimeSpan Hour = TimeSpan.FromHours(1);
 
     public static void Configure(RateLimiterOptions rateLimiter, RequestLimitsOptions limits)
     {
@@ -34,6 +37,8 @@ internal static class UserRateLimits
         rateLimiter.AddPolicy(RequestLimitPolicies.PushTest, context => PerUser(context, limits.PushTestPermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.PushAction, context => PerAddress(context, limits.PushActionPermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.Board, context => FixedWindow($"board:{PartitionKey(context)}", limits.BoardPermitsPerMinute));
+        rateLimiter.AddPolicy(RequestLimitPolicies.DataStoreWrite, context => FixedWindow($"data-store-write:{PartitionKey(context)}", limits.DataStoreWritePermitsPerHour, Hour));
+        rateLimiter.AddPolicy(RequestLimitPolicies.DataStoreTest, context => FixedWindow($"data-store-test:{PartitionKey(context)}", limits.DataStoreTestPermitsPerHour, Hour));
         rateLimiter.OnRejected = WriteRejectionAsync;
     }
 
@@ -43,11 +48,11 @@ internal static class UserRateLimits
     private static RateLimitPartition<string> PerAddress(HttpContext context, int permitsPerMinute) =>
         FixedWindow($"address:{context.Connection.RemoteIpAddress}", permitsPerMinute);
 
-    private static RateLimitPartition<string> FixedWindow(string partitionKey, int permitsPerMinute) =>
+    private static RateLimitPartition<string> FixedWindow(string partitionKey, int permits, TimeSpan? window = null) =>
         RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = permitsPerMinute,
-            Window = Window,
+            PermitLimit = permits,
+            Window = window ?? Window,
             QueueLimit = 0,
         });
 

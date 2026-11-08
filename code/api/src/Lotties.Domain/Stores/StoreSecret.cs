@@ -16,7 +16,7 @@ public sealed class StoreSecret : IEquatable<StoreSecret>
         _value = value;
     }
 
-    /// <summary>Validates the shape (required, at most <paramref name="maxLength"/>, no control characters, no <c>;</c> or <c>=</c>); never trims.</summary>
+    /// <summary>Validates the shape (required, at most <paramref name="maxLength"/>, no control characters; <c>;</c>, <c>=</c>, quotes and spaces are allowed); never trims.</summary>
     public static StoreSecret Create(string? value, string field, int maxLength) =>
         new(StoreFieldText.Secret(value, field, maxLength));
 
