@@ -1,5 +1,6 @@
 using Lotties.Domain.Medications;
 using Lotties.Infrastructure.Persistence.Errors;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -9,10 +10,10 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// Race safety of <see cref="TryAddAsync"/> relies on the primary key: a concurrent insert of the same id fails with a
 /// unique violation, the rejected entity is detached and <c>false</c> is returned. Any other database error is logged and rethrown.
 /// </remarks>
-internal sealed class EfMedicationRepository(LottiesDataDbContext context, UniqueViolations uniqueViolations, ILogger<EfMedicationRepository> logger) : IMedicationRepository
+internal sealed class EfMedicationRepository(StoreScope stores, UniqueViolations uniqueViolations, ILogger<EfMedicationRepository> logger) : IMedicationRepository
 {
     public async Task<IReadOnlyList<Medication>> ListForBabyAsync(Guid babyId, CancellationToken cancellationToken = default) =>
-        await context.Medications
+        await stores.ContextFor(babyId).Medications
             .AsNoTracking()
             .Where(medication => medication.BabyId == babyId)
             .OrderByDescending(medication => medication.IsUsual)
@@ -21,11 +22,12 @@ internal sealed class EfMedicationRepository(LottiesDataDbContext context, Uniqu
             .ToListAsync(cancellationToken);
 
     public Task<Medication?> FindAsync(Guid medicationId, CancellationToken cancellationToken = default) =>
-        context.Medications.SingleOrDefaultAsync(medication => medication.Id == medicationId, cancellationToken);
+        stores.Current.Medications.SingleOrDefaultAsync(medication => medication.Id == medicationId, cancellationToken);
 
     public async Task<bool> TryAddAsync(Medication medication, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(medication);
+        var context = stores.ContextFor(medication.BabyId);
         try
         {
             context.Medications.Add(medication);
@@ -48,9 +50,10 @@ internal sealed class EfMedicationRepository(LottiesDataDbContext context, Uniqu
     public async Task RemoveAsync(Medication medication, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(medication);
+        var context = stores.ContextFor(medication.BabyId);
         context.Medications.Remove(medication);
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => context.SaveChangesAsync(cancellationToken);
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => stores.Current.SaveChangesAsync(cancellationToken);
 }

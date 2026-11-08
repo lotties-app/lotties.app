@@ -1,6 +1,7 @@
 using Lotties.Domain.Clinical;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Infrastructure.Persistence.Repositories;
@@ -11,7 +12,7 @@ namespace Lotties.Infrastructure.Persistence.Repositories;
 /// few rows) so the event queries filter on plain type ids. The ids are a <see cref="List{T}"/>, not an array: newer C#
 /// compilers bind <c>array.Contains(x)</c> in a query to <c>MemoryExtensions.Contains(ReadOnlySpan)</c>, which EF Core 8 cannot translate.
 /// </remarks>
-internal sealed class EfClinicalEventRepository(LottiesDataDbContext context) : IClinicalEventRepository
+internal sealed class EfClinicalEventRepository(StoreScope stores) : IClinicalEventRepository
 {
     public async Task<IReadOnlyList<TypedEvent>> ListByTypesAsync(
         Guid babyId,
@@ -24,7 +25,7 @@ internal sealed class EfClinicalEventRepository(LottiesDataDbContext context) : 
         var typeIds = keys.Keys.ToList();
         var from = startedFrom.ToUniversalTime();
         var before = startedBefore.ToUniversalTime();
-        var found = await context.Events
+        var found = await stores.ContextFor(babyId).Events
             .AsNoTracking()
             .Where(item => item.BabyId == babyId && typeIds.Contains(item.TypeId) && item.StartedAt >= from && item.StartedAt < before)
             .OrderBy(item => item.StartedAt)
@@ -46,7 +47,7 @@ internal sealed class EfClinicalEventRepository(LottiesDataDbContext context) : 
         var typeIds = keys.Keys.ToList();
         var from = startedFrom.ToUniversalTime();
         var before = startedBefore.ToUniversalTime();
-        var found = await context.Events
+        var found = await stores.ContextFor(babyId).Events
             .AsNoTracking()
             .Where(item => item.BabyId == babyId && typeIds.Contains(item.TypeId) && item.StartedAt >= from && item.StartedAt < before)
             .OrderByDescending(item => item.StartedAt)
@@ -69,7 +70,7 @@ internal sealed class EfClinicalEventRepository(LottiesDataDbContext context) : 
         var start = from.ToUniversalTime();
         var end = to.ToUniversalTime();
         var hidden = hiddenTypeIds.ToList();
-        return await context.Events
+        return await stores.ContextFor(babyId).Events
             .AsNoTracking()
             .Where(item => item.BabyId == babyId && item.StartedAt < end && (item.EndedAt == null || item.EndedAt > start || item.StartedAt >= start))
             .Where(item => !hidden.Contains(item.TypeId))
@@ -84,7 +85,7 @@ internal sealed class EfClinicalEventRepository(LottiesDataDbContext context) : 
         ArgumentNullException.ThrowIfNull(hiddenTypeIds);
         var limit = notAfter.ToUniversalTime();
         var hidden = hiddenTypeIds.ToList();
-        return await context.Events
+        return await stores.ContextFor(babyId).Events
             .AsNoTracking()
             .Where(item => item.BabyId == babyId && item.StartedAt <= limit && !hidden.Contains(item.TypeId))
             .OrderByDescending(item => item.StartedAt)
@@ -96,7 +97,7 @@ internal sealed class EfClinicalEventRepository(LottiesDataDbContext context) : 
     private async Task<IReadOnlyDictionary<Guid, EventTypeKey>> KeysByTypeIdAsync(Guid babyId, IReadOnlyCollection<string> typeKeys, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(typeKeys);
-        var types = await context.EventTypes
+        var types = await stores.ContextFor(babyId).EventTypes
             .AsNoTracking()
             .Where(type => type.BabyId == null || type.BabyId == babyId)
             .Select(type => new { type.Id, type.Key })

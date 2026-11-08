@@ -23,7 +23,8 @@ namespace Lotties.Infrastructure.Persistence;
 /// Today every baby's data lives in the built-in Lotties database, so this context is opened on the connection of the scope's
 /// <see cref="LottiesDbContext"/> (one connection per request, as before the split; <see cref="BuiltInUnitOfWork"/> shares a
 /// transaction when a write spans both planes). It has no migrations of its own yet: <see cref="LottiesDbContext"/> still maps
-/// these tables with their physical foreign keys and owns every migration (the data migration chain is task T5).
+/// these tables with their physical foreign keys and owns every migration (the data migration chain is task T5). No repository
+/// receives it directly: each gets the context of the baby's store from <see cref="Stores.StoreScope"/> (task T2).
 /// </remarks>
 public sealed class LottiesDataDbContext(DbContextOptions<LottiesDataDbContext> options) : DbContext(options)
 {

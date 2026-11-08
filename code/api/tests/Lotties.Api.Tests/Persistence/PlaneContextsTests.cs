@@ -1,4 +1,5 @@
 using Lotties.Api.Tests.Support;
+using Lotties.Application.Stores;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Backups;
 using Lotties.Domain.Events;
@@ -59,6 +60,7 @@ public sealed class PlaneContextsTests(ApiFactory factory) : IClassFixture<ApiFa
         await using (var scope = factory.Services.CreateAsyncScope())
         {
             var session = scope.ServiceProvider.GetRequiredService<IBackupSession>();
+            await scope.ServiceProvider.GetRequiredService<IStoreScope>().EnterAsync(baby.Id);
             await session.BeginAsync();
             await scope.ServiceProvider.GetRequiredService<IBabyRepository>().AddAsync(baby);
             await scope.ServiceProvider.GetRequiredService<IEventRepository>().TryAddAsync(entry);

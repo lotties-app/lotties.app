@@ -50,7 +50,7 @@ public sealed class RepositoryTests(ApiFactory factory) : IClassFixture<ApiFacto
             return Task.CompletedTask;
         });
 
-        var added = await WithMedicationsAsync(medications => medications.TryAddAsync(Medication.Create(winner.Id, baby.BabyId, "Loser", null, null, isUsual: false, TestUsers.Now)));
+        var added = await WithMedicationsAsync(baby.BabyId, medications => medications.TryAddAsync(Medication.Create(winner.Id, baby.BabyId, "Loser", null, null, isUsual: false, TestUsers.Now)));
 
         Assert.False(added);
     }
@@ -60,7 +60,7 @@ public sealed class RepositoryTests(ApiFactory factory) : IClassFixture<ApiFacto
     {
         var orphan = Medication.Create(Guid.NewGuid(), Guid.NewGuid(), "Colidis", null, null, isUsual: false, TestUsers.Now);
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => WithMedicationsAsync(medications => medications.TryAddAsync(orphan)));
+        await Assert.ThrowsAsync<DbUpdateException>(() => WithMedicationsAsync(orphan.BabyId, medications => medications.TryAddAsync(orphan)));
     }
 
     [Fact]
@@ -153,9 +153,9 @@ public sealed class RepositoryTests(ApiFactory factory) : IClassFixture<ApiFacto
         return await action(scope.ServiceProvider.GetRequiredService<IUserRepository>());
     }
 
-    private async Task<TResult> WithMedicationsAsync<TResult>(Func<IMedicationRepository, Task<TResult>> action)
+    private async Task<TResult> WithMedicationsAsync<TResult>(Guid babyId, Func<IMedicationRepository, Task<TResult>> action)
     {
-        await using var scope = factory.Services.CreateAsyncScope();
+        await using var scope = await factory.CreateScopeForAsync(babyId);
         return await action(scope.ServiceProvider.GetRequiredService<IMedicationRepository>());
     }
 

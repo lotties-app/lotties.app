@@ -7,6 +7,7 @@ using Lotties.Domain.Users;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Persistence.Errors;
 using Lotties.Infrastructure.Persistence.Repositories;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,9 +17,11 @@ public static class InfrastructureServiceCollectionExtensions
 {
     /// <summary>
     /// Registers <paramref name="databaseOptions"/>, the scoped <see cref="LottiesDbContext"/> (control plane) and
-    /// <see cref="LottiesDataDbContext"/> (data plane, opened on the control context's connection: every baby's data is in the
-    /// built-in database), the PostgreSQL <see cref="IUniqueViolationDetector"/> (another provider, e.g. a test database, adds
-    /// its own) and the repositories.
+    /// <see cref="LottiesDataDbContext"/> (data plane of the built-in store, opened on the control context's connection), the
+    /// data store routing (the scoped <see cref="Lotties.Application.Stores.IStoreScope"/> the data-plane repositories get their
+    /// context from, with <c>Stores:Enabled</c> off until <see cref="StoreRoutingServiceCollectionExtensions.AddDataStoreRouting"/>
+    /// binds it), the PostgreSQL <see cref="IUniqueViolationDetector"/> (another provider, e.g. a test database, adds its own) and
+    /// the repositories.
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, DatabaseOptions databaseOptions)
     {
@@ -27,6 +30,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton(databaseOptions);
         services.AddDbContext<LottiesDbContext>(options => options.UseLottiesDatabase(databaseOptions.ToConnectionString()));
         services.AddDbContext<LottiesDataDbContext>((provider, options) => options.UseLottiesDatabase(SharedConnection(provider)));
+        services.AddStoreScope();
         services.AddScoped<BuiltInUnitOfWork>();
         services.AddSingleton<IUniqueViolationDetector, NpgsqlUniqueViolationDetector>();
         services.AddSingleton<UniqueViolations>();

@@ -462,6 +462,28 @@ through `BuiltInUnitOfWork`). Two cross-plane places stay on `LottiesDbContext`,
 reminder candidates query (one statement with `EXISTS` on data tables; T11) and account erasure (both planes in one
 transaction; T10). Hosted responses and SQL are pinned by golden tests. `dotnet ef` now needs `--context LottiesDbContext`.
 
+**Status (2026-11-07): T2 is built** (branch `feat/byo-t2-store-resolver`, stacked on T1, not deployed; migration
+`20261107124403_DataStores`, additive, not applied anywhere). Every data-plane repository gets its context from the scoped
+`StoreScope` (`IStoreScope`): a baby is entered after authorization and stays bound to the store `IStoreResolver` found for it;
+a call that names a baby that was not entered throws `store_scope_missing`, a call by record id needs exactly one store in the
+scope (`store_scope_ambiguous` otherwise), and a store that cannot be opened is `503 store_unavailable` (every external store
+today: `IExternalDataStores` has none in production), never the built-in store. The `/babies/{babyId}` routes enter the
+route's baby in an endpoint filter; everything else enters its babies itself: the push planning pass (per baby, a failure skips
+that baby), the demo start, the assistants (`AssistantSubjects`, Alexa and MCP), the doctor's patient list, the rest estimate,
+a backup restore, and the account eraser (which, until T10, requires every baby it touches to be on the built-in store; the demo
+cleanup runs through it). The built-in store is the T1 data context on the control connection (`AddDbContext`, never pooled);
+an external store builds its own options. Control table `data_stores` (owner account, state, sealed descriptor bytes, empty)
+and the routing columns `babies.data_store_id` (null = built-in, `RESTRICT`) and `babies.store_epoch` (per-baby counter,
+default 0) are mapped beside `Baby` by table splitting (`BabyStoreAssignment`), so the baby's own queries are unchanged; EF
+cannot bulk-delete a shared table, so the eraser deletes baby rows through the change tracker, and `store_epoch` is nullable in
+the schema (an optional table-splitting dependent) with the check constraint `ck_babies_store_epoch_present` keeping it non-null
+(EF reads the row only where the epoch is not null). The resolver always reads the pointer (one query per baby per request,
+the only change in the golden SQL file; the golden responses are unchanged). `Stores:Enabled` (section `Stores`, the same flag
+as T3, bound separately by `StoreRoutingOptions`) is off by default and then only means that no external store is opened: a
+baby that points at one gets `store_unavailable` on every way in (routes, assistants, jobs, erasure), never the built-in
+database. The epoch reaches clients in the additive header `X-Sync-Epoch` (SPEC "Events sync contract"). The cross-plane unit
+of work refuses an external store (T7 moves data through the backup file instead).
+
 Tiers: heavy / careful / medium / light. Every task ships tests with it. Each lists the CLAUDE.md conventions it touches.
 Order matters; T0 first, because it can kill or reshape the rest.
 
