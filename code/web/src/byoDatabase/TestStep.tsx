@@ -4,7 +4,8 @@ import { OwnDatabaseHelpLink } from './OwnDatabaseHelpLink';
 import { knownFindings, resultMessageOf, type ResultMessage } from './storeMessages';
 import type { SavePhase } from './useSaveAndTest';
 
-function ResultAlert({
+/** A save or test outcome in plain words (never the server's text); a problem links the guide. */
+export function ResultAlert({
   message,
   findings = [],
 }: {

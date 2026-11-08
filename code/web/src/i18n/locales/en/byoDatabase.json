@@ -54,7 +54,7 @@
       },
       "credentials": {
         "title": "The database refused the password",
-        "body": "The password was changed or the role lost its rights. Set up the connection again with the current details."
+        "body": "The password was changed or the role lost its rights. Use \"Update connection details\" below with the current details."
       },
       "quotaFull": {
         "title": "Your database is full",
@@ -380,7 +380,7 @@
           "title": "Disconnecting",
           "p1": "While the records are in your database, move them back to Lotties hosting first. Then Forget the saved details removes the connection details from Lotties; your database is not touched.",
           "p2": "Lotties deletes the old copy in your database after the undo window only if it can still reach it then. If you forget the details sooner, delete the lotties schema yourself.",
-          "p3": "Changing the roles' password at your provider stops Lotties at once, but then Lotties cannot move the records back for you either."
+          "p3": "Changing the roles' password at your provider stops Lotties at once. To let Lotties read the records again (for example to move them back), give it the new password with Update connection details."
         },
         "deletion": {
           "title": "Deleting your account",
@@ -391,13 +391,26 @@
         "troubleshooting": {
           "title": "What to do when something goes wrong",
           "p1": "Not reachable, no answer in time, or too many connections: the database may be paused or waking up. Resume it at your provider, wait a minute and test again. Your changes wait on this device.",
-          "p2": "Password refused: type the user name and password again (on a Supabase pooler the user name includes a dot and your project reference).",
+          "p2": "Password refused: type the user name and password again with Update connection details (on a Supabase pooler the user name includes a dot and your project reference).",
           "p3": "The role can do too much: run the setup SQL again with new roles. Unexpected tables: use an empty database.",
           "p4": "Address not allowed, port not accepted or secure connection failed: use the public address your provider gives on port 5432 or 6543; for a private certificate authority paste its certificate.",
           "p5": "Database full: free space or change the plan at your provider. Records being moved, or account being deleted: wait; nothing is lost.",
           "p6": "Only for a baby you keep alone: remove the other members and pending invites, or keep the records with Lotties to share the baby."
         }
       }
+    },
+    "update": {
+      "open": "Update connection details",
+      "title": "Update connection details",
+      "intro": "Use this when the password was changed, your provider reset it, or the address changed. Type the details of the same database that holds your baby's records: nothing is moved or changed in it. Lotties never shows the saved details, so type them all again, passwords included.",
+      "save": "Save new details and test",
+      "test": "Test the saved details",
+      "close": "Close",
+      "done": {
+        "title": "Connected again",
+        "body": "The new details are saved and Lotties reached your database with them. Your baby's records stay where they are."
+      },
+      "moveOutHint": "To move the records back to Lotties hosting, Lotties must read them from your database first. Update the connection details until the test passes, then move back. While the records are in your database, its saved details cannot be forgotten."
     }
   }
 }

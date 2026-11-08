@@ -5,14 +5,25 @@ import { Alert, Button, CircularProgress, Link, Stack, Typography } from '@mui/m
 import type { Baby } from '../db/models';
 import { BackToHostedAction, SavedStoreActions } from './StoreActions';
 import { DataLocationChoice } from './DataLocationChoice';
-import { isFeatureHidden, type DataStoreView } from './dataStoreApi';
+import { isFeatureHidden, type DataStoreStatus, type DataStoreView } from './dataStoreApi';
+import { HEALTH_SEVERITY, storeHealthOf } from './storeMessages';
 import { SetupWizard } from './SetupWizard';
 import { StoreStatusBanner } from './StoreStatusBanner';
+import { UpdateConnectionDetails } from './UpdateConnectionDetails';
 import { useDataStore } from './useDataStore';
 
-/** The records are in the family's own database: how it is doing and the way back. */
+/** A store Lotties cannot use right now (the banner is a warning or an error). */
+const isTroubled = (store: DataStoreStatus): boolean =>
+  ['warning', 'error'].includes(HEALTH_SEVERITY[storeHealthOf(store)]);
+
+/**
+ * The records are in the family's own database: how it is doing, new connection details when the
+ * old ones stopped working, and the way back (which needs the database readable, so a troubled
+ * store says to fix the connection first).
+ */
 function OwnStoreView({ babyId, view }: { babyId: string; view: DataStoreView }) {
   const { t } = useTranslation();
+  const troubled = !!view.store && isTroubled(view.store);
   return (
     <Stack spacing={2}>
       {view.store && <StoreStatusBanner store={view.store} />}
@@ -21,7 +32,9 @@ function OwnStoreView({ babyId, view }: { babyId: string; view: DataStoreView })
           {t('byoDatabase.status.provider', { provider: view.store.providerLabel })}
         </Typography>
       )}
+      <UpdateConnectionDetails babyId={babyId} providerLabel={view.store?.providerLabel ?? null} />
       <DataLocationChoice current="own" />
+      {troubled && <Alert severity="info">{t('byoDatabase.update.moveOutHint')}</Alert>}
       <BackToHostedAction babyId={babyId} />
     </Stack>
   );
@@ -41,6 +54,9 @@ function HostedView({ babyId, view }: { babyId: string; view: DataStoreView }) {
             {t('byoDatabase.status.savedTitle')}
           </Typography>
           <StoreStatusBanner store={saved} />
+          {isTroubled(saved) && (
+            <UpdateConnectionDetails babyId={babyId} providerLabel={saved.providerLabel} />
+          )}
           <SavedStoreActions
             babyId={babyId}
             ready={saved.lastCheckResult === 'ok' || saved.state === 'ready'}

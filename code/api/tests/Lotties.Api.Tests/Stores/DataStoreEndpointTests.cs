@@ -369,6 +369,42 @@ public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFix
     }
 
     [Fact]
+    public async Task Put_BabyInItsOwnersStore_ReplacesTheDescriptorKeepingTheStoreAndThePointer()
+    {
+        var (client, baby) = await AllowedOwnerAsync(consent: true);
+        var ownerId = await factory.UserIdAsync(baby.OwnerSubject);
+        var storeId = Guid.NewGuid();
+        await factory.AssignStoreAsync(baby.BabyId, ownerId, storeId);
+        await client.PutAsync(Route(baby), Body());
+        var first = await SealedDescriptorOfAsync(baby.OwnerSubject);
+        var pointerBefore = await PointerOfAsync(baby.BabyId);
+        var forgottenBefore = factory.Health.Forgotten.Count(id => id == storeId);
+
+        var response = await client.PutAsync(Route(baby), Body(providerLabel: "Rotated Cloud"));
+
+        var status = await response.ReadAsync<DataStoreStatusResponse>();
+        Assert.Equal(("own", "pending", "Rotated Cloud", true), (status.Kind, status.Store!.State, status.Store.ProviderLabel, status.Store.HasDescriptor));
+        Assert.Equal([storeId], await factory.QueryAsync(context => context.DataStores.Where(store => store.OwnerUserId == ownerId).Select(store => store.Id).ToListAsync()));
+        Assert.Equal(storeId, pointerBefore.DataStoreId);
+        Assert.Equal(pointerBefore, await PointerOfAsync(baby.BabyId));
+        Assert.NotEqual(first, await SealedDescriptorOfAsync(baby.OwnerSubject));
+        Assert.Equal(forgottenBefore + 1, factory.Health.Forgotten.Count(id => id == storeId));
+    }
+
+    [Fact]
+    public async Task Test_BabyInItsOwnersStoreAfterReplacingTheDetails_RunsTheConnectionTest()
+    {
+        var (client, baby) = await AllowedOwnerAsync(consent: true);
+        await factory.AssignStoreAsync(baby.BabyId, await factory.UserIdAsync(baby.OwnerSubject), Guid.NewGuid());
+        await client.PutAsync(Route(baby), Body());
+        factory.Tester.Result = StoreCheckResult.Ok;
+
+        var result = await (await client.PostAsync(Route(baby, "/test"), null)).ReadAsync<DataStoreTestResponse>();
+
+        Assert.Equal((true, "ok"), (result.Ok, result.Result));
+    }
+
+    [Fact]
     public async Task Put_BabyInAnotherAccountsStore_Is403StoreNotOwned()
     {
         var (client, baby) = await AllowedOwnerAsync(consent: true, BabyRole.Parent);
@@ -493,11 +529,16 @@ public sealed class DataStoreEndpointTests(StoresApiFactory factory) : IClassFix
         return await factory.QueryAsync(context => context.DataStores.AnyAsync(store => store.OwnerUserId == ownerId));
     }
 
+    private Task<BabyPointer> PointerOfAsync(Guid babyId) =>
+        factory.QueryAsync(context => context.BabyStoreAssignments.Where(row => row.BabyId == babyId).Select(row => new BabyPointer(row.DataStoreId, row.Epoch)).SingleAsync());
+
     private async Task<byte[]> SealedDescriptorOfAsync(string subject)
     {
         var ownerId = await factory.UserIdAsync(subject);
         return await factory.QueryAsync(context => context.DataStores.Where(store => store.OwnerUserId == ownerId).Select(store => store.SealedDescriptor!).SingleAsync());
     }
+
+    private sealed record BabyPointer(Guid? DataStoreId, int Epoch);
 }
 
 /// <summary>With <c>Stores:Enabled</c> off (the default host) every data-store route answers a bare 404 to everyone, before any 401 or 403.</summary>

@@ -200,6 +200,11 @@ writes your baby's records to its own database instead.
 - What you already have on the phone stays readable.
 - **Settings > Where your data lives** shows what is wrong in plain words (for example "Your database is not reachable" or
   "The database refused the password") and what to do.
+- **New password, a reset at your provider, or a new pooler address**: press **Update connection details** on that screen
+  and type the details of the **same database** again (all of them, passwords included: Lotties never shows the saved ones).
+  **Save new details and test** replaces the sealed details and tests them at once; **Test the saved details** tries the
+  ones already saved (for example after you resumed a paused project). Your baby's records and where they live do not
+  change; Lotties starts using the new details at once.
 - After a few failures in a row Lotties stops trying for a short while (30 seconds, doubling up to 5 minutes), so a paused
   database is not woken up again and again.
 - Voice assistants answer that the information is temporarily unavailable.
@@ -207,7 +212,9 @@ writes your baby's records to its own database instead.
 ## 11. Disconnecting
 
 - **While the records are in your database**: press **Move back to Lotties hosting** first. Lotties refuses to forget a
-  database that still holds a baby's records (`store_in_use`).
+  database that still holds a baby's records (`store_in_use`). Moving back reads the records from your database, so it
+  needs a working connection: if the screen shows a problem, fix it first (resume the project, or **Update connection
+  details** until the test passes), then move back.
 - **While the records are with Lotties** (or after moving back): **Forget the saved details** removes the sealed connection
   details from Lotties. Your database is not touched.
 - **The old copy after moving back**: Lotties deletes it after the undo window, but only if it can still reach your
@@ -215,7 +222,7 @@ writes your baby's records to its own database instead.
   yourself, for example with `DROP SCHEMA lotties CASCADE;` and then `DROP ROLE lotties_app; DROP ROLE lotties_migrator;`
   as the admin user.
 - **From your side**: changing the roles' password or dropping the roles stops Lotties at once (`store_credentials_rejected`).
-  Do this only as an emergency stop: Lotties then cannot move the records back for you either (see the FAQ).
+  Lotties cannot move the records back until you give it working details again with **Update connection details**.
 
 ## 12. Deleting your account
 
@@ -247,7 +254,7 @@ The app shows plain words, never the server's own text. The codes, for reference
 | `endpoint_blocked_address` | A private, local or otherwise refused address | Use a database on the public internet |
 | `endpoint_tls_failed`, `store_tls_failed` | The certificate could not be verified | Use the provider's address; for a private authority paste its certificate |
 | `endpoint_invalid_ca` | The pasted certificate is not valid PEM | Paste the whole block with the BEGIN and END lines |
-| `store_credentials_rejected` | User name or password refused | Type them again; on a pooler the user name may need `.project` |
+| `store_credentials_rejected` | User name or password refused | Type them again (**Update connection details** once the records are in your database); on a pooler the user name may need `.project` |
 | `store_role_too_powerful` | The app role can do more than read and write its tables | Run the setup SQL again with new roles; never the admin user |
 | `store_schema_conflict` | The database holds tables Lotties did not create for this baby | Use an empty database |
 | `store_schema_ahead` | Set up by a newer Lotties | Wait for the server update |
@@ -289,9 +296,15 @@ app, and the people who run Lotties could read them. This is control over where 
 
 **Can I see my connection details again in the app?** No. They are shown once (while you type them) and never again. To
 change them while the records are with Lotties, use **Replace the connection details** and type them again. While the
-records are in your database the screen does not offer that button yet. If you changed a role's password at your provider
-in the meantime, Lotties is refused (and cannot move the records back either): set the old password again at your provider,
-move the records back to Lotties hosting, then set up the connection again with new details.
+records are in your database (or when a saved database shows a problem), use **Update connection details**: type the
+current details of the same database, then **Save new details and test**. This is also the way out after you changed a
+role's password at your provider: give Lotties the new password, and it can read the records again (and move them back if
+you want).
+
+**Can I point Lotties at a different database with Update connection details?** Use it only for the database that already
+holds your baby's records. A database that Lotties set up for another store is refused (`store_schema_conflict`), but an
+empty one is not: Lotties would prepare empty tables there and use that database for the baby from then on, while the
+records stay in the old one until you give Lotties its details again. To change databases, move the records back to Lotties hosting, then set up the new one.
 
 **Does it cost money?** Lotties does not charge for it. Your provider may; free plans exist at the time of writing, with
 limits that change. Lotties does not recommend a provider.

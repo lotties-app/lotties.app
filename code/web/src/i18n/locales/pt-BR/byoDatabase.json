@@ -54,7 +54,7 @@
       },
       "credentials": {
         "title": "O banco recusou a senha",
-        "body": "A senha mudou ou a função perdeu permissões. Configure a conexão de novo com os dados atuais."
+        "body": "A senha mudou ou a função perdeu permissões. Use \"Atualizar os dados de conexão\" abaixo com os dados atuais."
       },
       "quotaFull": {
         "title": "Seu banco está cheio",
@@ -380,7 +380,7 @@
           "title": "Desconectar",
           "p1": "Enquanto os registros estão no seu banco, volte com eles para o Lotties antes. Depois, Esquecer os dados salvos remove os dados de conexão do Lotties; seu banco não é tocado.",
           "p2": "O Lotties apaga a cópia antiga no seu banco depois do prazo para desfazer só se ainda conseguir alcançá-lo. Se você esquecer os dados antes, apague o schema lotties você mesmo.",
-          "p3": "Trocar a senha das funções no provedor para o Lotties na hora, mas aí o Lotties também não consegue trazer os registros de volta para você."
+          "p3": "Trocar a senha das funções no provedor para o Lotties na hora. Para o Lotties ler os registros de novo (por exemplo para trazê-los de volta), informe a nova senha em Atualizar os dados de conexão."
         },
         "deletion": {
           "title": "Excluir sua conta",
@@ -391,13 +391,26 @@
         "troubleshooting": {
           "title": "O que fazer quando algo dá errado",
           "p1": "Inacessível, sem resposta a tempo ou conexões demais: o banco pode estar pausado ou acordando. Retome no provedor, espere um minuto e teste de novo. Suas alterações esperam neste aparelho.",
-          "p2": "Senha recusada: digite de novo o nome de usuário e a senha (no pooler do Supabase o nome de usuário tem um ponto e a referência do projeto).",
+          "p2": "Senha recusada: digite de novo o nome de usuário e a senha em Atualizar os dados de conexão (no pooler do Supabase o nome de usuário tem um ponto e a referência do projeto).",
           "p3": "A função pode fazer demais: rode o SQL de configuração de novo com funções novas. Tabelas inesperadas: use um banco vazio.",
           "p4": "Endereço não permitido, porta não aceita ou conexão segura falhou: use o endereço público que o provedor dá, na porta 5432 ou 6543; para uma autoridade certificadora privada, cole o certificado dela.",
           "p5": "Banco cheio: libere espaço ou mude de plano no provedor. Registros sendo movidos, ou conta sendo excluída: espere; nada se perde.",
           "p6": "Só para um bebê que você acompanha sozinho: remova os outros membros e convites pendentes, ou deixe os registros com o Lotties para compartilhar o bebê."
         }
       }
+    },
+    "update": {
+      "open": "Atualizar os dados de conexão",
+      "title": "Atualizar os dados de conexão",
+      "intro": "Use quando a senha mudou, seu provedor a redefiniu ou o endereço mudou. Digite os dados do mesmo banco que guarda os registros do seu bebê: nada é movido nem alterado nele. O Lotties nunca mostra os dados salvos, então digite todos de novo, inclusive as senhas.",
+      "save": "Salvar os novos dados e testar",
+      "test": "Testar os dados salvos",
+      "close": "Fechar",
+      "done": {
+        "title": "Conectado de novo",
+        "body": "Os novos dados foram salvos e o Lotties acessou seu banco com eles. Os registros do seu bebê continuam onde estão."
+      },
+      "moveOutHint": "Para voltar os registros para o Lotties guardar, o Lotties precisa primeiro lê-los no seu banco. Atualize os dados de conexão até o teste passar e depois volte. Enquanto os registros estão no seu banco, os dados salvos dele não podem ser esquecidos."
     }
   }
 }
