@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { enCatalog } from '../i18n/catalogEn';
 import { ptBRCatalog } from '../i18n/catalogPtBR';
 import { sha256Hex } from '../session/sha256';
-import { BYO_DATABASE_CONSENT } from './byoDatabaseConsent';
 import {
   CONSENT_VERSION,
   CONSENT_VERSIONS,
@@ -36,17 +35,13 @@ function consentScreen(catalog: { consent: Record<string, unknown> }) {
   return Object.fromEntries(SCREEN_KEYS.map((key) => [key, catalog.consent[key]]));
 }
 
-/**
- * The digest of every text a person accepts: terms, privacy policy, the consent screen and the optional
- * own-database consent (byoDatabaseConsent.ts), in both languages.
- */
+/** The digest of every text a person accepts: terms, privacy policy and the consent screen, in both languages. */
 export function currentTextDigest(): string {
   return sha256Hex(
     JSON.stringify({
       terms: [termsEn, termsPtBR],
       privacy: [privacyEn, privacyPtBR],
       screen: [consentScreen(enCatalog), consentScreen(ptBRCatalog)],
-      byoDatabase: [BYO_DATABASE_CONSENT.en, BYO_DATABASE_CONSENT['pt-BR']],
     }),
   );
 }

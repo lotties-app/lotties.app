@@ -25,7 +25,7 @@ export const privacyEn: PolicyDocument = {
         items: [
           'No advertising, no analytics or tracking tools, and no selling of data.',
           'No medical advice: Lotties is not a medical device.',
-          'Your data reaches other companies only when you use a feature that needs them, such as reminders or Alexa, or when you connect a database of your own for a baby.',
+          'Your data reaches other companies only when you use a feature that needs them, such as reminders or Alexa.',
         ],
       },
       {
@@ -88,7 +88,7 @@ export const privacyEn: PolicyDocument = {
               id: 'consent',
               cells: [
                 'Your consent records',
-                "When you accept the terms of use and this policy: your internal user id, the version you accepted, the date and time, the language you read it in and whether you declared that you are the child's parent or legal guardian or an adult they authorised. The same for each optional feature you turn on or off (reminders, the Alexa skill, AI assistants, your own database). No IP address and no device details.",
+                "When you accept the terms of use and this policy: your internal user id, the version you accepted, the date and time, the language you read it in and whether you declared that you are the child's parent or legal guardian or an adult they authorised. The same for each optional feature you turn on or off (reminders, the Alexa skill, AI assistants). No IP address and no device details.",
                 'To show that you consented, to ask again after a material change, and to keep the optional choices you made. Deleted with your account.',
               ],
             },
@@ -181,14 +181,6 @@ export const privacyEn: PolicyDocument = {
               ],
             },
             {
-              id: 'ownDatabase',
-              cells: [
-                'Your own database (optional, off by default)',
-                "Only if a baby's owner connects a database of her own for that baby: the provider name she types, the connection details (server address, port, database name, two user names and their passwords, and a certificate if she adds one), stored encrypted, and the state of the connection with the result and time of its last check. That baby's care records are then stored in her database instead of ours (see [Your own database](#privacy-own-database)).",
-                "To read and write that baby's records in the database she chose, and to tell her when it cannot be reached.",
-              ],
-            },
-            {
               id: 'technical',
               cells: [
                 'Technical logs',
@@ -255,7 +247,6 @@ export const privacyEn: PolicyDocument = {
             'Optional features you turn on (reminders, the Alexa skill, the address search): your consent (art. 7, I, and art. 11, I when a reminder is about a medicine or a vaccine). You withdraw it by turning the feature off or unlinking the skill.',
             'The rest estimate: your consent, given when you turn it on for yourself in Insights, as it can reveal when you work and rest (art. 7, I, and art. 11, I as it may be read as health information). Nobody can turn it on for you. You withdraw it by turning it off, and you can delete its settings and answers there.',
             "The Cry monitor: your specific consent, asked on each device before it starts, from a member who may log for the baby (art. 11, I, and art. 14, §1). You withdraw it on the monitor's page; the spells already logged stay as ordinary records until you delete them.",
-            "Keeping a baby's records in your own database: the specific consent of the baby's owner, given on its own screen before a database is connected (art. 7, I, and art. 11, I). She withdraws it by moving the records back to Lotties and removing the database.",
             'Technical logs and protecting the service: our legitimate interest in keeping it running and safe (art. 7, IX), limited to what that needs and never using health information.',
             'When the law or an authority requires us to keep or hand over data: compliance with a legal obligation (art. 7, II, and art. 11, II, a).',
           ],
@@ -279,7 +270,7 @@ export const privacyEn: PolicyDocument = {
           items: [
             'What we record: your user id, the version, the date and time, the language of the text and the capacity you declared. Not your IP address. The records are deleted with your account.',
             "Until you accept, the server refuses every request for a baby's data, and reminders, the Alexa skill and AI assistants do not work for you. You can always open your account settings, download your data and delete your account.",
-            "Optional features (reminders, the Alexa skill, AI assistants, keeping a baby's records in your own database) have their own consent, off by default, recorded when you turn them on or off, with a sentence next to the switch saying what leaves our control.",
+            'Optional features (reminders, the Alexa skill, AI assistants) have their own consent, off by default, recorded when you turn them on or off, with a sentence next to the switch saying what leaves our control.',
             'A material change (new data collected, a new recipient or purpose, a change in your rights or in who is responsible) asks for your consent again before you continue. A minor change shows a notice with a link to this page.',
             'You can withdraw your consent at any time. Because Lotties cannot work without it, withdrawing means downloading your data and deleting your account in Settings > Privacy and data. If you decline at the start, you are signed out and nothing about a child is stored.',
             'Lotties is a beta: it can have bugs, go offline and lose data, and no system is fully secure, so a leak cannot be ruled out. We take the security measures described below and, if something relevant happens, we will tell you and the ANPD as the law requires.',
@@ -346,14 +337,6 @@ export const privacyEn: PolicyDocument = {
                   ],
                 },
                 {
-                  id: 'ownDatabaseProvider',
-                  cells: [
-                    'The database provider you choose (such as Supabase, Neon or any other PostgreSQL host)',
-                    "The baby's care records, written and read by the Lotties servers, and the network address of those servers. Lotties does not choose this company: you do, and its own terms and the region you pick apply to what it stores.",
-                    "Only if the baby's owner connects her own database for that baby (see [Your own database](#privacy-own-database)).",
-                  ],
-                },
-                {
                   id: 'addressLookup',
                   cells: [
                     "Address search: BrasilAPI, ViaCEP and OpenStreetMap's Nominatim",
@@ -390,85 +373,6 @@ export const privacyEn: PolicyDocument = {
             {
               kind: 'p',
               text: 'We may also disclose data when the law or a court order requires it.',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      // Bring your own database (dataFlows.ts OWN_DATABASE_FLOW, docs/design/47-bring-your-own-database.md):
-      // the facts are held by dataFlows.test.ts; forbiddenClaims.ts lists what it must never claim.
-      id: 'own-database',
-      title: 'Your own database (optional)',
-      blocks: [
-        {
-          kind: 'note',
-          text: "Optional, chosen for each baby, and off by default. Unless a baby's owner connects a database of her own, Lotties hosts all of that baby's data, as the rest of this policy describes. The feature may not be offered to your account yet.",
-        },
-        {
-          kind: 'p',
-          text: "The owner of a baby can choose to keep that baby's care records in a PostgreSQL database of her own, at a provider she picks (such as Supabase, Neon or another). You keep using the Lotties app and your account exactly as before: only where the baby's care records are stored changes. Lotties reads and writes them there, through the Lotties servers, to run the app.",
-        },
-      ],
-      subsections: [
-        {
-          id: 'where',
-          title: 'What is stored where',
-          blocks: [
-            {
-              kind: 'list',
-              items: [
-                "In your database: the baby's care records, that is the daily entries, your own entry types, medicines and prescriptions, formulas, appointments, saved doctors and clinics, vaccinations, measurements and notes.",
-                "With Lotties: your sign-in account, your consent records, who belongs to the baby and with which role, the baby's profile, your settings, and the connection details of your database (below).",
-                'On your device: the same offline copy the app keeps for any baby.',
-              ],
-            },
-          ],
-        },
-        {
-          id: 'who-reads',
-          title: 'Who can read it',
-          blocks: [
-            {
-              kind: 'list',
-              items: [
-                "Every time the app reads or writes the records, they pass through the Lotties servers, which can read them while they do so, and may hold them for a short time in the servers' memory.",
-                'The connection details you enter are stored encrypted (AES-256-GCM) and are never shown again, not even to you. The key is held by whoever runs Lotties, so the Lotties servers, and the people who run them, can open them. A copy of the Lotties database alone does not reveal them.',
-                'This is not end-to-end encryption. Choosing your own database changes where the records are stored, not who can read them through Lotties.',
-                'The connection details and the records are kept out of our logs; a log line about your database holds only an internal id, the kind of problem and how long it took.',
-                'Your provider can access what is stored with it, under its own terms. Only the Lotties servers connect to it, over an encrypted connection whose certificate they check; your phone never does.',
-              ],
-            },
-          ],
-        },
-        {
-          id: 'provider',
-          title: 'Your provider and your responsibility',
-          blocks: [
-            {
-              kind: 'list',
-              items: [
-                'The provider is a company you choose. Lotties does not choose it and does not control it. Its terms, its prices and the country or region you pick apply to the records stored there.',
-                'You are responsible for that account. A provider may pause a free database after a time without use, limit or close it, change its terms or lose data, and free plans may have no backups. While your database cannot be reached, the app shows what is on your device and keeps your new entries until it can send them.',
-                'Lotties makes no backup of the records stored in your database. Download a backup of the baby regularly in [Hub > Export data](/hub/export).',
-                'Lotties stays responsible, as this policy describes, for what it does with the records: reading and writing them to run the app.',
-              ],
-            },
-          ],
-        },
-        {
-          id: 'limits',
-          title: 'What is not available, and moving in and out',
-          blocks: [
-            {
-              kind: 'list',
-              items: [
-                "Only the baby's owner can connect a database, after agreeing to a separate consent that names the provider and states these facts. It is recorded like the other optional consents.",
-                'In this first version, a baby whose records are in your own database has no reminders, no invited members and no doctor access.',
-                "When you connect a database you can move the baby's existing records into it. The copy on the Lotties servers is erased after a short undo period whose date the app shows; until then the records are also still with Lotties.",
-                'You can move the records back to Lotties-hosted storage at any time and then remove the database. Lotties then deletes the connection details it holds; whatever you leave in your database stays there, under your control, until you delete it.',
-                'Deleting your Lotties account deletes the connection details. The records in your own database are yours: delete them there when you want.',
-              ],
             },
           ],
         },
@@ -518,7 +422,6 @@ export const privacyEn: PolicyDocument = {
                 'Delete entries: a deleted entry disappears at once on every device. The server keeps it hidden, so that every device learns of the deletion, until the baby or your account is deleted; ask us if you need it erased sooner.',
                 'Stop sharing: the owner removes members and doctors in [Hub > Members and roles](/hub/family), where anyone can also leave a baby.',
                 "Withdraw consent for optional features: turn notifications off in [Settings](/settings#notifications), unlink the skill in the Alexa app, change or end a doctor's access in [Hub > Doctor access](/hub/family#doctor-access), turn the rest estimate off or delete its data in the Rest tab of [Insights](/insights), and withdraw the Cry monitor's consent on its page, [Hub > Cry monitor](/hub/cry-monitor), on each device.",
-                "Your own database: move a baby's records back to Lotties, or remove the database, on the screen where it was connected; what you leave in that database is under your control.",
                 'Delete your account: [Settings > Account and data](/settings#account) > Delete my account (in the doctor area, [Settings > Account and data](/doctor/settings#account)). Babies only you use are erased with all their records. On a baby other people keep, your access ends; your private notes, reminders and doctor profile are deleted; and what you added stays for them under the name "Former member". If you are the only owner of a baby others use, make someone else an owner first.',
                 'Your sign-in account at our sign-in server is deleted together with your data when our server is set up to do it, and the app says before you confirm whether it will be. When it is not set up, or the sign-in server cannot be reached at that moment, your data is still erased, the app tells you that the sign-in account remains (it holds no baby data), and you can ask us to remove it.',
               ],
@@ -553,7 +456,6 @@ export const privacyEn: PolicyDocument = {
             'Reminders: the delivery record for 14 days; snooze and dismiss choices for 7 days after the last change. A device that does not open the app for 90 days stops getting reminders, and the push address of a device that was switched off is deleted 30 days later.',
             'Doctor access log and invites: kept with the baby until it is erased.',
             'Cry monitor: the sound is never kept. The crying spells it logs are ordinary records (above); its consent stays on the device until you withdraw it or sign out.',
-            'Your own database: the connection details until the database is removed or you delete your account; the records stored in it for as long as you and your provider keep them.',
             'Technical logs: only as long as needed to run and protect the service.',
             'Database copies made before updates: deleted when no longer needed. Until then they still contain data deleted in the meantime.',
             'On your device: until you sign out (the app then deletes its copy) or clear the app data.',
@@ -577,7 +479,6 @@ export const privacyEn: PolicyDocument = {
             "Only Lotties' own pages may use the microphone (a Permissions Policy), and only after you start the Cry monitor; your browser shows when it is in use.",
             "Limits on the number and size of requests; the Alexa connection checks Amazon's signature on every request.",
             "The server uses a database account with limited rights and keeps passwords and keys out of the source code. The app's own logs leave out what you write.",
-            "If a baby's owner connects her own database: the Lotties servers reach it only at a public internet address, over an encrypted connection whose certificate they verify, and keep its connection details encrypted (see [Your own database](#privacy-own-database)).",
             'Administrator access to the servers is limited to the maintainer. We look at stored data only when needed to run the service, solve a problem you reported or comply with the law.',
           ],
         },
@@ -605,7 +506,6 @@ export const privacyEn: PolicyDocument = {
             'Notifications: the push services of Google, Mozilla, Apple and Microsoft, which operate worldwide, including in the United States. They cannot read the content of reminders or alerts.',
             'Alexa: Amazon, which processes voice requests in its own data centers, including in the United States.',
             "Address search: OpenStreetMap's Nominatim is run by the OpenStreetMap Foundation, based in the United Kingdom. BrasilAPI and ViaCEP may also use servers outside Brazil.",
-            "Your own database: the provider you choose stores a baby's care records in the country or region you pick, which may be outside Brazil.",
             'The Apple and Google app stores and GitHub, when you use them, under their own terms.',
           ],
         },

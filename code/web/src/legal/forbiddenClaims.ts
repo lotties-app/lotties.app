@@ -6,9 +6,9 @@ import type { Locale } from '../i18n/config';
  * serves, a baby's own database included, and the operator holds the key that opens its connection details:
  * nothing in Lotties is end-to-end encrypted or hidden from the operator. A text that says otherwise is false.
  *
- * Used by forbiddenClaims.test.ts on the legal texts (privacy policy, terms, the own-database consent) and
- * meant to be reused by the tests of any other user-facing text about privacy (the own-database screens, the
- * landing page): `findForbiddenClaims(text, locale)` returns what it found, empty when the text is clean.
+ * Used by forbiddenClaims.test.ts on the legal texts (privacy policy, terms; the own-database consent text is
+ * held for the general release, docs/legal-held/byo-database/README.md) and meant to be reused by the tests
+ * of any other user-facing text about privacy (the own-database screens, the landing page): `findForbiddenClaims(text, locale)` returns what it found, empty when the text is clean.
  */
 
 /** Phrases that claim more than the code does, per language (case-insensitive). */

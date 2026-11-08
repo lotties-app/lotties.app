@@ -26,7 +26,6 @@ public static class ConsentVersions
         new("2026-10-30.1", TermsVersion: "1", PrivacyPolicyVersion: "10", Material: false, Date: "2026-10-30"),
         new("2026-11-03.1", TermsVersion: "1", PrivacyPolicyVersion: "11", Material: false, Date: "2026-11-03"),
         new("2026-11-06.1", TermsVersion: "1", PrivacyPolicyVersion: "12", Material: false, Date: "2026-11-06"),
-        new("2026-11-07.1", TermsVersion: "1", PrivacyPolicyVersion: "13", Material: false, Date: "2026-11-07"),
     ];
 
     /// <summary>The newest version.</summary>
