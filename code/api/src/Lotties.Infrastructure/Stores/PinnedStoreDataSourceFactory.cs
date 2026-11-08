@@ -30,12 +30,23 @@ public sealed class PinnedStoreDataSourceFactory
     /// <summary>Most physical connections per store.</summary>
     public const int MaxPoolSize = 5;
 
+    /// <summary>Command timeout of the store migrator's connection, in seconds (a migration step can take longer than a query).</summary>
+    public const int MigrationCommandTimeoutSeconds = 120;
+
     /// <summary>
     /// The data source of one store. <paramref name="customRoots"/> (from <see cref="StoreTrustAnchors.FromPem"/>) replaces
     /// the system trust store when the provider uses a private CA; null uses the system trust store.
     /// </summary>
     public NpgsqlDataSource Create(PinnedEndpoint endpoint, StoreConnectionFields fields, X509Certificate2Collection? customRoots = null) =>
         Create(endpoint, fields, customRoots, AcceptOnlyValidCertificate);
+
+    /// <summary>
+    /// A data source for one run of the store migrator (task T5): the same pinning and TLS rule as <see cref="Create(PinnedEndpoint, StoreConnectionFields, X509Certificate2Collection?)"/>,
+    /// but unpooled (a session-level advisory lock must end with its connection, never stay on a pooled one) and with
+    /// <see cref="MigrationCommandTimeoutSeconds"/>. The caller disposes it after the run.
+    /// </summary>
+    public NpgsqlDataSource CreateForMigration(PinnedEndpoint endpoint, StoreConnectionFields fields, X509Certificate2Collection? customRoots = null) =>
+        Build(ConnectionString(endpoint, fields, forMigration: true), endpoint, customRoots, AcceptOnlyValidCertificate);
 
     /// <summary>
     /// Opens a connection of <paramref name="dataSource"/>; a failed TLS handshake or a refused certificate becomes
@@ -64,15 +75,14 @@ public sealed class PinnedStoreDataSourceFactory
         PinnedEndpoint endpoint,
         StoreConnectionFields fields,
         X509Certificate2Collection? customRoots,
-        RemoteCertificateValidationCallback validation)
-    {
-        var builder = new NpgsqlDataSourceBuilder(ConnectionString(endpoint, fields));
-        builder.UseSslClientAuthenticationOptionsCallback(options => ConfigureTls(options, endpoint.HostName, customRoots, validation));
-        return builder.Build();
-    }
+        RemoteCertificateValidationCallback validation) =>
+        Build(ConnectionString(endpoint, fields), endpoint, customRoots, validation);
 
-    /// <summary>The connection string: pinned address, fixed options, the user's three fields as values only.</summary>
-    internal static string ConnectionString(PinnedEndpoint endpoint, StoreConnectionFields fields)
+    /// <summary>
+    /// The connection string: pinned address, fixed options, the user's three fields as values only. A migration connection is
+    /// unpooled and has the longer command timeout.
+    /// </summary>
+    internal static string ConnectionString(PinnedEndpoint endpoint, StoreConnectionFields fields, bool forMigration = false)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentNullException.ThrowIfNull(fields);
@@ -86,8 +96,8 @@ public sealed class PinnedStoreDataSourceFactory
             SslMode = SslMode.Require,
             GssEncryptionMode = GssEncryptionMode.Disable,
             Timeout = ConnectTimeoutSeconds,
-            CommandTimeout = CommandTimeoutSeconds,
-            Pooling = true,
+            CommandTimeout = forMigration ? MigrationCommandTimeoutSeconds : CommandTimeoutSeconds,
+            Pooling = !forMigration,
             MinPoolSize = 0,
             MaxPoolSize = MaxPoolSize,
             ApplicationName = ApplicationName,
@@ -96,6 +106,17 @@ public sealed class PinnedStoreDataSourceFactory
             Enlist = false,
             Multiplexing = false,
         }.ConnectionString;
+    }
+
+    private static NpgsqlDataSource Build(
+        string connectionString,
+        PinnedEndpoint endpoint,
+        X509Certificate2Collection? customRoots,
+        RemoteCertificateValidationCallback validation)
+    {
+        var builder = new NpgsqlDataSourceBuilder(connectionString);
+        builder.UseSslClientAuthenticationOptionsCallback(options => ConfigureTls(options, endpoint.HostName, customRoots, validation));
+        return builder.Build();
     }
 
     private static void ConfigureTls(

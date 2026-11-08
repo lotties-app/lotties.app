@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using Lotties.Application.Stores;
+using Lotties.Domain.Exceptions;
 using Lotties.Domain.Stores;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Stores;
@@ -12,9 +14,10 @@ namespace Lotties.Api.Tests.Support;
 /// External data stores for the routing tests (docs/design/47-bring-your-own-database.md, task T2): one throw-away SQLite file per
 /// store, holding only the data tables of <see cref="LottiesDataDbContext"/> (no table of the control plane, no key to one; the
 /// built-in event types seeded). Each store builds its own context options once and a new context per scope (never pooled), like a
-/// family's database will. A store that was never <see cref="Create">created</see> here cannot be opened.
+/// family's database will. A store that was never <see cref="Create">created</see> here cannot be opened. It is also the store
+/// migrator of these stores (task T5): a store created here already has its schema, so it is ready; any other is unavailable.
 /// </summary>
-internal sealed class SqliteDataStores : IExternalDataStores, IDisposable
+internal sealed class SqliteDataStores : IExternalDataStores, IStoreMigrator, IDisposable
 {
     private readonly ConcurrentDictionary<Guid, Store> _stores = new();
 
@@ -33,6 +36,9 @@ internal sealed class SqliteDataStores : IExternalDataStores, IDisposable
 
     public ValueTask<IDataStore?> FindAsync(Guid storeId, CancellationToken cancellationToken = default) =>
         ValueTask.FromResult<IDataStore?>(_stores.GetValueOrDefault(storeId));
+
+    public Task EnsureReadyAsync(Guid storeId, CancellationToken cancellationToken = default) =>
+        _stores.ContainsKey(storeId) ? Task.CompletedTask : Task.FromException(new StoreUnavailableException());
 
     /// <summary>Reads the store's database directly (not through the API).</summary>
     public async Task<TResult> QueryAsync<TResult>(Guid storeId, Func<LottiesDataDbContext, Task<TResult>> query)

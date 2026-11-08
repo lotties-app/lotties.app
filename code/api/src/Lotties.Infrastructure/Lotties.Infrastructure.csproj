@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Lotties.Infrastructure.Tests" />
+    <InternalsVisibleTo Include="Lotties.Postgres.Tests" />
+    <InternalsVisibleTo Include="Lotties.Api.Tests" />
   </ItemGroup>
 
   <ItemGroup>

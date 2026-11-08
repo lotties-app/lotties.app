@@ -30,4 +30,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The store migrator (design 47 task T5) and the data migration chain run here against a real Postgres. -->
+    <ProjectReference Include="..\..\src\Lotties.Infrastructure\Lotties.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

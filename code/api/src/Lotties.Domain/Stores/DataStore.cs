@@ -1,4 +1,5 @@
 using Lotties.Domain.Common;
+using Lotties.Domain.Exceptions;
 
 namespace Lotties.Domain.Stores;
 
@@ -34,6 +35,12 @@ public sealed class DataStore
     /// <summary>The sealed connection descriptor (task T3), or <c>null</c> before the owner saved one. Never logged or returned.</summary>
     public byte[]? SealedDescriptor { get; private set; }
 
+    /// <summary>
+    /// The last data migration the migrator found applied in the store (task T5; a migration id of the data chain), or
+    /// <c>null</c> before the first run. A mirror of <c>lotties.store_meta.schema_version</c> in the store.
+    /// </summary>
+    public string? SchemaVersion { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -41,4 +48,21 @@ public sealed class DataStore
     /// <summary>A new store of <paramref name="ownerUserId"/>, <see cref="DataStoreState.Pending"/> and without a descriptor.</summary>
     public static DataStore Create(Guid id, Guid ownerUserId, DateTimeOffset now) =>
         new(Ids.Required(id, nameof(id)), Ids.Required(ownerUserId, nameof(ownerUserId)), UtcTime.Normalize(now));
+
+    /// <summary>
+    /// Records what the migrator found (task T5): the new state and, when known, the schema version of the store. Throws
+    /// <see cref="DataStoreStateTransitionException"/> for a move <see cref="DataStoreStateTransitions"/> does not allow; a null
+    /// <paramref name="schemaVersion"/> keeps the stored one.
+    /// </summary>
+    public void RecordMigrationState(DataStoreState state, string? schemaVersion, DateTimeOffset now)
+    {
+        if (!DataStoreStateTransitions.CanMove(State, state))
+        {
+            throw new DataStoreStateTransitionException(State, state);
+        }
+
+        State = state;
+        SchemaVersion = schemaVersion ?? SchemaVersion;
+        UpdatedAt = UtcTime.Normalize(now);
+    }
 }

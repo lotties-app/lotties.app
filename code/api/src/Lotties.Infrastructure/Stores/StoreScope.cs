@@ -24,6 +24,7 @@ internal sealed class StoreScope(
     IStoreResolver resolver,
     BuiltInDataStore builtIn,
     IExternalDataStores externals,
+    IStoreMigrator migrator,
     IOptions<StoreRoutingOptions> options) : IStoreScope, IAsyncDisposable, IDisposable
 {
     private readonly Dictionary<Guid, StoreRoute> _routes = [];
@@ -139,7 +140,10 @@ internal sealed class StoreScope(
         _stores[key] = key.Id is { } id ? await OpenExternalAsync(id, cancellationToken) : builtIn;
     }
 
-    /// <summary>An external store, only while the feature is on and the store can be opened; <c>store_unavailable</c> otherwise.</summary>
+    /// <summary>
+    /// An external store, only while the feature is on, once the migrator found its schema ready (task T5; it throws the store's
+    /// <c>store_*</c> error otherwise) and when the store can be opened; <c>store_unavailable</c> otherwise.
+    /// </summary>
     private async Task<IDataStore> OpenExternalAsync(Guid storeId, CancellationToken cancellationToken)
     {
         if (!options.Value.Enabled)
@@ -147,6 +151,7 @@ internal sealed class StoreScope(
             throw new StoreUnavailableException();
         }
 
+        await migrator.EnsureReadyAsync(storeId, cancellationToken);
         return await externals.FindAsync(storeId, cancellationToken) ?? throw new StoreUnavailableException();
     }
 
