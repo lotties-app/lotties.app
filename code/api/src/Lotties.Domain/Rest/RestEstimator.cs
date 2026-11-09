@@ -31,7 +31,6 @@ public static class RestEstimator
     {
         private readonly RestInput _input;
         private readonly RestConstants _constants;
-        private readonly TimeZoneInfo _zone;
         private readonly TimeSpan _fall;
         private readonly TimeSpan _lead;
         private readonly DateTimeOffset _nightStart;
@@ -50,14 +49,13 @@ public static class RestEstimator
             _input = input;
             _constants = constants;
             var s = input.Settings;
-            _zone = TimeZoneInfo.FindSystemTimeZoneById(s.TimeZone);
             _fall = TimeSpan.FromMinutes(s.FallAsleepMinutes);
             _lead = TimeSpan.FromMinutes(s.WakeLeadMinutes);
-            _nightStart = ToUtc(input.Night, s.NightStart);
-            var endDate = s.NightEnd <= s.NightStart ? input.Night.AddDays(1) : input.Night;
-            _nightEnd = ToUtc(endDate, s.NightEnd);
+            var night = RestCalendar.NightWindow(s, input.Night);
+            _nightStart = night.Start;
+            _nightEnd = night.End;
             _horizon = _nightEnd + MorningHorizon;
-            _work = BuildWorkWindows();
+            _work = [.. RestCalendar.WorkWindows(s, input.Night).Select(window => new Span(window.Start, window.End))];
         }
 
         public RestNight Execute()
@@ -264,35 +262,6 @@ public static class RestEstimator
             }
 
             return null;
-        }
-
-        private DateTimeOffset ToUtc(DateOnly date, TimeOnly time)
-        {
-            var local = DateTime.SpecifyKind(date.ToDateTime(time), DateTimeKind.Unspecified);
-            // A gap time (spring forward) gets the standard offset, so it lands just after the gap; an ambiguous time the standard (later) one.
-            var offset = _zone.GetUtcOffset(local);
-            return new DateTimeOffset(local - offset, TimeSpan.Zero);
-        }
-
-        private List<Span> BuildWorkWindows()
-        {
-            var spans = new List<Span>();
-            for (var day = _input.Night.AddDays(-2); day <= _input.Night.AddDays(3); day = day.AddDays(1))
-            {
-                var iso = day.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)day.DayOfWeek;
-                foreach (var window in _input.Settings.WorkWindows)
-                {
-                    if (!window.Days.Contains(iso))
-                    {
-                        continue;
-                    }
-
-                    var endDay = window.End <= window.Start ? day.AddDays(1) : day;
-                    spans.Add(new Span(ToUtc(day, window.Start), ToUtc(endDay, window.End)));
-                }
-            }
-
-            return spans;
         }
 
         // Intervals during which every one of the babies is asleep (an open sleep runs to MaxValue).

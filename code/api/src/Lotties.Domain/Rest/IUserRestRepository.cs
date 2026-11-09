@@ -12,6 +12,9 @@ public interface IUserRestRepository
     /// <summary>The user's answer for a night, or <c>null</c>; tracked.</summary>
     Task<UserRestMorning?> FindMorningAsync(Guid userId, DateOnly night, CancellationToken cancellationToken = default);
 
+    /// <summary>The user's answers for the nights from <paramref name="firstNight"/> to <paramref name="lastNight"/> (both included); not tracked.</summary>
+    Task<IReadOnlyList<UserRestMorning>> ListMorningsAsync(Guid userId, DateOnly firstNight, DateOnly lastNight, CancellationToken cancellationToken = default);
+
     /// <summary>Saves a first answer for a night. Returns <c>false</c>, leaving nothing tracked, when a concurrent PUT saved it first.</summary>
     Task<bool> TryAddMorningAsync(UserRestMorning morning, CancellationToken cancellationToken = default);
 

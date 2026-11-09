@@ -116,8 +116,9 @@ Decision (owner, 2026-10-30): **the server holds the settings and does the calcu
 
 A **tab in Insights** ("Rest" in English, "Descanso" in Portuguese), shown only to the person who turned the feature
 on: last night as a range with its parts, labelled "Estimated from the baby's log, not a measurement", with the work
-windows and the three periods editable from the same tab, and the morning question of R5 shown there when it applies. No history chart
-before the owner decides one, no totals for the family, no comparison. Turning it off removes the card and deletes the
+windows and the three periods editable from the same tab, and the morning question of R5 shown there when it applies. A history
+of the person's own past nights is allowed since the owner's decision of 2026-11-09 (section 12); still no totals for the
+family, no comparison. Turning it off removes the card and deletes the
 local settings. Every string through `t()` (en and pt-BR), dates and durations through the Intl helpers.
 
 ## 6. Privacy and consent
@@ -235,3 +236,64 @@ records (baby id, is-baby-sleep, started, ended, created by, created at, importe
 estimate response. Events imported from a file, events backfilled more than 15 minutes after they started, and events
 by a person other than the one asked about do not count as that person's own events (R2, R4, R5); all baby sleep events
 count for R1 and R3 whoever logged them.
+
+## 12. History (owner decision 2026-11-09)
+
+The owner reopened only "no history chart": a person may see their **own** estimated rest over past nights. Everything
+else stands: per person, only the caller sees it (no other member, Owner, Doctor, assistant, export or backup), no score,
+no target, no "better/worse", no comparison between people, no total for the family, no judging. Estimates are still
+**not stored**: the history is recomputed from the baby's events on every request. No new table, no migration.
+
+Rules (pure, `Lotties.Domain.Rest.RestHistoryBuilder`, no I/O; it calls `RestEstimator.Estimate` once per night and repeats
+none of R1 to R6):
+- **Window.** N nights, N = 14 (default) or 28, ending at the **last finished night**: the latest local date (person's
+  zone) whose night window has ended at or before now. Every night uses the person's **current** settings (settings are not
+  kept per night). Each night reads the same events the one-night estimate reads (the night window widened by 12 hours
+  before and 6 hours after, `RestCalendar.EventWindow`) and that night's morning answer if any.
+- **Work overlap.** A night whose window overlaps one of the person's work windows (R6) is reported with its estimate and
+  `workOverlap: true`, but it is left out of every summary.
+- **Counted nights.** A night counts in the summaries when its status is `ok`, every part has an end (an `ongoing` part
+  leaves it out) and it has no work overlap. Its rested minutes are the sum of its parts (a counted night with no part
+  counts as 0). `notEnoughLog` nights (no baby sleep in the window) are never counted: no guess from nothing.
+- **Weekday and weekend.** By the local date the night **starts** (person's zone): Monday to Friday nights are `weekday`,
+  Saturday and Sunday nights `weekend` (so Friday night is a weekday night). Each group gives its counted nights and, from
+  **4** counted nights on, the 25th percentile, median and 75th percentile of the nightly rested minutes (linear
+  interpolation between closest ranks, as a spreadsheet's PERCENTILE.INC). Below 4 the group gives only its count and the
+  web shows nothing.
+- **Typical night.** For each of the 24 local hours, starting at the hour the night window starts, the share (0 to 1) of
+  counted nights in which the person is estimated asleep during that hour, meaning the parts cover at least 30 minutes of
+  that real hour (on a daylight-saving night an hour is the real hour that starts at that wall-clock time). Below 4
+  counted nights only the count is given (`hours` empty).
+- **Rounding.** Minutes to the nearest 5 (halves away from zero), after the percentile is taken on exact minutes; shares
+  to 2 decimals (halves away from zero).
+- Never stored, cached, logged (only "Computed the rest history of user {id}"), exported or put in the backup; no
+  assistant tool.
+
+**Route** `GET /api/v1/me/rest/history?nights=14|28` (default 14; anything else, including signs, spaces and decimals, is
+400 `validation_failed` with field `nights`). Any signed-in person, account-level like `GET /me/rest` (row in
+`EndpointRoleMatrixTests`), behind the consent gate, reads only the caller's own settings, morning answers and the events
+of her non-Doctor babies (an external store that cannot be reached is the usual retriable 503). With the feature off the
+answer is `status: "disabled"` with empty lists and nothing is read. Nights are oldest first.
+
+```json
+{ "status": "ok", "nightsRequested": 14,
+  "nights": [
+    { "night": "2026-01-09", "status": "ok",
+      "parts": [ { "start": "2026-01-09T21:20:00+00:00", "end": "2026-01-10T06:30:00+00:00",
+                   "startSource": "babyLog", "endSource": "babyFinalWake", "confidence": "low" } ],
+      "confidence": "low", "workOverlap": false, "counted": true } ],
+  "weekdayWeekend": {
+    "weekday": { "countedNights": 5, "restedMinutes": { "p25": 550, "median": 550, "p75": 550 } },
+    "weekend": { "countedNights": 0, "restedMinutes": null } },
+  "typicalNight": { "countedNights": 5, "hours": [ { "hour": 19, "share": 0 }, { "hour": 20, "share": 0 },
+                                                   { "hour": 21, "share": 1 } ] },
+  "constants": { "fallAsleepMinutes": 20, "wakeLeadMinutes": 20, "minimumNights": 4, "minutesRounding": 5,
+                 "shareDecimals": 2, "asleepMinutesPerHour": 30 } }
+```
+
+(`nights` and `hours` shortened.) A night's `status` is `ok` or `notEnoughLog`; its `confidence` is `low` when any part is
+low, `normal` otherwise, `null` without parts; `parts` are exactly those of `GET /me/rest` for that night; `counted` says
+whether the night is in the summaries. `typicalNight.hours` always holds 24 entries when present.
+
+Data: nothing new is stored, so `AccountErasureTests`, `EfAccountDataEraser` and the backup need no change. Tests:
+`Lotties.Domain.Tests/Rest/RestHistoryBuilderTests.cs`, `Lotties.Api.Tests/Rest/RestHistoryEndpointTests.cs`.
