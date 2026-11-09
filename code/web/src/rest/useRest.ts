@@ -5,7 +5,9 @@ import { useOnline } from '../sync/useOnline';
 import {
   deleteRestSettings,
   getRestEstimate,
+  getRestHistory,
   getRestSettings,
+  type HistoryNights,
   putRestMorning,
   putRestSettings,
   type RestSettings,
@@ -19,6 +21,7 @@ import { toPayload } from './restModel';
 
 export const restSettingsKey = ['rest', 'settings'] as const;
 export const restEstimateKey = (night: string | null) => ['rest', 'estimate', night] as const;
+export const restHistoryKey = (nights: HistoryNights) => ['rest', 'history', nights] as const;
 
 /** The person's rest settings; `data` is `null` when the server does not know the route. */
 export function useRestSettings() {
@@ -46,11 +49,27 @@ export function useRestEstimate(night: string | null) {
   return { query, online };
 }
 
+/** The person's own last `nights` nights (section 12); offline, the cached answer only. */
+export function useRestHistory(nights: HistoryNights) {
+  const api = useApiClient();
+  const online = useOnline();
+  const query = useQuery({
+    queryKey: restHistoryKey(nights),
+    queryFn: () => getRestHistory(api, nights),
+    enabled: online,
+  });
+  return { query, online };
+}
+
 export function useRestActions() {
   const api = useApiClient();
   const queryClient = useQueryClient();
   const refreshSettings = () => queryClient.invalidateQueries({ queryKey: restSettingsKey });
-  const refreshEstimates = () => queryClient.invalidateQueries({ queryKey: ['rest', 'estimate'] });
+  const refreshEstimates = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['rest', 'estimate'] }),
+      queryClient.invalidateQueries({ queryKey: ['rest', 'history'] }),
+    ]);
   return {
     saveSettings: async (settings: RestSettings) => {
       await putRestSettings(api, toPayload(settings));
@@ -59,6 +78,7 @@ export function useRestActions() {
     deleteSettings: async () => {
       await deleteRestSettings(api);
       queryClient.removeQueries({ queryKey: ['rest', 'estimate'] });
+      queryClient.removeQueries({ queryKey: ['rest', 'history'] });
       await refreshSettings();
     },
     answerMorning: async (night: string, upAt: string) => {

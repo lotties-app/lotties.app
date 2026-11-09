@@ -108,6 +108,9 @@ const DevBoardPreview = import.meta.env.DEV ? lazy(() => import('./dev/BoardPrev
 const DevDataLocationPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/DataLocationPreview'))
   : null;
+const DevRestHistoryPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/RestHistoryPreview'))
+  : null;
 
 export function AppRoutes() {
   const { pathname } = useLocation();
@@ -138,6 +141,16 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevDataLocationPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevRestHistoryPreview && (
+        <Route
+          path="/dev/rest-history"
+          element={
+            <Suspense fallback={null}>
+              <DevRestHistoryPreview />
             </Suspense>
           }
         />

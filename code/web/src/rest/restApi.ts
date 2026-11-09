@@ -1,4 +1,5 @@
 import type { ApiClient } from '../api/apiClient';
+import { ApiError } from '../api/ApiError';
 import { API_PREFIX } from '../sync/contract';
 
 /*
@@ -132,6 +133,127 @@ export async function getRestEstimate(
 ): Promise<RestEstimate | null> {
   const query = night ? `?night=${encodeURIComponent(night)}` : '';
   return parseRestEstimate(await api.request<unknown>(`${API_PREFIX}/me/rest${query}`));
+}
+
+/* History (section 12): the caller's own past nights, recomputed by the server on every request. */
+
+export const HISTORY_NIGHTS = [14, 28] as const;
+export type HistoryNights = (typeof HISTORY_NIGHTS)[number];
+
+export interface RestHistoryNight {
+  /** The local date the night started (`yyyy-mm-dd`). */
+  night: string;
+  status: 'ok' | 'notEnoughLog';
+  parts: RestPart[];
+  confidence: 'normal' | 'low' | null;
+  workOverlap: boolean;
+  /** Whether the night is in the summaries. */
+  counted: boolean;
+}
+
+export interface RestedMinutes {
+  p25: number;
+  median: number;
+  p75: number;
+}
+
+export interface RestGroup {
+  countedNights: number;
+  /** `null` below the minimum number of counted nights. */
+  restedMinutes: RestedMinutes | null;
+}
+
+export interface RestHistoryHour {
+  hour: number;
+  /** 0 to 1. */
+  share: number;
+}
+
+export interface RestHistory {
+  status: 'ok' | 'disabled';
+  nightsRequested: number;
+  /** Oldest first, as the server sends them. */
+  nights: RestHistoryNight[];
+  weekdayWeekend: { weekday: RestGroup; weekend: RestGroup };
+  /** `hours` is empty below the minimum, otherwise 24 entries from the hour the night starts. */
+  typicalNight: { countedNights: number; hours: RestHistoryHour[] };
+  constants: { minimumNights: number };
+}
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+function parseGroup(value: unknown): RestGroup {
+  if (!isRecord(value)) return { countedNights: 0, restedMinutes: null };
+  const minutes = value.restedMinutes;
+  const restedMinutes =
+    isRecord(minutes) &&
+    isFiniteNumber(minutes.p25) &&
+    isFiniteNumber(minutes.median) &&
+    isFiniteNumber(minutes.p75)
+      ? { p25: minutes.p25, median: minutes.median, p75: minutes.p75 }
+      : null;
+  return {
+    countedNights: isFiniteNumber(value.countedNights) ? value.countedNights : 0,
+    restedMinutes,
+  };
+}
+
+function parseHistoryNight(value: unknown): RestHistoryNight | null {
+  if (!isRecord(value) || typeof value.night !== 'string') return null;
+  return {
+    night: value.night,
+    status: value.status === 'ok' ? 'ok' : 'notEnoughLog',
+    parts: Array.isArray(value.parts)
+      ? (value.parts as RestPart[]).filter((p) => isRecord(p) && typeof p.start === 'string')
+      : [],
+    confidence:
+      value.confidence === 'low' || value.confidence === 'normal' ? value.confidence : null,
+    workOverlap: value.workOverlap === true,
+    counted: value.counted === true,
+  };
+}
+
+/** The history, or `null` when the answer is not shaped like it (an older server). */
+export function parseRestHistory(body: unknown): RestHistory | null {
+  if (!isRecord(body) || (body.status !== 'ok' && body.status !== 'disabled')) return null;
+  if (!Array.isArray(body.nights)) return null;
+  const pair = isRecord(body.weekdayWeekend) ? body.weekdayWeekend : {};
+  const typical = isRecord(body.typicalNight) ? body.typicalNight : {};
+  const constants = isRecord(body.constants) ? body.constants : {};
+  return {
+    status: body.status,
+    nightsRequested: isFiniteNumber(body.nightsRequested) ? body.nightsRequested : 14,
+    nights: body.nights.map(parseHistoryNight).filter((n): n is RestHistoryNight => n !== null),
+    weekdayWeekend: { weekday: parseGroup(pair.weekday), weekend: parseGroup(pair.weekend) },
+    typicalNight: {
+      countedNights: isFiniteNumber(typical.countedNights) ? typical.countedNights : 0,
+      hours: Array.isArray(typical.hours)
+        ? typical.hours.filter(
+            (h): h is RestHistoryHour =>
+              isRecord(h) && isFiniteNumber(h.hour) && isFiniteNumber(h.share),
+          )
+        : [],
+    },
+    constants: {
+      minimumNights: isFiniteNumber(constants.minimumNights) ? constants.minimumNights : 4,
+    },
+  };
+}
+
+/** The caller's own last `nights` nights; `null` when the server does not know the route. */
+export async function getRestHistory(
+  api: ApiClient,
+  nights: HistoryNights,
+): Promise<RestHistory | null> {
+  try {
+    return parseRestHistory(
+      await api.request<unknown>(`${API_PREFIX}/me/rest/history?nights=${nights}`),
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
 }
 
 export async function putRestMorning(api: ApiClient, night: string, upAt: string): Promise<void> {
