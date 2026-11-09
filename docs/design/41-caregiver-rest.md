@@ -121,6 +121,18 @@ of the person's own past nights is allowed since the owner's decision of 2026-11
 family, no comparison. Turning it off removes the card and deletes the
 local settings. Every string through `t()` (en and pt-BR), dates and durations through the Intl helpers.
 
+**History (web).** Below the last-night card, a History card (`rest/RestHistorySection.tsx`) reads
+`GET /me/rest/history` (section 12) with a 14 / 28 nights switch (the choice alone is remembered in localStorage;
+the answer stays in the memory cache like the estimate, and offline the last answer is shown, marked as such). It
+shows: night by night, newest first, each night's parts as ranges on one shared clock axis (one hue, the chart's night
+token; low-confidence parts lighter with a dashed edge; a night with work overlap or not counted faded, with the reason
+in words); typical rested time for weeknights and weekend nights as "about" the median with the 25th to 75th percentile
+range and the count; and a typical night, 24 hour cells whose colour strength is the share of counted nights estimated
+asleep. Below `minimumNights` a group or the typical night shows only its count and "Not enough nights yet", never a
+chart. Every chart has a visually hidden table with the same values; no score, target, verdict, judging colour or
+comparison. A 404 (an API without the route) hides the card. Preview `/dev/rest-history?state=ok|belowMinimum|
+notEnoughLog|disabled|error`; tests `rest/restHistory.test.tsx`.
+
 ## 6. Privacy and consent
 
 The estimate is information about when an adult rested: it can be read as health data, and the work windows say when a

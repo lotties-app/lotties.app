@@ -87,6 +87,58 @@
         "body": "Your work hours, night, time zone and morning answers are deleted from the server. You can turn it on again later.",
         "confirm": "Turn off and delete"
       }
+    },
+    "history": {
+      "title": "History",
+      "intro": "Your own past nights, estimated again from the baby's log each time you open this.",
+      "nightsLabel": "Nights to show",
+      "nights_one": "{{count}} night",
+      "nights_other": "{{count}} nights",
+      "error": "The history could not be loaded.",
+      "offlineNone": "Connect to see the history.",
+      "empty": "No night in this period has an estimate yet.",
+      "chart": {
+        "title": "Night by night",
+        "label": "Estimated rest, night by night, newest first",
+        "gaps": "Gaps are times you are estimated to be up.",
+        "legendRest": "Estimated rest",
+        "legendLow": "Low confidence",
+        "legendMuted": "Not in the typical values",
+        "notEnoughLog": "Not enough in the log",
+        "workOverlap": "Overlaps your work hours, not in the typical values",
+        "notCounted": "Not in the typical values",
+        "caption": "Estimated rest per night",
+        "colNight": "Night",
+        "colRest": "Estimated rest",
+        "colNote": "Note"
+      },
+      "typical": {
+        "title": "Typical rested time",
+        "hint": "Weeknights start Monday to Friday; weekend nights Saturday and Sunday. The bar spans the middle half of your counted nights; the mark is the middle night.",
+        "weekday": "Weeknights",
+        "weekend": "Weekend nights",
+        "about": "about {{duration}}",
+        "range": "usually about {{from}} to {{to}}",
+        "counted_one": "{{count}} night",
+        "counted_other": "{{count}} nights",
+        "notEnough": "Not enough nights yet (needs {{count}})",
+        "label": "Typical rested time on weeknights and weekend nights",
+        "caption": "Typical rested time",
+        "colGroup": "Nights",
+        "colTypical": "Typical",
+        "colRange": "Usual range",
+        "colCount": "Counted"
+      },
+      "typicalNight": {
+        "title": "A typical night",
+        "label": "How often you are estimated to be asleep at each hour",
+        "hint": "The stronger an hour's colour, the more of your counted nights you are estimated to be asleep in it.",
+        "fewer": "Fewer nights",
+        "more": "More nights",
+        "caption": "Share of counted nights estimated asleep, by hour",
+        "colHour": "Hour",
+        "colShare": "Nights estimated asleep"
+      }
     }
   }
 }

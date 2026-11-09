@@ -87,6 +87,58 @@
         "body": "Seu horário de trabalho, noite, fuso horário e respostas da manhã são apagados do servidor. Você pode ligar de novo depois.",
         "confirm": "Desligar e apagar"
       }
+    },
+    "history": {
+      "title": "Histórico",
+      "intro": "Suas próprias noites passadas, estimadas de novo a partir do registro do bebê sempre que você abre esta tela.",
+      "nightsLabel": "Noites a mostrar",
+      "nights_one": "{{count}} noite",
+      "nights_other": "{{count}} noites",
+      "error": "Não foi possível carregar o histórico.",
+      "offlineNone": "Conecte-se para ver o histórico.",
+      "empty": "Nenhuma noite deste período tem estimativa ainda.",
+      "chart": {
+        "title": "Noite a noite",
+        "label": "Descanso estimado, noite a noite, da mais recente para a mais antiga",
+        "gaps": "Os intervalos são momentos em que você provavelmente estava acordado.",
+        "legendRest": "Descanso estimado",
+        "legendLow": "Pouca confiança",
+        "legendMuted": "Fora dos valores típicos",
+        "notEnoughLog": "Registro insuficiente",
+        "workOverlap": "Coincide com seu horário de trabalho, fora dos valores típicos",
+        "notCounted": "Fora dos valores típicos",
+        "caption": "Descanso estimado por noite",
+        "colNight": "Noite",
+        "colRest": "Descanso estimado",
+        "colNote": "Observação"
+      },
+      "typical": {
+        "title": "Tempo de descanso típico",
+        "hint": "Noites de semana começam de segunda a sexta; noites de fim de semana, sábado e domingo. A barra cobre a metade do meio das noites contadas; a marca é a noite do meio.",
+        "weekday": "Noites de semana",
+        "weekend": "Noites de fim de semana",
+        "about": "cerca de {{duration}}",
+        "range": "em geral de cerca de {{from}} a {{to}}",
+        "counted_one": "{{count}} noite",
+        "counted_other": "{{count}} noites",
+        "notEnough": "Ainda não há noites suficientes (são necessárias {{count}})",
+        "label": "Tempo de descanso típico em noites de semana e de fim de semana",
+        "caption": "Tempo de descanso típico",
+        "colGroup": "Noites",
+        "colTypical": "Típico",
+        "colRange": "Faixa usual",
+        "colCount": "Contadas"
+      },
+      "typicalNight": {
+        "title": "Uma noite típica",
+        "label": "Com que frequência você provavelmente está dormindo em cada hora",
+        "hint": "Quanto mais forte a cor de uma hora, em mais noites contadas você provavelmente estava dormindo nela.",
+        "fewer": "Menos noites",
+        "more": "Mais noites",
+        "caption": "Parte das noites contadas com sono estimado, por hora",
+        "colHour": "Hora",
+        "colShare": "Noites com sono estimado"
+      }
     }
   }
 }

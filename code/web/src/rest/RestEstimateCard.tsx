@@ -1,28 +1,16 @@
 import { useState } from 'react';
-import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Alert, Box, Button, Card, Skeleton, Stack, Typography } from '@mui/material';
-import { formatDate, formatTime } from '../i18n/format';
+import { formatDate } from '../i18n/format';
 import { Icon } from '../ui/Icon';
-import type { RestEstimate, RestPart } from './restApi';
+import type { RestEstimate } from './restApi';
+import { partText } from './restText';
 import { shiftNight } from './restModel';
 import { MorningQuestion } from './MorningQuestion';
 import { restEstimateKey, useRestEstimate } from './useRest';
 
 const NAV_BUTTON = { minWidth: 44, minHeight: 44 } as const;
-
-function partText(part: RestPart, t: TFunction): string {
-  const start = formatTime(part.start);
-  const main = part.end
-    ? t('rest.part.range', { start, end: formatTime(part.end) })
-    : t('rest.part.ongoing', { start });
-  const notes = [
-    part.endSource === 'confirmed' ? t('rest.part.confirmed') : null,
-    part.confidence === 'low' ? t('rest.part.lowConfidence') : null,
-  ].filter(Boolean);
-  return notes.length > 0 ? `${main} (${notes.join(', ')})` : main;
-}
 
 function Parts({ estimate }: { estimate: RestEstimate }) {
   const { t } = useTranslation();
