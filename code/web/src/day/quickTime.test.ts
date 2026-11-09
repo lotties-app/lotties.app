@@ -54,9 +54,10 @@ describe('quick time arithmetic', () => {
       startedAt: iso(at(8, 5)),
       endedAt: iso(at(8, 5)),
     });
-    expect(quickTimeChanges({ startedAt: iso(at(8, 0)), endedAt: null }, at(7, 55), null)).toEqual(
-      { startedAt: iso(at(7, 55)), endedAt: null },
-    );
+    expect(quickTimeChanges({ startedAt: iso(at(8, 0)), endedAt: null }, at(7, 55), null)).toEqual({
+      startedAt: iso(at(7, 55)),
+      endedAt: null,
+    });
     expect(
       quickTimeChanges({ startedAt: iso(at(8, 0)), endedAt: iso(at(9, 0)) }, at(8, 5), at(9, 10)),
     ).toEqual({ startedAt: iso(at(8, 5)), endedAt: iso(at(9, 10)) });

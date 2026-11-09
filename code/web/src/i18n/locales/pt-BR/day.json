@@ -99,7 +99,8 @@
       "actions": "Ações do registro",
       "changeTime": "Mudar horário",
       "stop": "Parar",
-      "view": "Ver"
+      "view": "Ver",
+      "open": "Mais ações para {{title}}"
     },
     "quickTime": {
       "nudges": "Mover {{field}}",

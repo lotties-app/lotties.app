@@ -99,7 +99,8 @@
       "actions": "Entry actions",
       "changeTime": "Change time",
       "stop": "Stop",
-      "view": "View"
+      "view": "View",
+      "open": "More actions for {{title}}"
     },
     "quickTime": {
       "nudges": "Move {{field}}",

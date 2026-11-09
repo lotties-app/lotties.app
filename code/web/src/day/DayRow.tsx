@@ -1,6 +1,6 @@
 import { useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, ButtonBase, Typography } from '@mui/material';
+import { Box, ButtonBase, IconButton, Typography } from '@mui/material';
 import type { BabyEvent, EventType, Medication, Prescription } from '../db/models';
 import type { EntitySyncState } from '../db/queries';
 import { bottlePauseSummary } from '../events/bottlePauses';
@@ -18,7 +18,7 @@ import {
 } from '../timers/pauseMath';
 import { EventIllustration } from '../ui/illustrations/EventIllustration';
 import { Icon } from '../ui/Icon';
-import { palette } from '../ui/form/styles';
+import { focusRing, palette } from '../ui/form/styles';
 import type { FedToSleep } from '../now/bottleFollowUp';
 import { AssistantOriginNote } from '../events/AssistantOriginNote';
 import { DeleteRequestBanner } from '../events/DeleteRequestBanner';
@@ -347,11 +347,7 @@ export function DayRow({
         sx={(theme) => ({
           mb: 1,
           display: 'flex',
-          // With large text on a narrow phone the running/duration pill goes under the title
-          // instead of pushing the card past the screen edge.
-          flexWrap: 'wrap',
           alignItems: 'center',
-          columnGap: 1,
           minWidth: 0,
           borderRadius: `${RADIUS.tile}px`,
           backgroundColor: palette(theme).category[view.category].bg,
@@ -367,92 +363,128 @@ export function DayRow({
             : {}),
         })}
       >
-        <ButtonBase
-          ref={rowButton}
-          onClick={() => onEdit(event)}
-          {...(onMenu ? { onKeyDown: hold.onKeyDown, 'aria-describedby': hintId } : {})}
-          disabled={readOnly}
-          aria-label={
-            readOnly
-              ? `${view.title}, ${time}`
-              : viewOnly
-                ? t('day.viewRow', { title: view.title, time, name: authorName })
-                : t('day.editRow', { title: view.title, time })
-          }
+        <Box
           sx={{
-            // Basis 0: the title only gives up its line when the pill alone fills the card.
-            flex: '1 1 0',
+            flex: '1 1 auto',
+            display: 'flex',
+            // With large text on a narrow phone the running/duration pill goes under the title
+            // instead of pushing the card past the screen edge.
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            columnGap: 1,
             minWidth: 0,
-            minHeight: 56,
-            display: 'block',
-            textAlign: 'start',
-            pl: 2,
-            pr: 1.5,
-            py: 1,
-            borderRadius: `${RADIUS.tile}px`,
-            '&.Mui-disabled': { opacity: 1 },
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-            <Typography sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{view.title}</Typography>
-            <SyncMark state={syncState} />
-          </Box>
-          {detail && (
-            <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-              {detail}
-            </Typography>
-          )}
-          {givenBy && (
-            <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
-              {givenBy}
-            </Typography>
-          )}
-          <AssistantOriginNote event={event} />
-          {onMenu && (
-            <Box component="span" id={hintId} sx={visuallyHidden}>
-              {t('day.rowMenu.hint')}
-            </Box>
-          )}
-        </ButtonBase>
-        <DeleteRequestBanner
-          event={event}
-          {...(deleteRequest
-            ? { onDelete: deleteRequest.onDelete, onKeep: deleteRequest.onKeep }
-            : {})}
-        />
-        {(running || length) && (
-          <Box
+          <ButtonBase
+            ref={rowButton}
+            onClick={() => onEdit(event)}
+            {...(onMenu ? { onKeyDown: hold.onKeyDown, 'aria-describedby': hintId } : {})}
+            disabled={readOnly}
+            aria-label={
+              readOnly
+                ? `${view.title}, ${time}`
+                : viewOnly
+                  ? t('day.viewRow', { title: view.title, time, name: authorName })
+                  : t('day.editRow', { title: view.title, time })
+            }
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
+              // Basis 0: the title shares its line with the pill (and Stop) while it keeps about
+              // 7 characters; below that (a running row on a 360 px phone) they wrap under it.
+              flex: '1 1 0',
+              minWidth: 'min(100%, 6.5rem)',
+              minHeight: 56,
+              display: 'block',
+              textAlign: 'start',
+              pl: 2,
               pr: 1.5,
-              flexShrink: 0,
-              maxWidth: '100%',
-              ml: 'auto',
+              py: 1,
+              borderRadius: `${RADIUS.tile}px`,
+              '&.Mui-disabled': { opacity: 1 },
             }}
           >
-            {running ? (
-              <RunningPill event={event} />
-            ) : (
-              <DurationPill text={length!} {...(pausedText ? { pausedText } : {})} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}>
+                {view.title}
+              </Typography>
+              <SyncMark state={syncState} />
+            </Box>
+            {detail && (
+              <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+                {detail}
+              </Typography>
             )}
-            {running && onStop && (
-              <ButtonBase
-                onClick={() => onStop(event)}
-                aria-label={t('day.stopNamed', { title: view.title })}
-                sx={(theme) => ({
-                  minWidth: 44,
-                  minHeight: 44,
-                  borderRadius: '50%',
-                  boxShadow: `inset 0 0 0 1.5px ${palette(theme).primary.main}`,
-                  color: palette(theme).primary.main,
-                })}
-              >
-                <Icon name="stop" size={20} />
-              </ButtonBase>
+            {givenBy && (
+              <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: 'anywhere' }}>
+                {givenBy}
+              </Typography>
             )}
-          </Box>
+            <AssistantOriginNote event={event} />
+            {onMenu && (
+              <Box component="span" id={hintId} sx={visuallyHidden}>
+                {t('day.rowMenu.hint')}
+              </Box>
+            )}
+          </ButtonBase>
+          <DeleteRequestBanner
+            event={event}
+            {...(deleteRequest
+              ? { onDelete: deleteRequest.onDelete, onKeep: deleteRequest.onKeep }
+              : {})}
+          />
+          {(running || length) && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                pr: onMenu ? 0.5 : 1.5,
+                flexShrink: 0,
+                maxWidth: '100%',
+                ml: 'auto',
+              }}
+            >
+              {running ? (
+                <RunningPill event={event} />
+              ) : (
+                <DurationPill text={length!} {...(pausedText ? { pausedText } : {})} />
+              )}
+              {running && onStop && (
+                <ButtonBase
+                  onClick={() => onStop(event)}
+                  aria-label={t('day.stopNamed', { title: view.title })}
+                  sx={(theme) => ({
+                    minWidth: 44,
+                    minHeight: 44,
+                    borderRadius: '50%',
+                    boxShadow: `inset 0 0 0 1.5px ${palette(theme).primary.main}`,
+                    color: palette(theme).primary.main,
+                  })}
+                >
+                  <Icon name="stop" size={20} />
+                </ButtonBase>
+              )}
+            </Box>
+          )}
+        </Box>
+        {onMenu && (
+          <IconButton
+            onClick={(click) => {
+              click.stopPropagation();
+              onMenu(event);
+            }}
+            aria-label={t('day.rowMenu.open', { title: view.title })}
+            aria-haspopup="dialog"
+            sx={(theme) => ({
+              flexShrink: 0,
+              width: 44,
+              height: 44,
+              mr: 0.5,
+              color: palette(theme).text.secondary,
+              '&:focus-visible': { outline: focusRing(theme), outlineOffset: -2 },
+            })}
+          >
+            <Icon name="more" size={20} />
+          </IconButton>
         )}
       </Box>
     </Box>

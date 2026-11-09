@@ -121,7 +121,11 @@ export function QuickTimeForm({ event, onSaved, onCancel }: Props) {
         onChange={(next) => edit(() => setStart(next))}
       />
       {end && (
-        <TimeRow label={t('events.end')} value={end} onChange={(next) => edit(() => setEnd(next))} />
+        <TimeRow
+          label={t('events.end')}
+          value={end}
+          onChange={(next) => edit(() => setEnd(next))}
+        />
       )}
       {problem && (
         <Typography role="alert" color="error" variant="body2">

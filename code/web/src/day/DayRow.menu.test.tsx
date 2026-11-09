@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyEvent } from '../db/models';
 import { SLEEP, event } from '../presets/presetFixtures';
 import { SLEEP_TYPE } from '../test/builtInTypes';
+import { useTestLocale } from '../test/locale';
 import { renderUi } from '../test/renderUi';
 import { DayRow } from './DayRow';
 import { HOLD_MS } from './useLongPress';
@@ -32,7 +33,7 @@ function renderRow(props: Partial<Parameters<typeof DayRow>[0]> = {}) {
       />
     </ul>,
   );
-  const row = screen.getByRole('button', { name: /^Edit / });
+  const row = screen.getByRole('button', { name: /^(Edit|Editar) / });
   return { onEdit, onMenu, row };
 }
 
@@ -148,5 +149,66 @@ describe('DayRow menu without a gesture', () => {
     );
     expect(screen.queryByText(/Shift\+F10/)).toBeNull();
     expect(fireEvent.contextMenu(screen.getByRole('button'))).toBe(true);
+  });
+});
+
+describe('DayRow more button', () => {
+  it('opens the menu without editing and is a focusable button', () => {
+    const { onEdit, onMenu } = renderRow();
+    const more = screen.getByRole('button', { name: 'More actions for Nap' });
+    expect(more.tabIndex).toBe(0);
+    fireEvent.click(more);
+    expect(onMenu).toHaveBeenCalledWith(nap);
+    expect(onEdit).not.toHaveBeenCalled();
+  });
+
+  it('is not a hold target: a long press on it does nothing more than its click', () => {
+    vi.useFakeTimers();
+    try {
+      const { onEdit, onMenu } = renderRow();
+      press(screen.getByRole('button', { name: 'More actions for Nap' }), HOLD_MS + 10);
+      expect(onMenu).toHaveBeenCalledTimes(1);
+      expect(onEdit).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps Stop beside it on a running row', () => {
+    const onStop = vi.fn();
+    const { onMenu } = renderRow({ event: { ...nap, endedAt: null }, onStop });
+    fireEvent.click(screen.getByRole('button', { name: 'Stop Nap' }));
+    expect(onStop).toHaveBeenCalled();
+    expect(onMenu).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for Nap' }));
+    expect(onMenu).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives a Viewer (row tap disabled) a keyboard route to the menu', () => {
+    const onMenu = vi.fn();
+    renderUi(
+      <ul>
+        <DayRow
+          event={nap}
+          type={SLEEP_TYPE}
+          medications={[]}
+          syncState={undefined}
+          hasNext={false}
+          onEdit={() => undefined}
+          onMenu={onMenu}
+          readOnly
+        />
+      </ul>,
+    );
+    const more = screen.getByRole('button', { name: 'More actions for Nap' });
+    expect(more.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(more);
+    expect(onMenu).toHaveBeenCalledWith(nap);
+  });
+
+  it('is named in Portuguese too', async () => {
+    await useTestLocale('pt-BR');
+    renderRow();
+    expect(screen.getByRole('button', { name: /^Mais ações para / })).toBeTruthy();
   });
 });

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BabyRoutineDb } from '../db/database';
@@ -8,6 +9,7 @@ import { dismissDeletedNotice } from '../events/deletedEvents';
 import { BABY_ID, testDatabase } from '../test/fakeApi';
 import { renderWithDb } from '../test/renderApp';
 import { DIAPER, EVENT_TYPES, FEEDING, seedBaby } from '../test/seed';
+import { DayRow } from './DayRow';
 import { DayRowMenu } from './DayRowMenu';
 
 let db: BabyRoutineDb;
@@ -56,7 +58,10 @@ function renderMenu(event: BabyEvent, props: Partial<Parameters<typeof DayRowMen
 }
 
 const actions = () => within(screen.getByRole('group', { name: 'Entry actions' }));
-const actionNames = () => actions().getAllByRole('button').map((b) => b.textContent);
+const actionNames = () =>
+  actions()
+    .getAllByRole('button')
+    .map((b) => b.textContent);
 
 describe('DayRowMenu actions', () => {
   it('offers Edit, Change time and Delete for an entry the user may change', async () => {
@@ -172,5 +177,45 @@ describe('DayRowMenu change time', () => {
     fireEvent.click(actions().getByRole('button', { name: 'Change time' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(actionNames()).toEqual(['Edit', 'Change time', 'Delete']);
+  });
+});
+
+describe('DayRow and its menu together', () => {
+  it('a Viewer opens View only from the more button', async () => {
+    const event = await feeding();
+    const onOpen = vi.fn();
+    function Harness() {
+      const [open, setOpen] = useState<BabyEvent | null>(null);
+      return (
+        <>
+          <ul>
+            <DayRow
+              event={event}
+              type={EVENT_TYPES[0]}
+              medications={[]}
+              syncState={undefined}
+              hasNext={false}
+              onEdit={onOpen}
+              onMenu={setOpen}
+              readOnly
+            />
+          </ul>
+          <DayRowMenu
+            event={open}
+            type={EVENT_TYPES[0]}
+            medications={[]}
+            canChange={false}
+            onOpen={onOpen}
+            onClose={() => setOpen(null)}
+          />
+        </>
+      );
+    }
+    renderWithDb(db, <Harness />);
+    fireEvent.click(screen.getByRole('button', { name: /^More actions for / }));
+    expect(actionNames()).toEqual(['View']);
+    expect(onOpen).not.toHaveBeenCalled();
+    fireEvent.click(actions().getByRole('button', { name: 'View' }));
+    expect(onOpen).toHaveBeenCalledWith(event);
   });
 });
