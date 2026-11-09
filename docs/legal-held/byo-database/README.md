@@ -34,7 +34,10 @@ The PR that held it restored every shipped legal file to its state before #63 (`
   account, availability, backups, costs, security settings, access, the roles she creates and any copy left there;
   Lotties: not responsible for loss, unavailability, deletion or exposure caused by her database, provider or settings,
   and still responsible for its own processing, servers, database and the sealed connection details; "nothing in this
-  section limits the rights the law gives you"). The account-deletion line now mentions the opt-in wipe (T10). The
+  section limits the rights the law gives you"). The account-deletion line now mentions the opt-in wipe (T10). Improved 2026-11-08 (second pass): the liability
+  exclusion now covers only what does not come from something Lotties did, states that Lotties creates and changes only
+  its own tables in the `lotties` schema, and keeps the line that the law's rights and Lotties' responsibility for its own
+  failures are untouched (en, pt-BR, policy and consent text). The
   wording awaits legal review (docs/PRIVACY-LAWYER-BRIEF.md item 19): liability exclusion may be limited by law.
 - The patch does **not** contain a consent version entry on purpose: the release adds a new MATERIAL entry (below).
   Right after `git apply`, exactly three tests fail, as guards until steps 3, 4 and 7 are done: the two version/digest
@@ -62,9 +65,10 @@ policy statement and not part of the consent digest). The landing page and in-ap
    changed since, resolve the conflicts by hand (the source is also in commit `ae6d8d3`:
    `git show ae6d8d3 -- code/web/src/legal`).
 2. Re-check every fact in the section and in `byoDatabaseConsent.ts` against the code at that time (design 47 status:
-   members, reminders and doctors for such a baby, the undo window, the cipher, what moves and what stays). Known
-   mismatch found while holding: the held texts say the app shows the date the undo period ends, and docs/BYO-DATABASE.md
-   section 9 says the app does not show it yet; fix whichever is wrong at release. Never claim
+   members, reminders and doctors for such a baby, the undo window, the cipher, what moves and what stays). The held
+   texts now say the undo period is seven days (the default of `Stores__Moves__UndoWindowDays`, which the operator can
+   change: update the number if it is changed) and no longer say the app shows its end date; if the web gains that
+   date, the texts may say so. Never claim
    what the code does not do; `forbiddenClaims.test.ts` and `dataFlows.test.ts` must pass.
 3. `code/web/src/legal/privacyPolicy.ts`: `PRIVACY_POLICY_VERSION` = the next number after the shipped one (13 if the
    shipped one is still 12), `PRIVACY_POLICY_LAST_UPDATED` = the release date. If the number is not 13, update the test

@@ -1,5 +1,5 @@
 diff --git a/code/web/src/legal/PrivacyPage.test.tsx b/code/web/src/legal/PrivacyPage.test.tsx
-index 230ed6bc..d3ddbdd1 100644
+index 230ed6b..d3ddbdd 100644
 --- a/code/web/src/legal/PrivacyPage.test.tsx
 +++ b/code/web/src/legal/PrivacyPage.test.tsx
 @@ -10,7 +10,7 @@ import { AppThemeProvider } from '../theme/AppThemeProvider';
@@ -22,7 +22,7 @@ index 230ed6bc..d3ddbdd1 100644
  
 diff --git a/code/web/src/legal/byoDatabaseConsent.test.ts b/code/web/src/legal/byoDatabaseConsent.test.ts
 new file mode 100644
-index 00000000..6b387e1e
+index 0000000..6b387e1
 --- /dev/null
 +++ b/code/web/src/legal/byoDatabaseConsent.test.ts
 @@ -0,0 +1,95 @@
@@ -123,7 +123,7 @@ index 00000000..6b387e1e
 +});
 diff --git a/code/web/src/legal/byoDatabaseConsent.ts b/code/web/src/legal/byoDatabaseConsent.ts
 new file mode 100644
-index 00000000..bbc4ce51
+index 0000000..f681e59
 --- /dev/null
 +++ b/code/web/src/legal/byoDatabaseConsent.ts
 @@ -0,0 +1,83 @@
@@ -165,8 +165,8 @@ index 00000000..bbc4ce51
 +      'The records still pass through the Lotties servers every time the app reads or writes them, and the Lotties servers can read them while they do.',
 +      'The connection details you enter are stored encrypted (AES-256-GCM) and are never shown again. The key is held by whoever runs Lotties, so the Lotties servers, and the people who run them, can open them. This is not end-to-end encryption.',
 +      '{provider} is a company you choose, not one Lotties chooses. Its own terms, its prices and the country or region you picked apply to your records there. You are responsible for that account and that database: its availability, backups, costs, security settings, who can access it, the roles you create and any copy of the records left in it.',
-+      'Lotties is not responsible for loss, unavailability, deletion or exposure of the records caused by your database, {provider} or your settings there. Lotties stays responsible for what it does itself: its servers, its own database and how it sends and stores your connection details.',
-+      'Your provider may pause or close a free database, limit it, or lose data, and free plans may have no backups. Once the records are moved and the undo period the app shows has ended, Lotties keeps no copy of them, so download a backup of the baby from time to time.',
++      'Lotties is not responsible for loss, unavailability, deletion or exposure of the records that comes from your database, {provider} or your settings there, and not from something Lotties did. Lotties stays responsible for what it does itself: its servers, its own database and how it sends and stores your connection details. This does not limit the rights the law gives you.',
++      'Your provider may pause or close a free database, limit it, or lose data, and free plans may have no backups. Once the records are moved and the seven-day undo period has ended, Lotties keeps no copy of them, so download a backup of the baby from time to time.',
 +      'For this baby, reminders, invited members and doctor access are not available in this first version.',
 +      'You can move the records back to Lotties, or disconnect, at any time.',
 +    ],
@@ -183,8 +183,8 @@ index 00000000..bbc4ce51
 +      'Os registros continuam passando pelos servidores do Lotties sempre que o app os lê ou grava, e os servidores do Lotties conseguem lê-los nesse momento.',
 +      'Os dados de conexão que você informa são guardados criptografados (AES-256-GCM) e nunca mais são mostrados. A chave fica com quem opera o Lotties; por isso os servidores do Lotties, e as pessoas que os operam, conseguem abri-los. Isto não é criptografia de ponta a ponta.',
 +      '{provider} é uma empresa que você escolhe, não o Lotties. Os termos dela, os preços dela e o país ou a região que você escolheu valem para os seus registros lá. Você é responsável por essa conta e por esse banco: disponibilidade, backups, custos, configurações de segurança, quem tem acesso, as funções que você cria e qualquer cópia dos registros que fique nele.',
-+      'O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição dos registros causadas pelo seu banco, por {provider} ou pelas suas configurações lá. O Lotties continua responsável pelo que ele mesmo faz: os servidores dele, o banco dele e como envia e guarda os seus dados de conexão.',
-+      'O seu provedor pode pausar ou encerrar um banco de dados gratuito, limitá-lo ou perder dados, e planos gratuitos podem não ter backup. Depois que os registros forem movidos e o prazo para desfazer que o app mostra terminar, o Lotties não guarda cópia deles, então baixe de vez em quando um backup do bebê.',
++      'O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição dos registros que venha do seu banco, de {provider} ou das suas configurações lá, e não de algo que o Lotties fez. O Lotties continua responsável pelo que ele mesmo faz: os servidores dele, o banco dele e como envia e guarda os seus dados de conexão. Isto não limita os direitos que a lei lhe dá.',
++      'O seu provedor pode pausar ou encerrar um banco de dados gratuito, limitá-lo ou perder dados, e planos gratuitos podem não ter backup. Depois que os registros forem movidos e o prazo de sete dias para desfazer terminar, o Lotties não guarda cópia deles, então baixe de vez em quando um backup do bebê.',
 +      'Para este bebê, lembretes, membros convidados e o acesso de médicos não estão disponíveis nesta primeira versão.',
 +      'Você pode trazer os registros de volta para o Lotties, ou desconectar, a qualquer momento.',
 +    ],
@@ -211,7 +211,7 @@ index 00000000..bbc4ce51
 +  };
 +}
 diff --git a/code/web/src/legal/consentVersions.test.ts b/code/web/src/legal/consentVersions.test.ts
-index e5512cdd..cd976724 100644
+index e5512cd..cd97672 100644
 --- a/code/web/src/legal/consentVersions.test.ts
 +++ b/code/web/src/legal/consentVersions.test.ts
 @@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
@@ -242,7 +242,7 @@ index e5512cdd..cd976724 100644
    );
  }
 diff --git a/code/web/src/legal/dataFlows.test.ts b/code/web/src/legal/dataFlows.test.ts
-index 0dac5748..dc1b9505 100644
+index 0dac574..dc1b950 100644
 --- a/code/web/src/legal/dataFlows.test.ts
 +++ b/code/web/src/legal/dataFlows.test.ts
 @@ -5,6 +5,7 @@ import {
@@ -380,7 +380,7 @@ index 0dac5748..dc1b9505 100644
      expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(3);
      expect(PRIVACY_POLICY_LAST_UPDATED >= '2026-10-24').toBe(true);
 diff --git a/code/web/src/legal/dataFlows.ts b/code/web/src/legal/dataFlows.ts
-index db736062..842e6389 100644
+index db73606..842e638 100644
 --- a/code/web/src/legal/dataFlows.ts
 +++ b/code/web/src/legal/dataFlows.ts
 @@ -23,6 +23,7 @@ export const DATA_CATEGORY_IDS = [
@@ -546,7 +546,7 @@ index db736062..842e6389 100644
   * Planned data flows: described in the policy, NOT built (no code collects or uses anything for them).
   * Each has its own policy section that must say it is not active and off by default (dataFlows.test.ts),
 diff --git a/code/web/src/legal/forbiddenClaims.test.ts b/code/web/src/legal/forbiddenClaims.test.ts
-index 54c2a0f8..e2e2e281 100644
+index 54c2a0f..e2e2e28 100644
 --- a/code/web/src/legal/forbiddenClaims.test.ts
 +++ b/code/web/src/legal/forbiddenClaims.test.ts
 @@ -1,5 +1,6 @@
@@ -576,7 +576,7 @@ index 54c2a0f8..e2e2e281 100644
 +  });
  });
 diff --git a/code/web/src/legal/forbiddenClaims.ts b/code/web/src/legal/forbiddenClaims.ts
-index 96a3dfa2..b2a24597 100644
+index 96a3dfa..b2a2459 100644
 --- a/code/web/src/legal/forbiddenClaims.ts
 +++ b/code/web/src/legal/forbiddenClaims.ts
 @@ -6,9 +6,9 @@ import type { Locale } from '../i18n/config';
@@ -593,7 +593,7 @@ index 96a3dfa2..b2a24597 100644
  
  /** Phrases that claim more than the code does, per language (case-insensitive). */
 diff --git a/code/web/src/legal/policyTypes.ts b/code/web/src/legal/policyTypes.ts
-index 14576e40..2640208c 100644
+index 14576e4..2640208 100644
 --- a/code/web/src/legal/policyTypes.ts
 +++ b/code/web/src/legal/policyTypes.ts
 @@ -71,6 +71,7 @@ export const POLICY_SECTION_IDS = [
@@ -605,7 +605,7 @@ index 14576e40..2640208c 100644
    'rights',
    'retention',
 diff --git a/code/web/src/legal/privacy.en.ts b/code/web/src/legal/privacy.en.ts
-index 4efcf15a..28344162 100644
+index 4efcf15..278a49d 100644
 --- a/code/web/src/legal/privacy.en.ts
 +++ b/code/web/src/legal/privacy.en.ts
 @@ -25,7 +25,7 @@ export const privacyEn: PolicyDocument = {
@@ -733,9 +733,9 @@ index 4efcf15a..28344162 100644
 +                'The provider is a company you choose. Lotties does not choose it and does not control it. Its terms, its prices and the country or region you pick apply to the records stored there.',
 +                'You are responsible for that account and that database: keeping it available, its backups and how long they are kept, its costs, its security settings and who can access it, the passwords and roles you create (including the ones Lotties uses), anything else you keep in the same database, and any copy of the records left there (an old copy after moving back, leftovers after disconnecting, and the records that stay there after you delete your Lotties account unless you choose that Lotties deletes them).',
 +                'A provider may pause a free database after a time without use, limit or close it, change its terms or lose data, and free plans may have no backups. While your database cannot be reached, the app shows what is on your device and keeps your new entries until it can send them.',
-+                'Lotties is not responsible for loss, unavailability, deletion or exposure of records caused by your database, your provider or your settings there.',
++                'Lotties is not responsible for loss, unavailability, deletion or exposure of records that comes from your database, your provider or your settings there, and not from something Lotties did.',
 +                'Lotties makes no backup of the records stored in your database. Download a backup of the baby regularly in [Hub > Export data](/hub/export).',
-+                'Lotties stays responsible, as this policy describes, for what it does itself: reading and writing the records to run the app, how it sends and stores your connection details, its own servers and the data in its own database. Nothing in this section limits the rights the law gives you.',
++                'Lotties stays responsible, as this policy describes, for what it does itself: reading and writing the records to run the app, how it sends and stores your connection details, its own servers and the data in its own database. Lotties creates and changes only its own tables, in a schema named lotties, and does not read or change anything else in your database. Nothing in this section limits the rights the law gives you, or the responsibility Lotties has for its own failures.',
 +              ],
 +            },
 +          ],
@@ -749,7 +749,7 @@ index 4efcf15a..28344162 100644
 +              items: [
 +                "Only the baby's owner can connect a database, after agreeing to a separate consent that names the provider and states these facts. It is recorded like the other optional consents.",
 +                'In this first version, a baby whose records are in your own database has no reminders, no invited members and no doctor access.',
-+                "When you connect a database you can move the baby's existing records into it. The copy on the Lotties servers is erased after a short undo period whose date the app shows; until then the records are also still with Lotties.",
++                "When you connect a database you can move the baby's existing records into it. The copy on the Lotties servers is erased after an undo period of seven days (the period Lotties sets today); until then the records are also still with Lotties, and moving them back undoes the move.",
 +                'You can move the records back to Lotties-hosted storage at any time and then remove the database. Lotties then deletes the connection details it holds; whatever you leave in your database stays there, under your control, until you delete it.',
 +                'Deleting your Lotties account deletes the connection details. The records in your own database stay there, yours, unless you choose in the delete dialog that Lotties deletes them first; otherwise delete them there when you want.',
 +              ],
@@ -794,7 +794,7 @@ index 4efcf15a..28344162 100644
            ],
          },
 diff --git a/code/web/src/legal/privacy.pt-BR.ts b/code/web/src/legal/privacy.pt-BR.ts
-index e25a7774..9f61ea5d 100644
+index e25a777..05eafae 100644
 --- a/code/web/src/legal/privacy.pt-BR.ts
 +++ b/code/web/src/legal/privacy.pt-BR.ts
 @@ -26,7 +26,7 @@ export const privacyPtBR: PolicyDocument = {
@@ -922,9 +922,9 @@ index e25a7774..9f61ea5d 100644
 +                'O provedor é uma empresa que você escolhe. O Lotties não a escolhe e não a controla. Os termos dela, os preços dela e o país ou a região que você escolher valem para os registros guardados lá.',
 +                'Você é responsável por essa conta e por esse banco: mantê-lo disponível, os backups e por quanto tempo ficam guardados, os custos, as configurações de segurança e quem tem acesso, as senhas e funções que você cria (inclusive as que o Lotties usa), tudo o mais que você guardar no mesmo banco e qualquer cópia dos registros que fique lá (uma cópia antiga depois de trazer os registros de volta, sobras depois de desconectar e os registros que continuam lá depois que você exclui a sua conta no Lotties, a não ser que escolha que o Lotties os apague).',
 +                'Um provedor pode pausar um banco gratuito depois de um tempo sem uso, limitá-lo ou encerrá-lo, mudar os termos ou perder dados, e planos gratuitos podem não ter backup. Enquanto o seu banco não puder ser acessado, o app mostra o que está no seu aparelho e guarda os novos registros até conseguir enviá-los.',
-+                'O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição de registros causadas pelo seu banco, pelo seu provedor ou pelas suas configurações lá.',
++                'O Lotties não é responsável por perda, indisponibilidade, exclusão ou exposição de registros que venha do seu banco, do seu provedor ou das suas configurações lá, e não de algo que o Lotties fez.',
 +                'O Lotties não faz backup dos registros guardados no seu banco. Baixe com frequência um backup do bebê em [Central > Exportar dados](/hub/export).',
-+                'O Lotties continua responsável, como descreve esta política, pelo que ele mesmo faz: ler e gravar os registros para o app funcionar, como envia e guarda os seus dados de conexão, os servidores dele e os dados no banco dele. Nada nesta seção limita os direitos que a lei lhe dá.',
++                'O Lotties continua responsável, como descreve esta política, pelo que ele mesmo faz: ler e gravar os registros para o app funcionar, como envia e guarda os seus dados de conexão, os servidores dele e os dados no banco dele. O Lotties cria e altera apenas as tabelas dele, em um esquema chamado lotties, e não lê nem altera mais nada no seu banco. Nada nesta seção limita os direitos que a lei lhe dá, nem a responsabilidade do Lotties pelas próprias falhas.',
 +              ],
 +            },
 +          ],
@@ -938,7 +938,7 @@ index e25a7774..9f61ea5d 100644
 +              items: [
 +                'Só o titular do bebê pode conectar um banco, depois de concordar com um consentimento separado que cita o provedor e diz estes fatos. Ele é registrado como os outros consentimentos opcionais.',
 +                'Nesta primeira versão, um bebê cujos registros estão no seu próprio banco não tem lembretes, membros convidados nem acesso de médicos.',
-+                'Ao conectar um banco, você pode levar para ele os registros que o bebê já tem. A cópia nos servidores do Lotties é apagada depois de um curto prazo para desfazer, cuja data o app mostra; até lá os registros também continuam com o Lotties.',
++                'Ao conectar um banco, você pode levar para ele os registros que o bebê já tem. A cópia nos servidores do Lotties é apagada depois de um prazo de sete dias para desfazer (o prazo que o Lotties define hoje); até lá os registros também continuam com o Lotties, e trazê-los de volta desfaz a mudança.',
 +                'Você pode trazer os registros de volta para o armazenamento do Lotties a qualquer momento e então remover o banco. O Lotties então apaga os dados de conexão que guarda; o que você deixar no seu banco continua lá, sob o seu controle, até você apagar.',
 +                'Excluir a sua conta no Lotties apaga os dados de conexão. Os registros no seu próprio banco continuam lá, seus, a não ser que você escolha na janela de exclusão que o Lotties os apague antes; caso contrário, apague-os lá quando quiser.',
 +              ],
@@ -983,7 +983,7 @@ index e25a7774..9f61ea5d 100644
            ],
          },
 diff --git a/code/web/src/legal/privacyPolicy.ts b/code/web/src/legal/privacyPolicy.ts
-index 0ec6241b..be6c63d3 100644
+index 0ec6241..be6c63d 100644
 --- a/code/web/src/legal/privacyPolicy.ts
 +++ b/code/web/src/legal/privacyPolicy.ts
 @@ -5,10 +5,10 @@
