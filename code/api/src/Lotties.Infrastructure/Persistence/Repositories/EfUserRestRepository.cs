@@ -16,6 +16,12 @@ internal sealed class EfUserRestRepository(LottiesDbContext context, UniqueViola
     public Task<UserRestMorning?> FindMorningAsync(Guid userId, DateOnly night, CancellationToken cancellationToken = default) =>
         context.UserRestMornings.SingleOrDefaultAsync(morning => morning.UserId == userId && morning.Night == night, cancellationToken);
 
+    public async Task<IReadOnlyList<UserRestMorning>> ListMorningsAsync(Guid userId, DateOnly firstNight, DateOnly lastNight, CancellationToken cancellationToken = default) =>
+        await context.UserRestMornings
+            .AsNoTracking()
+            .Where(morning => morning.UserId == userId && morning.Night >= firstNight && morning.Night <= lastNight)
+            .ToListAsync(cancellationToken);
+
     public Task<bool> TryAddMorningAsync(UserRestMorning morning, CancellationToken cancellationToken = default) =>
         UniqueInserts.TryInsertAsync(context, uniqueViolations, morning, cancellationToken);
 

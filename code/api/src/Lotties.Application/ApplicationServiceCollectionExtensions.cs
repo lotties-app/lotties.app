@@ -66,6 +66,8 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<FeedingPreferences.IFeedingSettingsService, FeedingPreferences.FeedingSettingsService>();
         services.AddScoped<Rest.IRestSettingsService, Rest.RestSettingsService>();
         services.AddScoped<Rest.IRestEstimateService, Rest.RestEstimateService>();
+        services.AddScoped<Rest.IRestHistoryService, Rest.RestHistoryService>();
+        services.AddScoped<Rest.RestEventReader>();
         services.AddScoped<Consents.IConsentService, Consents.ConsentService>();
         services.AddScoped<Stores.IDataStoreService, Stores.DataStoreService>();
         services.AddScoped<Stores.DataStoreMoves>();

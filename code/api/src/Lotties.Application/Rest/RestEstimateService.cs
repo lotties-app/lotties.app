@@ -1,10 +1,7 @@
 using System.Globalization;
 using System.Text.Json.Serialization;
 using Lotties.Application.Serialization;
-using Lotties.Application.Stores;
 using Lotties.Application.Users;
-using Lotties.Domain.Babies;
-using Lotties.Domain.Clinical;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Rest;
 using Microsoft.Extensions.Logging;
@@ -59,18 +56,11 @@ public interface IRestEstimateService
 internal sealed class RestEstimateService(
     ICurrentUser currentUser,
     IUserRestRepository rest,
-    IBabyRepository babies,
-    IClinicalEventRepository events,
-    IStoreScope stores,
+    RestEventReader reader,
     TimeProvider timeProvider,
     ILogger<RestEstimateService> logger) : IRestEstimateService
 {
-    private const string SleepKey = "sleep";
     private const int MaxEventsPerBaby = 5000;
-    private static readonly TimeSpan LookBack = TimeSpan.FromHours(12);
-    private static readonly TimeSpan LookAhead = TimeSpan.FromHours(6);
-    private static readonly TimeSpan SleepIdLookBack = TimeSpan.FromHours(24);
-    private static readonly string[] SleepKeys = [SleepKey];
 
     public async Task<RestEstimateResponse> GetMineAsync(string? night, CancellationToken cancellationToken = default)
     {
@@ -99,33 +89,7 @@ internal sealed class RestEstimateService(
         var start = RestSettingsService.NightStartUtc(night, values);
         var endDate = values.NightEnd <= values.NightStart ? night.AddDays(1) : night;
         var end = RestSettingsService.NightStartUtc(endDate, values with { NightStart = values.NightEnd });
-        var from = start - LookBack;
-        var to = end + LookAhead;
-        var result = new List<RestEvent>();
-        foreach (var baby in await babies.ListForUserAsync(userId, cancellationToken))
-        {
-            // A Doctor is no caregiver here: her babies never feed the estimate (design 41 section 4).
-            if (baby.Members.SingleOrDefault(member => member.UserId == userId) is not { } membership || membership.Role.IsDoctor())
-            {
-                continue;
-            }
-
-            await stores.EnterAsync(baby.Id, cancellationToken);
-            var sleepIds = (await events.ListByTypesAsync(baby.Id, SleepKeys, from - SleepIdLookBack, to, cancellationToken))
-                .Select(item => item.Event.Id)
-                .ToHashSet();
-            var overlapping = await events.ListOverlappingAsync(baby.Id, from, to, MaxEventsPerBaby, [], cancellationToken);
-            result.AddRange(overlapping.Select(item => new RestEvent(
-                item.BabyId,
-                sleepIds.Contains(item.Id),
-                item.StartedAt,
-                item.EndedAt,
-                item.CreatedBy,
-                item.CreatedAt,
-                false)));
-        }
-
-        return result;
+        return await reader.ReadAsync(userId, start - RestCalendar.EventLookBack, end + RestCalendar.EventLookAhead, MaxEventsPerBaby, cancellationToken);
     }
 
     private static DateOnly? ParseNight(string? night)
@@ -148,7 +112,7 @@ internal sealed class RestEstimateService(
         return RestSettingsService.NightStartUtc(today, values) <= now ? today : today.AddDays(-1);
     }
 
-    private static RestSettings ToSettings(RestSettingsValues values) => new(
+    internal static RestSettings ToSettings(RestSettingsValues values) => new(
         values.Enabled,
         values.TimeZone,
         [.. values.WorkWindows.Select(window => new RestWorkWindow(window.Days, window.Start, window.End))],
@@ -163,16 +127,18 @@ internal sealed class RestEstimateService(
         Status = estimate.Status,
         Parts =
         [
-            .. estimate.Parts.Select(part => new RestPartResponse
-            {
-                Start = part.Start,
-                End = part.End,
-                StartSource = part.StartSource,
-                EndSource = part.EndSource,
-                Confidence = part.Confidence,
-            }),
+            .. estimate.Parts.Select(MapPart),
         ],
         AskMorning = estimate.AskMorning,
         Constants = new RestConstantsResponse(estimate.Constants.FallAsleepMinutes, estimate.Constants.WakeLeadMinutes),
+    };
+
+    internal static RestPartResponse MapPart(RestPart part) => new()
+    {
+        Start = part.Start,
+        End = part.End,
+        StartSource = part.StartSource,
+        EndSource = part.EndSource,
+        Confidence = part.Confidence,
     };
 }

@@ -88,6 +88,9 @@ internal static class MeEndpoints
         api.MapGet("/me/rest", GetRestEstimateAsync)
             .WithName("GetRestEstimate")
             .ProducesProblem(StatusCodes.Status400BadRequest);
+        api.MapGet("/me/rest/history", GetRestHistoryAsync)
+            .WithName("GetRestHistory")
+            .ProducesProblem(StatusCodes.Status400BadRequest);
         api.MapPut("/me/rest/morning", SaveRestMorningAsync)
             .WithName("SaveRestMorning")
             .ProducesProblem(StatusCodes.Status400BadRequest);
@@ -136,6 +139,9 @@ internal static class MeEndpoints
 
     private static async Task<Ok<RestEstimateResponse>> GetRestEstimateAsync(string? night, IRestEstimateService estimate, CancellationToken cancellationToken) =>
         TypedResults.Ok(await estimate.GetMineAsync(night, cancellationToken));
+
+    private static async Task<Ok<RestHistoryResponse>> GetRestHistoryAsync(string? nights, IRestHistoryService history, CancellationToken cancellationToken) =>
+        TypedResults.Ok(await history.GetMineAsync(nights, cancellationToken));
 
     private static async Task<NoContent> SaveRestMorningAsync(SaveRestMorningRequest request, IRestSettingsService rest, CancellationToken cancellationToken)
     {
