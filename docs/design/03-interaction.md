@@ -44,6 +44,14 @@ Three depths:
 
 **Long-press** (500 ms, haptic tick) is only a shortcut; each target also has a visible path. Timeline rows get a ⋯ menu (Repeat now, Edit, Delete with undo). **No row swipes**: §11 uses swipe to change day.
 
+**Press and hold a Day row** (2026-11, `day/useLongPress.ts`, `day/DayRowMenu.tsx`):
+- Holding a row for about 450 ms opens a bottom sheet titled with the entry and its time, with a light haptic (`navigator.vibrate(10)` where it exists; iOS Safari has none). Moving more than 10 px, a scroll, a second finger or lifting early cancels it, so scrolling and the day swipe stay as they were. The row has no text selection or native callout, and the click after a hold is swallowed: a hold never also edits.
+- Actions: **Edit** (as a tap), **Change time**, **Stop** (a running entry the user may stop) and **Delete** (soft delete with the Undo toast, no confirmation). An entry the user may not change (a Viewer, a Caregiver on someone else's entry) gets only **View**, the read-only sheet.
+- **Change time** is a small sheet: the start (and the end when the entry has its own end) as the native `<input type="time">`, chips −15 / −5 / +5 / +15 min, Cancel and Save. It saves through `editEvent` (client `updatedAt`, idempotent upsert, a night's wake-up kept in step) with the payload untouched. An end before the start, or a running timer starting after now, is refused. An entry whose payload follows its times (a bottle history, pauses, nursing sides; `quickTimeAllowed`) opens the full event sheet instead, which rebases them.
+- The visible alternative is a **⋯ button** at the end of every row (44×44 px, "More actions for Nap", in the tab order with a focus ring): it opens the same sheet, never edits, and is not a hold target. It also gives a Viewer, whose row tap is disabled, a keyboard route to View. On a running row it sits after Stop; when the title would drop below about 7 characters (a running row on a 360 px phone) the pill and Stop wrap under the title, and the ⋯ stays at the right edge.
+- Also not gesture-only: the sheet opens on a right-click and, on a focused row, on the Menu key or Shift+F10; the row keeps its label and has a screen-reader hint saying so. Tapping the row still edits.
+- Not verified on a real touch device yet (Android contextmenu after a hold, iOS callout).
+
 **Command bar** (prototype B):
 - Lives in the + sheet, docked at the bottom and *not* auto-focused.
 - Uses a local, deterministic grammar that reads English and Portuguese at once.

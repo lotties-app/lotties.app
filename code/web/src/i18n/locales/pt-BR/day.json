@@ -93,6 +93,22 @@
     "bottlePauses_one": "{{count}} pausa",
     "bottlePauses_other": "{{count}} pausas",
     "bottleLeft": "sobrou {{levels}} ml",
-    "viewRow": "{{title}}, {{time}}, registrado por {{name}} (somente visualização)"
+    "viewRow": "{{title}}, {{time}}, registrado por {{name}} (somente visualização)",
+    "rowMenu": {
+      "hint": "Toque e segure, ou pressione Shift+F10, para mais ações.",
+      "actions": "Ações do registro",
+      "changeTime": "Mudar horário",
+      "stop": "Parar",
+      "view": "Ver",
+      "open": "Mais ações para {{title}}"
+    },
+    "quickTime": {
+      "nudges": "Mover {{field}}",
+      "earlier_one": "{{field}} {{count}} minuto antes",
+      "earlier_other": "{{field}} {{count}} minutos antes",
+      "later_one": "{{field}} {{count}} minuto depois",
+      "later_other": "{{field}} {{count}} minutos depois",
+      "startInFuture": "Um registro em andamento não pode começar depois de agora."
+    }
   }
 }

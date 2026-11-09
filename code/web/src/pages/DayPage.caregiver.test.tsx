@@ -100,6 +100,12 @@ async function renderDay(listName = /^Today, /) {
 const rowOf = (list: HTMLElement, id: string) =>
   list.querySelector<HTMLElement>(`[data-event-id="${id}"]`)!;
 
+/** The row's main button, not the "more actions" one. */
+const mainButton = (row: HTMLElement) =>
+  within(row)
+    .getAllByRole('button')
+    .find((button) => !button.hasAttribute('aria-haspopup'))!;
+
 async function violations() {
   const result = await axe.run(document.body, {
     runOnly: ['wcag2a', 'wcag2aa'],
@@ -113,14 +119,12 @@ describe('the Day tab for a caregiver', () => {
     await seed('Caregiver');
     const list = await renderDay();
     await waitFor(() =>
-      expect(
-        within(rowOf(list, 'anas-diaper')).getByRole('button').getAttribute('aria-label'),
-      ).toMatch(/added by Ana \(view only\)$/),
+      expect(mainButton(rowOf(list, 'anas-diaper')).getAttribute('aria-label')).toMatch(
+        /added by Ana \(view only\)$/,
+      ),
     );
     for (const id of ['mine', 'unsynced']) {
-      expect(within(rowOf(list, id)).getByRole('button').getAttribute('aria-label')).toMatch(
-        /^Edit /,
-      );
+      expect(mainButton(rowOf(list, id)).getAttribute('aria-label')).toMatch(/^Edit /);
     }
   });
 
@@ -128,7 +132,7 @@ describe('the Day tab for a caregiver', () => {
     await seed('Caregiver');
     const list = await renderDay();
     await within(rowOf(list, 'anas-diaper')).findByRole('button', { name: /added by Ana/ });
-    fireEvent.click(within(rowOf(list, 'anas-diaper')).getByRole('button'));
+    fireEvent.click(mainButton(rowOf(list, 'anas-diaper')));
     const sheet = await screen.findByRole('dialog');
     expect(
       within(sheet).getByText('Added by Ana. Only they or a parent can change it.'),
@@ -141,7 +145,7 @@ describe('the Day tab for a caregiver', () => {
   it('opens their own entry in the edit sheet', async () => {
     await seed('Caregiver');
     const list = await renderDay();
-    fireEvent.click(within(rowOf(list, 'mine')).getByRole('button'));
+    fireEvent.click(mainButton(rowOf(list, 'mine')));
     const sheet = await screen.findByRole('dialog');
     expect(within(sheet).getByRole('button', { name: 'Save' })).toBeTruthy();
   });
@@ -171,7 +175,7 @@ describe('the Day tab for a caregiver', () => {
       const list = await renderDay();
       await within(rowOf(list, 'anas-dose')).findByText('Given by Ana');
       expect(await violations()).toEqual([]);
-      fireEvent.click(within(rowOf(list, 'anas-dose')).getByRole('button'));
+      fireEvent.click(mainButton(rowOf(list, 'anas-dose')));
       const sheet = await screen.findByRole('dialog');
       expect(within(sheet).getByText('Given by Ana')).toBeTruthy();
       expect(await violations()).toEqual([]);
@@ -184,9 +188,7 @@ describe('the Day tab for a parent', () => {
     await seed('Parent');
     const list = await renderDay();
     expect(await within(rowOf(list, 'anas-dose')).findByText('Given by Ana')).toBeTruthy();
-    expect(
-      within(rowOf(list, 'anas-diaper')).getByRole('button').getAttribute('aria-label'),
-    ).toMatch(/^Edit /);
+    expect(mainButton(rowOf(list, 'anas-diaper')).getAttribute('aria-label')).toMatch(/^Edit /);
     expect(
       within(rowOf(list, 'running')).getByRole('button', { name: 'Stop Feeding' }),
     ).toBeTruthy();
@@ -200,7 +202,7 @@ describe('the Day tab in pt-BR', () => {
     await seed('Caregiver');
     const list = await renderDay(/^Hoje, /);
     expect(await within(rowOf(list, 'anas-dose')).findByText('Dado por Ana')).toBeTruthy();
-    fireEvent.click(within(rowOf(list, 'anas-diaper')).getByRole('button'));
+    fireEvent.click(mainButton(rowOf(list, 'anas-diaper')));
     const sheet = await screen.findByRole('dialog');
     expect(
       within(sheet).getByText('Registrado por Ana. Só essa pessoa ou um responsável pode alterar.'),

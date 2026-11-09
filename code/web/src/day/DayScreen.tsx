@@ -33,6 +33,7 @@ import { DateBar } from './DateBar';
 import { DayRibbon } from './DayRibbon';
 import { DayFilterSheet } from './DayFilterSheet';
 import { DayRow, SessionSeparatorRow } from './DayRow';
+import { DayRowMenu } from './DayRowMenu';
 import { DaySummary } from './DaySummary';
 import {
   addDays,
@@ -169,6 +170,8 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const [editing, setEditing] = useState<BabyEvent | null>(null);
   const [viewing, setViewing] = useState<BabyEvent | null>(null);
   const [creating, setCreating] = useState<string | null>(null);
+  /** The row whose action menu is open (press and hold, right-click, Menu key). */
+  const [menuId, setMenuId] = useState<string | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const rowHighlight = useRowHighlight(listRef);
 
@@ -219,6 +222,14 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
   const categories = categoriesOf(types);
   const typeOf = (event: BabyEvent): EventType | undefined =>
     types.find((candidate) => candidate.id === event.typeId);
+  /** Stop of the action menu, as the row's Stop button. */
+  const stopOf = (event: BabyEvent) =>
+    writable && access.controlLockedBy(event) === null
+      ? (running: BabyEvent) => void actions.stop(running, { name: typeOf(running)?.name })
+      : undefined;
+  // A deleted (or no longer loaded) entry closes its menu.
+  const menuEvent = menuId ? (dayEvents.find((event) => event.id === menuId) ?? null) : null;
+  const menuStop = menuEvent ? stopOf(menuEvent) : undefined;
   const feedingIds = typeIdsForKey(types, 'feeding');
   const feedings = events.filter((event) => feedingIds.has(event.typeId));
   const fedBefore = (event: BabyEvent) =>
@@ -307,6 +318,7 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
                   hasNext={index < items.length - 1}
                   highlighted={rowHighlight.highlighted === item.event.id}
                   onEdit={open}
+                  onMenu={(event) => setMenuId(event.id)}
                   {...(writable && access.controlLockedBy(item.event) === null
                     ? {
                         onStop: (running: BabyEvent) =>
@@ -344,6 +356,16 @@ export function DayScreen({ baby, initialDay }: { baby: Baby; initialDay?: Date 
         events={dayEvents}
         open={adding}
         onClose={() => setAdding(false)}
+      />
+      <DayRowMenu
+        event={menuEvent}
+        type={menuEvent ? typeOf(menuEvent) : undefined}
+        medications={medications}
+        {...(prescriptions ? { prescriptions } : {})}
+        canChange={!!menuEvent && writable && access.canChange(menuEvent)}
+        onOpen={open}
+        {...(menuStop ? { onStop: menuStop } : {})}
+        onClose={() => setMenuId(null)}
       />
       {viewing && (
         <EventReadOnlySheet
