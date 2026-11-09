@@ -93,6 +93,21 @@
     "bottlePauses_one": "{{count}} pause",
     "bottlePauses_other": "{{count}} pauses",
     "bottleLeft": "{{levels}} ml left",
-    "viewRow": "{{title}}, {{time}}, added by {{name}} (view only)"
+    "viewRow": "{{title}}, {{time}}, added by {{name}} (view only)",
+    "rowMenu": {
+      "hint": "Press and hold, or press Shift+F10, for more actions.",
+      "actions": "Entry actions",
+      "changeTime": "Change time",
+      "stop": "Stop",
+      "view": "View"
+    },
+    "quickTime": {
+      "nudges": "Move {{field}}",
+      "earlier_one": "{{field}} {{count}} minute earlier",
+      "earlier_other": "{{field}} {{count}} minutes earlier",
+      "later_one": "{{field}} {{count}} minute later",
+      "later_other": "{{field}} {{count}} minutes later",
+      "startInFuture": "A running entry cannot start after now."
+    }
   }
 }

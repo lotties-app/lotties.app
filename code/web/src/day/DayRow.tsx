@@ -1,3 +1,4 @@
+import { useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import type { BabyEvent, EventType, Medication, Prescription } from '../db/models';
@@ -22,6 +23,7 @@ import type { FedToSleep } from '../now/bottleFollowUp';
 import { AssistantOriginNote } from '../events/AssistantOriginNote';
 import { DeleteRequestBanner } from '../events/DeleteRequestBanner';
 import { isInstantEvent } from './ribbonText';
+import { useLongPress } from './useLongPress';
 
 interface Props {
   event: BabyEvent;
@@ -56,6 +58,11 @@ interface Props {
    * it (the banner then only says what was asked).
    */
   deleteRequest?: { onDelete: () => void; onKeep: () => void };
+  /**
+   * Opens the row's action menu (press and hold, right-click, the Menu key or Shift+F10; see
+   * `DayRowMenu`). Omitted: no menu.
+   */
+  onMenu?: (event: BabyEvent) => void;
 }
 
 /** The live clock of a running event: effective time, so a paused timer stands still. */
@@ -262,8 +269,17 @@ export function DayRow({
   highlighted = false,
   fedToSleep = null,
   deleteRequest,
+  onMenu,
 }: Props) {
   const { t } = useTranslation();
+  const hintId = useId();
+  const rowButton = useRef<HTMLButtonElement>(null);
+  // Presses on the Stop button or the delete-request answers stay theirs.
+  const ignore = (target: Element) => {
+    const control = target.closest('button, a, input, [role="button"]');
+    return control !== null && control !== rowButton.current;
+  };
+  const hold = useLongPress(() => onMenu?.(event), ignore);
   const authorName = author || t('access.someoneElse');
   const givenBy =
     author !== null && isMedicationType(type) ? t('access.givenBy', { name: authorName }) : '';
@@ -327,6 +343,7 @@ export function DayRow({
         <EventIllustration type={type} payload={event.payload} size={32} />
       </Box>
       <Box
+        {...(onMenu ? hold.container : {})}
         sx={(theme) => ({
           mb: 1,
           display: 'flex',
@@ -344,10 +361,16 @@ export function DayRow({
           }`,
           transition: 'box-shadow 240ms ease-out',
           '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+          // Press and hold opens the row menu: no text selection or native callout meanwhile.
+          ...(onMenu
+            ? { userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }
+            : {}),
         })}
       >
         <ButtonBase
+          ref={rowButton}
           onClick={() => onEdit(event)}
+          {...(onMenu ? { onKeyDown: hold.onKeyDown, 'aria-describedby': hintId } : {})}
           disabled={readOnly}
           aria-label={
             readOnly
@@ -385,6 +408,11 @@ export function DayRow({
             </Typography>
           )}
           <AssistantOriginNote event={event} />
+          {onMenu && (
+            <Box component="span" id={hintId} sx={visuallyHidden}>
+              {t('day.rowMenu.hint')}
+            </Box>
+          )}
         </ButtonBase>
         <DeleteRequestBanner
           event={event}
@@ -430,3 +458,12 @@ export function DayRow({
     </Box>
   );
 }
+
+const visuallyHidden = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+} as const;
