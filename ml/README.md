@@ -73,6 +73,18 @@ cd ml
 .venv/bin/python -m benchmark.run --synthetic brazil --legacy-priors --out out/before
 ```
 
+Community insights (docs/design/34-community-insights.md section 9 item 1): the pooled-statistics pipeline of design 34
+section 5 (clipping, fixed age bands with a coarse fallback, a 14-day cap per baby and cell, k babies and k families,
+the 25 % dominance rule, hysteresis 18, p3/p97 only from 50 babies, noise) run on synthetic instances of 100, 1 000 and
+10 000 babies at 5, 20 and 50 % opt-in. Synthetic only (`community_cohort` in `benchmark/synthetic.py`; no CSV, no
+`BR_ML_DATA`); writes `community.json` and `community.md` to `--out`; about 5 minutes on a laptop CPU. Results:
+[`docs/ml/COMMUNITY-SYNTHETIC.md`](../docs/ml/COMMUNITY-SYNTHETIC.md).
+
+```bash
+cd ml
+.venv/bin/python -m benchmark.community --k 20 --epsilon 0.2 --seed 1 --out out   # --epsilon 0 turns the noise off
+```
+
 Tests (heuristic parity with the C# unit tests, leakage checks, synthetic end-to-end backtest):
 
 ```bash
@@ -102,6 +114,7 @@ Every method outputs q10, q25, q50, q75 and q90 in minutes from the decision ins
 | `benchmark/backtest.py` | Rolling-origin evaluation with daily refits, cold-start variants, timings |
 | `benchmark/metrics.py` | MAE, pinball, coverage, day-block bootstrap |
 | `benchmark/run.py` | CLI and report |
-| `benchmark/synthetic.py` | Synthetic histories: `generate` (tests) and `cohort_baby` (Brazilian and Swiss-like cohorts from published bed times and night lengths) |
+| `benchmark/synthetic.py` | Synthetic histories: `generate` (tests), `cohort_baby` (Brazilian and Swiss-like cohorts from published bed times and night lengths) and `community_cohort` (per-baby, per-day inputs of the community statistics, families of 1 to 3, heavy families) |
 | `benchmark/night_window.py` | Night-window evaluation CLI (`night_window.json`, `night_window.md` in `--out`) |
+| `benchmark/community.py` | Community-insights synthetic study: the pooled-statistics pipeline as pure functions and its evaluation CLI (`community.json`, `community.md`) |
 | `benchmark/prior_check.py` | Before/after of the age-band priors on synthetic cohorts (`prior_check.json`, `prior_check.md`) |
