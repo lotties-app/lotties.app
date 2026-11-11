@@ -184,8 +184,11 @@ a message that names the setting, never its value). The env names are design 19'
 
 ### 5.1 Registration (web, behind `isNativeApp()`, lazy)
 
-`widgets/silentPush.ts`, started by `WidgetSync` (signed in, account database open, native app only):
+`widgets/silentPush.ts`, started by `WidgetSync` (signed in, account database open, native app only). Step 0 is the
+gate of section 5.4 (the source of truth for it); steps 1 to 6 run only after a `true` answer:
 
+0. Ask the server `GET /push/silent/status?channel=apns|fcm` (section 5.4). Anything but `true` (off, failed call): stop
+   here, with nothing native called and no token asked for.
 1. Ask the native layer whether a Lotties widget is installed (iOS `WidgetCenter.getCurrentConfigurations`, Android
    `AppWidgetManager.getAppWidgetIds` for the three widget receivers). No widget: unregister if this install was
    registered, and stop. No token is stored for a phone without widgets.
@@ -196,7 +199,7 @@ a message that names the setting, never its value). The env names are design 19'
 3. `POST /push/devices`; keep the returned id in this account's local storage; 409 `silent_push_not_configured`: stop
    until the next launch.
 4. From then on every API request of the app carries `Lotties-Push-Device: <id>` (`api/pushDeviceHeader.ts`).
-5. On every launch and resume the steps run again (tokens rotate after a restore or reinstall; the server dedupes).
+5. On every launch and resume the steps run again, starting with step 0 (tokens rotate after a restore or reinstall; the server dedupes).
 6. Sign-out and account erasure: `DELETE /push/devices/{id}` before the session ends (with the Web Push
    `releaseThisDevice` in `endSession`), then the stored id is dropped.
 
@@ -230,9 +233,9 @@ service answers at once (`NO_APP`). **Owner decision (2026-11-11): warm only for
 ### 5.4 The gate: no Apple or Google contact while silent push is off (2026-11-11)
 
 Asking the phone for a push token is what makes it contact Apple (APNs) or Google (FCM, and the Firebase installation
-behind it). That must not happen while `SilentPush:Enabled` is off, so the client asks the server first. This runs
-before step 1 of section 5.1 and replaces the old order (widget check, token, then a 409 from the server); the
-"Order of provisioning (privacy)" paragraph of section 9 describes that old order and no longer holds.
+behind it). That must not happen while `SilentPush:Enabled` is off, so the client asks the server first. This is step
+0 of section 5.1 and replaced the old order (widget check, token, then a 409 from the server); section 9 "Order of
+provisioning" follows from it.
 
 - **Server**: `GET /api/v1/push/silent/status?channel=apns|fcm` answers `{"enabled": true|false}`: whether silent pushes
   are on and that channel has credentials (`ISilentPushConfiguration.Accepts`). Nothing else (no host, key, credential
@@ -345,11 +348,12 @@ is not applied, `FirebaseInitProvider` finds no options and leaves Firebase unin
 crash), `pushToken` answers `{}`, nothing registers and no message can arrive. A phone without Google Play services
 gets `{}` too (the token task fails).
 
-**Order of provisioning (privacy).** The web app asks for a token whenever a widget is installed, before it knows
-whether the server has the flag on (a 409 then stops it until the next launch). In a build with `google-services.json`
-that means the Firebase library contacts Google to create the token even while `SilentPush:Enabled` is off: the token is
-not stored by us, but Google sees the registration. So the `ANDROID_GOOGLE_SERVICES_JSON_BASE64` secret goes in only
-with the policy release (docs/legal-held/widget-silent-push/README.md), not before.
+**Order of provisioning (privacy).** The app asks for a token only after the server answers that silent pushes are on
+(the gate, section 5.4), and Firebase auto-init is off, so a build with `google-services.json` stays silent towards
+Google while `SilentPush:Enabled` is off. The `ANDROID_GOOGLE_SERVICES_JSON_BASE64` secret (and an Android build with
+Firebase) may therefore go in before the policy release (unverified on a device, section 14). What must keep its order
+is the switch: the policy is released first (docs/legal-held/widget-silent-push/README.md), then `SILENT_PUSH_ENABLED=true`.
+The server's APNs and FCM values are already in the production Secret and the flag is off.
 
 ## 10. What the owner provisions (and what the repository has)
 
@@ -361,7 +365,7 @@ with the policy release (docs/legal-held/widget-silent-push/README.md), not befo
 | iOS: `aps-environment` in `App/App.entitlements` (App target only), value `$(LOTTIES_APS_ENVIRONMENT)`: a build setting of the App target, `production` in Release (CI archives Release with manual signing and the App Store profile, which is always `production`; TestFlight and App Store builds) and `development` in Debug (Xcode runs with automatic signing get a development profile). Set by hand instead of through Xcode's Push Notifications capability because the project has no Mac to run Xcode; the project does not track capabilities (`SystemCapabilities` absent, App Groups works the same way), so nothing else in `project.pbxproj` is needed. Matches `LottiesSilentPush.apnsEnvironment` (`#if DEBUG` sandbox, else production) | repo | **yes** (2026-11-11), unverified (section 14) |
 | iOS: `UIBackgroundModes` = [`remote-notification`] in `App/Info.plist` (App target only; the widget's `Info.plist` has none) | repo | **yes** (2026-11-11), unverified |
 | Firebase: a project with the Android app `app.lotties.app` (debug builds use the same application id today), `google-services.json` downloaded from its settings | console.firebase.google.com | no (gitignored path exists; the Gradle plugin classpath and conditional apply exist) |
-| CI: the repository secret `ANDROID_GOOGLE_SERVICES_JSON_BASE64` (`base64 -w0 google-services.json`; listed in docs/MOBILE-RELEASE.md section 3); the release workflow (`mobile-release.yml`, step "Restore google-services.json (optional)") writes it to `code/mobile/android/app/` before the Gradle build. Set it only with the policy release (section 9, "Order of provisioning"). `android-compile-check.yml` stays without it (it proves the build without Firebase) | repo secret | workflow step yes, secret no |
+| CI: the repository secret `ANDROID_GOOGLE_SERVICES_JSON_BASE64` (`base64 -w0 google-services.json`; listed in docs/MOBILE-RELEASE.md section 3); the release workflow (`mobile-release.yml`, step "Restore google-services.json (optional)") writes it to `code/mobile/android/app/` before the Gradle build. It may be set before the policy release: the gate keeps the app silent while the flag is off (section 9, "Order of provisioning"; section 5.4). `android-compile-check.yml` stays without it (it proves the build without Firebase) | repo secret | workflow step yes, secret no |
 | Local builds with Firebase: copy `google-services.json` to `code/mobile/android/app/` (gitignored, never committed) | developer machine | no |
 | Firebase: the **Firebase Cloud Messaging API (V1)** enabled in the project (Project settings > Cloud Messaging) | console | no |
 | Firebase: a **service account** with the "Firebase Cloud Messaging API Admin" role, its JSON key | Google Cloud console | no |
@@ -379,7 +383,7 @@ policy version must change before the flag is turned on in production. The propo
 docs/legal-held/widget-silent-push/ (README and patch); nothing shipped changes in this change. Android adds one fact
 (noted in the held README and audit draft, the patch text not changed): the Firebase library inside the app registers
 the install with Google when it makes the token (per Firebase's documentation a Firebase installation id and app, OS and
-library versions), only once a widget is installed (auto-init off) and only in a build with `google-services.json`.
+library versions), only once the server says silent pushes are on (section 5.4) and a widget is installed (auto-init off) and only in a build with `google-services.json`.
 
 ## 12. Owner questions
 
