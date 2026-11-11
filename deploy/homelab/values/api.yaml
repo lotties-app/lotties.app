@@ -1,7 +1,7 @@
 # The API (.NET 10, image lotties-api built from code/api/Dockerfile). The Ingress sends https://<PUBLIC_HOST>/api/...
 # here unchanged: the routes already start with /api/v1. Only /api is public; /health is for the probes.
 # Set by deploy.sh: image, imagePullSecrets (PULL_SECRET), AUTH_AUTHORITY, AUTH_AUDIENCE, CORS_ALLOWED_ORIGINS,
-# DB_AUTO_MIGRATE, FORWARDED_HEADERS_TRUSTED_NETWORKS (when set in .env), podAnnotations.checksum/secrets and one
+# DB_AUTO_MIGRATE, SILENT_PUSH_ENABLED, FORWARDED_HEADERS_TRUSTED_NETWORKS (when set in .env), podAnnotations.checksum/secrets and one
 # secretEnv entry per Stores__* key of the Secret (bring your own database; only names, the values stay in the Secret).
 
 # "app" in the .NET images (since .NET 8; still 1654 in the .NET 10 Ubuntu images).
@@ -92,6 +92,33 @@ secretEnv:
   AUTH_ADMIN_CLIENT_SECRET:
     secretName: lotties-secrets
     key: AUTH_ADMIN_CLIENT_SECRET
+    optional: true
+  # Silent pushes for the widgets (docs/design/37b-widget-silent-push.md; docs/DEPLOY.md "Silent pushes for the widgets").
+  # APNs: the three keys all or none (the bundle id is optional); FCM: both or none. They do nothing while the flag
+  # SILENT_PUSH_ENABLED (env, set by deploy.sh, default false) is off.
+  PUSH_APNS_KEY_ID:
+    secretName: lotties-secrets
+    key: PUSH_APNS_KEY_ID
+    optional: true
+  PUSH_APNS_TEAM_ID:
+    secretName: lotties-secrets
+    key: PUSH_APNS_TEAM_ID
+    optional: true
+  PUSH_APNS_KEY_P8:
+    secretName: lotties-secrets
+    key: PUSH_APNS_KEY_P8
+    optional: true
+  PUSH_APNS_BUNDLE_ID:
+    secretName: lotties-secrets
+    key: PUSH_APNS_BUNDLE_ID
+    optional: true
+  PUSH_FCM_PROJECT_ID:
+    secretName: lotties-secrets
+    key: PUSH_FCM_PROJECT_ID
+    optional: true
+  PUSH_FCM_SERVICE_ACCOUNT_JSON:
+    secretName: lotties-secrets
+    key: PUSH_FCM_SERVICE_ACCOUNT_JSON
     optional: true
   # Only in the Secret when DB_AUTO_MIGRATE=true: the pod then holds the migrator role's credentials.
   DB_MIGRATOR_USER:

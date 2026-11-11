@@ -107,7 +107,10 @@ is not rebuilt keeps the release that built it (docs/DEPLOY.md "Versions").
   `PUSH_VAPID_PUBLIC_KEY`/`PRIVATE_KEY`/`SUBJECT` (all three or none: none turns push off),
   `DEMO_SIGNING_KEY` (32+ characters; without it the try-it demo is off; shorter is refused),
   `AUTH_ADMIN_CLIENT_ID`/`AUTH_ADMIN_CLIENT_SECRET` (both or none: with none, deleting an account in the app keeps the
-  Keycloak user; setup and rotation in docs/KEYCLOAK-ACCOUNT-DELETION.md), only with `DB_AUTO_MIGRATE=true`,
+  Keycloak user; setup and rotation in docs/KEYCLOAK-ACCOUNT-DELETION.md), the widget silent-push keys
+  `PUSH_APNS_KEY_ID`/`PUSH_APNS_TEAM_ID`/`PUSH_APNS_KEY_P8` (all three or none; `PUSH_APNS_BUNDLE_ID` optional) and
+  `PUSH_FCM_PROJECT_ID`/`PUSH_FCM_SERVICE_ACCOUNT_JSON` (both or none), used only when the plain flag
+  `SILENT_PUSH_ENABLED` (default false, passed as an env value) is true, only with `DB_AUTO_MIGRATE=true`,
   `DB_MIGRATOR_USER`/`DB_MIGRATOR_PASSWORD`, and the bring-your-own-database settings `Stores__Enabled`,
   `Stores__Allowlist__<n>`, `Stores__CurrentKeyId` and `Stores__KeyEncryptionKeys__<id>` (off by default; checked before
   anything changes; key-encryption keys already in the Secret are kept; docs/DEPLOY.md "Bring your own database: turning

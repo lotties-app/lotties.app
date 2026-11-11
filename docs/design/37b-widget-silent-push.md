@@ -331,7 +331,7 @@ with the policy release (docs/legal-held/widget-silent-push/README.md), not befo
 | Local builds with Firebase: copy `google-services.json` to `code/mobile/android/app/` (gitignored, never committed) | developer machine | no |
 | Firebase: the **Firebase Cloud Messaging API (V1)** enabled in the project (Project settings > Cloud Messaging) | console | no |
 | Firebase: a **service account** with the "Firebase Cloud Messaging API Admin" role, its JSON key | Google Cloud console | no |
-| Server Secret `lotties-secrets`: `PUSH_APNS_KEY_ID`, `PUSH_APNS_TEAM_ID`, `PUSH_APNS_KEY_P8`, `PUSH_FCM_PROJECT_ID` (the Firebase project id, the `project_id` of `google-services.json`), `PUSH_FCM_SERVICE_ACCOUNT_JSON`, then `SILENT_PUSH_ENABLED=true` | deploy (docs/DEPLOY.md) | no (`deploy.sh` does not pass these keys yet) |
+| Server Secret `lotties-secrets`: `PUSH_APNS_KEY_ID`, `PUSH_APNS_TEAM_ID`, `PUSH_APNS_KEY_P8`, `PUSH_FCM_PROJECT_ID` (the Firebase project id, the `project_id` of `google-services.json`), `PUSH_FCM_SERVICE_ACCOUNT_JSON` (`PUSH_APNS_BUNDLE_ID` optional), then `SILENT_PUSH_ENABLED=true` (a plain value, not in the Secret) | deploy (docs/DEPLOY.md), values in `deploy/homelab/.env` | wiring yes (`deploy.sh` passes the keys to the Secret and the flag, default `false`; 2026-11-11), values no |
 | Android: the Firebase Messaging library and service (section 9) | repo | **yes** (2026-11-11) |
 | Privacy policy activation (section 11) | owner + lawyer | draft only |
 

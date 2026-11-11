@@ -325,7 +325,10 @@ answers 409 `silent_push_not_configured` and nothing is queued or sent.
 
 Egress: `api.push.apple.com` (HTTP/2), `api.sandbox.push.apple.com`, `fcm.googleapis.com`, `oauth2.googleapis.com`
 over HTTPS. Keys and tokens are never logged (the senders' HTTP clients have no request logging). `deploy/homelab/deploy.sh`
-does not pass these variables yet. One API instance coalesces its own writes; with several, a change may cause one
+passes them: the `PUSH_APNS_*` and `PUSH_FCM_*` values from `deploy/homelab/.env` go only to the Secret `lotties-secrets`
+(a key left out keeps the Secret's value, an empty one removes it; one line each, so give the `.p8` and the JSON as
+base64), and `SILENT_PUSH_ENABLED` is a plain value that defaults to `false` on every run without it. The run stops on a
+half-set channel, or on `SILENT_PUSH_ENABLED=true` without a complete channel. One API instance coalesces its own writes; with several, a change may cause one
 extra push.
 
 ## Address lookup
