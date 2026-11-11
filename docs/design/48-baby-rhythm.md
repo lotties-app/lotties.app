@@ -213,8 +213,19 @@ repository, so an unreachable store is the usual retriable 503.
   line and "How this is worked out" with the rule values.
 - States: skeleton while loading, a muted line with Reload on error, a muted line offline with nothing cached (the
   cached answer is shown otherwise), nothing at all on 403/404 or an answer not shaped like a rhythm.
-- No chart (the optional night-length range bar was not built).
-- Preview `/dev/rhythm?state=ok|partial|empty|varies|error`; showcase screenshot `rhythm` (docs/showcase-media.md).
+- No chart. A night-length chart (one bar or dot per night, like the rest history charts of Insights > Rest) needs
+  per-night values, and the answer holds only summaries (p25, median, p75, counts, statuses). It was skipped rather
+  than drawn from the summaries or computed again on the device (which would disagree with the server's night rules:
+  merged sessions, wakings, the 3 to 16 hour bounds, the 04:00 evening day). What it would need, as an addition to the
+  wire shape (section 6) and not built: `nightSeries`, one entry per counted night in date order, each
+  `{ "evening": "yyyy-MM-dd", "bedTime": "HH:mm", "wakeUp": "HH:mm", "lengthMinutes": int,
+  "longestStretchMinutes": int, "firstStretchMinutes": int }` (local clocks in the zone of the request, the same nights
+  the metrics count, nothing for a night left out), present whatever the statuses are, so the chart can show the nights
+  so far while a metric still says what it needs. The chart would then reuse the Insights chart kit
+  (`insights/charts`: neutral marks, the p25 to p75 band as a reference, a table as text alternative) with no judging
+  colour and no target line. The optional night-length range bar drawn only from p25/median/p75 was not built either.
+- Preview `/dev/rhythm?state=ok|partial|empty|varies|error`; showcase screenshot `rhythm` in light and dark, en and pt-BR, and a step of the demo video
+  tour (docs/showcase-media.md).
 - Tests `rhythm/rhythm.test.tsx`: parser, model (missing counts, plural forms, sentences in en and pt-BR, varies), the
   section states, no causal, judging or advising word in either catalog or any rendered scenario, axe in light, dark and
   night.
