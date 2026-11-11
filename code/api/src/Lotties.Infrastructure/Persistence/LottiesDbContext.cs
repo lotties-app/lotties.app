@@ -116,6 +116,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>The append-only history of the consents (granted, withdrawn).</summary>
     public DbSet<Lotties.Domain.Consents.UserConsentHistoryEntry> UserConsentHistory => Set<Lotties.Domain.Consents.UserConsentHistoryEntry>();
 
+    /// <summary>The append-only community insights consent history of each baby (docs/design/34-community-insights.md section 3.2; control plane).</summary>
+    public DbSet<Lotties.Domain.CommunityInsights.CommunityConsentEntry> CommunityConsents => Set<Lotties.Domain.CommunityInsights.CommunityConsentEntry>();
+
     /// <summary>The project board's topics (docs/design/36-project-board.md; internal project tracking, never baby data).</summary>
     public DbSet<Lotties.Domain.Board.BoardTopic> BoardTopics => Set<Lotties.Domain.Board.BoardTopic>();
 

@@ -183,6 +183,8 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope s
         await context.NotificationDeliveries.IgnoreQueryFilters().Where(row => row.BabyId != null && ids.Contains(row.BabyId.Value)).ExecuteDeleteAsync(cancellationToken);
         await context.BabyNotificationPreferences.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.DataStoreMoves.Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
+        // The community insights consent lines go with the erased baby (design 34 section 3.2; keeping a hashed proof is open decision O8).
+        await context.CommunityConsents.Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.BabyMembers.IgnoreQueryFilters().Where(row => ids.Contains(row.BabyId)).ExecuteDeleteAsync(cancellationToken);
         await context.UserAssistantSettings
             .Where(row => row.DefaultBabyId != null && ids.Contains(row.DefaultBabyId.Value))
