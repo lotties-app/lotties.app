@@ -55,6 +55,7 @@ Compose reads `.env` from the repository root.
 | `CORS_ALLOWED_ORIGINS` | api | no | Comma-separated origins. Only if the web app is served from a different origin than the API, or for the iOS/Android app (`https://localhost,capacitor://localhost`, see "Native apps (iOS/Android)") |
 | `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
+| `SILENT_PUSH_ENABLED`, `PUSH_APNS_KEY_ID`, `PUSH_APNS_TEAM_ID`, `PUSH_APNS_KEY_P8`, `PUSH_FCM_PROJECT_ID`, `PUSH_FCM_SERVICE_ACCOUNT_JSON` | api | no (`false`; per channel all or none) | Silent pushes that keep the app's widgets current; held behind the privacy policy; see "Silent pushes for the widgets" |
 | `Demo__SigningKey` (home lab: `DEMO_SIGNING_KEY` in `deploy/homelab/.env`) | api | no | Try-it demo; 32+ characters, secret. Blank = demo off. Tuning: `Demo__LifetimeDays` (3), `Demo__MaxLiveAccounts` (200), `Demo__StartPermitsPerHour` (3), `Demo__CleanupMinutes` (30); see docs/design/45-try-it-demo.md |
 | `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
 | `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
@@ -303,6 +304,29 @@ Apply the `PushNotifications` migration (`20261021182304_PushNotifications`) as 
 - Test send `gone`: the browser dropped the subscription (or keys were rotated); re-enable on the device. `failed`: outbound network or push service error.
 - Database errors on push routes (permission denied): the app role lacks grants on the new tables, see Database above.
 - No reminders but test works: the user has no time zone saved (open Settings once), quiet hours, per-baby reminders off, or the scheduler disabled on every instance.
+
+## Silent pushes for the widgets
+
+Content-free APNs/FCM pushes that tell the family's other phones that a baby's records changed, so the app syncs and
+its home-screen widgets update (docs/design/37b-widget-silent-push.md). **Off by default, and it stays off in production
+until the held privacy policy text is released** (docs/legal-held/widget-silent-push/README.md). Needs migration
+`SilentPushDevices` (table `silent_push_devices`; back up before deploying it). While off, `POST /api/v1/push/devices`
+answers 409 `silent_push_not_configured` and nothing is queued or sent.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `SilentPush__Enabled` (`SILENT_PUSH_ENABLED`) | `false` | Master switch; on needs at least one channel below, else startup fails |
+| `SilentPush__Apns__KeyId`, `__TeamId`, `__PrivateKey` (`PUSH_APNS_KEY_ID`, `PUSH_APNS_TEAM_ID`, `PUSH_APNS_KEY_P8`) | empty | The APNs auth key (`.p8` text or its base64) and its ids. Secret. All or none |
+| `SilentPush__Apns__BundleId` (`PUSH_APNS_BUNDLE_ID`) | `app.lotties.app` | The `apns-topic` |
+| `SilentPush__Fcm__ProjectId`, `__ServiceAccountJson` (`PUSH_FCM_PROJECT_ID`, `PUSH_FCM_SERVICE_ACCOUNT_JSON`) | empty | Firebase project and a service-account key (JSON or its base64; its `token_uri` must be Google's). Secret. Both or none |
+| `SilentPush__DebounceSeconds`, `__MinIntervalSeconds` | `20`, `300` | A burst of changes to one baby is one push, at most one push per baby per interval |
+| `SilentPush__FcmPriority` | `normal` | `high` wakes a sleeping Android phone (FCM may deprioritize it) |
+| `SilentPush__MaxDevicesPerUser`, `__WorkerTickSeconds`, `__SendTimeoutSeconds`, `__MaxConcurrentSends` | `10`, `5`, `10`, `8` | Limits |
+
+Egress: `api.push.apple.com` (HTTP/2), `api.sandbox.push.apple.com`, `fcm.googleapis.com`, `oauth2.googleapis.com`
+over HTTPS. Keys and tokens are never logged (the senders' HTTP clients have no request logging). `deploy/homelab/deploy.sh`
+does not pass these variables yet. One API instance coalesces its own writes; with several, a change may cause one
+extra push.
 
 ## Address lookup
 

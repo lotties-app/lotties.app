@@ -138,24 +138,30 @@ active devices of a configured channel, minus the origin device. Never:
 
 ### 4.5 Senders and results
 
-`ISilentPushSender.SendAsync(SilentPushTarget, CancellationToken) -> SilentPushOutcome` (`Sent`, `TokenGone`,
-`TokenInvalid`, `Retryable`, `Failed`, `NotConfigured`). `DispatchingSilentPushSender` picks the channel; a channel without
-configuration answers `NotConfigured` (never throws). Implementations (`Lotties.Infrastructure/SilentPush`, plain
-`HttpClient`, no vendor library, the JWT and token rules of design 19 sections 5.1 and 5.2):
+`ISilentPushSender.SendAsync(SilentPushTarget, CancellationToken) -> SilentPushOutcome` (`Sent`, `Gone`, `Invalid`,
+`Failed`, `Retryable`, `ConfigurationError`, `NotConfigured`). `DispatchingSilentPushSender` picks the configured sender
+of the target's channel (a `CanHandle` pick); a channel without credentials answers `NotConfigured` (never throws).
+Implementations (`Lotties.Infrastructure/SilentPush`, plain `HttpClient` without request logging, no vendor library, the
+JWT and token rules of design 19 sections 5.1 and 5.2):
 
 - `ApnsSilentPushSender`: HTTP/2 to `api.push.apple.com` or `api.sandbox.push.apple.com` by the device's environment;
-  ES256 provider token (`kid` = key id, `iss` = team id, `iat`) reused for 30 minutes. `200` sent; `410` and `400`
-  `BadDeviceToken`/`DeviceTokenNotForTopic` gone/invalid (revoked); `403` provider-token errors are a server configuration
-  error (`Failed`, not counted against the device); `429` and `5xx` retryable.
-- `FcmSilentPushSender`: RS256 service-account JWT exchanged at `oauth2.googleapis.com/token` for an access token, cached
-  until 5 minutes before expiry, refreshed once on `401`. `200` sent; `404 UNREGISTERED` gone, `400 INVALID_ARGUMENT` and
-  `403 SENDER_ID_MISMATCH` invalid; `429` and `5xx` retryable.
+  ES256 provider token (`kid` = key id, `iss` = team id, `iat`) reused for 30 minutes and signed again after
+  `ExpiredProviderToken`. `200` sent; `410` gone; `400` `BadDeviceToken`/`DeviceTokenNotForTopic` invalid; any other
+  `400`, `403` (provider token), `404`, `405`, `413` a configuration error (our request or key, never the device's
+  fault); `429` and `5xx` retryable; anything else failed.
+- `FcmSilentPushSender`: RS256 service-account JWT exchanged at `oauth2.googleapis.com/token` for an access token, kept
+  until 5 minutes before expiry, exchanged again once on `401` (a second `401` is a configuration error); a refused
+  exchange sends nothing. `200` sent; `UNREGISTERED` gone; `403 SENDER_ID_MISMATCH` invalid; `400 INVALID_ARGUMENT`
+  invalid only when the message is about the registration token (a bad payload must never revoke every device), else a
+  configuration error, as other `400`/`403`/`404`; `429` and `5xx` retryable.
 
-Outcomes: `Sent` records `last_sent_at` and clears the failure count; `TokenGone` revokes as `gone`, `TokenInvalid` as
-`invalid`; `Retryable` and device-attributable `Failed` count a failure (10 in a row revoke as `invalid`); there is **no
-retry** of a silent push (the next change sends another, the next app open syncs). Logs carry device ids, counts and
-outcomes only: never a token, a key or a provider's response body. Housekeeping in the same worker, once an hour:
-devices not seen for 60 days are revoked (`inactive`), revoked rows older than 30 days are deleted.
+Outcomes (`SilentPushDevice.RecordOutcome`): `Sent` records `last_sent_at` and clears the failure count; `Gone` revokes as
+`gone`, `Invalid` as `invalid`; `Failed` counts a failure (10 in a row revoke as `invalid`); `Retryable`,
+`ConfigurationError` and `NotConfigured` change nothing (not the device's fault). There is **no retry** of a silent push
+(the next change sends another, the next app open syncs). A configuration error is logged at error level at most once an
+hour per channel. Logs carry device ids, counts and outcomes only: never a token, a key or a provider's response body.
+Housekeeping in the same worker, on its first pass and then hourly: devices not seen for 60 days are revoked
+(`inactive`), revoked rows older than 30 days are deleted.
 
 ### 4.6 Configuration (section `SilentPush`)
 
