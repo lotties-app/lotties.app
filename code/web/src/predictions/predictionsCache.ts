@@ -1,4 +1,5 @@
 import type { PredictionsDto } from '../sync/contract';
+import { widgetInputsChanged } from '../widgets/widgetInputs';
 
 /** Last predictions response per baby, kept so the cards can show something offline. */
 export interface CachedPredictions {
@@ -37,6 +38,8 @@ export function writeCachedPredictions(babyId: string, cached: CachedPredictions
   } catch {
     // Storage unavailable or full: the cards just have no offline copy.
   }
+  // The home-screen widget shows the estimates built from these predictions.
+  widgetInputsChanged();
 }
 
 /** Drops the cached predictions of every baby (sign-out, account switch). */

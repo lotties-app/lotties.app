@@ -220,6 +220,41 @@ extension WidgetSnapshot.Baby {
         }
         return times.filter { $0 > now && $0 < now.addingTimeInterval(24 * 3600) }.sorted()
     }
+
+    /// The moments after `now` at which a text the widgets draw from this baby changes with time alone, so the timeline
+    /// carries an entry for each and the widget stays right without the app or a reload (docs/design/37-widgets-siri.md
+    /// "Freshness"): a row's rounded "ago" (`LottiesText.agoRounded`: every minute in the first hour after the event,
+    /// then every half hour), an estimate passing ("próx. 11:30" goes away) and midnight ("Nada hoje"). Soonest first;
+    /// a moment less than 20 seconds after the previous one is merged into it; at most `limit`, within `horizon`.
+    func textChanges(
+        after now: Date, horizon: TimeInterval = 6 * 3600, limit: Int = 60, calendar: Calendar = .current
+    ) -> [Date] {
+        let end = now.addingTimeInterval(horizon)
+        var times: [Date] = []
+        if let midnight = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) {
+            times.append(midnight)
+        }
+        var shown: [Date] = [lastFeed?.at, lastDiaper?.at].compactMap { $0 }
+        if let lastActivity { shown += Array(lastActivity.values) }
+        for date in shown {
+            // 1...59 minutes, then 60, 90, 120... until a day (the rows then say "Nada hoje").
+            var minutes = 1
+            while minutes < 24 * 60 {
+                let time = date.addingTimeInterval(TimeInterval(minutes * 60))
+                if time > end { break }
+                if time > now { times.append(time) }
+                minutes += minutes < 60 ? 1 : 30
+            }
+        }
+        times += [nextNap?.expected, nextFeed?.at, nextDiaper?.at].compactMap { $0 }
+        var kept: [Date] = []
+        for time in times.filter({ $0 > now && $0 <= end }).sorted() {
+            if let previous = kept.last, time.timeIntervalSince(previous) < 20 { continue }
+            kept.append(time)
+            if kept.count == limit { break }
+        }
+        return kept
+    }
 }
 
 /// One entry of `widget-outbox.json`: an event the user asked for by voice or from the widget while the app was closed.

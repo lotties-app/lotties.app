@@ -29,6 +29,8 @@ export interface FakeNativeShell extends NativeShell {
   openAppUrl(url: string): void;
   /** The app returns to the foreground. */
   resume(): void;
+  /** The app leaves the foreground. */
+  pause(): void;
   /** The system browser closed (browserFinished). */
   finishBrowser(): void;
   /** Android's back button (backButton), with whether the WebView can go back. */
@@ -44,6 +46,7 @@ export function fakeNativeShell(): FakeNativeShell {
   const finishedListeners = new Set<() => void>();
   const backListeners = new Set<(canGoBack: boolean) => void>();
   const resumeListeners = new Set<() => void>();
+  const pauseListeners = new Set<() => void>();
   const shell: FakeNativeShell = {
     opened: [],
     styles: [],
@@ -66,6 +69,10 @@ export function fakeNativeShell(): FakeNativeShell {
       resumeListeners.add(listener);
       return () => resumeListeners.delete(listener);
     },
+    onPause: async (listener) => {
+      pauseListeners.add(listener);
+      return () => pauseListeners.delete(listener);
+    },
     launchUrl: async () => shell.launch,
     shareFile: vi.fn(async (file: SharedFile) => {
       shell.shared.push(file);
@@ -83,9 +90,14 @@ export function fakeNativeShell(): FakeNativeShell {
     pressBack: (canGoBack) => backListeners.forEach((listener) => listener(canGoBack)),
     openAppUrl: (url) => urlListeners.forEach((listener) => listener(url)),
     resume: () => resumeListeners.forEach((listener) => listener()),
+    pause: () => pauseListeners.forEach((listener) => listener()),
     finishBrowser: () => finishedListeners.forEach((listener) => listener()),
     listenerCount: () =>
-      urlListeners.size + finishedListeners.size + backListeners.size + resumeListeners.size,
+      urlListeners.size +
+      finishedListeners.size +
+      backListeners.size +
+      resumeListeners.size +
+      pauseListeners.size,
   };
   return shell;
 }

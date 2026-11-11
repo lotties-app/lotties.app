@@ -366,6 +366,25 @@ describe('SyncEngine push', () => {
     expect(engine.status.getSnapshot().state).toBe('idle');
   });
 
+  it('pulls at once when the page becomes visible again, and not after stop', async () => {
+    const target = new EventTarget();
+    const { engine, calls } = setup(undefined, { eventTarget: target });
+
+    engine.start();
+    await engine.whenIdle();
+    const afterStart = calls.length;
+    expect(afterStart).toBeGreaterThan(0);
+
+    target.dispatchEvent(new Event('visibilitychange'));
+    await engine.whenIdle();
+    expect(calls.length).toBe(afterStart * 2);
+
+    engine.stop();
+    target.dispatchEvent(new Event('visibilitychange'));
+    await engine.whenIdle();
+    expect(calls.length).toBe(afterStart * 2);
+  });
+
   it('does not call the API while the browser reports offline', async () => {
     await newEvent();
     const { engine, calls } = setup(undefined, { isOnline: () => false });

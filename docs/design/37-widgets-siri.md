@@ -67,8 +67,8 @@ the WebView's storage (a native process cannot read IndexedDB).
 
 Times are absolute; the widget renders "x min ago" itself, so it stays right without the app. `signedIn: false` (or a
 missing file) makes the widget show "Open Lotties". The app rewrites the file after every local event write and after
-each sync pull (one writer function, only when `isNativeApp()`), and **deletes it on sign-out** and when the account's
-local data is cleared (docs/design/12 "per-account local data").
+each sync pull (one writer function, only when `isNativeApp()`; every trigger is in section 16), and **deletes it on
+sign-out** and when the account's local data is cleared (docs/design/12 "per-account local data").
 
 ### 2.2 `widget-outbox.json` (appended by intents, drained by the app)
 
@@ -229,7 +229,8 @@ The medium widget's rows were cut ("2 hrs,... · próx....") and busy (borders, 
 time, the sleep button) and a borderless list on the right. Each row is icon, name, and on the right how long ago the last one
 was, said outright ("há 35 min", "há 2 h+", "há 2 h 30+": minutes under an hour, then rounded down to the half hour with a plus; `LottiesText.agoRounded`); the estimate ("próx. 11:30") sits under the name when there is one, and only the
 row that is coming up gets a tinted fill. The last row is "Mais" (the list of every activity). The "ago" is computed per timeline
-entry (at most 15 minutes old) instead of ticking live; the lock screen and the single-purpose widgets keep the live text.
+entry instead of ticking live, and the timeline has an entry at each moment it changes (section 16); the lock screen and the
+single-purpose widgets keep the live text.
 
 ## 13. Android widgets (2026-11-01)
 
@@ -258,7 +259,8 @@ compose compiler plugin at `kotlinVersion`):
 - Refresh: `WidgetRefresher` registers a `LottiesStore` listener from `LottiesSharedPlugin.load()` and from the widget
   receivers' `onUpdate` (process-wide, debounced 300 ms); a refresh bumps each widget's Glance state version so it reads
   the files again. No `updatePeriodMillis`: one non-waking alarm (`WidgetRefreshReceiver`, not exported) at the soonest of
-  an open choice's end, the next highlight change (`DueRules.dueChanges`) and 15 minutes. Below Android 12 the alarm is
+  an open choice's end, the next highlight change (`DueRules.dueChanges`), the next text change (`TextChanges`, section 16)
+  and 15 minutes. Below Android 12 the alarm is
   exact; from 12 on it is inexact (no exact-alarm permission), so a choice can stay open, or a highlight change can show,
   late, and nothing renders while the phone sleeps until it wakes.
 - Signed out or no snapshot: "Abra o Lotties" / "Open Lotties"; a tap anywhere outside a button opens the app.
@@ -400,3 +402,72 @@ using the same tiers as the Android widget (section 13):
 Choices (Wet/Dirty/Both, ml, side) replace the content at any size; in the small widget the ml go in two rows of two, and
 a More opened from another widget is ignored (the list of activities does not fit). No lock-screen families: Summary keeps them.
 Unverified until a device runs it: the layout at each size and the interactive buttons (the compile check only builds it).
+
+## 16. Freshness (2026-11-10)
+
+Owner report: the widgets fell behind the app (a feed or a sleep logged in the app, or on another family member's phone,
+did not show until the app was opened again). This section lists what keeps them current and what still needs the app.
+The data contract (2.1, 2.2) is unchanged.
+
+### 16.1 When the app writes the snapshot
+
+`widgets/widgetSyncRunner.ts` (`startWidgetSync`, mounted by `WidgetSync` in the native app only):
+
+| Trigger | Write |
+| --- | --- |
+| Start (sign-in, launch) and resume (Capacitor `appStateChange`, active) | at once |
+| A change in Dexie of `events`, `babies`, `eventTypes`, the sync `outbox` or `ageNorms`: a write from any screen, a sync pull merging what other phones logged (`mergeEventDelta`), an outbox drain | debounced, 400 ms (a pull merged page by page makes one write) |
+| What the snapshot reads outside Dexie: the selected baby (`writeSelectedBabyId`), the cached predictions (`writeCachedPredictions`), both through `widgets/widgetInputs.ts`; the app language (`languageChanged`) | debounced, 400 ms |
+| The app leaving the foreground (`appStateChange` not active, `visibilitychange` hidden) | at once: iOS suspends the WebView seconds later |
+| Hub > About "send now" (`refreshWidgetNow`) | at once, even when nothing changed |
+
+- Every run drains `widget-outbox.json` first, so the app never writes a snapshot that hides a widget tap it has not
+  turned into an event yet. Before, a rebuild while the outbox still held a tap (at launch, or on Android while the app
+  ran in the background) put the widget back to the state before the tap until the next resume.
+- When a drain took any entry out of the file, the snapshot is written even if the app's copy did not change (the widget
+  had written its tap into the file itself; a dropped entry would otherwise stay on the widget).
+- Runs never overlap (a trigger during a run asks for one more); a snapshot equal to the last one written (ignoring
+  `updatedAt`) is not written again; nothing is written once the session is ending (sign-out deletes the file).
+- The sync engine also pulls when the page becomes visible again (`SyncEngine`, `visibilitychange`), not only at its
+  30-second tick, so opening the app for a moment brings the other phones' entries to the widget.
+
+### 16.2 How the widgets redraw
+
+- iOS: every `writeSnapshot` (the WebKit handler and the Capacitor plugin) and `clearAll` calls
+  `WidgetCenter.shared.reloadAllTimelines()`; widget buttons call it after their tap. The timeline (`lottiesTimeline`)
+  has an entry now, at each highlight change (`dueChanges`) and at each moment a text changes with time alone
+  (`WidgetSnapshot.Baby.textChanges`: each minute in the first hour after a row's last event, then each half hour; an
+  estimate passing; midnight), at most 60 of those within 6 hours; policy `.after(15 minutes)`. So the rows' "há 35 min"
+  stays right when WidgetKit grants the reload late. "Nada hoje" follows the entry's day, not the render's. The sleep and
+  running-feed times are `Text(_, style: .relative)` / `.timer` and tick by themselves.
+- Android: every `LottiesStore.writeSnapshot` (the plugin, or a widget button) notifies `WidgetRefresher` (300 ms
+  debounce), which bumps each widget's Glance state and plans one alarm at the soonest of an open choice's end, a
+  highlight change, a text change (`TextChanges`, the same rules as iOS) and 15 minutes; the sleep and running-feed times
+  are live Chronometers. No `updatePeriodMillis`. While a row's last event is under an hour old and the screen is on, that
+  is one render a minute.
+
+### 16.3 What still needs the app (not built: needs a device or a decision)
+
+1. **Entries from other phones while the app is closed.** The widget never talks to the network (section 2) and the
+   app's WebView does not run in the background, so they show only after the app opens and pulls. Options, each a
+   decision: a background push (APNs `content-available` / FCM data message; native push is design 19, not built) that
+   wakes native code to fetch a summary; a widget-side fetch with its own token (changes the "no network in the widget"
+   rule and the privacy policy); `BGAppRefreshTask` / WorkManager, which iOS and Android run when they choose. All need
+   native code that reads the server, since a native process cannot read the app's IndexedDB.
+2. **Siri and Android voice entries** (sections 8 and 14) go to the server through MCP only; the phone's snapshot is not
+   touched, so the widget shows them after the app pulls. Applying the same optimistic change as the widget buttons
+   (`LottiesLogger.log`, `WidgetOutbox.applyToSnapshot`) after a successful MCP write would close it on the same phone.
+3. **Widget button taps reach the server**, and so the other phones, only when the app opens and drains the outbox. On
+   Android a native "outbox changed" event to a running app, or on iOS a Darwin notification, could drain sooner.
+4. **One estimate per kind**: when the next feed or diaper estimate has passed, the one after it appears only when the
+   app writes the snapshot again.
+5. **iOS budget**: reloads asked while the app is in the foreground are free; the 15-minute reload and a reload asked
+   while the app goes to the background count against WidgetKit's daily budget (Apple documents about 40 to 70 a day for a
+   widget people often see) and can come late; the timeline entries keep the texts right meanwhile.
+
+Unverified (no Xcode, no device, no emulator): whether the write on leaving the app completes before iOS suspends the
+WebView (if not, it completes on the next resume); whether WKWebView and the Android WebView fire `visibilitychange` on
+every return to the foreground (the 30-second tick still pulls if not); the iOS timeline change compiles only in the
+`ios-compile-check` workflow; how late Android 12+'s inexact alarm comes for the one-minute renders. The web side is
+covered by `WidgetSync.test.tsx` and `SyncEngine.test.ts`; the Android `TextChanges` and `RefreshPlan` by
+`WidgetLogicTest`.

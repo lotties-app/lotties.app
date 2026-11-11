@@ -142,8 +142,10 @@ object WidgetRefresher {
     val versionKey get() = VERSION
 
     /**
-     * One alarm for the next render (the end of an open choice, a highlight change, at most 15 minutes): non-waking and
-     * inexact on Android 12+ (no exact-alarm permission), so it can come late while the phone sleeps.
+     * One alarm for the next render (the end of an open choice, a highlight change, a row's "há 35 min" or an estimate
+     * changing by itself, midnight; at most 15 minutes, [RefreshPlan]): non-waking and inexact on Android 12+ (no
+     * exact-alarm permission), so it can come late, and nothing renders while the screen is off (the late alarm fires
+     * when the phone wakes).
      */
     // setExact runs only below Android 12, where it needs no permission (lint cannot see the version check).
     @SuppressLint("MissingPermission")

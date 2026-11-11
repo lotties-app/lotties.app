@@ -1,3 +1,5 @@
+import { widgetInputsChanged } from '../widgets/widgetInputs';
+
 const KEY = 'baby-routine.selected-baby';
 
 export function readSelectedBabyId(): string | null {
@@ -14,6 +16,8 @@ export function writeSelectedBabyId(id: string): void {
   } catch {
     // Storage unavailable: the selection just lasts for this session.
   }
+  // The home-screen widget shows the selected baby.
+  widgetInputsChanged();
 }
 
 /** Forgets the saved selection, whatever it points at (sign-out, account switch). */

@@ -27,7 +27,10 @@ export interface SyncEngineOptions {
   /** Cross-tab mutual exclusion; defaults to `navigator.locks` when available. */
   locks?: LockManager | null;
   isOnline?: () => boolean;
-  /** Receives `online`/`offline` events; defaults to `window`. */
+  /**
+   * Receives `online`/`offline` events and `visibilitychange` (fired at the document, it bubbles up
+   * to the window); defaults to `window`.
+   */
   eventTarget?: EventTarget | null;
 }
 
@@ -48,8 +51,8 @@ function defaultIsOnline() {
 /**
  * Offline-first sync: push the outbox in order, then pull deltas. Runs are single-flight
  * (one per engine, and one across tabs via the Web Locks API); a trigger during a run schedules
- * exactly one follow-up run. Triggers: `start()`, new outbox entries, `online`, the interval and
- * backoff timers.
+ * exactly one follow-up run. Triggers: `start()`, new outbox entries, `online`, the page becoming
+ * visible again (the app back in the foreground), the interval and backoff timers.
  */
 export class SyncEngine {
   readonly status = new SyncStatusStore();
@@ -117,6 +120,7 @@ export class SyncEngine {
     this.status.update({ authRequired: false });
     this.eventTarget?.addEventListener('online', this.handleOnline);
     this.eventTarget?.addEventListener('offline', this.handleOffline);
+    this.eventTarget?.addEventListener('visibilitychange', this.handleVisibility);
     this.intervalTimer = setInterval(this.handleTick, this.intervalMs);
     this.lastPending = null;
     this.countsSubscription = liveQuery(() => this.readCounts()).subscribe({
@@ -135,6 +139,7 @@ export class SyncEngine {
     this.stopped = true;
     this.eventTarget?.removeEventListener('online', this.handleOnline);
     this.eventTarget?.removeEventListener('offline', this.handleOffline);
+    this.eventTarget?.removeEventListener('visibilitychange', this.handleVisibility);
     if (this.intervalTimer) clearInterval(this.intervalTimer);
     this.intervalTimer = null;
     this.clearRetryTimer();
@@ -322,6 +327,16 @@ export class SyncEngine {
 
   private readonly handleTick = () => {
     void (this.paused ? this.resumeIfTokenChanged() : this.syncNow());
+  };
+
+  /**
+   * Back in the foreground: pull what other devices wrote meanwhile now, not at the next tick (up to
+   * the interval away), so the screens and the home-screen widget catch up even when the person
+   * only glances at the app (docs/design/37-widgets-siri.md "Freshness").
+   */
+  private readonly handleVisibility = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+    this.handleTick();
   };
 
   private readonly handleCounts = (counts: QueueCounts) => {

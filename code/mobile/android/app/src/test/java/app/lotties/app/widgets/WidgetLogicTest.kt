@@ -160,5 +160,59 @@ class WidgetLogicTest {
         val picker = OpenPicker.opening(PickerTarget.MORE, now)
         assertEquals(picker.until, RefreshPlan.next(now, baby(feed = minutesAhead(25)), picker))
         assertEquals(minutesAhead(5), RefreshPlan.next(now, baby(feed = minutesAhead(25)), null))
+        // A row's "há 3 min" changes before the highlight and the 15 minutes.
+        val changed = baby(feed = minutesAhead(25)).copy(lastDiaper = WidgetSnapshot.Diaper(minutesAgo(3) - 5_000L, "wet"))
+        assertEquals(minutesAgo(3) - 5_000L + 4 * 60_000L, RefreshPlan.next(now, changed, null, utc))
+    }
+
+    // Texts that change with time alone (WidgetSnapshot.Baby.textChanges on iOS)
+
+    private val utc = TimeZone.getTimeZone("UTC")
+
+    @Test
+    fun theAgoChangesEachMinuteInTheFirstHourThenEachHalfHourUntilADay() {
+        val at = minutesAgo(10) - 15_000L
+        assertEquals(at + 11 * 60_000L, TextChanges.agoChangeAfter(at, now))
+        assertEquals(minutesAhead(1), TextChanges.agoChangeAfter(minutesAgo(59), now)) // "59 min" -> "1 h+"
+        assertEquals(minutesAhead(29), TextChanges.agoChangeAfter(minutesAgo(61), now)) // "1 h+" -> "1 h 30+"
+        assertEquals(minutesAhead(30), TextChanges.agoChangeAfter(minutesAgo(90), now))
+        assertEquals(minutesAhead(1), TextChanges.agoChangeAfter(minutesAgo(24 * 60 - 1), now))
+        assertNull(TextChanges.agoChangeAfter(minutesAgo(24 * 60), now))
+        assertEquals(minutesAhead(3), TextChanges.agoChangeAfter(minutesAhead(2), now)) // ahead: "just now" until +1 min
+    }
+
+    @Test
+    fun theAgoChangeIsExactlyWhenTheRoundedTextChanges() {
+        for (seconds in 0L until 24 * 3600L step 173L) {
+            val at = now - seconds * 1000L
+            val change = TextChanges.agoChangeAfter(at, now) ?: continue
+            assertTrue(change > now)
+            assertEquals(Ago.rounded(at, now), Ago.rounded(at, change - 1))
+            assertTrue(Ago.rounded(at, now) != Ago.rounded(at, change))
+        }
+    }
+
+    @Test
+    fun nextMidnightFollowsTheZone() {
+        assertEquals(Iso.parse("2026-11-02T00:00:00Z"), TextChanges.nextMidnight(now, utc))
+        // 15:00 UTC is 12:00 in Sao Paulo (UTC-3): its next midnight is 03:00 UTC.
+        assertEquals(
+            Iso.parse("2026-11-02T03:00:00Z"),
+            TextChanges.nextMidnight(now, TimeZone.getTimeZone("America/Sao_Paulo")),
+        )
+    }
+
+    @Test
+    fun theNextTextChangeIsTheSoonestOfTheRowsTheEstimatesAndMidnight() {
+        val quiet = baby()
+        assertEquals(Iso.parse("2026-11-02T00:00:00Z"), TextChanges.next(quiet, now, utc))
+        val fedAt = minutesAgo(90) - 20_000L
+        val fed = quiet.copy(lastFeed = WidgetSnapshot.Feed(fedAt, "bottle", 120, null))
+        assertEquals(fedAt + 120 * 60_000L, TextChanges.next(fed, now, utc))
+        val estimate = fed.copy(nextFeed = WidgetSnapshot.NextFeed(minutesAhead(12), 120))
+        assertEquals(minutesAhead(12), TextChanges.next(estimate, now, utc))
+        val bathAt = minutesAgo(30) - 50_000L
+        val bathed = estimate.copy(lastActivity = mapOf("bath" to bathAt))
+        assertEquals(bathAt + 31 * 60_000L, TextChanges.next(bathed, now, utc))
     }
 }
