@@ -15,6 +15,11 @@ export interface NativeShell {
   onAppUrlOpen(listener: (url: string) => void): Promise<() => void>;
   /** The app came back to the foreground (iOS/Android appStateChange, active). */
   onResume(listener: () => void): Promise<() => void>;
+  /**
+   * The app is leaving the foreground (iOS/Android appStateChange, not active): on iOS this comes before
+   * the app is backgrounded and suspended, so there is still time to save (the widget snapshot).
+   */
+  onPause(listener: () => void): Promise<() => void>;
   /** The URL that started the app (a redirect that arrived after the OS stopped it), if any. */
   launchUrl(): Promise<string | undefined>;
   /**
@@ -83,6 +88,14 @@ export const capacitorShell: NativeShell = {
     return removing(
       await App.addListener('appStateChange', (state) => {
         if (state.isActive) listener();
+      }),
+    );
+  },
+  onPause: async (listener) => {
+    const { App } = await load();
+    return removing(
+      await App.addListener('appStateChange', (state) => {
+        if (!state.isActive) listener();
       }),
     );
   },

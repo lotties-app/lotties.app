@@ -71,8 +71,10 @@ struct LottiesProvider: TimelineProvider {
     }
 }
 
-/// One entry now and one at each moment an action starts or stops being "coming up" (the highlight changes without
-/// the app opening); the timeline is rebuilt every 15 minutes anyway.
+/// One entry now, one at each moment an action starts or stops being "coming up" (the highlight changes without the app
+/// opening) and one at each moment a text changes with time alone (`textChanges`: the rows' "há 35 min", an estimate
+/// passing, midnight), so the widget stays right even when WidgetKit's budget delays the reload asked for in 15 minutes.
+/// Each snapshot the app writes reloads the timeline (`reloadAllTimelines`). docs/design/37-widgets-siri.md "Freshness".
 private func lottiesTimeline(slots: [WidgetActivity]) -> Timeline<LottiesEntry> {
     let now = Date()
     let snapshot = LottiesShared.readSnapshot()
@@ -84,11 +86,14 @@ private func lottiesTimeline(slots: [WidgetActivity]) -> Timeline<LottiesEntry> 
                 LottiesEntry(date: open.until, snapshot: snapshot, slots: slots),
             ], policy: .after(open.until))
     }
-    var dates = [now]
-    if let baby = snapshot?.selectedBaby { dates += baby.dueChanges(after: now).prefix(8) }
+    var dates: Set<Date> = [now]
+    if let baby = snapshot?.selectedBaby {
+        dates.formUnion(baby.dueChanges(after: now).prefix(8))
+        dates.formUnion(baby.textChanges(after: now))
+    }
     let next = Calendar.current.date(byAdding: .minute, value: 15, to: now) ?? now
     return Timeline(
-        entries: dates.map { LottiesEntry(date: $0, snapshot: snapshot, slots: slots) }, policy: .after(next))
+        entries: dates.sorted().map { LottiesEntry(date: $0, snapshot: snapshot, slots: slots) }, policy: .after(next))
 }
 
 /// "Edit widget": what each of the three buttons logs. Anything the app can log with one tap is on the list.
@@ -253,7 +258,8 @@ private struct AgoText: View {
     var compact = false
 
     var body: some View {
-        if let date, Calendar.current.isDateInToday(date) {
+        // "Today" as of the entry's moment, not of the render (WidgetKit renders entries ahead of time).
+        if let date, Calendar.current.isDate(date, inSameDayAs: now) {
             if compact {
                 let text = LottiesText.agoRounded(date, now: now)
                 if text == LottiesText.t("agora", "just now") {

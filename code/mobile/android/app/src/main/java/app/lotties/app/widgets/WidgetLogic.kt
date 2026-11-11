@@ -203,15 +203,60 @@ sealed class QuickItem {
     }
 }
 
+/**
+ * When a text the widgets draw changes with time alone (the iOS `WidgetSnapshot.Baby.textChanges`, docs/design/37
+ * "Freshness"): a row's rounded "ago" ([Ago.rounded]: each minute in the first hour after the event, then each half
+ * hour, until a day), an estimate passing ("próx. 11:30" goes away) and midnight ("Nothing today"). The sleep and
+ * running-feed timers are live Chronometers and need no render.
+ */
+object TextChanges {
+    private const val MINUTE_MS = 60_000L
+    private const val DAY_MINUTES = 24 * 60L
+
+    /** The soonest such moment after [now]. */
+    fun next(baby: WidgetSnapshot.Baby, now: Long, zone: TimeZone = TimeZone.getDefault()): Long {
+        val candidates = mutableListOf(nextMidnight(now, zone))
+        val shown = listOfNotNull(baby.lastFeed?.at, baby.lastDiaper?.at) + baby.lastActivity.values
+        shown.mapNotNullTo(candidates) { agoChangeAfter(it, now) }
+        listOfNotNull(baby.nextNap?.expected, baby.nextFeed?.at, baby.nextDiaper?.at).filterTo(candidates) { it > now }
+        return candidates.filter { it > now }.min()
+    }
+
+    /** The next moment after [now] at which the rounded "ago" of [at] reads differently; null after a day. */
+    fun agoChangeAfter(at: Long, now: Long): Long? {
+        if (now < at) return at + MINUTE_MS // a time ahead reads "just now" until a minute after it
+        val minutes = (now - at) / MINUTE_MS
+        val next = if (minutes < 60) minutes + 1 else 60 + 30 * ((minutes - 60) / 30 + 1)
+        return if (next <= DAY_MINUTES) at + next * MINUTE_MS else null
+    }
+
+    /** The start of the next calendar day in [zone]. */
+    fun nextMidnight(now: Long, zone: TimeZone = TimeZone.getDefault()): Long {
+        val calendar = Calendar.getInstance(zone).apply {
+            timeInMillis = now
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.DAY_OF_YEAR, 1)
+        }
+        return calendar.timeInMillis
+    }
+}
+
 object RefreshPlan {
-    /** iOS rebuilds the timeline every 15 minutes; the rows' "ago" is at most that old. */
+    /** At most this long between two renders, whatever the snapshot says. */
     const val PERIOD_MS = 15 * 60_000L
 
-    /** When the widgets should render again: the picker's end, the next highlight change, or 15 minutes from now. */
-    fun next(now: Long, baby: WidgetSnapshot.Baby?, picker: OpenPicker?): Long {
+    /**
+     * When the widgets should render again: the picker's end, the next highlight change, the next moment a text changes
+     * by itself ([TextChanges]), or 15 minutes from now.
+     */
+    fun next(now: Long, baby: WidgetSnapshot.Baby?, picker: OpenPicker?, zone: TimeZone = TimeZone.getDefault()): Long {
         val candidates = mutableListOf(now + PERIOD_MS)
         picker?.until?.takeIf { it > now }?.let { candidates.add(it) }
         baby?.let { DueRules.dueChanges(it, now).firstOrNull() }?.let { candidates.add(it) }
+        baby?.let { candidates.add(TextChanges.next(it, now, zone)) }
         return candidates.min()
     }
 }

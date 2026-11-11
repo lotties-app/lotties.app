@@ -189,10 +189,28 @@ async function apply(db: BabyRoutineDb, entry: OutboxEntry): Promise<boolean> {
  * can never work (unknown baby, bad content), which is dropped. Returns how many events were written.
  */
 export async function drainOutbox(db: BabyRoutineDb, bridge: WidgetBridge): Promise<number> {
+  return (await drainOutboxDetailed(db, bridge)).written;
+}
+
+/** What a drain did: events written, and entries taken out of the file (written, already applied or dropped). */
+export interface DrainResult {
+  written: number;
+  removed: number;
+}
+
+/**
+ * `drainOutbox`, also saying how many entries left the file. Any removed entry means a widget button or intent touched
+ * the snapshot file since the app last wrote it (it applies its tap there at once), so the app must write it again even
+ * when its own copy did not change (a dropped entry would otherwise stay on the widget).
+ */
+export async function drainOutboxDetailed(
+  db: BabyRoutineDb,
+  bridge: WidgetBridge,
+): Promise<DrainResult> {
   const entries = parseOutbox(await bridge.readOutbox()).sort((a, b) =>
     a.occurredAt.localeCompare(b.occurredAt),
   );
-  if (entries.length === 0) return 0;
+  if (entries.length === 0) return { written: 0, removed: 0 };
   const drained = new Set(readDrained());
   const finished: string[] = [];
   let written = 0;
@@ -210,5 +228,5 @@ export async function drainOutbox(db: BabyRoutineDb, bridge: WidgetBridge): Prom
     }
   }
   if (finished.length > 0) await bridge.removeOutbox(finished);
-  return written;
+  return { written, removed: finished.length };
 }

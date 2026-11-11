@@ -69,6 +69,21 @@ describe('capacitorShell', () => {
     expect(capacitor.remove).toHaveBeenCalledTimes(1);
   });
 
+  it('tells resume and pause apart from appStateChange', async () => {
+    const seen: string[] = [];
+    await capacitorShell.onResume(() => seen.push('resume'));
+    await capacitorShell.onPause(() => seen.push('pause'));
+    const [[resumeEvent, onResume], [pauseEvent, onPause]] = capacitor.App.addListener.mock
+      .calls as unknown as [string, (state: { isActive: boolean }) => void][];
+    for (const isActive of [false, true]) {
+      onResume({ isActive });
+      onPause({ isActive });
+    }
+
+    expect([resumeEvent, pauseEvent]).toEqual(['appStateChange', 'appStateChange']);
+    expect(seen).toEqual(['pause', 'resume']);
+  });
+
   it('listens for the browser closing', async () => {
     const listener = () => {};
     await capacitorShell.onBrowserFinished(listener);
