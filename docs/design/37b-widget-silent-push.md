@@ -355,11 +355,11 @@ with the policy release (docs/legal-held/widget-silent-push/README.md), not befo
 
 | Item | Where | In the repository |
 | --- | --- | --- |
-| Apple: enable **Push Notifications** on the App ID `app.lotties.app` (developer.apple.com > Identifiers) | portal | no |
+| Apple: enable **Push Notifications** on the App ID `app.lotties.app` (developer.apple.com > Certificates, Identifiers & Profiles > Identifiers > `app.lotties.app` > Push Notifications > Save; no push certificate, the server uses the auth key below). Only the app: the widget extension `app.lotties.app.widgets` receives no push and needs nothing | portal | no |
 | Apple: create an **APNs auth key** (Keys > +, Apple Push Notifications service), note its key id and the team id; download the `.p8` once | portal | no |
-| Apple: regenerate the `Lotties App Store` profile (a capability changed) and update `IOS_PROFILE_BASE64` | portal + repo secret | no |
-| iOS: `aps-environment` = `production` in `App/App.entitlements` (Xcode adds it with the Push Notifications capability; `development` for Xcode runs is set by the profile) | repo, with the profile | **no, on purpose**: adding it before the profile has the capability breaks the signed build |
-| iOS: `UIBackgroundModes` = [`remote-notification`] in `App/Info.plist` (Background Modes capability > Remote notifications) | repo | **no, on purpose**: added together with the entitlement |
+| Apple: regenerate the `Lotties App Store` profile (Profiles > `Lotties App Store` > Edit > Save, download; it then carries `aps-environment` = `production`) and update the repo secret `IOS_PROFILE_BASE64` (`base64 -w0 Lotties_App_Store.mobileprovision \| gh secret set IOS_PROFILE_BASE64 --repo lotties-app/lotties.app`); steps in docs/MOBILE-RELEASE.md 4.3 step 4c. **Needed before the next iOS release run**: since the entitlement below is in the repository, `mobile-release.yml` refuses an app profile without `aps-environment` = `production` (step "Install the signing certificate and the provisioning profile") instead of failing later at the archive | portal + repo secret | workflow check yes (2026-11-11), profile and secret no |
+| iOS: `aps-environment` in `App/App.entitlements` (App target only), value `$(LOTTIES_APS_ENVIRONMENT)`: a build setting of the App target, `production` in Release (CI archives Release with manual signing and the App Store profile, which is always `production`; TestFlight and App Store builds) and `development` in Debug (Xcode runs with automatic signing get a development profile). Set by hand instead of through Xcode's Push Notifications capability because the project has no Mac to run Xcode; the project does not track capabilities (`SystemCapabilities` absent, App Groups works the same way), so nothing else in `project.pbxproj` is needed. Matches `LottiesSilentPush.apnsEnvironment` (`#if DEBUG` sandbox, else production) | repo | **yes** (2026-11-11), unverified (section 14) |
+| iOS: `UIBackgroundModes` = [`remote-notification`] in `App/Info.plist` (App target only; the widget's `Info.plist` has none) | repo | **yes** (2026-11-11), unverified |
 | Firebase: a project with the Android app `app.lotties.app` (debug builds use the same application id today), `google-services.json` downloaded from its settings | console.firebase.google.com | no (gitignored path exists; the Gradle plugin classpath and conditional apply exist) |
 | CI: the repository secret `ANDROID_GOOGLE_SERVICES_JSON_BASE64` (`base64 -w0 google-services.json`; listed in docs/MOBILE-RELEASE.md section 3); the release workflow (`mobile-release.yml`, step "Restore google-services.json (optional)") writes it to `code/mobile/android/app/` before the Gradle build. Set it only with the policy release (section 9, "Order of provisioning"). `android-compile-check.yml` stays without it (it proves the build without Firebase) | repo secret | workflow step yes, secret no |
 | Local builds with Firebase: copy `google-services.json` to `code/mobile/android/app/` (gitignored, never committed) | developer machine | no |
@@ -430,6 +430,12 @@ Still open:
 
 - The iOS code (AppDelegate handlers, the message handler methods, the `lotties:remote-change` event): written without
   Xcode; only the `ios-compile-check` workflow can compile it, and nothing has run on a device.
+- The iOS configuration (2026-11-11, edited by hand, no Xcode, no Mac): the `aps-environment` entitlement as the build
+  setting `$(LOTTIES_APS_ENVIRONMENT)` (that Xcode expands it before matching it with the profile), the
+  `remote-notification` background mode, the workflow's `aps-environment` profile check and an archive with the
+  regenerated profile have never run (`ios-compile-check` builds unsigned, so it does not exercise entitlements).
+  Opening the project in Xcode and toggling the Push Notifications capability may rewrite the value to a literal
+  `development`; keep the build setting.
 - Whether a suspended WKWebView runs the sync inside the push's 30 seconds (WebKit may keep its web-content and network
   processes suspended while the app has background time); if it does not, the warm path does nothing on iOS and only the
   cold-path options remain.
