@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
  * Records the demo video (one per language) from the `/dev/*` previews: synthetic data only.
  * Raw WebM files go to showcase/output/video (gitignored); `build-media.mjs` encodes the MP4/WebM
  * and the poster that are committed. A short tour: Now, a quick diaper log (one tap on Wet), the bottle follow-up,
- * Insights, vaccines, sharing with a caregiver and the doctor's view.
+ * Insights, her rhythm, vaccines, sharing with a caregiver and the doctor's view.
  *
  * Narrow it with SHOWCASE_LOCALES=en.
  */
@@ -59,6 +59,7 @@ const ROUTES = [
   '/dev/now?state=awake',
   '/dev/now?state=bottlesleep',
   '/dev/insights?state=rich',
+  '/dev/rhythm?state=ok',
   '/dev/vaccines?state=timeline',
   '/dev/roles',
   '/dev/doctor-dashboard?state=summary',
@@ -131,19 +132,25 @@ for (const locale of LOCALES.filter((l) =>
     await scrollBy(page, 900, 4000);
     await pause(page, 800);
 
-    // 5. Vaccines.
+    // 5. Her rhythm (Insights): usual times, ranges, what the log shows.
+    await go(page, '/dev/rhythm?state=ok');
+    await pause(page, 1500);
+    await scrollBy(page, 800, 3500);
+    await pause(page, 800);
+
+    // 6. Vaccines.
     await go(page, '/dev/vaccines?state=timeline');
     await pause(page, 1500);
     await scrollBy(page, 700, 3500);
     await pause(page, 600);
 
-    // 6. Sharing with a caregiver.
+    // 7. Sharing with a caregiver.
     await go(page, '/dev/roles');
     await pause(page, 1500);
     await scrollBy(page, 350, 2500);
     await pause(page, 1000);
 
-    // 7. The doctor's view.
+    // 8. The doctor's view.
     await page.goto('/dev/doctor-dashboard?state=summary');
     await pause(page, 1800);
     await scrollBy(page, 600, 3500);
