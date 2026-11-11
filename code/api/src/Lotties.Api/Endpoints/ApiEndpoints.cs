@@ -36,6 +36,9 @@ public static class ApiEndpoints
         api.MapAddressEndpoints();
         api.MapVaccineScheduleEndpoints();
         api.MapAgeNormsEndpoints();
+        // The community statistics catalog has no route (docs/design/34-community-insights.md, T4): resolving it here only
+        // validates the embedded file at startup, like the age norms; an invalid catalog stops the API.
+        _ = app.Services.GetRequiredService<Lotties.Application.CommunityInsights.ICommunityStatisticsCatalogProvider>();
         api.MapBabyScopedGroup().MapVaccinationEndpoints();
         api.MapBabyScopedGroup().MapNoteEndpoints().MapAccessLogEndpoints();
         api.MapBabyScopedGroup().MapProposalEndpoints();

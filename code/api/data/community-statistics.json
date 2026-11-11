@@ -1,0 +1,216 @@
+{
+  "schema": 1,
+  "version": 1,
+  "generatedFor": "catalog only, not collected",
+  "release": "weekly",
+  "bandGrids": {
+    "ageWeeksFine": [
+      { "fromWeeks": 0, "toWeeks": 12, "stepWeeks": 1 },
+      { "fromWeeks": 12, "toWeeks": 28, "stepWeeks": 2 },
+      { "fromWeeks": 28, "toWeeks": 104, "stepWeeks": 4 }
+    ],
+    "ageWeeksCoarse": [
+      { "fromWeeks": 0, "toWeeks": 28, "stepWeeks": 4 },
+      { "fromWeeks": 28, "toWeeks": 100, "stepWeeks": 12 },
+      { "fromWeeks": 100, "toWeeks": 104, "stepWeeks": 4 }
+    ],
+    "cryAgeBands": ["newborn", "weeks6to3m", "months3to6", "months6plus"]
+  },
+  "statistics": [
+    {
+      "key": "bottle_ml_per_feed",
+      "description": "Milk per bottle by age in weeks, split by bottle kind (formula or breast milk, never a formula's name or brand), and bottles per local day.",
+      "inputs": ["age_weeks", "local_day", "bottle_drunk_ml", "bottle_feeding_type", "bottles_per_day"],
+      "band": { "grid": "age_weeks", "dimension": "bottle_feeding_type" },
+      "outputs": ["p10", "p25", "p50", "p75", "p90", "bottles_per_day_p50"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": null,
+      "epsilon": 0.2,
+      "capPerBaby": 14,
+      "clip": [
+        { "input": "bottle_drunk_ml", "min": 0, "max": 400, "unit": "ml" },
+        { "input": "bottles_per_day", "min": 0, "max": 24, "unit": "count" }
+      ],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": false,
+      "notInV1Reason": null
+    },
+    {
+      "key": "growth_vs_age",
+      "description": "Weight, length and head circumference by age in weeks. Not built: WHO curves come first and are not replaced.",
+      "inputs": ["age_weeks", "weight_kg", "length_cm", "head_cm"],
+      "band": { "grid": "age_weeks", "dimension": null },
+      "outputs": ["p3", "p15", "p50", "p85", "p97"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": 50,
+      "epsilon": 0.2,
+      "capPerBaby": 4,
+      "clip": [
+        { "input": "weight_kg", "min": 0.5, "max": 25, "unit": "kg" },
+        { "input": "length_cm", "min": 30, "max": 110, "unit": "cm" },
+        { "input": "head_cm", "min": 20, "max": 60, "unit": "cm" }
+      ],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": true,
+      "notInV1Reason": "O6: no pooled growth in v1; the WHO Child Growth Standards are shown first (docs/design/34-community-insights.md section 4)."
+    },
+    {
+      "key": "tummy_minutes_per_day",
+      "description": "Effective tummy time minutes per local day with at least one entry, and the share of days with any.",
+      "inputs": ["age_weeks", "local_day", "tummy_minutes_per_day"],
+      "band": { "grid": "age_weeks", "dimension": null },
+      "outputs": ["p25", "p50", "p75", "share_of_days_with_any"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": null,
+      "epsilon": 0.2,
+      "capPerBaby": 14,
+      "clip": [
+        { "input": "tummy_minutes_per_day", "min": 0, "max": 240, "unit": "minutes" }
+      ],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": false,
+      "notInV1Reason": null
+    },
+    {
+      "key": "naps_per_day",
+      "description": "Naps per complete local day.",
+      "inputs": ["age_weeks", "local_day", "naps_per_day"],
+      "band": { "grid": "age_weeks", "dimension": null },
+      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": null,
+      "epsilon": 0.2,
+      "capPerBaby": 14,
+      "clip": [
+        { "input": "naps_per_day", "min": 0, "max": 12, "unit": "count" }
+      ],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": false,
+      "notInV1Reason": null
+    },
+    {
+      "key": "day_sleep_minutes",
+      "description": "Effective day sleep minutes per complete local day.",
+      "inputs": ["age_weeks", "local_day", "day_sleep_minutes"],
+      "band": { "grid": "age_weeks", "dimension": null },
+      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": null,
+      "epsilon": 0.2,
+      "capPerBaby": 14,
+      "clip": [
+        { "input": "day_sleep_minutes", "min": 0, "max": 720, "unit": "minutes" }
+      ],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": false,
+      "notInV1Reason": null
+    },
+    {
+      "key": "night_sleep_minutes",
+      "description": "Effective night sleep minutes per complete local day.",
+      "inputs": ["age_weeks", "local_day", "night_sleep_minutes"],
+      "band": { "grid": "age_weeks", "dimension": null },
+      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": null,
+      "epsilon": 0.2,
+      "capPerBaby": 14,
+      "clip": [
+        { "input": "night_sleep_minutes", "min": 0, "max": 960, "unit": "minutes" }
+      ],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": false,
+      "notInV1Reason": null
+    },
+    {
+      "key": "feeds_per_day",
+      "description": "Feeds per complete local day.",
+      "inputs": ["age_weeks", "local_day", "feeds_per_day"],
+      "band": { "grid": "age_weeks", "dimension": null },
+      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": null,
+      "epsilon": 0.2,
+      "capPerBaby": 14,
+      "clip": [
+        { "input": "feeds_per_day", "min": 0, "max": 24, "unit": "count" }
+      ],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": false,
+      "notInV1Reason": null
+    },
+    {
+      "key": "diapers_per_day",
+      "description": "Diaper changes per complete local day.",
+      "inputs": ["age_weeks", "local_day", "diapers_per_day"],
+      "band": { "grid": "age_weeks", "dimension": null },
+      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": null,
+      "epsilon": 0.2,
+      "capPerBaby": 14,
+      "clip": [
+        { "input": "diapers_per_day", "min": 0, "max": 20, "unit": "count" }
+      ],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": false,
+      "notInV1Reason": null
+    },
+    {
+      "key": "routine_shift_scale",
+      "description": "Per baby, the 7-day median of each routine value against her own previous 21-day median, as a ratio; published as a scale per band and metric, never a label.",
+      "inputs": ["age_weeks", "local_day", "naps_per_day", "day_sleep_minutes", "night_sleep_minutes", "feeds_per_day", "diapers_per_day"],
+      "band": { "grid": "age_weeks", "dimension": "routine_metric" },
+      "outputs": ["shift_ratio_p90", "shift_ratio_p97"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": 50,
+      "epsilon": 0.2,
+      "capPerBaby": 4,
+      "clip": [
+        { "input": "naps_per_day", "min": 0, "max": 12, "unit": "count" },
+        { "input": "day_sleep_minutes", "min": 0, "max": 720, "unit": "minutes" },
+        { "input": "night_sleep_minutes", "min": 0, "max": 960, "unit": "minutes" },
+        { "input": "feeds_per_day", "min": 0, "max": 24, "unit": "count" },
+        { "input": "diapers_per_day", "min": 0, "max": 20, "unit": "count" }
+      ],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": false,
+      "notInV1Reason": null
+    },
+    {
+      "key": "cry_outcome_by_cause",
+      "description": "Per answered fussy spell, by cry age band and part of day: the share of spells each cause helped, and the share where the suggested cause was the one that helped.",
+      "inputs": ["cry_age_band", "part_of_day", "what_helped_cause", "suggested_cause", "cry_duration_bucket"],
+      "band": { "grid": "cry_age_band", "dimension": "part_of_day" },
+      "outputs": ["share_helped_by_cause", "share_suggested_equals_helped"],
+      "k": 20,
+      "kHysteresis": 18,
+      "kTails": null,
+      "epsilon": 0.2,
+      "capPerBaby": 14,
+      "clip": [],
+      "status": "planned",
+      "proposed": true,
+      "notInV1": false,
+      "notInV1Reason": null
+    }
+  ]
+}
