@@ -117,11 +117,30 @@
         <receiver
             android:name=".widgets.WidgetRefreshReceiver"
             android:exported="false" />
+
+        <!-- The widgets' silent push (docs/design/37b-widget-silent-push.md section 9): the API's content-free FCM data
+             message reaches the app's live WebView, which syncs and rewrites the snapshot. Inert in a build without
+             google-services.json (no Firebase, no token, no message). -->
+        <service
+            android:name=".push.LottiesMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <!-- No FCM token at start-up: one is made only when the app asks for it, while a widget is installed. -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Firebase Messaging adds com.google.android.c2dm.permission.RECEIVE and POST_NOTIFICATIONS to the merged
+         manifest (WAKE_LOCK and ACCESS_NETWORK_STATE were there already, from WorkManager). The app never asks for
+         POST_NOTIFICATIONS and the silent push shows nothing (a data message, no notification block); removing the
+         declaration fails lint (NotificationPermission, Firebase's own notification code). -->
 
     <!-- Voice on Android speaks its answers: the text-to-speech engines must be visible (Android 11+). -->
     <queries>

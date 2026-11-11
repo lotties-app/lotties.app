@@ -477,7 +477,8 @@ covered by `WidgetSync.test.tsx` and `SyncEngine.test.ts`; the Android `TextChan
 
 Owner decision for 16.3.1: a content-free silent push from the server wakes the app, which pulls the sync; the
 existing runner (16.1) rewrites the snapshot and the widgets reload. Server side built and off by default
-(`SilentPush:Enabled`), iOS receive path written (not compiled, not run), Android not built (needs the Firebase
-Messaging library), privacy text held. It works only while the app process and its WebView are alive (suspended in the
-background); a terminated app keeps today's behaviour (design 37b section 5.3). Siri and Android voice entries (16.3.2)
-reach the same phone's widget through the same push once it is on (design 37b section 8).
+(`SilentPush:Enabled`), iOS receive path written (not compiled, not run), Android receive path built (Firebase
+Messaging, design 37b section 9; compiled and unit-tested, not run on a device), privacy text held. It works only while
+the app process and its WebView are alive (suspended in the background); a terminated app keeps today's behaviour
+(design 37b section 5.3; owner decision 2026-11-11: warm only for the first release). Siri and Android voice entries
+(16.3.2) reach the same phone's widget through the same push once it is on (design 37b section 8).

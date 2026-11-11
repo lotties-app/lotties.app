@@ -120,6 +120,18 @@ object WidgetRefresher {
         }
     }
 
+    /**
+     * Waits until the refresh [request] asked for has run (a silent push keeps the process up only while its handler
+     * runs, push/LottiesMessagingService.kt). Returns at once when none is pending; a newer request is waited for too.
+     */
+    suspend fun awaitPending() {
+        while (true) {
+            val job = synchronized(lock) { pending } ?: return
+            job.join()
+            if (synchronized(lock) { pending } === job) return
+        }
+    }
+
     suspend fun refreshAll(context: Context) {
         val app = context.applicationContext
         val manager = GlanceAppWidgetManager(app)

@@ -1,7 +1,33 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { nativeSilentPush, REMOTE_CHANGE_EVENT } from './silentPushBridge';
 
-/* The iOS side of the widgets' silent push goes through the app's WebKit message handler `lotties`. */
+/*
+ * The iOS side of the widgets' silent push goes through the app's WebKit message handler `lotties`; the Android side
+ * through the `LottiesShared` Capacitor plugin (LottiesSharedPlugin.kt), faked here with the answers it gives.
+ */
+
+const android = vi.hoisted(() => {
+  const remove = vi.fn(async () => {});
+  const listeners: (() => void)[] = [];
+  return {
+    remove,
+    fire: () => listeners.forEach((listener) => listener()),
+    plugin: {
+      widgetsInstalled: vi.fn(async (): Promise<{ installed?: boolean }> => ({ installed: true })),
+      pushToken: vi.fn(async (): Promise<Record<string, unknown>> => ({
+        channel: 'fcm',
+        token: 'f1:APA91b-x_y',
+      })),
+      silentPushDone: vi.fn<(options: { changed: boolean }) => Promise<void>>(async () => {}),
+      addListener: vi.fn(async (_event: string, listener: () => void) => {
+        listeners.push(listener);
+        return { remove };
+      }),
+    },
+  };
+});
+
+vi.mock('@capacitor/core', () => ({ registerPlugin: () => android.plugin }));
 
 type Scope = { webkit?: { messageHandlers?: Record<string, { postMessage: unknown }> } };
 
@@ -53,5 +79,41 @@ describe('nativeSilentPush on iOS', () => {
     window.dispatchEvent(new CustomEvent(REMOTE_CHANGE_EVENT));
 
     expect(listener).toHaveBeenCalledOnce();
+  });
+});
+
+describe('nativeSilentPush on Android', () => {
+  it('asks the plugin whether a widget is installed', async () => {
+    expect(await nativeSilentPush.widgetsInstalled()).toBe(true);
+
+    android.plugin.widgetsInstalled.mockResolvedValueOnce({ installed: false });
+    expect(await nativeSilentPush.widgetsInstalled()).toBe(false);
+  });
+
+  it('reads the FCM token, and nothing when the build or the phone has no Firebase', async () => {
+    expect(await nativeSilentPush.pushToken()).toEqual({ channel: 'fcm', token: 'f1:APA91b-x_y' });
+
+    android.plugin.pushToken.mockResolvedValueOnce({});
+    expect(await nativeSilentPush.pushToken()).toBeNull();
+  });
+
+  it('tells the plugin a ping was handled', async () => {
+    await nativeSilentPush.remoteChangeDone(false);
+
+    expect(android.plugin.silentPushDone).toHaveBeenCalledWith({ changed: false });
+  });
+
+  it('hears the plugin event, until stopped', async () => {
+    const listener = vi.fn();
+    const stop = nativeSilentPush.onRemoteChange(listener);
+    await vi.waitFor(() =>
+      expect(android.plugin.addListener).toHaveBeenCalledWith('remoteChange', listener),
+    );
+
+    android.fire();
+    stop();
+
+    expect(listener).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(android.remove).toHaveBeenCalled());
   });
 });
