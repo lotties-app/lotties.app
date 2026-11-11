@@ -3,6 +3,7 @@ using Lotties.Application.Events;
 using Lotties.Application.EventTypes;
 using Lotties.Application.Measurements;
 using Lotties.Application.Medications;
+using Lotties.Application.SilentPush;
 using Lotties.Application.Users;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -25,6 +26,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IUserProfileService, UserProfileService>();
         services.AddScoped<IBabyAccessService, BabyAccessService>();
         services.AddScoped<IEventService, EventService>();
+        services.AddSilentPushApplication();
         services.AddScoped<IBabyService, BabyService>();
         services.AddScoped<IMemberService, MemberService>();
         services.AddScoped<IInviteService, InviteService>();

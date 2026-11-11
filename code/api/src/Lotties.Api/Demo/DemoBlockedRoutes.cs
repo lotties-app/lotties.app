@@ -33,6 +33,7 @@ public static class DemoBlockedRoutes
         "POST /api/v1/push/subscriptions",
         "PUT /api/v1/push/settings",
         "POST /api/v1/push/test",
+        "POST /api/v1/push/devices",
         "PUT /api/v1/babies/{babyId:guid}/notification-preferences",
         "PUT /api/v1/me/assistant-settings",
         "PUT /api/v1/me/consents/optional/{kind}",

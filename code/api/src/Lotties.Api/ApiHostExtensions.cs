@@ -22,6 +22,7 @@ using Lotties.Infrastructure.AddressLookup;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Persistence.AutoMigration;
 using Lotties.Infrastructure.Push;
+using Lotties.Infrastructure.SilentPush;
 using Lotties.Infrastructure.Stores;
 using Lotties.Infrastructure.Stores.Migration;
 using Lotties.Infrastructure.Stores.Moves;
@@ -30,7 +31,7 @@ namespace Lotties.Api;
 
 public static class ApiHostExtensions
 {
-    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), OIDC auth, baby policies, CORS, problem details, request limits, trusted proxy headers, the Alexa skill and the MCP server (both off by default), the project board (off by default), the sealed store credentials, the store migrator, the move worker and the data store routing of bring-your-own-database (<c>Stores:Enabled</c>, off by default) and JSON converters.</summary>
+    /// <summary>Registers configuration aliases, persistence, the opt-in startup migration, application services, push notifications (off without VAPID keys), silent pushes for the widgets (<c>SilentPush:Enabled</c>, off by default), OIDC auth, baby policies, CORS, problem details, request limits, trusted proxy headers, the Alexa skill and the MCP server (both off by default), the project board (off by default), the sealed store credentials, the store migrator, the move worker and the data store routing of bring-your-own-database (<c>Stores:Enabled</c>, off by default) and JSON converters.</summary>
     public static WebApplicationBuilder AddLottiesApi(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -43,6 +44,8 @@ public static class ApiHostExtensions
         builder.Services.AddNotificationPersistence();
         builder.Services.AddPushNotifications();
         builder.Services.AddSingleton<IPushConfiguration, PushOptionsConfiguration>();
+        builder.Services.AddSilentPush(builder.Configuration);
+        builder.Services.AddSilentPushOrigin();
 
         builder.Services.AddAddressLookup(builder.Configuration);
         builder.Services.AddStoreCredentials(builder.Configuration);

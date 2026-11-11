@@ -53,6 +53,7 @@ public static class ApiEndpoints
         api.MapDataStoreEndpoints();
         api.MapCommunityConsentEndpoints();
         api.MapPushEndpoints();
+        api.MapSilentPushEndpoints();
         api.MapBabyScopedGroup().MapNotificationPreferenceEndpoints();
         api.MapAlexaEndpoints();
         api.MapBoardEndpoints();

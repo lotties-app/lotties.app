@@ -10,6 +10,7 @@ using Lotties.Domain.Babies;
 using Lotties.Domain.Board;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Notifications;
+using Lotties.Domain.SilentPush;
 using Lotties.Domain.Stores;
 using Lotties.Domain.Users;
 using Lotties.Infrastructure.Persistence;
@@ -124,6 +125,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["products.created_by"] = Rule.Clear,
         ["professional_profiles.user_id"] = Rule.Erase,
         ["push_subscriptions.user_id"] = Rule.Erase,
+        ["silent_push_devices.user_id"] = Rule.Erase,
         ["user_assistant_settings.user_id"] = Rule.Erase,
         ["user_consent_history.user_id"] = Rule.Erase,
         ["user_consents.user_id"] = Rule.Erase,
@@ -494,6 +496,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         }
 
         var subscription = PushSubscription.Create(userId, PushEndpoint.From(PushTestData.NewEndpoint()), PushTestData.Keys, NotificationLocale.English, "Chrome on Android", null, Start);
+        var silentPushDevice = SilentPushDevice.Register(userId, SilentPushToken.From(SilentPushChannel.Apns, Convert.ToHexString(Guid.NewGuid().ToByteArray()) + Convert.ToHexString(Guid.NewGuid().ToByteArray())), ApnsEnvironment.Production, Start);
         var actor = BoardActor.ForUser(userId, "Her board name");
         var (boardItem, boardCreated) = BoardItem.Create(
             Guid.NewGuid(),
@@ -508,6 +511,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
             context.BoardItemEvents.Add(boardCreated);
             context.BoardApiKeys.Add(boardKey);
             context.PushSubscriptions.Add(subscription);
+            context.SilentPushDevices.Add(silentPushDevice);
             context.NotificationDeliveries.Add(NotificationDelivery.Claim(Guid.NewGuid(), subscription.Id, PushEndpointTests.DosePlan(userId, babyId, Start), Start).Delivery);
             context.NotificationActions.Add(NotificationAction.Snooze(userId, babyId, NotificationKey.ForNap(babyId, Start), Start));
             context.UserNotificationSettings.Add(UserNotificationSettings.Create(userId, new NotificationSettingsTerms(NotificationTimeZone.From("America/Sao_Paulo"), QuietHours.Default, false, false), Start));
