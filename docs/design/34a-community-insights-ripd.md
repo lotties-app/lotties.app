@@ -1,6 +1,7 @@
 # 34a. Community insights: RIPD draft (Relatório de Impacto à Proteção de Dados Pessoais)
 
-Working draft, version 0.1, 2026-11-10. Task T1 of docs/design/34-community-insights.md section 11.
+Working draft, version 0.2, 2026-11-11 (0.1 of 2026-11-10 plus the owner's O2 decision on noise, design 34 section
+5.1). Task T1 of docs/design/34-community-insights.md section 11.
 
 > **Nothing described here is active.** Community insights is **planned, not built, and off for everyone**: there is no
 > consent table, no aggregation job, no statistics endpoint and no flag in the code (docs/design/33-privacy-audit.md
@@ -26,7 +27,7 @@ for this flow), docs/PRIVACY-LAWYER-BRIEF.md (questions to the lawyer; items 9 a
 | Controller (controlador) | the person or company that runs the hosted Lotties service at `https://lotties.app`. **Needs owner decision (checklist section 2; O12)**: natural person (CPF) or company (CNPJ). Published today as "the Lotties project maintainers" (`VITE_PRIVACY_CONTROLLER_NAME` unset) |
 | Operator (operador) | **none planned.** The computation runs inside the Lotties API on the controller's own home lab servers; no processor computes, stores or receives the inputs or the statistics. Infrastructure note: Cloudflare proxies `lotties.app` (confirmed in the lawyer brief section 2; the audit still says "to confirm", C2), so the consent requests and the published statistics file would pass through it in transit like all other traffic. Whether Cloudflare is an operator is already lawyer brief question 4 |
 | Encarregado (DPO) | **needs owner decision / needs lawyer** (checklist section 2: whether the small-agent rules allow skipping one given sensitive data of children; `VITE_PRIVACY_DPO` unset) |
-| Date and version | draft 0.1, 2026-11-10; to be re-issued before activation and reviewed yearly (section 9) |
+| Date and version | draft 0.2, 2026-11-11 (0.1 of 2026-11-10); to be re-issued before activation and reviewed yearly (section 9) |
 | Status | planned, not built, off everywhere; activation needs the checklist of design 34 section 12 |
 | Self-hosted instances | out of scope of this report: each self-hoster is its own controller; the feature is off by default there and, with fewer than k families, publishes nothing (design 34 section 6) |
 
@@ -52,12 +53,16 @@ task T4).
 
 | Statistic (catalog key) | Inputs read | Sensitive (art. 5, II)? | In v1? |
 | --- | --- | --- | --- |
-| Milk per feed (`bottle_ml_per_feed`) | age in completed weeks; ml drunk per live bottle; feeding kind (formula / breast milk, never the formula's name or brand); bottles per local day | yes (health / feeding of a child) | planned |
+| Milk per feed (`bottle_ml_per_feed`) | age in completed weeks; ml drunk per live bottle; feeding kind (formula / breast milk, never the formula's name or brand); bottles per local day | yes (health / feeding of a child) | **not in v1** (O2: percentile outputs deferred) |
 | Growth (`growth_vs_age`) | age in weeks; weight, length, head circumference | yes | **proposed not in v1** (O6: WHO curves first) |
-| Tummy time (`tummy_minutes_per_day`) | age in weeks; effective minutes per local day; share of days with any | yes | planned |
-| Routines (`naps_per_day`, `day_sleep_minutes`, `night_sleep_minutes`, `feeds_per_day`, `diapers_per_day`) | age in weeks; per complete local day: counts and effective durations | yes | planned |
-| Unusual patterns (`routine_shift_scale`) | the same per-day values; per baby, the ratio of the 7-day median to her own previous 21-day median | yes (derived) | planned |
-| Crying (`cry_outcome_by_cause`) | cry age band; per answered fussy spell: cause that helped (mapped), suggested cause, part of day (4 blocks), duration bucket | yes | planned, gated by the evaluation |
+| Tummy time (`tummy_minutes_per_day`) | age in weeks; effective minutes per local day; share of days with any | yes | share of days only, relaxed tier (epsilon about 5, O2); the minute percentiles **not in v1** |
+| Routines (`naps_per_day`, `day_sleep_minutes`, `night_sleep_minutes`, `feeds_per_day`, `diapers_per_day`) | age in weeks; per complete local day: counts and effective durations | yes | **not in v1** (O2: percentile outputs deferred) |
+| Unusual patterns (`routine_shift_scale`) | the same per-day values; per baby, the ratio of the 7-day median to her own previous 21-day median | yes (derived) | **not in v1** (O2: percentile outputs deferred) |
+| Crying (`cry_outcome_by_cause`) | cry age band; per answered fussy spell: cause that helped (mapped), suggested cause, part of day (4 blocks), duration bucket | yes | planned, strict tier (epsilon 0.2, O2), gated by the evaluation |
+
+"In v1?" follows the owner's O2 decision of 2026-11-11 (design 34 section 5.1): percentile outputs (medians, p10-p90,
+p3/p97, ratio percentiles) are deferred because the synthetic study found them unusable at epsilon 0.2. The catalog
+file still carries the earlier proposal (epsilon 0.2 on every statistic) until a later code change aligns it.
 
 **Never read** by the job (design 34 section 4): names or labels, birth date (age in weeks is computed and the date
 dropped), timestamps finer than local day / part of day, notes, custom field text, custom event types, medications,
@@ -94,8 +99,8 @@ owner's family plus testers), so at activation most or all cells would be suppre
    T2).
 2. Weekly (Sunday 03:30 server time), a background job in the API process, behind `CommunityInsights:Enabled`
    (default `false`), reads with a read-only database role the opted-in babies' live events, computes per-baby
-   summaries in memory, applies caps, clipping, bands, k, dominance and complementary suppression and, if chosen,
-   noise (design 34 section 5), and writes **only** the published statistics file and one run row. **No staging table
+   summaries in memory, applies caps, clipping, bands, k, dominance and complementary suppression and the noise of
+   its epsilon tier (design 34 sections 5 and 5.1), and writes **only** the published statistics file and one run row. **No staging table
    of per-baby values.**
 3. `GET /api/v1/community-statistics` serves the static file (no query parameters, no filters) to signed-in users
    (O10); the web app caches it and shows context lines with "From families who chose to share, not advice".
@@ -166,10 +171,17 @@ owner's family plus testers), so at activation most or all cells would be suppre
   studied; the server already holds the records, so it would not reduce exposure to the controller). The promotion
   rule (design 34 section 9) keeps a pooled number out of the app unless it beats the norms with a confidence interval
   above zero and is calibrated; a statistic that does not pass is **not served**, which this report treats as a
-  necessity test per statistic. **Planned**: the evaluation and pilot results are to be attached here before
+  necessity test per statistic. **Synthetic study done** (docs/ml/COMMUNITY-SYNTHETIC.md, no child data): without
+  noise the pooled medians are close to the truth, but the gain over the published norms is small and only at scale
+  (cold-start MAE about 1 ml per feed better for bottles at 10 000 babies, -0.1 naps a day, -0.2 to +1.7 minutes for
+  night sleep); at epsilon 0.2 the percentiles are worse than the norms everywhere (pooled median off by 54-76 ml,
+  50-60 minutes of tummy time, 70-180 minutes of night sleep), while crying shares beat the uniform baseline (4.8
+  points against 8.0 at 10 000 babies and 20 % opt-in). **Planned**: the pilot results are to be attached here before
   activation.
-- **Proportionality conclusion (provisional)**: proportionate for bottle amounts, tummy time, routines and the shift
-  scale **if** the evaluation shows a gain; not shown for growth (excluded) and conditional for crying (gated).
+- **Proportionality conclusion (provisional, after O2)**: the percentile statistics (bottle amounts, tummy minutes,
+  routines, the shift scale) are **not in v1**, since with the strict noise they do not beat the norms and the study
+  shows no gain worth a promotion; growth is excluded (O6); crying shares (strict tier) and the tummy-time share of
+  days (relaxed tier) remain, each conditional on the promotion rule and the pilot.
 
 ## 4. Data subject rights (Direitos dos titulares) — planned
 
@@ -194,7 +206,7 @@ assume the measures are built as designed; none of them exists today.
 | # | Risk | To whom | L before | S | Planned mitigation (design 34) | Residual |
 | --- | --- | --- | --- | --- | --- | --- |
 | R1 | **Re-identification in small cells**: in a band with few families a percentile can equal one baby's value; someone who knows a family is in the app (siblings, a parents' chat) infers it | babies, families | medium | high (child's health data) | k = 20 distinct babies from 20 distinct families (O1); suppression below k with a fixed coarse fallback grid; p3/p97 only at 50+; no exact counts (ranges); fixed band edges; hysteresis (publish at 20, suppress at 18 once published) | low |
-| R2 | **Membership inference / differencing between releases**: comparing two weekly files reveals who entered or left a band (e.g. a withdrawal near k) | babies, families | low-medium | medium | per-baby summaries; hysteresis; weekly (not nightly) release; optional differential privacy (O2: proposal epsilon 0.2 per statistic per week, or monthly at 0.5); no totals across bands (complementary suppression); the evaluation measures the attacker's advantage with and without DP | low with DP; low-medium without (**needs owner decision O2**) |
+| R2 | **Membership inference / differencing between releases**: comparing two weekly files reveals who entered or left a band (e.g. a withdrawal near k) | babies, families | low-medium | medium | per-baby summaries; hysteresis; weekly (not nightly) release; differential privacy in two tiers (O2, decided 2026-11-11, design 34 section 5.1): strict epsilon 0.2 per statistic per week for the crying shares, relaxed epsilon about 5 for the other non-percentile statistics (today the tummy-time share of days); percentile statistics not in v1; no totals across bands (complementary suppression). Synthetic study: without noise a withdrawal is detected almost always (advantage 1.00), at epsilon 0.2 both advantages are within about 0.07 of zero (theoretical bound 0.10). At epsilon about 5 the bound tanh(epsilon / 2) is about 0.99 (computed, not measured): close to no formal protection against differencing | low for the strict tier; **low-medium for the relaxed tier** (protection rests on k, caps, dominance, suppression and hysteresis); **needs lawyer** (relaxed epsilon, section 7.2 item 11) |
 | R3 | **Dominance by one family**: a heavy-logging family or twins drive a cell | other families (wrong numbers), that family (exposure) | medium | medium | per-baby cap (`capPerBaby`, deterministic keyed sampling); clipping to published ranges; one summary per baby in percentiles; a "family" = babies sharing an Owner; dominance rule (one family > 25 % of the values suppresses the cell) | low |
 | R4 | **Withdrawal not fully honoured**: aggregates already computed and copies on devices still reflect the baby | the baby | high (by nature of aggregates) | low (aggregate, no link to the baby) | next run excludes the baby (the job reads only the latest `granted` row with the current text version); only current + previous file kept; no staging table; the screen and the policy say this plainly | low; **needs lawyer** (section 4) |
 | R5 | **Breach / security incident**: the inputs are the normal records; the new assets are the consent table and the run log | babies, parents | low (no new store of inputs) | high (source records) / low (aggregates) | no copy of per-baby values; read-only role `lotties_insights_ro` (SELECT on event, baby, membership, consent tables) plus write to `community_runs` and the file; own servers; incident process of the policy (art. 48; checklist C14); a suspected re-identification stops publication (flag off, empty file) and is handled as an incident | unchanged from the service's general security risk (audit C3, C4, G4) |
@@ -209,7 +221,8 @@ assume the measures are built as designed; none of them exists today.
 
 Minimisation (section 2.2); per-baby opt-in consent with versioned text and one-tap withdrawal; fixed age bands; k = 20
 babies from 20 families; dominance rule; complementary suppression; per-baby cap and clipping; per-baby summaries;
-p3/p97 only at 50+; hysteresis; optional differential privacy with a stated budget (O2); weekly release; no query
+p3/p97 only at 50+ (no percentile output in v1 under O2); hysteresis; differential privacy in two stated tiers (O2:
+strict 0.2, relaxed about 5 with a weak formal guarantee); weekly release; no query
 endpoint, no filters beyond the catalog dimensions; no exact counts; static published catalog in the open repository;
 read-only database role; no staging table; own servers, no processor, no recipient; run log without baby ids; published
 file states its parameters; current + previous file only; kill switch `CommunityInsights:Enabled` (default `false`,
@@ -223,7 +236,7 @@ demo accounts and of babies in the family's own database (to be written into des
 | # | Decision (design 34 section 13) | Proposal there |
 | --- | --- | --- |
 | O1 | k | 20 babies from 20 families; p3/p97 at 50+; hysteresis 18 |
-| O2 | DP on or off; epsilon and yearly budget | on as defence in depth; weekly 0.2 or monthly 0.5; after the evaluation. If off, the policy's "random noise" sentence goes before activation |
+| O2 | DP on or off; epsilon and yearly budget | **decided by the owner, 2026-11-11** (design 34 section 5.1): on, weekly; strict epsilon 0.2 for statistics that survive it (crying shares, about 10 per statistic per year); relaxed epsilon about 5 for the other non-percentile statistics (about 260 per statistic per year by basic composition, weak formal guarantee, stated plainly); percentile statistics not in v1. Lawyer review of the relaxed tier before activation |
 | O3 | Final consent wording and placement | design 34 section 3.5; Settings > Baby; one dismissible card |
 | O4 | One parent's yes, veto or notice | one yes plus a notice to the others |
 | O5 | All-or-nothing or per purpose | all-or-nothing in v1 |
@@ -252,6 +265,10 @@ demo accounts and of babies in the family's own database (to be written into des
    regulation on RIPD in force at activation requires more.
 9. Encarregado and small-agent status for a processing of children's sensitive data (checklist section 2; brief item 2).
 10. Cloudflare in transit for the consent calls and the aggregate file (brief items 3 and 4).
+11. **The relaxed epsilon tier (O2, design 34 section 5.1)**: whether epsilon about 5 per statistic per weekly release
+    (about 260 per statistic per year by basic composition) may still be described in the policy as "a small amount of
+    random noise" and as a safeguard, and how its weak formal guarantee must be worded; whether the strict tier (0.2)
+    and the deferral of percentile statistics change the art. 12 analysis (section 3). Lawyer brief item 20.
 
 ## 8. Inconsistencies found while drafting (Inconsistências)
 
@@ -277,10 +294,11 @@ To fix in the design or audit docs (not changed in this task):
 ## 9. Residual risk and decision (Risco residual e decisão)
 
 Provisional view: with the planned measures, the residual risk to the children and families is **low** for
-re-identification, dominance and breach of new assets, **low-medium** for differencing without DP and for function
-creep, and **medium** for consent quality (self-declared guardian). No decision is taken here: the feature stays off.
+re-identification, dominance and breach of new assets, **low-medium** for differencing in the relaxed epsilon tier
+(O2) and for function creep, and **medium** for consent quality (self-declared guardian). No decision is taken here: the feature stays off.
 
-Before activation (design 34 section 12): owner decisions O1-O12 and the new ones in 7.1; lawyer review of this draft,
+Before activation (design 34 section 12): owner decisions O1-O12 (O2 taken on 2026-11-11) and the new ones in 7.1;
+lawyer review of this draft (including the relaxed epsilon tier),
 the policy section and the consent text; T2-T8 built and green; evaluation and pilot results attached to section 3.1;
 this report re-issued with final parameters; go / no-go signed by the controller; review date set (proposal: yearly).
 

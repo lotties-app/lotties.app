@@ -176,6 +176,25 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
       configurações"? Algo precisa sair, ser suavizado ou ser acrescentado (por exemplo, o dever de segurança do art. 46
       do lado do Lotties)?
 20. **RIPD de "Comparações com outros bebês" (rascunho, recurso ainda não ativo).** Rascunho em inglês com títulos em português, ponto de partida para a sua revisão (não é parecer): `docs/design/34a-community-insights-ripd.md`; a seção 7.2 lista as perguntas abertas (declaração de responsável, art. 12, eliminação de estatísticas já publicadas, retenção do registro de consentimento).
+    **Ruído (privacidade diferencial), decidido pelo responsável em 2026-11-11** (`docs/design/34-community-insights.md`
+    seção 5.1, com base no estudo sintético `docs/ml/COMMUNITY-SYNTHETIC.md`, sem dados de crianças), **pendente da sua
+    revisão**:
+    - **Nível estrito, epsilon 0,2 por estatística por publicação semanal** (cerca de 10 por estatística por ano por
+      composição simples), só para estatísticas que resistem a esse ruído: as proporções de causas do choro (erro de 4,8
+      pontos com ruído, contra 1,7 sem ruído e 8,0 da divisão uniforme, com 10 000 bebês e 20 % de adesão).
+    - **Nível relaxado, epsilon de cerca de 5**, para as demais estatísticas que não são percentis (hoje, a proporção de
+      dias com tempo de bruços). A garantia formal é **fraca** e deve ser dita assim: cerca de 260 por estatística por
+      ano por composição simples (52 x 5), e o limite teórico da vantagem de quem compara duas publicações,
+      tanh(epsilon / 2), fica perto de 0,99 (calculado, não medido no estudo); a proteção principal continua sendo o
+      grupo mínimo, os limites por família, o corte de extremos, a regra de dominância, a supressão e a histerese.
+    - **Percentis fora da v1** (medianas, faixas p10-p90, p3/p97: por exemplo a mediana de ml por mamadeira): com
+      epsilon 0,2 o estudo encontrou a mediana errada em 54 a 76 ml e a previsão dos primeiros 14 dias pior que a das
+      tabelas publicadas, e a precisão só volta
+      perto de epsilon 5 a 10.
+    Perguntas: (a) o nível relaxado pode ser apresentado como salvaguarda, e a frase da política "um pouco de ruído
+    aleatório" continua correta para ele, ou a redação deve mudar na ativação? (b) Como descrever a garantia fraca sem
+    prometer mais do que ela dá? (c) Os dois níveis e a exclusão dos percentis mudam a análise do art. 12 (RIPD seção 3 e
+    seção 7.2, item 11)? Nada disso está ativo; a política e o consentimento não mudam agora.
 
 ## 8. O que levar à reunião
 
