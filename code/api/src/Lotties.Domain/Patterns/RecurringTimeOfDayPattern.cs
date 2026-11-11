@@ -22,7 +22,7 @@ namespace Lotties.Domain.Patterns;
 /// </summary>
 public static class RecurringTimeOfDayPattern
 {
-    private const int MinutesPerDay = 24 * 60;
+    private const int MinutesPerDay = CircularSummary.MinutesPerDay;
     private const int HalfDay = MinutesPerDay / 2;
 
     /// <param name="localTimes">Local wall-clock times of the events, in any order; times after today are ignored.</param>
@@ -128,13 +128,9 @@ public static class RecurringTimeOfDayPattern
         : PatternConfidence.Low;
 
     /// <summary>Minutes between two times of day on the 24-hour circle (0 to 720).</summary>
-    private static int Distance(int first, int second)
-    {
-        var apart = Math.Abs(first - second) % MinutesPerDay;
-        return Math.Min(apart, MinutesPerDay - apart);
-    }
+    private static int Distance(int first, int second) => CircularSummary.Distance(first, second);
 
-    private static int Modulo(int minute) => ((minute % MinutesPerDay) + MinutesPerDay) % MinutesPerDay;
+    private static int Modulo(int minute) => CircularSummary.Modulo(minute);
 
     private static TimeOnly ClockOf(int minute) => new(Modulo(minute) / 60, Modulo(minute) % 60);
 
@@ -155,21 +151,6 @@ public static class RecurringTimeOfDayPattern
         {
             var near = byDate.Select(day => day.Select(other => RecurringTimeOfDayPattern.Distance(other, minute)).Where(distance => distance <= radius).ToArray()).ToArray();
             return new CentreCandidate(minute, near.Count(day => day.Length > 0), near.Sum(day => day.Length), near.Sum(day => day.Sum()));
-        }
-    }
-
-    /// <summary>Circular mean (whole minute of the day) and circular standard deviation (minutes) of times of day.</summary>
-    private sealed record CircularSummary(int Mean, double Spread)
-    {
-        public static CircularSummary Of(IReadOnlyList<int> minutes)
-        {
-            var angles = minutes.Select(minute => minute * 2 * Math.PI / MinutesPerDay).ToArray();
-            var sine = angles.Sum(Math.Sin);
-            var cosine = angles.Sum(Math.Cos);
-            var resultant = Math.Min(1.0, Math.Sqrt((sine * sine) + (cosine * cosine)) / angles.Length);
-            var mean = (int)Math.Round(Math.Atan2(sine, cosine) * MinutesPerDay / (2 * Math.PI), MidpointRounding.AwayFromZero);
-            var spread = resultant <= 0 ? double.PositiveInfinity : Math.Sqrt(-2 * Math.Log(resultant)) * MinutesPerDay / (2 * Math.PI);
-            return new CircularSummary(Modulo(mean), spread);
         }
     }
 }

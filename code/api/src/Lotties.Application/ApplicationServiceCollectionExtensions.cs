@@ -52,6 +52,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Backups.IBackupImportService, Backups.BackupImportService>();
         services.TryAddSingleton(Lotties.Domain.Predictions.PredictionOptions.Default);
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
+        services.AddScoped<Rhythm.IRhythmService, Rhythm.RhythmService>();
         services.AddScoped<Clinical.DailyObservationReader>();
         services.AddScoped<Clinical.VaccineOverviewReader>();
         services.AddScoped<Clinical.IClinicalSummaryService, Clinical.ClinicalSummaryService>();
