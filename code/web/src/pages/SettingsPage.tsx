@@ -25,6 +25,7 @@ import { VersionLine } from '../ui/VersionLine';
 import { babyShownName } from '../baby/shownName';
 import { ProfileSection } from '../settings/ProfileSection';
 import { DataLocationSection } from '../byoDatabase/DataLocationSection';
+import { CommunityInsightsSection } from '../communityInsights/CommunityInsightsSection';
 
 /**
  * Sections that moved to the Hub: an old `/settings#medications` link (a bookmark, a reminder or
@@ -93,15 +94,12 @@ export function SettingsPage() {
           >
             <EventTypesSection baby={baby} />
           </SettingsSection>
+          <CommunityInsightsSection baby={baby} expanded={wants('community-insights')} />
         </>
       ) : (
         !doctor && <Alert severity="info">{t('settings.createBabyFirst')}</Alert>
       )}
-      <SettingsSection
-        id="profile"
-        title={t('profile.title')}
-        defaultExpanded={wants('profile')}
-      >
+      <SettingsSection id="profile" title={t('profile.title')} defaultExpanded={wants('profile')}>
         <ProfileSection />
       </SettingsSection>
       <SettingsSection

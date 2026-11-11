@@ -4,6 +4,7 @@ import type { MemberDto } from '../sync/contract';
 import type { BabyEvent } from '../db/models';
 import {
   canChangeEvent,
+  canManageCommunityInsights,
   canControlTimer,
   canLog,
   canWrite,
@@ -23,6 +24,18 @@ const members: MemberDto[] = [
   { userId: 'user-ana', displayName: ' Ana ', role: 'Parent', joinedAt: '2026-10-01' },
   { userId: ME, displayName: 'Lu', role: 'Caregiver', joinedAt: '2026-10-02' },
 ];
+
+describe('community insights', () => {
+  it.each([
+    ['Owner', true],
+    ['Parent', true],
+    ['Caregiver', false],
+    ['Viewer', false],
+    ['Doctor', false],
+  ] as const)('%s manages the consent: %s', (role, expected) => {
+    expect(canManageCommunityInsights({ role })).toBe(expected);
+  });
+});
 
 describe('role rules', () => {
   it.each([

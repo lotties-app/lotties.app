@@ -4,6 +4,7 @@ using Lotties.Api.Authentication;
 using Lotties.Api.Authorization;
 using Lotties.Api.Board;
 using Lotties.Api.Board.Mcp;
+using Lotties.Api.CommunityInsights;
 using Lotties.Api.Configuration;
 using Lotties.Api.Consents;
 using Lotties.Api.Cors;
@@ -48,6 +49,7 @@ public static class ApiHostExtensions
         builder.Services.AddStoreMigrator(builder.Configuration);
         builder.Services.AddStoreMoveWorker(builder.Configuration);
         builder.Services.AddDataStoreAccess(builder.Configuration);
+        builder.Services.AddCommunityInsightsAccess(builder.Configuration);
         builder.Services.AddStoreManagementFallbacks();
         builder.Services.AddNotificationScheduler();
         builder.Services.AddOidcAuthentication(builder.Configuration);
@@ -68,7 +70,7 @@ public static class ApiHostExtensions
     /// <summary>
     /// Adds the trusted proxy headers (client address and scheme), CORS, problem details (exception and status-code
     /// mapping), the request body limit, authentication, the MCP request guard (404 while disabled, origin, the MCP token's
-    /// user), the board MCP guard (404 unless the board and its MCP endpoint are on, origin), the board guard (404 while disabled, the board API key's identity), the data-store guard (404 while <c>Stores:Enabled</c> is off), the per-user rate limiter and request timeouts, authorization, and the MCP scope gate, in that order.
+    /// user), the board MCP guard (404 unless the board and its MCP endpoint are on, origin), the board guard (404 while disabled, the board API key's identity), the data-store guard (404 while <c>Stores:Enabled</c> is off), the community insights guard (404 while <c>CommunityInsights:Enabled</c> is off), the per-user rate limiter and request timeouts, authorization, and the MCP scope gate, in that order.
     /// </summary>
     public static WebApplication UseLottiesApi(this WebApplication app)
     {
@@ -82,6 +84,7 @@ public static class ApiHostExtensions
         app.UseBoardMcpRequestGuard();
         app.UseBoardRequestGuard();
         app.UseDataStoreRequestGuard();
+        app.UseCommunityInsightsRequestGuard();
         app.UseRequestRateAndTimeLimits();
         app.UseAuthorization();
         app.UseConsentGate();

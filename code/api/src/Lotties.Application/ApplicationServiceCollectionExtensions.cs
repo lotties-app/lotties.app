@@ -54,6 +54,7 @@ public static class ApplicationServiceCollectionExtensions
         services.TryAddSingleton(Lotties.Domain.Predictions.PredictionOptions.Default);
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
         services.AddScoped<Rhythm.IRhythmService, Rhythm.RhythmService>();
+        services.AddScoped<CommunityInsights.ICommunityConsentService, CommunityInsights.CommunityConsentService>();
         services.AddScoped<Clinical.DailyObservationReader>();
         services.AddScoped<Clinical.VaccineOverviewReader>();
         services.AddScoped<Clinical.IClinicalSummaryService, Clinical.ClinicalSummaryService>();

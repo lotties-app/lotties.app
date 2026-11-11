@@ -1152,6 +1152,69 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Lotties.Domain.CommunityInsights.CommunityConsentEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("action");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("baby_id");
+
+                    b.Property<bool>("GuardianConfirmed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("guardian_confirmed");
+
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("locale");
+
+                    b.Property<string>("PolicyVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("policy_version");
+
+                    b.Property<string>("Scopes")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("scopes");
+
+                    b.Property<string>("TextVersion")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("text_version");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_community_consents");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_community_consents_user_id");
+
+                    b.HasIndex("BabyId", "At")
+                        .HasDatabaseName("ix_community_consents_baby_id_at");
+
+                    b.ToTable("community_consents", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Consents.UserConsent", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -3174,6 +3237,23 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Strength");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.CommunityInsights.CommunityConsentEntry", b =>
+                {
+                    b.HasOne("Lotties.Domain.Babies.Baby", null)
+                        .WithMany()
+                        .HasForeignKey("BabyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_community_consents_babies_baby_id");
+
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_community_consents_users_user_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Consents.UserConsent", b =>

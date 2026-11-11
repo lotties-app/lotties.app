@@ -256,6 +256,13 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         ["POST /api/v1/babies/{babyId:guid}/data-store/move-in"] = Access.Owner,
         ["POST /api/v1/babies/{babyId:guid}/data-store/move-out"] = Access.Owner,
 
+        // Community insights consent (docs/design/34-community-insights.md section 3, task T2): per baby, an Owner or a Parent sees the
+        // state and turns it on or off; Caregiver, Viewer and Doctor 403. Doctor scope decision: none, she is refused by role whatever
+        // her scopes (the consent is the family's, never a clinical section; design 34 section 3.4). 404 while CommunityInsights:Enabled
+        // is off (before any 401; on in this host). Blocked in the demo. No store binding (control plane).
+        ["GET /api/v1/babies/{babyId:guid}/community-consent"] = Access.Write,
+        ["PUT /api/v1/babies/{babyId:guid}/community-consent"] = Access.Write,
+
         ["GET /api/v1/push/config"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions/revoke"] = Access.SignedIn,
@@ -431,6 +438,8 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         "POST /api/v1/babies/{babyId:guid}/data-store/test",
         "POST /api/v1/babies/{babyId:guid}/data-store/move-in",
         "POST /api/v1/babies/{babyId:guid}/data-store/move-out",
+        "GET /api/v1/babies/{babyId:guid}/community-consent",
+        "PUT /api/v1/babies/{babyId:guid}/community-consent",
     };
 
     public static TheoryData<string, Caller> Cases()

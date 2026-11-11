@@ -14,6 +14,7 @@ export type Catalog = typeof import('./locales/en/account.json') &
   typeof import('./locales/en/board.json') &
   typeof import('./locales/en/byoDatabase.json') &
   typeof import('./locales/en/common.json') &
+  typeof import('./locales/en/communityInsights.json') &
   typeof import('./locales/en/consent.json') &
   typeof import('./locales/en/credits.json') &
   typeof import('./locales/en/cryMonitor.json') &

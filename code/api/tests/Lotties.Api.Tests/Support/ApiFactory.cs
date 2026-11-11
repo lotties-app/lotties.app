@@ -74,6 +74,9 @@ public class ApiFactory : WebApplicationFactory<Program>
         // its routes (BoardAuthorizationTests turns it off again to check the 404); its MCP endpoint too (BoardMcpHttpTests).
         builder.UseSetting("Board:Enabled", "true");
         builder.UseSetting("Board:Mcp:Enabled", "true");
+        // Community insights are off by default in production (docs/design/34, task T2); on here so the endpoint matrix, the account
+        // erasure fixture and the consent tests reach the consent routes (CommunityConsentEndpointTests turns it off again for the 404).
+        builder.UseSetting("CommunityInsights:Enabled", "true");
         // A loaded CI runner can hold a request for minutes before it runs; the production 30 s request timeout would abort
         // it ("The application aborted the request"). RequestLimitTests checks the real defaults on a host of its own.
         builder.UseSetting("RequestLimits:RequestTimeoutSeconds", "600");
