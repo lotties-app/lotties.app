@@ -1,0 +1,94 @@
+{
+  "rhythm": {
+    "title": "{{name}}'s rhythm",
+    "intro": "What the log of the last days shows, from {{name}}'s own entries only.",
+    "error": "The rhythm could not be loaded right now.",
+    "offline": "Connect to see the rhythm.",
+    "offlineLast": "Shown from your last connection.",
+    "around": "around {{time}}",
+    "range": "{{low}} to {{high}}",
+    "median": "median {{value}}",
+    "varies": "Varies",
+    "variesDetail_one": "Times spread by about {{spread}} over {{count}} night",
+    "variesDetail_other": "Times spread by about {{spread}} over {{count}} nights",
+    "variesNoSpread_one": "Times vary over {{count}} night",
+    "variesNoSpread_other": "Times vary over {{count}} nights",
+    "notAvailable": "Not available yet.",
+    "needs": {
+      "nights_one": "Needs {{count}} more night in the log",
+      "nights_other": "Needs {{count}} more nights in the log",
+      "days_one": "Needs {{count}} more day in the log",
+      "days_other": "Needs {{count}} more days in the log",
+      "gaps_one": "Needs {{count}} more gap between feeds in the log",
+      "gaps_other": "Needs {{count}} more gaps between feeds in the log"
+    },
+    "sleep": {
+      "title": "Sleep",
+      "bedTime": "Bed time",
+      "wakeUp": "Wake-up",
+      "nightLength": "Night length",
+      "longestStretch": "Longest stretch",
+      "firstStretch": "First stretch"
+    },
+    "naps": {
+      "title": "Naps",
+      "perDay": "Naps per day",
+      "noNaps": "No naps logged between the nights yet.",
+      "usualStarts": "Usual start times",
+      "noUsualStarts": "No regular start time in the log yet."
+    },
+    "feeds": {
+      "title": "Feeds",
+      "perDay": "Feeds per day",
+      "gap": "Time between feeds"
+    },
+    "log": {
+      "title": "What the log shows",
+      "notEnough": "Not enough nights to compare yet.",
+      "noClearDifference": "No clear difference between the nights in the log yet.",
+      "pendingIntro_one": "Each side needs {{count}} night. So far:",
+      "pendingIntro_other": "Each side needs {{count}} nights. So far:",
+      "pending": {
+        "evening_feeds": "{{with}} after more evening feeds, {{without}} after fewer",
+        "dirty_diaper_day": "{{with}} after a day with a dirty diaper, {{without}} without"
+      },
+      "subject": {
+        "evening_feeds_one": "After days with {{count}} or more evening feeds",
+        "evening_feeds_other": "After days with {{count}} or more evening feeds",
+        "dirty_diaper_day": "After days with a dirty diaper"
+      },
+      "predicate": {
+        "night_length_longer": "nights were usually about {{difference}} longer",
+        "night_length_shorter": "nights were usually about {{difference}} shorter",
+        "longest_stretch_longer": "the longest stretch of sleep was usually about {{difference}} longer",
+        "longest_stretch_shorter": "the longest stretch of sleep was usually about {{difference}} shorter",
+        "first_stretch_longer": "the first stretch of sleep was usually about {{difference}} longer",
+        "first_stretch_shorter": "the first stretch of sleep was usually about {{difference}} shorter"
+      },
+      "sentence": "{{subject}}, {{predicate}} ({{with}}, against {{without}} without).",
+      "nights_one": "{{count}} night",
+      "nights_other": "{{count}} nights"
+    },
+    "footer_one": "Worked out from the last {{count}} day of this baby's own log only. Facts from the log, not advice.",
+    "footer_other": "Worked out from the last {{count}} days of this baby's own log only. Facts from the log, not advice.",
+    "how": {
+      "title": "How this is worked out",
+      "window_one": "Only the last {{count}} full day of this baby's log; today is not counted.",
+      "window_other": "Only the last {{count}} full days of this baby's log; today is not counted.",
+      "evening": "A night belongs to the evening it started on; the day starts at {{time}}.",
+      "nightBounds": "Nights shorter than {{min}} or longer than {{max}} are left out.",
+      "minimumNights_one": "A sleep figure needs at least {{count}} night.",
+      "minimumNights_other": "A sleep figure needs at least {{count}} nights.",
+      "minimumDays_one": "Naps and feeds per day need at least {{count}} day.",
+      "minimumDays_other": "Naps and feeds per day need at least {{count}} days.",
+      "minimumGaps_one": "The time between feeds needs at least {{count}} gap; gaps over {{max}} are left out.",
+      "minimumGaps_other": "The time between feeds needs at least {{count}} gaps; gaps over {{max}} are left out.",
+      "varies": "Bed time and wake-up show \"Varies\" when they spread by more than {{spread}}.",
+      "ranges": "A range is the middle half of the nights or days, with the median.",
+      "eveningFeeds": "Evening feeds are the feeds in the {{window}} before bed time.",
+      "groups_one": "A comparison needs {{count}} night on each side and a difference of at least {{difference}}, larger than the usual night-to-night spread.",
+      "groups_other": "A comparison needs {{count}} nights on each side and a difference of at least {{difference}}, larger than the usual night-to-night spread.",
+      "describes": "A comparison only describes the log: it does not say why nights differ."
+    }
+  }
+}

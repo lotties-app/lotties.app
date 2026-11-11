@@ -28,6 +28,7 @@ export const SHOWCASE_SCREENS = [
   { id: 'log-diaper', dark: false },
   { id: 'bottle-followup', dark: false },
   { id: 'insights', dark: false },
+  { id: 'rhythm', dark: false },
   { id: 'vaccines', dark: false },
   { id: 'sharing', dark: false },
   { id: 'doctor', dark: false },

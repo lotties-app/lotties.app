@@ -1,0 +1,94 @@
+{
+  "rhythm": {
+    "title": "Ritmo de {{name}}",
+    "intro": "O que o registro dos últimos dias mostra, só com as anotações de {{name}}.",
+    "error": "Não foi possível carregar o ritmo agora.",
+    "offline": "Conecte-se para ver o ritmo.",
+    "offlineLast": "Mostrado da sua última conexão.",
+    "around": "por volta de {{time}}",
+    "range": "{{low}} a {{high}}",
+    "median": "mediana {{value}}",
+    "varies": "Varia",
+    "variesDetail_one": "Os horários variam cerca de {{spread}} em {{count}} noite",
+    "variesDetail_other": "Os horários variam cerca de {{spread}} em {{count}} noites",
+    "variesNoSpread_one": "Os horários variam em {{count}} noite",
+    "variesNoSpread_other": "Os horários variam em {{count}} noites",
+    "notAvailable": "Ainda não disponível.",
+    "needs": {
+      "nights_one": "Falta {{count}} noite no registro",
+      "nights_other": "Faltam {{count}} noites no registro",
+      "days_one": "Falta {{count}} dia no registro",
+      "days_other": "Faltam {{count}} dias no registro",
+      "gaps_one": "Falta {{count}} intervalo entre mamadas no registro",
+      "gaps_other": "Faltam {{count}} intervalos entre mamadas no registro"
+    },
+    "sleep": {
+      "title": "Sono",
+      "bedTime": "Hora de dormir",
+      "wakeUp": "Hora de acordar",
+      "nightLength": "Duração da noite",
+      "longestStretch": "Maior trecho de sono",
+      "firstStretch": "Primeiro trecho de sono"
+    },
+    "naps": {
+      "title": "Sonecas",
+      "perDay": "Sonecas por dia",
+      "noNaps": "Ainda não há sonecas registradas entre as noites.",
+      "usualStarts": "Horários habituais de início",
+      "noUsualStarts": "Ainda não há um horário regular no registro."
+    },
+    "feeds": {
+      "title": "Mamadas",
+      "perDay": "Mamadas por dia",
+      "gap": "Intervalo entre mamadas"
+    },
+    "log": {
+      "title": "O que o registro mostra",
+      "notEnough": "Ainda não há noites suficientes para comparar.",
+      "noClearDifference": "Ainda não há diferença clara entre as noites do registro.",
+      "pendingIntro_one": "Cada lado precisa de {{count}} noite. Até agora:",
+      "pendingIntro_other": "Cada lado precisa de {{count}} noites. Até agora:",
+      "pending": {
+        "evening_feeds": "{{with}} depois de mais mamadas à noite, {{without}} depois de menos",
+        "dirty_diaper_day": "{{with}} depois de um dia com fralda suja, {{without}} sem"
+      },
+      "subject": {
+        "evening_feeds_one": "Depois de dias com {{count}} ou mais mamadas à noite",
+        "evening_feeds_other": "Depois de dias com {{count}} ou mais mamadas à noite",
+        "dirty_diaper_day": "Depois de dias com fralda suja"
+      },
+      "predicate": {
+        "night_length_longer": "as noites foram em geral cerca de {{difference}} mais longas",
+        "night_length_shorter": "as noites foram em geral cerca de {{difference}} mais curtas",
+        "longest_stretch_longer": "o maior trecho de sono foi em geral cerca de {{difference}} mais longo",
+        "longest_stretch_shorter": "o maior trecho de sono foi em geral cerca de {{difference}} mais curto",
+        "first_stretch_longer": "o primeiro trecho de sono foi em geral cerca de {{difference}} mais longo",
+        "first_stretch_shorter": "o primeiro trecho de sono foi em geral cerca de {{difference}} mais curto"
+      },
+      "sentence": "{{subject}}, {{predicate}} ({{with}}, contra {{without}} sem).",
+      "nights_one": "{{count}} noite",
+      "nights_other": "{{count}} noites"
+    },
+    "footer_one": "Calculado só com o último {{count}} dia do registro deste bebê. Fatos do registro, não conselhos.",
+    "footer_other": "Calculado só com os últimos {{count}} dias do registro deste bebê. Fatos do registro, não conselhos.",
+    "how": {
+      "title": "Como isto é calculado",
+      "window_one": "Só o último {{count}} dia completo do registro deste bebê; hoje não conta.",
+      "window_other": "Só os últimos {{count}} dias completos do registro deste bebê; hoje não conta.",
+      "evening": "Uma noite conta para o dia em que começou; o dia começa às {{time}}.",
+      "nightBounds": "Noites com menos de {{min}} ou mais de {{max}} ficam de fora.",
+      "minimumNights_one": "Um número de sono precisa de pelo menos {{count}} noite.",
+      "minimumNights_other": "Um número de sono precisa de pelo menos {{count}} noites.",
+      "minimumDays_one": "Sonecas e mamadas por dia precisam de pelo menos {{count}} dia.",
+      "minimumDays_other": "Sonecas e mamadas por dia precisam de pelo menos {{count}} dias.",
+      "minimumGaps_one": "O intervalo entre mamadas precisa de pelo menos {{count}} intervalo; intervalos acima de {{max}} ficam de fora.",
+      "minimumGaps_other": "O intervalo entre mamadas precisa de pelo menos {{count}} intervalos; intervalos acima de {{max}} ficam de fora.",
+      "varies": "Hora de dormir e de acordar mostram \"Varia\" quando variam mais de {{spread}}.",
+      "ranges": "Uma faixa é a metade do meio das noites ou dos dias, com a mediana.",
+      "eveningFeeds": "Mamadas à noite são as mamadas nas {{window}} antes da hora de dormir.",
+      "groups_one": "Uma comparação precisa de {{count}} noite de cada lado e de uma diferença de pelo menos {{difference}}, maior que a variação habitual de uma noite para outra.",
+      "groups_other": "Uma comparação precisa de {{count}} noites de cada lado e de uma diferença de pelo menos {{difference}}, maior que a variação habitual de uma noite para outra.",
+      "describes": "Uma comparação só descreve o registro: não diz o motivo de as noites serem diferentes."
+    }
+  }
+}

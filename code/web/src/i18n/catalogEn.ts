@@ -41,6 +41,7 @@ export type Catalog = typeof import('./locales/en/account.json') &
   typeof import('./locales/en/profile.json') &
   typeof import('./locales/en/providers.json') &
   typeof import('./locales/en/rest.json') &
+  typeof import('./locales/en/rhythm.json') &
   typeof import('./locales/en/selfHost.json') &
   typeof import('./locales/en/settings.json') &
   typeof import('./locales/en/sync.json') &

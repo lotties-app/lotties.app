@@ -92,6 +92,10 @@
         "caption": "Charts of sleep, feeds and diapers",
         "alt": "The Insights screen with 14 days of sleep as a bar chart and the average sleep per day"
       },
+      "rhythm": {
+        "caption": "Her rhythm, from her own log only",
+        "alt": "The rhythm section of Insights: usual bed time and wake-up, night length as a range, naps and feeds per day, and what the log shows, as plain facts"
+      },
       "vaccines": {
         "caption": "Vaccines, with the schedule of your country",
         "alt": "The vaccines screen listing doses given and due by age"

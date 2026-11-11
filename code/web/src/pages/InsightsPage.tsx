@@ -9,16 +9,25 @@ import { InsightsComingCard, InsightsSection } from '../insights/InsightsSection
 import { useMeasurements } from '../measurements/useMeasurements';
 import { RestOptInCard } from '../rest/RestOptInCard';
 import { RestTab } from '../rest/RestTab';
+import { RhythmSection } from '../rhythm/RhythmSection';
 import { useRestSettings } from '../rest/useRest';
 import { GrowthPage } from './GrowthPage';
 
-/** The selected baby's insights with the measured weights (online; the Formulas ml per kg). */
+/**
+ * The selected baby's insights with the measured weights (online; the Formulas ml per kg), then
+ * her rhythm from the server (docs/design/48-baby-rhythm.md; hidden on 403/404).
+ */
 function BabyInsights({ baby }: { baby: Baby }) {
   const { query } = useMeasurements(baby.id);
   const weights: WeightPoint[] = (query.data ?? []).flatMap((m) =>
     typeof m.weightKg === 'number' ? [{ date: m.date, kg: m.weightKg }] : [],
   );
-  return <InsightsSection baby={baby} weights={weights} />;
+  return (
+    <Stack spacing={3}>
+      <InsightsSection baby={baby} weights={weights} />
+      <RhythmSection babyId={baby.id} babyName={baby.name} />
+    </Stack>
+  );
 }
 
 type InsightsTab = 'insights' | 'rest';
