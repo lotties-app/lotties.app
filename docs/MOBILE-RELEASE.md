@@ -162,6 +162,19 @@ password manager (the private key `dist.key` cannot be recovered).
    - Profiles > **+** > Distribution > **App Store Connect** > App ID `app.lotties.app.widgets` > the same certificate
      > name `Lotties Widgets App Store` > download.
    The workflow refuses a profile whose App ID or App Group does not match.
+4c. **Push Notifications (widget silent push, docs/design/37b-widget-silent-push.md section 10)**, once, before the first
+   iOS build that contains the `aps-environment` entitlement (in the repository since 2026-11-11; until this step is done
+   every iOS release run stops at "Install the signing certificate and the provisioning profile"):
+   - Identifiers > `app.lotties.app` > enable **Push Notifications** (no push certificate needed: the server uses an APNs
+     auth key, design 37b section 10), Save. Apple then marks the `Lotties App Store` profile **Invalid**.
+   - Profiles > `Lotties App Store` > **Edit** > Save (same App ID and certificate) > download the regenerated
+     `.mobileprovision`. It now carries `aps-environment` = `production` (an App Store profile is always production).
+   - Update only that secret: `base64 -w0 Lotties_App_Store.mobileprovision | gh secret set IOS_PROFILE_BASE64 --repo lotties-app/lotties.app`.
+   - The widget extension (`app.lotties.app.widgets`) does **not** need Push Notifications: pushes go to the app, the
+     widget only reads the App Group. Leave its App ID and profile as they are.
+   The workflow refuses an app profile without `aps-environment` = `production`, naming this step. The capability does
+   nothing for users by itself: the app asks APNs for a token only when the web app asks for one (design 37b section 5.1)
+   and the server sends nothing while `SILENT_PUSH_ENABLED` is `false`.
 5. Set the secrets without pasting them anywhere (run in the folder with the files):
    ```bash
    base64 -w0 dist.p12 | gh secret set IOS_DIST_P12_BASE64 --repo lotties-app/lotties.app
@@ -214,3 +227,7 @@ run on a simulator or an iPhone, and read the Xcode logs when the CI archive fai
   fails too ("conflicting provisioning settings"). The workflow now signs manually (4.3); that path is **not run yet**: the
   `PROVISIONING_PROFILE_SPECIFIER` override reaching the Swift package targets, the export `provisioningProfiles` map and
   the keychain import on `macos-26` are the parts to watch on the next iOS run.
+- Push Notifications (4.3 step 4c, 2026-11-11, edited without Xcode): the `aps-environment` entitlement is
+  `$(LOTTIES_APS_ENVIRONMENT)`, a build setting of the App target (`production` in Release, `development` in Debug);
+  that Xcode expands it before matching the profile, the new profile check and the archive with the regenerated
+  profile have never run.

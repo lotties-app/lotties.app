@@ -264,6 +264,12 @@ jobs:
             expires="$(/usr/libexec/PlistBuddy -c 'Print :ExpirationDate' "$file.plist")"
             test "$app_id" = "${APPLE_TEAM_ID}.${bundle_id}"               || { echo "::error::The profile is for '$app_id', expected ${APPLE_TEAM_ID}.${bundle_id}"; exit 1; }
             /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$file.plist" | grep -q 'group.app.lotties.app'               || { echo "::error::The profile for ${bundle_id} has no App Group group.app.lotties.app (regenerate it, docs/MOBILE-RELEASE.md 4.3)"; exit 1; }
+            # The app (not the widget) signs with aps-environment=production (widget silent push, docs/design/37b section 10):
+            # a profile made before Push Notifications was enabled on the App ID lacks it and the archive would fail later.
+            if [ "$bundle_id" = app.lotties.app ]; then
+              aps="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:aps-environment' "$file.plist" 2>/dev/null || true)"
+              test "$aps" = production               || { echo "::error::The profile for ${bundle_id} has no aps-environment=production (got '${aps}'): enable Push Notifications on the App ID, regenerate the profile and update IOS_PROFILE_BASE64 (docs/MOBILE-RELEASE.md 4.3 step 4c)"; exit 1; }
+            fi
             echo "Profile '$name' expires $expires"
             cp "$file" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
             echo "$var=$name" >> "$GITHUB_ENV"
