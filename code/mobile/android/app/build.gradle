@@ -74,6 +74,11 @@ dependencies {
     implementation project(':capacitor-android')
     // Home-screen widgets (docs/design/37-widgets-siri.md section 13).
     implementation "androidx.glance:glance-appwidget:$glanceVersion"
+    // The widgets' silent push: FCM data messages (docs/design/37b-widget-silent-push.md section 9). Inert without
+    // google-services.json: the Google Services plugin (end of this file) is then not applied, Firebase never
+    // initialises, the plugin answers no token and no message can arrive.
+    implementation platform("com.google.firebase:firebase-bom:$firebaseBomVersion")
+    implementation 'com.google.firebase:firebase-messaging'
     testImplementation "junit:junit:$junitVersion"
     // The real org.json for plain-JVM unit tests (android.jar only has stubs that throw).
     testImplementation "org.json:json:20240303"
@@ -84,6 +89,8 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
+// Capacitor template: the Google Services plugin only when app/google-services.json exists (gitignored; the release
+// workflow writes it from a secret when one is set). Without it the build has no Firebase.
 try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {

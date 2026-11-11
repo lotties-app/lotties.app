@@ -14,4 +14,6 @@ ext {
     androidxEspressoCoreVersion = '3.7.0'
     cordovaAndroidVersion = '14.0.1'
     glanceVersion = '1.1.1'
+    // Firebase Cloud Messaging for the widgets' silent push (docs/design/37b-widget-silent-push.md section 9).
+    firebaseBomVersion = '34.4.0'
 }
