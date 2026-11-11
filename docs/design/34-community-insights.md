@@ -329,7 +329,7 @@ when activated (task T9).
 | # | Task | Tier | Depends |
 | --- | --- | --- | --- |
 | T0 | Owner decisions (section 13) and lawyer review of the policy section and the consent text | owner | none |
-| T1 | RIPD draft from section 8 outline (docs) | Opus | T0 |
+| T1 | RIPD draft from section 8 outline (docs). **RIPD draft: v0.1 written 2026-11-10, docs/design/34a-community-insights-ripd.md; awaits owner decisions and lawyer review** | Opus | T0 |
 | T2 | Consent: Domain `CommunityConsent` (pure rules: who may consent, versioning), EF table `community_consents` + migration, `GET/PUT /babies/{id}/community-consent` (Owner/Parent; Caregiver/Viewer/Doctor 403), rows in `EndpointRoleMatrixTests` with a scope decision (`BabyReadFamily`, never a Doctor scope), export/import of the history, account/baby deletion handling | Sonnet | T0 |
 | T3 | Web consent screen and state in Settings > Baby (`communityInsights.json` en + pt-BR, `baby/permissions.ts` gate, axe light/dark) | Sonnet | T2 |
 | T4 | Catalog `community-statistics.json` + validator (like `AgeNormsValidator`), embedded, schema test | Sonnet | T0 |

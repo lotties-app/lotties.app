@@ -175,6 +175,7 @@ Todos sobre uma criança (menor de 12 anos), inseridos por adultos:
       (culpa exclusiva do titular ou de terceiro) é a base certa para a parte "causadas pelo seu banco, provedor ou
       configurações"? Algo precisa sair, ser suavizado ou ser acrescentado (por exemplo, o dever de segurança do art. 46
       do lado do Lotties)?
+20. **RIPD de "Comparações com outros bebês" (rascunho, recurso ainda não ativo).** Rascunho em inglês com títulos em português, ponto de partida para a sua revisão (não é parecer): `docs/design/34a-community-insights-ripd.md`; a seção 7.2 lista as perguntas abertas (declaração de responsável, art. 12, eliminação de estatísticas já publicadas, retenção do registro de consentimento).
 
 ## 8. O que levar à reunião
 
