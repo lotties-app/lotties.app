@@ -36,8 +36,8 @@
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
 #
 # App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_*, VITE_REPO_URL, VITE_ISSUES_URL,
-# VITE_SUPPORT_URL and VITE_PRIVACY_* (public, baked into the web image), DB_*, PUSH_VAPID_*, DEMO_SIGNING_KEY and AUTH_ADMIN_CLIENT_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
-# CORS_ALLOWED_ORIGINS.
+# VITE_SUPPORT_URL and VITE_PRIVACY_* (public, baked into the web image), DB_*, PUSH_VAPID_*, DEMO_SIGNING_KEY, AUTH_ADMIN_CLIENT_*, PUSH_APNS_* and PUSH_FCM_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
+# SILENT_PUSH_ENABLED (default false), CORS_ALLOWED_ORIGINS.
 #
 # Bring your own database (docs/DEPLOY.md "Bring your own database: turning it on"; off by default). Every one of these
 # goes only to the Secret lotties-secrets (never a ConfigMap, a values file or a command line; values are never printed)
@@ -230,6 +230,8 @@ configure() {
   # Where the web pod's nginx would send /api/ (the Ingress sends /api to the API directly).
   API_UPSTREAM="lotties-api.$NS.svc.cluster.local:8080"
   DB_AUTO_MIGRATE=$(parse_bool "${DB_AUTO_MIGRATE:-false}") || die "DB_AUTO_MIGRATE must be true or false"
+  # Widget silent pushes: off unless set (a deploy without it turns them off); held until the privacy text is released.
+  SILENT_PUSH_ENABLED=$(parse_bool "${SILENT_PUSH_ENABLED:-false}") || die "SILENT_PUSH_ENABLED must be true or false"
   BUILT=0
   WOULD_BUILD=0
 
@@ -355,7 +357,7 @@ collect_store_secrets() {
 }
 
 collect_secrets() {
-  local key value demo_key push_count=0 admin_count=0 missing=()
+  local key value demo_key push_count=0 admin_count=0 apns_count=0 fcm_count=0 missing=()
   step "Secret $APP_SECRET (values are not shown)"
   SECRET_DIR="$WORK/secret"
   mkdir -m 700 "$SECRET_DIR"
@@ -380,6 +382,17 @@ collect_secrets() {
     [ -z "$value" ] || admin_count=$((admin_count + 1))
     put_secret "$key" "$value"
   done
+  # Silent pushes for the widgets (docs/design/37b-widget-silent-push.md): APNs (three, all or none; the bundle id is
+  # optional) and FCM (both or none). SILENT_PUSH_ENABLED (not a secret) turns them on; see releases().
+  for key in PUSH_APNS_KEY_ID PUSH_APNS_TEAM_ID PUSH_APNS_KEY_P8 PUSH_APNS_BUNDLE_ID PUSH_FCM_PROJECT_ID PUSH_FCM_SERVICE_ACCOUNT_JSON; do
+    value=$(setting_or_secret "$key")
+    case "$key" in
+      PUSH_APNS_BUNDLE_ID) ;;
+      PUSH_APNS_*) [ -z "$value" ] || apns_count=$((apns_count + 1)) ;;
+      PUSH_FCM_*) [ -z "$value" ] || fcm_count=$((fcm_count + 1)) ;;
+    esac
+    put_secret "$key" "$value"
+  done
   collect_store_secrets
   if [ "$DB_AUTO_MIGRATE" = true ]; then
     for key in DB_MIGRATOR_USER DB_MIGRATOR_PASSWORD; do
@@ -391,6 +404,10 @@ collect_secrets() {
   [ "${#missing[@]}" -eq 0 ] || die "missing settings: ${missing[*]} (set them in deploy/homelab/.env)"
   case "$push_count" in 0 | 3) ;; *) die "set all three PUSH_VAPID_* values or none (push is off with none)" ;; esac
   case "$admin_count" in 0 | 2) ;; *) die "set both AUTH_ADMIN_CLIENT_ID and AUTH_ADMIN_CLIENT_SECRET or neither (with neither, deleting an account keeps the Keycloak user)" ;; esac
+  case "$apns_count" in 0 | 3) ;; *) die "set all three of PUSH_APNS_KEY_ID, PUSH_APNS_TEAM_ID and PUSH_APNS_KEY_P8 or none" ;; esac
+  case "$fcm_count" in 0 | 2) ;; *) die "set both PUSH_FCM_PROJECT_ID and PUSH_FCM_SERVICE_ACCOUNT_JSON or neither" ;; esac
+  [ "$SILENT_PUSH_ENABLED" = false ] || [ "$apns_count" = 3 ] || [ "$fcm_count" = 2 ] \
+    || die "SILENT_PUSH_ENABLED=true needs the PUSH_APNS_* or the PUSH_FCM_* values (the API does not start without a channel)"
   # A pod reads its Secret only when it starts: the API pods carry this checksum, so a changed Secret restarts them.
   SECRETS_HASH=$( (cd "$SECRET_DIR" && for key in *; do printf '%s\n' "$key"; cat "$key"; printf '\n'; done) | sha256sum | cut -c1-16)
   echo "keys: $(secret_keys)"
@@ -398,6 +415,11 @@ collect_secrets() {
   [ -n "$demo_key" ] && echo "try-it demo: on" || echo "try-it demo: off (no DEMO_SIGNING_KEY)"
   [ "$admin_count" = 2 ] && echo "account deletion: also deletes the Keycloak user" \
     || echo "account deletion: keeps the Keycloak user (no AUTH_ADMIN_CLIENT_* values; see docs/KEYCLOAK-ACCOUNT-DELETION.md)"
+  if [ "$SILENT_PUSH_ENABLED" = true ]; then
+    echo "widget silent pushes: on (APNs $([ "$apns_count" = 3 ] && echo on || echo off), FCM $([ "$fcm_count" = 2 ] && echo on || echo off))"
+  else
+    echo "widget silent pushes: off (SILENT_PUSH_ENABLED is not true)"
+  fi
   [ "$DB_AUTO_MIGRATE" = true ] && echo "DB_AUTO_MIGRATE=true: the API pod holds the migrator credentials" || true
 }
 
@@ -598,6 +620,7 @@ releases() {
     --set-string "env.AUTH_AUDIENCE=$(helm_escape "$AUTH_AUDIENCE")"
     --set-string "env.CORS_ALLOWED_ORIGINS=$(helm_escape "$CORS_ALLOWED_ORIGINS")"
     --set-string "env.DB_AUTO_MIGRATE=$DB_AUTO_MIGRATE"
+    --set-string "env.SILENT_PUSH_ENABLED=$SILENT_PUSH_ENABLED"
     --set-string "podAnnotations.checksum/secrets=$SECRETS_HASH"
   )
   [ -z "$FORWARDED_HEADERS_TRUSTED_NETWORKS" ] \

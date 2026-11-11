@@ -288,6 +288,63 @@ run "push on" PUSH_VAPID_PUBLIC_KEY=pub PUSH_VAPID_PRIVATE_KEY=priv PUSH_VAPID_S
   check "push: the three keys go to the Secret" log_has '^secret-keys: .*PUSH_VAPID_PRIVATE_KEY PUSH_VAPID_PUBLIC_KEY PUSH_VAPID_SUBJECT'
 }
 
+# Widget silent pushes (docs/design/37b-widget-silent-push.md): keys only in the Secret, the flag a plain env value.
+SP_P8='QXBuc1AtOC1LZXktTWF0ZXJpYWw='
+SP_JSON='RmNtLVNlcnZpY2UtQWNjb3VudC1Kc29u'
+silent_push_hidden() { ! grep -qF -- "$SP_P8" "$WORK/log" "$WORK/out" && ! grep -qF -- "$SP_JSON" "$WORK/log" "$WORK/out" \
+  && ! grep -qF -- 'APNSKEYID1' "$WORK/log" "$WORK/out" && ! grep -qF -- 'fcm-proj-1' "$WORK/log" "$WORK/out"; }
+
+run "silent push off by default" SKIP_BUILD=1 && {
+  check "silent push: the flag defaults to false" log_has 'env\.SILENT_PUSH_ENABLED=false'
+  check "silent push: off and says so" out_has 'widget silent pushes: off'
+  check "silent push: no PUSH_APNS_/PUSH_FCM_ key in the Secret" log_lacks '^secret-keys: .*PUSH_(APNS|FCM)_'
+}
+
+EXPECT_FAIL=1 run "silent push bad flag" SILENT_PUSH_ENABLED=maybe SKIP_BUILD=1
+check "silent push: a flag that is not a boolean is refused" out_has 'SILENT_PUSH_ENABLED must be true or false'
+
+EXPECT_FAIL=1 run "silent push without a channel" SILENT_PUSH_ENABLED=true SKIP_BUILD=1
+check "silent push: on without a channel is refused" out_has 'SILENT_PUSH_ENABLED=true needs the PUSH_APNS_\* or the PUSH_FCM_\* values'
+
+EXPECT_FAIL=1 run "partial apns" PUSH_APNS_KEY_ID=APNSKEYID1 SKIP_BUILD=1
+check "silent push: one APNs key alone is refused" out_has 'all three of PUSH_APNS_KEY_ID, PUSH_APNS_TEAM_ID and PUSH_APNS_KEY_P8 or none'
+
+EXPECT_FAIL=1 run "partial fcm" PUSH_FCM_PROJECT_ID=fcm-proj-1 SKIP_BUILD=1
+check "silent push: the FCM project alone is refused" out_has 'both PUSH_FCM_PROJECT_ID and PUSH_FCM_SERVICE_ACCOUNT_JSON or neither'
+
+EXPECT_FAIL=1 run "apns placeholder" PUSH_APNS_KEY_ID=APNSKEYID1 PUSH_APNS_TEAM_ID=TEAM1 PUSH_APNS_KEY_P8='<base64-of-the-p8-file>' SKIP_BUILD=1
+check "silent push: the .env.example placeholder is refused" out_has 'PUSH_APNS_KEY_P8 is still the .env.example placeholder'
+
+run "silent push on" SILENT_PUSH_ENABLED=true PUSH_APNS_KEY_ID=APNSKEYID1 PUSH_APNS_TEAM_ID=TEAM1 PUSH_APNS_KEY_P8="$SP_P8" \
+  PUSH_APNS_BUNDLE_ID=app.lotties.app PUSH_FCM_PROJECT_ID=fcm-proj-1 PUSH_FCM_SERVICE_ACCOUNT_JSON="$SP_JSON" SKIP_BUILD=1 && {
+  check "silent push: the Secret is made from files" log_has '^kubectl .* create secret generic lotties-secrets --from-file='
+  check "silent push: the APNs keys go to the Secret" log_has '^secret-keys: .*PUSH_APNS_BUNDLE_ID PUSH_APNS_KEY_ID PUSH_APNS_KEY_P8 PUSH_APNS_TEAM_ID '
+  check "silent push: the FCM keys go to the Secret" log_has '^secret-keys: .*PUSH_FCM_PROJECT_ID PUSH_FCM_SERVICE_ACCOUNT_JSON '
+  check "silent push: the API is told" log_has 'env\.SILENT_PUSH_ENABLED=true'
+  check "silent push: on and says which channels" out_has 'widget silent pushes: on \(APNs on, FCM on\)'
+  check "silent push: no value on a command line or printed" silent_push_hidden
+}
+
+run "silent push fcm only" SILENT_PUSH_ENABLED=1 PUSH_FCM_PROJECT_ID=fcm-proj-1 PUSH_FCM_SERVICE_ACCOUNT_JSON="$SP_JSON" SKIP_BUILD=1 && {
+  check "silent push: one channel is enough" out_has 'widget silent pushes: on \(APNs off, FCM on\)'
+  check "silent push: no APNs key in the Secret" log_lacks '^secret-keys: .*PUSH_APNS_'
+}
+
+printf 'DB_HOST=db.example.test\nPUSH_FCM_PROJECT_ID=fcm-proj-1\nPUSH_FCM_SERVICE_ACCOUNT_JSON=%s\n' "$SP_JSON" > "$WORK/sp-secret"
+run "silent push keys kept" STUB_SECRET_FILE="$WORK/sp-secret" SKIP_BUILD=1 && {
+  check "silent push: keys left out keep what the Secret has" log_has '^secret-keys: .*PUSH_FCM_PROJECT_ID PUSH_FCM_SERVICE_ACCOUNT_JSON '
+  check "silent push: a deploy without the flag keeps it off" log_has 'env\.SILENT_PUSH_ENABLED=false'
+  check "silent push: kept values are never printed" silent_push_hidden
+}
+run "silent push keys removed" STUB_SECRET_FILE="$WORK/sp-secret" PUSH_FCM_PROJECT_ID= PUSH_FCM_SERVICE_ACCOUNT_JSON= SKIP_BUILD=1 && {
+  check "silent push: keys set to empty are removed" log_lacks '^secret-keys: .*PUSH_FCM_'
+}
+
+for key in PUSH_APNS_KEY_ID PUSH_APNS_TEAM_ID PUSH_APNS_KEY_P8 PUSH_APNS_BUNDLE_ID PUSH_FCM_PROJECT_ID PUSH_FCM_SERVICE_ACCOUNT_JSON; do
+  check "silent push: values/api.yaml maps $key from the Secret (optional)" \
+    bash -c "grep -A3 '^  $key:' '$HERE/values/api.yaml' | grep -q 'key: $key' && grep -A3 '^  $key:' '$HERE/values/api.yaml' | grep -q 'optional: true'"
+done
+
 run "no demo key" SKIP_BUILD=1 && {
   check "demo: off without a key, and says so" out_has 'try-it demo: off'
   check "demo: no DEMO_SIGNING_KEY in the Secret" log_lacks '^secret-keys: .*DEMO_SIGNING_KEY'
