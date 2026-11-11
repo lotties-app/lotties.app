@@ -3,6 +3,9 @@
 A day: wake-up around 07:00 (woke_up marker), naps after jittered awake windows until bed time around 20:00
 (bed_time marker), night wakings inside the night, feeds every ~2.5 h by day and ~3.5 h by night (instants), diapers
 every ~3.5 h (instants).
+
+Also the night-window cohorts (``cohort_baby``) and the community-insights cohorts (``community_cohort``, per-baby
+per-day inputs of the pooled statistics), both described in their own blocks below.
 """
 
 from __future__ import annotations
@@ -10,6 +13,8 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
+
+import numpy as np
 
 from .data import SECONDS_PER_MINUTE, Dataset, Event
 from .priors import UNSOURCED_AWAKE, UNSOURCED_NAP
@@ -189,3 +194,170 @@ def _poisson(rng: random.Random, mean: float) -> int:
         count += 1
         product *= rng.random()
     return count
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Synthetic community cohorts for the pooled-statistics study (benchmark/community.py; docs/design/34-community-insights.md
+# section 9 item 1). Never real data: every baby, family and value below is drawn from the curves and spreads in this
+# block. A cohort is per-baby, per-local-day inputs (what the aggregation job would derive in memory, design 34 section
+# 4), not event histories: 10 000 babies of events would be slow and add nothing to the pooled statistics.
+#
+# SOURCED anchors (code/api/data/age-norms.json, the published-norms priors the pool must beat): formula ml per feed
+# (midpoints of the 1-4, 4-9, 9-13, 13-17, 17-26 and 26-52 week ranges), night sleep (Pelotas medians 9.5 h at 3
+# months, 10 h at 12, 10.5 h at 24) and naps per day (3.1 / 2.2 / 1.2 in the 0-6, 6-12, 12-24 month bands), each
+# placed at its band's middle week and joined by straight lines, so the truth moves week by week inside a published
+# band. UNSOURCED (no published norm): every between-baby and day-to-day spread, the breast-milk bottle factor, the
+# tummy-time curve, the first weeks of night sleep and naps, feeds per day, crying spells and their causes, the family
+# sizes, opt-in by family, and the "heavy" families. The crying causes have a known ground truth by construction.
+# Synthetic data cannot prove a real-world gain (docs/design/28-age-norms.md section 15.4).
+
+MAX_WEEK = 104
+"""Age in completed weeks, exclusive: the catalog bands end at week 104."""
+
+FORMULA_ML_BY_WEEK = ((0, 45), (2.6, 90), (6.5, 120), (10.9, 165), (15.2, 190), (21.8, 190), (39.1, 210), (104, 210))
+"""Week 0 and week 104 are unsourced; the others are midpoints of the published formula ranges at their band middles."""
+UNSOURCED_BREAST_MILK_FACTOR = 0.85
+UNSOURCED_TUMMY_MINUTES_BY_WEEK = ((0, 5), (8, 20), (16, 35), (26, 45))
+NIGHT_MINUTES_BY_WEEK = ((0, 510), (15.2, 570), (65.2, 600), (104, 630))
+"""Week 0 is unsourced; 15.2 / 65.2 / 104 are the Pelotas medians (the 104-week one is the 24-month median)."""
+NAPS_BY_WEEK = ((0, 4.0), (13, 3.1), (39, 2.2), (78, 1.2), (104, 1.0))
+"""Weeks 0 and 104 are unsourced; the others are the typical values of the three published nap bands."""
+TUMMY_WEEKS = 26
+CRY_CAUSES = ("hunger", "sleepy", "diaper", "gas", "comfort")
+PARTS_OF_DAY = ("morning", "afternoon", "evening", "night")
+CRY_BAND_EDGES = (0, 6, 13, 26, MAX_WEEK)
+"""docs/design/27 `cryAgeBand`: newborn (< 6 weeks), 6 weeks to 3 months, 3 to 6 months, 6 months and over."""
+UNSOURCED_CRY_CAUSE_BASE = (
+    (0.35, 0.15, 0.15, 0.20, 0.15),
+    (0.30, 0.20, 0.10, 0.25, 0.15),
+    (0.30, 0.30, 0.10, 0.10, 0.20),
+    (0.25, 0.35, 0.10, 0.05, 0.25),
+)
+"""Ground truth of "what helped" per cry band (causes in ``CRY_CAUSES`` order), before the part-of-day factors."""
+UNSOURCED_CRY_PART_FACTOR = (
+    (1.0, 0.8, 1.2, 0.8, 1.0),
+    (1.0, 1.0, 1.0, 1.0, 1.0),
+    (0.8, 1.3, 0.8, 1.5, 1.3),
+    (1.4, 0.7, 1.0, 1.0, 0.9),
+)
+UNSOURCED_PART_OF_DAY_SHARES = (0.2, 0.25, 0.4, 0.15)
+HEAVY_FAMILY_SHARE = 0.02
+"""Share of families that log much more (every day for 40 weeks, 28 bottles a day) and with biased values."""
+
+
+def curve(points: tuple[tuple[float, float], ...], weeks):
+    """Piecewise-linear truth curve at ``weeks`` (scalar or array), flat outside the anchors."""
+    xs, ys = zip(*points)
+    return np.interp(weeks, xs, ys)
+
+
+def cry_truth(cry_band: int, part: int) -> np.ndarray:
+    """The known ground truth: share of spells where each cause helped, for one cry band and part of day."""
+    weights = np.asarray(UNSOURCED_CRY_CAUSE_BASE[cry_band]) * np.asarray(UNSOURCED_CRY_PART_FACTOR[part])
+    return weights / weights.sum()
+
+
+@dataclass(frozen=True)
+class Observations:
+    """One row per input value: the baby (index into the cohort arrays), the baby's local day number, the age in
+    completed weeks that day, the value and the dimension (bottle kind, part of day; 0 when the statistic has none)."""
+
+    baby: np.ndarray
+    day: np.ndarray
+    week: np.ndarray
+    value: np.ndarray
+    dimension: np.ndarray
+
+    def take(self, mask: np.ndarray) -> "Observations":
+        return Observations(self.baby[mask], self.day[mask], self.week[mask], self.value[mask], self.dimension[mask])
+
+
+@dataclass(frozen=True)
+class CommunityCohort:
+    baby_id: np.ndarray
+    """Stable random 63-bit ids (the keyed hash of the per-baby cap reads them)."""
+    family: np.ndarray
+    heavy: np.ndarray
+    """Per baby: whether its family is a heavy-logging one."""
+    bottle_kind: np.ndarray
+    """0 formula, 1 breast milk (the catalog dimension of ``bottle_ml_per_feed``)."""
+    observations: dict[str, Observations]
+
+    @property
+    def size(self) -> int:
+        return len(self.baby_id)
+
+
+def _families(rng: np.random.Generator, size: int) -> tuple[np.ndarray, np.ndarray]:
+    sizes = rng.choice((1, 2, 3), size=size, p=(0.75, 0.2, 0.05))
+    family = np.repeat(np.arange(size), sizes)[:size]
+    heavy_family = rng.random(size) < HEAVY_FAMILY_SHARE
+    heavy_family[int(rng.integers(0, family.max() + 1))] = True  # at least one heavy family per instance
+    return family, heavy_family[family]
+
+
+def _days(rng: np.random.Generator, family: np.ndarray, heavy: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Expanded logged days (baby, day number, age week). A history is a window of 2-16 weeks (heavy: 40, the same
+    start for the whole family) from a random age; 80 % of days are logged (heavy: all)."""
+    size = len(family)
+    start = rng.integers(0, MAX_WEEK - 1, size)
+    family_start = rng.integers(0, MAX_WEEK - 40, family.max() + 1)
+    start = np.where(heavy, family_start[family], start)
+    n_days = np.where(heavy, 40, rng.integers(2, 17, size)) * 7
+    baby = np.repeat(np.arange(size), n_days)
+    day = np.arange(len(baby)) - np.repeat(np.cumsum(n_days) - n_days, n_days)
+    week = start[baby] + day // 7
+    logged = (week < MAX_WEEK) & ((rng.random(len(baby)) < 0.8) | heavy[baby])
+    return baby[logged], day[logged], week[logged]
+
+
+def community_cohort(size: int, seed: int) -> CommunityCohort:
+    """``size`` synthetic babies in families of 1 to 3 (75 / 20 / 5 %), about 2 % of families heavy (at least one)."""
+    rng = np.random.default_rng([seed, size, 34])
+    family, heavy = _families(rng, size)
+    baby_id = rng.integers(1, 2**63 - 1, size, dtype=np.int64)
+    kind = (rng.random(size) < 0.4).astype(np.int64)
+    baby, day, week = _days(rng, family, heavy)
+    hb = heavy[baby]
+    observations: dict[str, Observations] = {}
+
+    # Milk per feed: a baby factor (lognormal sd 0.18), per-feed spread (sd 0.15), 1 % typing slips (x10, then clipped).
+    feeds = np.where(hb, 28, np.clip(np.rint(rng.normal(7 - 4 * np.minimum(week, 52) / 52, 1.0)), 2, 10)).astype(np.int64)
+    fb, fd, fw = np.repeat(baby, feeds), np.repeat(day, feeds), np.repeat(week, feeds)
+    factor = rng.lognormal(0, 0.18, size) * np.where(kind == 1, UNSOURCED_BREAST_MILK_FACTOR, 1.0) * np.where(heavy, 1.5, 1.0)
+    ml = curve(FORMULA_ML_BY_WEEK, fw + 0.5) * factor[fb] * rng.lognormal(0, 0.15, len(fb))
+    ml = np.where(rng.random(len(fb)) < 0.01, ml * 10, ml)
+    observations["bottle_ml_per_feed"] = Observations(fb, fd, fw, ml, kind[fb])
+
+    # Tummy time: weeks 0-26, on about 65 % of days; baby factor sd 0.45, day spread sd 0.4.
+    tummy_p = rng.beta(6.5, 3.5, size)
+    has = (week < TUMMY_WEEKS) & (rng.random(len(baby)) < tummy_p[baby])
+    t_factor = rng.lognormal(0, 0.45, size) * np.where(heavy, 3.0, 1.0)
+    minutes = curve(UNSOURCED_TUMMY_MINUTES_BY_WEEK, week + 0.5) * t_factor[baby] * rng.lognormal(0, 0.4, len(baby))
+    observations["tummy_minutes_per_day"] = Observations(baby[has], day[has], week[has], minutes[has], np.zeros(int(has.sum()), np.int64))
+
+    # Routines: night sleep (baby offset sd 60 min, night spread sd 45 min) and naps (offset sd 0.5, day sd 0.7, whole).
+    zeros = np.zeros(len(baby), np.int64)
+    night = curve(NIGHT_MINUTES_BY_WEEK, week + 0.5) + rng.normal(0, 60, size)[baby] + rng.normal(0, 45, len(baby)) + np.where(hb, 90, 0)
+    observations["night_sleep_minutes"] = Observations(baby, day, week, night, zeros)
+    naps = curve(NAPS_BY_WEEK, week + 0.5) + rng.normal(0, 0.5, size)[baby] + rng.normal(0, 0.7, len(baby)) + np.where(hb, 1.5, 0)
+    observations["naps_per_day"] = Observations(baby, day, week, np.clip(np.rint(naps), 0, None), zeros)
+
+    # Crying: answered fussy spells, Poisson 0.6 a day; part of day and the helping cause from the ground truth with a
+    # per-baby tilt (Dirichlet, concentration 20); a heavy family always answers "gas".
+    spells = rng.poisson(0.6, len(baby))
+    cb, cd, cw = np.repeat(baby, spells), np.repeat(day, spells), np.repeat(week, spells)
+    part = rng.choice(4, size=len(cb), p=UNSOURCED_PART_OF_DAY_SHARES)
+    band = np.searchsorted(CRY_BAND_EDGES, cw, side="right") - 1
+    cause = np.zeros(len(cb), np.int64)
+    for b in range(4):
+        for p in range(4):
+            rows = np.flatnonzero((band == b) & (part == p))
+            if len(rows) == 0:
+                continue
+            tilt = rng.dirichlet(cry_truth(b, p) * 20, size)[cb[rows]]
+            below = np.cumsum(tilt, axis=1) < rng.random(len(rows))[:, None]
+            cause[rows] = np.minimum(below.sum(axis=1), len(CRY_CAUSES) - 1)
+    cause = np.where(heavy[cb], CRY_CAUSES.index("gas"), cause)
+    observations["cry_outcome_by_cause"] = Observations(cb, cd, cw, cause.astype(float), part.astype(np.int64))
+    return CommunityCohort(baby_id, family, heavy, kind, observations)

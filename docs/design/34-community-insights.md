@@ -336,7 +336,7 @@ when activated (task T9).
 | T5 | Aggregation job: inputs per use case, caps, clipping, bands, k, dominance, suppression, DP, run log, read-only role, flag; property tests (a cell never below k, a withdrawn baby absent from the next run, a single heavy family bounded) | Opus plan, Sonnet build | T2, T4 |
 | T6 | `GET /community-statistics` with ETag (like `/age-norms`), matrix row | Haiku | T5 |
 | T7 | Web cache + `useCommunityStatistics()`, fallback chain pooled > norms > default, the context lines (wording reviewed) | Sonnet | T6 |
-| T8 | `ml/benchmark/community.py` synthetic study, then the pilot backtest (section 9) | Sonnet | T4 |
+| T8 | `ml/benchmark/community.py` synthetic study, then the pilot backtest (section 9). **Synthetic study done** (docs/ml/COMMUNITY-SYNTHETIC.md); **pilot backtest still to do** | Sonnet | T4 |
 | T9 | Activation: policy section rewritten from "not active yet" to the final text, `PLANNED_FLOWS` entry moved to an active flow (data category row, status), version/date raised, in-app notice (gap G6), audit section 11 and docs/design/20 updated, store forms | Opus review, Sonnet edit | T1-T8 green |
 
 ## 12. Activation checklist (all before the flag goes on in production)
