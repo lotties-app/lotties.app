@@ -70,6 +70,9 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["baby_notes.baby_id"] = Rule.Erase,
         ["baby_notification_preferences.baby_id"] = Rule.Erase,
         ["care_providers.baby_id"] = Rule.Erase,
+        // The community insights consent history (design 34 section 3.2) goes with an erased baby; a hashed proof kept after
+        // erasure is open decision O8 (lawyer).
+        ["community_consents.baby_id"] = Rule.Erase,
         ["data_store_moves.baby_id"] = Rule.Erase,
         ["event_types.baby_id"] = Rule.Erase,
         ["events.baby_id"] = Rule.Erase,
@@ -98,6 +101,10 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["board_item_events.actor_user_id"] = Rule.Clear,
         ["board_items.created_by_user_id"] = Rule.Clear,
         ["care_providers.created_by"] = Rule.KeepForTheFamily,
+
+        // A line she added to a baby others keep stays, under the stand-in: deleting it would change the baby's state (a "no" she
+        // gave would turn back into an older "yes").
+        ["community_consents.user_id"] = Rule.KeepForTheFamily,
 
         // Her bring-your-own-database stores (sealed descriptors) go with her in every case (docs/design/47 section 9); the
         // erased babies' rows in that database go only when she asks for it (wipeOwnDatabase): AccountErasureOwnStoreTests.
@@ -429,6 +436,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
             new { title = "Pediatrician", type = "consultation", startsAt = DateTimeOffset.UtcNow.AddDays(40), durationMinutes = 30, providerId, status = "upcoming" }));
         await Write(client.PutAsJsonAsync($"{path}/vaccinations/{Guid.NewGuid()}", new { vaccineKey = "bcg", doseId = "bcg-1", doseLabel = "Dose única", givenOn = "2026-01-05", network = "public" }));
         await Write(client.PutAsJsonAsync($"{path}/measurements/{Guid.NewGuid()}", new { date = "2026-01-09", weightKg = 5.4m }));
+        await Write(client.PutAsJsonAsync($"{path}/community-consent", new { granted = true, textVersion = "ci-1", guardianConfirmed = true, locale = "en" }));
         await Write(client.PutAsJsonAsync($"{path}/events/{Guid.NewGuid()}", new { typeId = BuiltInEventTypes.FeedingId, startedAt = Start, payload = new { method = "breast", side = "left" } }));
         var deleted = Guid.NewGuid();
         await Write(client.PutAsJsonAsync($"{path}/events/{deleted}", new { typeId = BuiltInEventTypes.BathId, startedAt = Start.AddHours(1), payload = new { } }));

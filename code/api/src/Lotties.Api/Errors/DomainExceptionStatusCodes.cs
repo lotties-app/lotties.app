@@ -98,6 +98,8 @@ internal static class DomainExceptionStatusCodes
         [typeof(InvalidBoardCursorException)] = StatusCodes.Status400BadRequest,
         [typeof(ConsentRequiredException)] = StatusCodes.Status403Forbidden,
         [typeof(ConsentVersionOutdatedException)] = StatusCodes.Status409Conflict,
+        [typeof(CommunityConsentNotAllowedException)] = StatusCodes.Status403Forbidden,
+        [typeof(CommunityConsentVersionOutdatedException)] = StatusCodes.Status409Conflict,
         [typeof(DemoNotAvailableException)] = StatusCodes.Status403Forbidden,
         [typeof(DemoDisabledException)] = StatusCodes.Status404NotFound,
         [typeof(DemoCapacityException)] = StatusCodes.Status503ServiceUnavailable,

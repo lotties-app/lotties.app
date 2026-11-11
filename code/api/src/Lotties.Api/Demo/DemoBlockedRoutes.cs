@@ -6,7 +6,8 @@ namespace Lotties.Api.Demo;
 /// <summary>
 /// The routes a try-it demo account cannot use (docs/design/45-try-it-demo.md section 2): invites and Doctor access, push, assistant
 /// settings and optional consents, exports and imports, address lookup, a second baby, the shared catalog's writes and the baby's own
-/// database (data-store routes: they send data to a host the user chooses). Keys are
+/// database (data-store routes: they send data to a host the user chooses) and the community insights consent (a throwaway account never
+/// opts a baby in to pooled statistics; docs/design/34-community-insights.md). Keys are
 /// <c>"METHOD /route/pattern"</c> as the endpoint data source lists them; <c>DemoBlockedRoutesTests</c> fails when a key matches no route.
 /// </summary>
 public static class DemoBlockedRoutes
@@ -42,6 +43,8 @@ public static class DemoBlockedRoutes
         "POST /api/v1/babies/{babyId:guid}/data-store/test",
         "POST /api/v1/babies/{babyId:guid}/data-store/move-in",
         "POST /api/v1/babies/{babyId:guid}/data-store/move-out",
+        "GET /api/v1/babies/{babyId:guid}/community-consent",
+        "PUT /api/v1/babies/{babyId:guid}/community-consent",
     };
 
     public static bool IsBlocked(HttpContext context)
