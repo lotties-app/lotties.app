@@ -20,6 +20,8 @@
     <!-- The published age norms (docs/design/28-age-norms.md): one source of truth in code/api/data, shipped inside this
          assembly, validated at startup and served by GET /age-norms. -->
     <EmbeddedResource Include="..\..\data\age-norms.json" LogicalName="Lotties.Application.AgeNorms.age-norms.json" WithCulture="false" />
+    <!-- The community statistics catalog (docs/design/34-community-insights.md, T4): validated at startup, served by no route. -->
+    <EmbeddedResource Include="..\..\data\community-statistics.json" LogicalName="Lotties.Application.CommunityInsights.community-statistics.json" WithCulture="false" />
   </ItemGroup>
 
   <PropertyGroup>

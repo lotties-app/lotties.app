@@ -35,6 +35,8 @@
     <!-- Published age norms (docs/design/28-age-norms.md), validated by AgeNorms/AgeNormsDataTests (embedded in Lotties.Application),
          and the lookup vectors shared with the web port (code/web/src/ageNorms/ageNorms.test.ts). -->
     <None Include="..\..\data\age-norms.json" Link="AgeNorms\age-norms.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The community statistics catalog (docs/design/34-community-insights.md, T4), validated by CommunityInsights tests. -->
+    <None Include="..\..\data\community-statistics.json" Link="CommunityInsights\community-statistics.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\web\src\ageNorms\ageNormsVectors.json" Link="AgeNorms\ageNormsVectors.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\web\src\baby\birthWeekVectors.json" Link="Babies\birthWeekVectors.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Cry reasons scoring vectors shared with the web port (code/web/src/now/cryReasonsVectors.test.ts). -->
