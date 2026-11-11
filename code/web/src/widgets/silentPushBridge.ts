@@ -4,17 +4,18 @@ import { loadLottiesShared, viaWebKit, webkitHandler } from './widgetBridge';
  * The native side of the widgets' silent push (docs/design/37b-widget-silent-push.md section 5): whether a widget is
  * installed, this install's push token, the "something changed" ping and its answer. On iOS through the app's WebKit
  * message handler `lotties` (AppDelegate + `LottiesSilentPush.swift`); the ping arrives as the window event
- * {@link REMOTE_CHANGE_EVENT}. On Android through the `LottiesShared` Capacitor plugin (methods and the `remoteChange`
- * event are not built yet: every call fails and nothing registers). Only meaningful when `isNativeApp()`.
+ * {@link REMOTE_CHANGE_EVENT}. On Android through the `LottiesShared` Capacitor plugin (`LottiesSharedPlugin.kt`: the
+ * same three methods with the FCM token, and the plugin event `remoteChange` fired for each ping
+ * `push/LottiesMessagingService.kt` receives). Only meaningful when `isNativeApp()`.
  */
 export interface SilentPushNative {
   /** Whether at least one Lotties widget is on the home or lock screen. */
   widgetsInstalled(): Promise<boolean>;
-  /** This install's push token, or `null` (no push entitlement yet, simulator, refused, not built). */
+  /** This install's push token, or `null` (no push entitlement yet, simulator, no Firebase or Play services, refused). */
   pushToken(): Promise<NativePushToken | null>;
   /** Calls `listener` on every ping; returns the stop. */
   onRemoteChange(listener: () => void): () => void;
-  /** The ping was handled (iOS ends the background time it gave: `changed` = new data). */
+  /** The ping was handled (iOS ends the background time it gave, Android the messaging service's wait). */
   remoteChangeDone(changed: boolean): Promise<void>;
 }
 
