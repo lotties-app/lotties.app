@@ -31,8 +31,8 @@ request logging (`RemoveAllLoggers`: an APNs token is in the request URL), and n
 
 - What starts it: the person adds a Lotties widget in the iOS or Android app; the app registers the push token with
   our API (`POST /push/devices`, current core consent required, refused for demo accounts). Removing the last widget or
-  signing out unregisters it. On Android the token is made by the Firebase library in the app (second row of section 3),
-  which talks to Google only from that moment (auto-init off).
+  signing out unregisters it. On Android the token is made by the Firebase library in the app (second row of section 3);
+  with FCM auto-init off it makes no token, so no registration with Google, before that moment.
 - What is sent and to whom: section 3 above. Content-free by construction (one constant payload, tested); the server
   never puts a baby id, a name or an entry in it.
 - Who gets a push: the baby's members except a Doctor (her patients never enter the parents' shell), with a current core
