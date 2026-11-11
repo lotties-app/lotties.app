@@ -213,6 +213,7 @@ public sealed class DemoTests(ApiFactory factory) : IClassFixture<ApiFactory>
         var secondBaby = await client.PostAsJsonAsync("/api/v1/babies", new { name = "Another", birthDate = "2026-01-01" });
         var invites = await client.GetAsync($"/api/v1/babies/{started.BabyId}/invites");
         var address = await client.GetAsync("/api/v1/address/search?q=rua");
+        var silentPush = await client.GetAsync("/api/v1/push/silent/status?channel=fcm");
         var babies = await client.GetAsync("/api/v1/babies");
         var events = await client.GetAsync($"/api/v1/babies/{started.BabyId}/events");
 
@@ -220,6 +221,7 @@ public sealed class DemoTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Equal("demo_not_available", await CodeOfAsync(secondBaby));
         Assert.Equal(HttpStatusCode.Forbidden, invites.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, address.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, silentPush.StatusCode);
         Assert.Equal(HttpStatusCode.OK, babies.StatusCode);
         Assert.Equal(HttpStatusCode.OK, events.StatusCode);
     }

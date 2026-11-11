@@ -123,6 +123,7 @@ public sealed class ConsentGateTests : IClassFixture<ApiFactory>
         await (await client.GetAsync("/api/v1/push/preferences")).AssertProblemAsync(HttpStatusCode.Forbidden, "consent_required");
         await (await client.PostAsJsonAsync("/api/v1/push/test", new { })).AssertProblemAsync(HttpStatusCode.Forbidden, "consent_required");
         await (await client.PostAsJsonAsync("/api/v1/push/subscriptions", new { })).AssertProblemAsync(HttpStatusCode.Forbidden, "consent_required");
+        await (await client.GetAsync("/api/v1/push/silent/status?channel=fcm")).AssertProblemAsync(HttpStatusCode.Forbidden, "consent_required");
         Assert.NotEqual(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/v1/push/subscriptions/revoke", new { endpoint = "https://push.example/x" })).StatusCode);
         Assert.NotEqual(HttpStatusCode.Forbidden, (await client.DeleteAsync($"/api/v1/push/subscriptions/{Guid.NewGuid()}")).StatusCode);
     }

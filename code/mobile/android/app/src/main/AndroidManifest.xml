@@ -128,9 +128,26 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-        <!-- No FCM token at start-up: one is made only when the app asks for it, while a widget is installed. -->
+        <!-- Quiet Firebase (docs/design/37b-widget-silent-push.md section 5.4): with google-services.json in the build,
+             Firebase starts with the app (FirebaseInitProvider), but nothing may reach Google until the API says
+             silent pushes are on. No FCM token at start-up: auto-init stays off for good, and a token is made only when
+             the web app asks `LottiesShared.pushToken` (after GET /push/silent/status answered enabled, while a widget
+             is installed). No Analytics, no advertising id, no automatic data collection, no delivery metrics.
+             FirebaseQuietStartTest guards these values. -->
         <meta-data
             android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="firebase_data_collection_default_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="delivery_metrics_exported_to_big_query_enabled"
             android:value="false" />
     </application>
 

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { pretendNativeApp } from '../platform/nativeTestKit';
 import { nativeSilentPush, REMOTE_CHANGE_EVENT } from './silentPushBridge';
 
 /*
@@ -39,6 +40,21 @@ function fakeHandler(answer: (message: { method: string }) => unknown) {
 
 afterEach(() => {
   delete (window as unknown as Scope).webkit;
+});
+
+describe('nativeSilentPush.channel', () => {
+  it('names the push service of the platform without calling the native layer', () => {
+    const undoIos = pretendNativeApp('ios');
+    expect(nativeSilentPush.channel()).toBe('apns');
+    undoIos();
+    const undoAndroid = pretendNativeApp('android');
+    expect(nativeSilentPush.channel()).toBe('fcm');
+    undoAndroid();
+
+    expect(nativeSilentPush.channel()).toBeNull();
+    expect(android.plugin.pushToken).not.toHaveBeenCalled();
+    expect(android.plugin.widgetsInstalled).not.toHaveBeenCalled();
+  });
 });
 
 describe('nativeSilentPush on iOS', () => {

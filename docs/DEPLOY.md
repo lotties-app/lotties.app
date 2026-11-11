@@ -311,7 +311,9 @@ Content-free APNs/FCM pushes that tell the family's other phones that a baby's r
 its home-screen widgets update (docs/design/37b-widget-silent-push.md). **Off by default, and it stays off in production
 until the held privacy policy text is released** (docs/legal-held/widget-silent-push/README.md). Needs migration
 `SilentPushDevices` (table `silent_push_devices`; back up before deploying it). While off, `POST /api/v1/push/devices`
-answers 409 `silent_push_not_configured` and nothing is queued or sent.
+answers 409 `silent_push_not_configured` and nothing is queued or sent, and `GET /api/v1/push/silent/status` answers
+`{"enabled": false}`, so the apps never ask the phone for a push token (no contact with Apple or Google; design 37b
+section 5.4).
 
 | Config key (env) | Default | Purpose |
 |----------|---------|---------|

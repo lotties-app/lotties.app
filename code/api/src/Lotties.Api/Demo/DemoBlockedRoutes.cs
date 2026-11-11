@@ -34,6 +34,7 @@ public static class DemoBlockedRoutes
         "PUT /api/v1/push/settings",
         "POST /api/v1/push/test",
         "POST /api/v1/push/devices",
+        "GET /api/v1/push/silent/status",
         "PUT /api/v1/babies/{babyId:guid}/notification-preferences",
         "PUT /api/v1/me/assistant-settings",
         "PUT /api/v1/me/consents/optional/{kind}",

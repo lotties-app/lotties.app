@@ -227,6 +227,40 @@ same holds when the activity was destroyed (back out of the app) while the proce
 service answers at once (`NO_APP`). **Owner decision (2026-11-11): warm only for the first release**, measure later
 (section 12, question 1); none of the cold-path options is built.
 
+### 5.4 The gate: no Apple or Google contact while silent push is off (2026-11-11)
+
+Asking the phone for a push token is what makes it contact Apple (APNs) or Google (FCM, and the Firebase installation
+behind it). That must not happen while `SilentPush:Enabled` is off, so the client asks the server first. This runs
+before step 1 of section 5.1 and replaces the old order (widget check, token, then a 409 from the server); the
+"Order of provisioning (privacy)" paragraph of section 9 describes that old order and no longer holds.
+
+- **Server**: `GET /api/v1/push/silent/status?channel=apns|fcm` answers `{"enabled": true|false}`: whether silent pushes
+  are on and that channel has credentials (`ISilentPushConfiguration.Accepts`). Nothing else (no host, key, credential
+  or setting). Signed-in only (401 anonymous), behind the consent gate like registering (403 `consent_required`), blocked
+  for a demo account (`DemoBlockedRoutes`: a demo can never register, so it never asks for a token), 400
+  `validation_failed` (field `channel`) for a missing or unknown channel. 200 also while off: it is a status, not an
+  action. Row in `EndpointRoleMatrixTests` (`SignedIn`).
+- **Web** (`widgets/silentPush.ts`): `startSilentPush` reads the platform's channel in JavaScript
+  (`SilentPushNative.channel()`, the Capacitor bridge's `getPlatform`: no native call), then the status. Only a `true`
+  answer goes on to the native layer (the ping listener, the widget check, the token, then section 5.1 as before). A
+  `false` answer drops the stored device id and the `Lotties-Push-Device` header and touches nothing native. A failed
+  call (offline, 403 demo or consent, 5xx, an answer that is not a boolean) is not an answer: nothing native, nothing
+  forgotten, until the next resume. The answer is asked at every start and resume and trusted for 5 minutes
+  (`SILENT_PUSH_STATUS_TTL_MS`), so a resume within that time does not ask again; failures are not cached, and only a
+  start or a resume triggers a call (no timer, no retry loop). With the flag on, the behaviour is the one of section 5.1.
+- **Android, no auto-init** (`AndroidManifest.xml`, guarded by the JUnit `FirebaseQuietStartTest`): in a build with
+  `google-services.json` the `FirebaseInitProvider` starts Firebase with the app; that only reads the bundled options.
+  What could reach Google by itself is off: `firebase_messaging_auto_init_enabled`, `firebase_data_collection_default_enabled`,
+  `firebase_analytics_collection_enabled` (Analytics is not even a dependency), `google_analytics_adid_collection_enabled`
+  and `delivery_metrics_exported_to_big_query_enabled`, all `false`. The only path to a token is the explicit
+  `FirebaseMessaging.getInstance().token` in `LottiesShared.pushToken`, which the web app calls only after the gate.
+  Auto-init is **never** switched on at runtime (`isAutoInitEnabled = true` would persist and make later launches fetch
+  or refresh a token by themselves, even after the server switched silent pushes off); the explicit call is the safer of
+  the two. iOS needs no such switch: `registerForRemoteNotifications` runs only when the web app asks for the token.
+- **What remains after a switch-off**: a token made while the flag was on stays registered with Google or Apple (the app
+  does not delete it, which would itself be a call to them); the server keeps the device row but sends nothing while
+  off, and the app stops naming the device at its next start or resume.
+
 ## 6. Platform limits (battery and throttling)
 
 - **iOS**: background pushes are best effort. iOS decides per device (battery, Low Power Mode, how often the person opens
@@ -408,3 +442,11 @@ Still open:
   `getToken` works with auto-init off on every Play services version; a build with `google-services.json` (the Google
   Services plugin has never been applied in this project); that the merged `POST_NOTIFICATIONS` declaration changes
   nothing visible.
+- The gate of section 5.4 on a device: covered by Vitest (status off, on, failing, cached, re-asked) and the API tests,
+  but never watched on a phone. Unverified there: that an Android build with `google-services.json` and the quiet
+  manifest makes no request to a Google host before the status says yes (to check with a proxy or `adb logcat`); that the
+  explicit `getToken` still works with `firebase_data_collection_default_enabled = false` (Firebase documents the flag as
+  the default for automatic collection only); whether Firebase Messaging's start-up still makes a local IPC to Google
+  Play services (notification delegation settings), which is not a network call from the app but was not measured.
+  `FirebaseQuietStartTest` is written by eye: no JVM on the machine where it was written, it first runs in
+  `android-compile-check`.

@@ -1,3 +1,4 @@
+import { nativePlatform } from '../platform/nativeApp';
 import { loadLottiesShared, viaWebKit, webkitHandler } from './widgetBridge';
 
 /**
@@ -9,6 +10,11 @@ import { loadLottiesShared, viaWebKit, webkitHandler } from './widgetBridge';
  * `push/LottiesMessagingService.kt` receives). Only meaningful when `isNativeApp()`.
  */
 export interface SilentPushNative {
+  /**
+   * The push service this platform would use (`apns` on iOS, `fcm` on Android, `null` elsewhere). Read from the
+   * Capacitor bridge in JavaScript: it calls nothing native, so it is safe before the server says silent push is on.
+   */
+  channel(): PushChannel | null;
   /** Whether at least one Lotties widget is on the home or lock screen. */
   widgetsInstalled(): Promise<boolean>;
   /** This install's push token, or `null` (no push entitlement yet, simulator, no Firebase or Play services, refused). */
@@ -19,9 +25,11 @@ export interface SilentPushNative {
   remoteChangeDone(changed: boolean): Promise<void>;
 }
 
+export type PushChannel = 'apns' | 'fcm';
+
 /** The body of `POST /push/devices`. */
 export interface NativePushToken {
-  channel: 'apns' | 'fcm';
+  channel: PushChannel;
   token: string;
   apnsEnvironment?: 'production' | 'sandbox';
 }
@@ -65,7 +73,13 @@ async function withPlugin<T>(call: (plugin: SilentPushPlugin) => Promise<T>): Pr
   return call(loaded.native as SilentPushPlugin);
 }
 
+const CHANNELS = { ios: 'apns', android: 'fcm' } as const;
+
 export const nativeSilentPush: SilentPushNative = {
+  channel: () => {
+    const platform = nativePlatform();
+    return platform ? CHANNELS[platform] : null;
+  },
   widgetsInstalled: async () => {
     const handler = webkitHandler();
     if (handler) return (await viaWebKit(handler, 'widgetsInstalled')) === true;
