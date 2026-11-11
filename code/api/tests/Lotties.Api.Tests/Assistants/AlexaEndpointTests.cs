@@ -389,20 +389,35 @@ public sealed class AlexaEndpointTests(AlexaApiHost host) : IClassFixture<AlexaA
         Assert.Equal("You have more than one baby in Lotties. Choose the one for voice commands in the app, in Settings, Voice assistants.", AlexaApiHost.Speech(json));
     }
 
-    [Fact]
-    public async Task Post_OldTimestamp_Is400()
+    [Theory]
+    [InlineData(-151)]
+    [InlineData(-3600)]
+    public async Task Post_OldTimestamp_Is400(int seconds)
     {
-        var response = await host.PostAsync(Intent("AMAZON.HelpIntent", null, timestamp: DateTimeOffset.UtcNow.AddSeconds(-151)), SignedHeaders);
+        var response = await host.PostAsync(Intent("AMAZON.HelpIntent", null, timestamp: SentAt.AddSeconds(seconds)), SignedHeaders);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Post_FutureTimestamp_Is400()
+    [Theory]
+    [InlineData(151)]
+    [InlineData(200)]
+    public async Task Post_FutureTimestamp_Is400(int seconds)
     {
-        var response = await host.PostAsync(Intent("AMAZON.HelpIntent", null, timestamp: DateTimeOffset.UtcNow.AddSeconds(200)), SignedHeaders);
+        var response = await host.PostAsync(Intent("AMAZON.HelpIntent", null, timestamp: SentAt.AddSeconds(seconds)), SignedHeaders);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(-150)]
+    [InlineData(0)]
+    [InlineData(150)]
+    public async Task Post_TimestampWithinOneHundredFiftySeconds_IsAnswered(int seconds)
+    {
+        var response = await host.PostAsync(Intent("AMAZON.HelpIntent", null, timestamp: SentAt.AddSeconds(seconds)), SignedHeaders);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]

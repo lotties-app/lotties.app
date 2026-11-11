@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Lotties.Api.Assistants;
 using Lotties.Api.Assistants.Alexa;
 using Lotties.Api.Assistants.Mcp;
@@ -38,6 +40,9 @@ public sealed class AssistantReviewTests(ApiFactory factory) : IClassFixture<Api
         ("outdoor", BuiltInEventTypes.OutdoorId, (a, i) => a.LogOutdoorAsync(i, "park")),
         ("skin_care", BuiltInEventTypes.SkinCareId, (a, i) => a.LogSkinCareAsync(i, "moisturizer")),
     ];
+
+    /// <summary>An instant as System.Text.Json writes a <see cref="DateTimeOffset"/> (ISO 8601, up to seven fraction digits).</summary>
+    private static readonly Regex Instant = new(@"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,7})?(Z|[+-]\d{2}:\d{2})$", RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
 
     public static IEnumerable<object[]> WriterNames() => Writers.Select(writer => new object[] { writer.Name });
 
@@ -206,7 +211,7 @@ public sealed class AssistantReviewTests(ApiFactory factory) : IClassFixture<Api
         var doses = (await factory.EventsAsync(baby.BabyId)).Where(entry => entry.TypeId == BuiltInEventTypes.MedicationId).ToArray();
         Assert.Equal(2, doses.Length);
         Assert.All(doses, entry => Assert.Equal("alexa", PayloadOf(entry).GetProperty("via").GetString()));
-        foreach (var text in new[] { AlexaLanguages.For("en-US").Say(early), AlexaLanguages.For("pt-BR").Say(early), McpResultText.Of(early), JsonSerializer.Serialize(early) })
+        foreach (var text in new[] { AlexaLanguages.For("en-US").Say(early), AlexaLanguages.For("pt-BR").Say(early), McpResultText.Of(early), StructuredFactsOf(early) })
         {
             Assert.DoesNotContain("Zyrtecish", text, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("drops", text, StringComparison.OrdinalIgnoreCase);
@@ -233,7 +238,7 @@ public sealed class AssistantReviewTests(ApiFactory factory) : IClassFixture<Api
             Assert.Contains("These are reminders of the medicines you registered in Lotties, not recommendations from Lotties. Check the prescription, and ask your doctor or pharmacist if you have doubts.", AlexaLanguages.For("en-US").Say(result), StringComparison.Ordinal);
             Assert.Contains("São lembretes dos medicamentos que você cadastrou no Lotties, não recomendações do Lotties. Confira a receita e, em caso de dúvida, fale com o médico ou o farmacêutico.", AlexaLanguages.For("pt-BR").Say(result), StringComparison.Ordinal);
             Assert.Contains("not recommendations from Lotties", McpResultText.Of(result), StringComparison.Ordinal);
-            foreach (var text in new[] { AlexaLanguages.For("en-US").Say(result), AlexaLanguages.For("pt-BR").Say(result), McpResultText.Of(result), JsonSerializer.Serialize(result) })
+            foreach (var text in new[] { AlexaLanguages.For("en-US").Say(result), AlexaLanguages.For("pt-BR").Say(result), McpResultText.Of(result), StructuredFactsOf(result) })
             {
                 Assert.DoesNotContain("Zyrtecish", text, StringComparison.OrdinalIgnoreCase);
                 Assert.DoesNotContain("Nightmed", text, StringComparison.OrdinalIgnoreCase);
@@ -280,6 +285,37 @@ public sealed class AssistantReviewTests(ApiFactory factory) : IClassFixture<Api
             await factory.PutEventAsync(baby.OwnerSubject, baby.BabyId, BuiltInEventTypes.MedicationId, at, at, payload);
         }
     }
+
+    [Fact]
+    public void StructuredFacts_SkipTheClockDigitsOfInstants_ButCatchADoseOrNameAnywhereElse()
+    {
+        // The instants CI serialized when the raw-JSON check failed: "12.567747" and "02.5337481" both contain "2.5".
+        var clean = new AssistantResult { Code = AssistantResultCode.MedicationReminder, AsOf = DateTimeOffset.Parse("2026-11-11T06:47:12.567747+00:00", CultureInfo.InvariantCulture), At = DateTimeOffset.Parse("2026-11-09T10:17:02.5337481+00:00", CultureInfo.InvariantCulture), Count = 1 };
+        Assert.Contains("2.5", JsonSerializer.Serialize(clean), StringComparison.Ordinal);
+        Assert.DoesNotContain("2.5", StructuredFactsOf(clean), StringComparison.Ordinal);
+        Assert.Contains("medication_reminder", StructuredFactsOf(clean), StringComparison.Ordinal);
+
+        foreach (var leaked in new[] { clean with { Medicine = "Zyrtecish 2.5 drops" }, clean with { DueMedicines = ["2.5 drops"] }, clean with { TemperatureC = 2.5m }, clean with { PerDay = 12.5 }, clean with { EntryType = "drops" } })
+        {
+            Assert.Matches(@"2\.5|drops", StructuredFactsOf(leaked));
+        }
+    }
+
+    /// <summary>
+    /// Every fact of a result's structured JSON (what an MCP client receives) that could carry a medicine's name, dose or unit:
+    /// each property name, number and string, except instants (when the command ran, when a reminder is due). An instant's clock
+    /// digits are not a dose, and a substring check on the raw JSON failed whenever its seconds read like "12.5" or "02.5".
+    /// </summary>
+    private static string StructuredFactsOf(AssistantResult result) => string.Join('\n', FactsOf(JsonSerializer.SerializeToElement(result)));
+
+    private static IEnumerable<string> FactsOf(JsonElement element) => element.ValueKind switch
+    {
+        JsonValueKind.Object => element.EnumerateObject().SelectMany(property => FactsOf(property.Value).Prepend(property.Name)),
+        JsonValueKind.Array => element.EnumerateArray().SelectMany(FactsOf),
+        JsonValueKind.String when Instant.IsMatch(element.GetString()!) => Enumerable.Empty<string>(),
+        JsonValueKind.String => [element.GetString()!],
+        _ => [element.GetRawText()],
+    };
 
     [Fact]
     public void NoRendering_OfAnyResultCode_SaysAJudgementOrAdvice()

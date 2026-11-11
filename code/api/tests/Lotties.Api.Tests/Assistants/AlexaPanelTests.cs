@@ -21,12 +21,10 @@ public sealed class AlexaPanelTests(AlexaApiHost host) : IClassFixture<AlexaApiH
     private ApiFactory Factory => host.Factory;
 
     private static string Panel(string? token, string locale = "en-US", bool apl = true) =>
-        Build(new { type = "IntentRequest", requestId = NewRequestId(), timestamp = Now(), locale, intent = new { name = "PanelIntent", confirmationStatus = "NONE", slots = new { } } }, token, apl);
+        Build(new { type = "IntentRequest", requestId = NewRequestId(), timestamp = Stamp(), locale, intent = new { name = "PanelIntent", confirmationStatus = "NONE", slots = new { } } }, token, apl);
 
     private static string UserEvent(string? token, string argument = "panelRefresh", string locale = "en-US") =>
-        Build(new { type = "Alexa.Presentation.APL.UserEvent", requestId = NewRequestId(), timestamp = Now(), locale, arguments = new[] { argument }, source = new { type = "Document", id = "main" } }, token, true);
-
-    private static string Now() => DateTimeOffset.UtcNow.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        Build(new { type = "Alexa.Presentation.APL.UserEvent", requestId = NewRequestId(), timestamp = Stamp(), locale, arguments = new[] { argument }, source = new { type = "Document", id = "main" } }, token, true);
 
     private static string Build(object request, string? token, bool apl)
     {
