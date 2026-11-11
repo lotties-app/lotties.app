@@ -13,7 +13,8 @@ Apply at the release of the widgets' silent push (README.md in this folder, step
 
 | Recipient | What | When | Where | Status |
 | --- | --- | --- | --- | --- |
-| Apple Push Notification service (iOS app), Google Firebase Cloud Messaging (Android app) | the push token and a content-free message: APNs `{"aps":{"content-available":1},"lotties":{"v":1,"t":"sync"}}` (push type `background`, priority 5, expiry 1 hour), FCM data `{"lotties":"sync","v":"1"}` (priority normal, TTL 1 hour, collapse key `lotties-sync`); timing of each push (at most one per baby every 5 minutes by default) and the app's bundle id / Firebase project. **No** baby id, name, entry, count or time of an entry. The server authenticates with an APNs auth key (ES256 provider token) and a Firebase service account (OAuth token from `oauth2.googleapis.com`) | only in the native app, while a Lotties widget is installed (the app checks at every launch and resume) | Apple's and Google's infrastructure, mostly outside Brazil | built behind `SilentPush:Enabled` (off); iOS receive path written, Android receive path not built |
+| Apple Push Notification service (iOS app), Google Firebase Cloud Messaging (Android app) | the push token and a content-free message: APNs `{"aps":{"content-available":1},"lotties":{"v":1,"t":"sync"}}` (push type `background`, priority 5, expiry 1 hour), FCM data `{"lotties":"sync","v":"1"}` (priority normal, TTL 1 hour, collapse key `lotties-sync`); timing of each push (at most one per baby every 5 minutes by default) and the app's bundle id / Firebase project. **No** baby id, name, entry, count or time of an entry. The server authenticates with an APNs auth key (ES256 provider token) and a Firebase service account (OAuth token from `oauth2.googleapis.com`) | only in the native app, while a Lotties widget is installed (the app checks at every launch and resume) | Apple's and Google's infrastructure, mostly outside Brazil | built behind `SilentPush:Enabled` (off); iOS receive path written (not compiled or run), Android receive path built (compiled and unit-tested, not run on a device) |
+| Google Firebase (Android app only: the Firebase Messaging library inside the app, through Google Play services) | when the app first asks for the token (FCM auto-init is off, so only while a Lotties widget is installed): the library registers this install with Firebase Installations and FCM, sending, per Firebase's documentation (not observed on a device), a Firebase installation id, the app's package and Firebase app id, and app, Android and library versions; afterwards Google delivers the content-free message above. Not sent by a build without `google-services.json` | from the Android app, at a launch or resume with a widget installed | Google's infrastructure, mostly outside Brazil | built (Android, 2026-11-11); inert until the release workflow has the `ANDROID_GOOGLE_SERVICES_JSON_BASE64` secret |
 
 ## Device storage (section 5): add to the `localStorage` row
 
@@ -28,13 +29,17 @@ request logging (`RemoveAllLoggers`: an APNs token is in the request URL), and n
 
 ## New section: 18. Widget silent push (built off, 2026-11-11, docs/design/37b-widget-silent-push.md)
 
-- What starts it: the person adds a Lotties widget in the iOS (later Android) app; the app registers the push token with
+- What starts it: the person adds a Lotties widget in the iOS or Android app; the app registers the push token with
   our API (`POST /push/devices`, current core consent required, refused for demo accounts). Removing the last widget or
-  signing out unregisters it.
+  signing out unregisters it. On Android the token is made by the Firebase library in the app (second row of section 3),
+  which talks to Google only from that moment (auto-init off).
 - What is sent and to whom: section 3 above. Content-free by construction (one constant payload, tested); the server
   never puts a baby id, a name or an entry in it.
 - Who gets a push: the baby's members except a Doctor (her patients never enter the parents' shell), with a current core
   consent; never for a baby on the family's own database (as reminders); the device that made every change of the batch
   is skipped.
 - Gaps and open points: the legal basis (contract or consent); the cold path (a terminated app cannot refresh its widget
-  from a push; any fix that lets native code fetch data is a new flow to audit, design 37b section 12 question 1).
+  from a push; any fix that lets native code fetch data is a new flow to audit, design 37b section 12 question 1; owner
+  decision 2026-11-11: warm only for now). The app asks for a token before it knows whether the server has the flag on,
+  so an Android build with `google-services.json` would register with Google even while the flag is off: the secret
+  that adds the file to release builds is set only with this policy (design 37b section 9).
