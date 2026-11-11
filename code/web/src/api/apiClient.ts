@@ -1,4 +1,5 @@
 import { ApiError, parseRetryAfter } from './ApiError';
+import { pushDeviceHeaders } from './pushDeviceHeader';
 
 /**
  * Dispatched on `window` when the server answers `403 consent_required`: the consent changed under a running app (a material
@@ -71,7 +72,11 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     { method = 'GET', body, rawBody, contentType, signal, headers: extraHeaders }: RequestOptions,
     path: string,
   ) {
-    const headers: Record<string, string> = { Accept: 'application/json', ...extraHeaders };
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      ...pushDeviceHeaders(),
+      ...extraHeaders,
+    };
     if (token) headers.Authorization = `Bearer ${token}`;
     if (rawBody !== undefined) headers['Content-Type'] = contentType ?? 'application/octet-stream';
     else if (body !== undefined) headers['Content-Type'] = 'application/json';

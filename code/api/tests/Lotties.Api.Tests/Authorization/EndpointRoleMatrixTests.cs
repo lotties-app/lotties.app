@@ -273,6 +273,8 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         ["GET /api/v1/push/preferences"] = Access.SignedIn,
         ["POST /api/v1/push/test"] = Access.SignedIn,
         ["POST /api/v1/push/deliveries/{deliveryId:guid}/actions"] = Access.Anonymous,
+        ["POST /api/v1/push/devices"] = Access.SignedIn,
+        ["DELETE /api/v1/push/devices/{deviceId:guid}"] = Access.SignedIn,
         ["PUT /api/v1/babies/{babyId:guid}/notification-preferences"] = Access.Log,
 
         // Voice assistants (docs/design/32-assistants.md): the caller's own default baby (any signed-in user; the PUT accepts

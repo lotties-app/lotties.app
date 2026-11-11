@@ -28,10 +28,13 @@ export function useWidgetStatus(): WidgetStatus {
 export const errorText = (error: unknown): string =>
   (error instanceof Error ? error.message : String(error)).slice(0, 160);
 
-let refresher: (() => Promise<void>) | undefined;
+let refresher: ((force: boolean) => Promise<void>) | undefined;
 
-/** `WidgetSync` registers how to rebuild and send the snapshot now; Hub > About calls it from a button. */
-export function setWidgetRefresher(fn: (() => Promise<void>) | undefined): void {
+/**
+ * `WidgetSync` registers how to rebuild and send the snapshot now (`force`: even when it did not change); Hub > About
+ * calls it from a button, a silent push after its sync.
+ */
+export function setWidgetRefresher(fn: ((force: boolean) => Promise<void>) | undefined): void {
   refresher = fn;
 }
 
@@ -40,5 +43,15 @@ export async function refreshWidgetNow(): Promise<void> {
     setWidgetStatus({ state: 'error', message: 'widget sync is not running' });
     return;
   }
-  await refresher();
+  await refresher(true);
+}
+
+/**
+ * Rebuilds the snapshot now and writes it only when it changed (each write reloads the widgets, which costs iOS widget
+ * budget); resolves when done. `false` when the widget sync is not running.
+ */
+export async function flushWidgetSnapshot(): Promise<boolean> {
+  if (!refresher) return false;
+  await refresher(false);
+  return true;
 }

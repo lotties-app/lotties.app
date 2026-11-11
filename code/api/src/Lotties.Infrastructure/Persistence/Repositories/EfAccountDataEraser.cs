@@ -222,6 +222,7 @@ internal sealed class EfAccountDataEraser(LottiesDbContext context, StoreScope s
         await context.NotificationDeliveries.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.NotificationActions.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.PushSubscriptions.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await context.SilentPushDevices.Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.UserNotificationSettings.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.ProfessionalProfiles.IgnoreQueryFilters().Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await context.UserAssistantSettings.Where(row => row.UserId == userId).ExecuteDeleteAsync(cancellationToken);

@@ -33,6 +33,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
+    // The widgets' silent push (LottiesSilentPush in LottiesBridgeViewController.swift, docs/design/37b-widget-silent-push.md).
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        LottiesSilentPush.shared.didRegister(deviceToken: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        LottiesSilentPush.shared.didFailToRegister()
+    }
+
+    func application(_ application: UIApplication,
+                     didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+                     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        LottiesSilentPush.shared.didReceive(userInfo, completion: completionHandler)
+    }
+
     func application(_ application: UIApplication,
                      configurationForConnecting connectingSceneSession: UISceneSession,
                      options: UIScene.ConnectionOptions) -> UISceneConfiguration {

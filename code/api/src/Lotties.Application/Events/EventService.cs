@@ -1,4 +1,5 @@
 using Lotties.Application.Babies;
+using Lotties.Application.SilentPush;
 using Lotties.Application.Users;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Events;
@@ -25,7 +26,9 @@ namespace Lotties.Application.Events;
 /// stop, pause or resume someone else's running event (<see cref="Event.EnsureEditableBy"/>, deletes
 /// <see cref="Event.EnsureChangeableBy"/>); creating needs only the role the endpoint policy already checked. Reads go
 /// through the caller's <see cref="SectionView"/>: a Doctor without the medications section gets no medication doses (404
-/// for one), and without the formulas section no formula on a bottle.
+/// for one), and without the formulas section no formula on a bottle. Every write that changed the store (a create, an
+/// applied edit, a soft delete) tells <see cref="ISilentPushSignal"/>, so the family's other phones refresh their widgets
+/// (docs/design/37b-widget-silent-push.md section 4.2); an ignored upsert tells nothing.
 /// </remarks>
 internal sealed class EventService : IEventService
 {
@@ -36,6 +39,7 @@ internal sealed class EventService : IEventService
     private readonly IBabyMembershipRepository _memberships;
     private readonly IBabyAccessService _access;
     private readonly ICurrentUser _currentUser;
+    private readonly ISilentPushSignal _silentPush;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<EventService> _logger;
 
@@ -47,6 +51,7 @@ internal sealed class EventService : IEventService
         IBabyMembershipRepository memberships,
         IBabyAccessService access,
         ICurrentUser currentUser,
+        ISilentPushSignal silentPush,
         TimeProvider timeProvider,
         ILogger<EventService> logger)
     {
@@ -57,6 +62,7 @@ internal sealed class EventService : IEventService
         _memberships = memberships ?? throw new ArgumentNullException(nameof(memberships));
         _access = access ?? throw new ArgumentNullException(nameof(access));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
+        _silentPush = silentPush ?? throw new ArgumentNullException(nameof(silentPush));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -81,9 +87,11 @@ internal sealed class EventService : IEventService
             return;
         }
 
-        await EnsureCallerMayChangeAsync(existing, cancellationToken);
+        var userId = await EnsureCallerMayChangeAsync(existing, cancellationToken);
+        var before = existing.UpdatedAt;
         existing.SoftDelete(_timeProvider.GetUtcNow());
         await _events.SaveChangesAsync(cancellationToken);
+        SignalIfChanged(existing, before, userId);
         _logger.LogInformation("Soft deleted event {EventId} of baby {BabyId}", eventId, babyId);
     }
 
@@ -129,7 +137,7 @@ internal sealed class EventService : IEventService
     {
         var now = _timeProvider.GetUtcNow();
         var decision = existing.DecideUpsert(babyId, request.UpdatedAt, now);
-        await EnsureCallerMayEditAsync(existing, request, now, cancellationToken);
+        var userId = await EnsureCallerMayEditAsync(existing, request, now, cancellationToken);
         if (decision != EventUpsertDecision.Apply)
         {
             _logger.LogInformation("Upsert of event {EventId} ignored: {Decision}", existing.Id, decision);
@@ -138,21 +146,27 @@ internal sealed class EventService : IEventService
 
         var eventType = await LoadAvailableTypeAsync(babyId, request.TypeId, cancellationToken);
         await EnsureValidEditPayloadAsync(babyId, existing, eventType, request, cancellationToken);
+        var before = existing.UpdatedAt;
         existing.Edit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes, now, request.UpdatedAt);
         await _events.SaveChangesAsync(cancellationToken);
+        SignalIfChanged(existing, before, userId);
         return new UpsertEventResult(existing, Created: false);
     }
 
-    private async Task EnsureCallerMayChangeAsync(Event existing, CancellationToken cancellationToken)
+    /// <summary>Throws when the caller may not change <paramref name="existing"/>; returns the caller's user id.</summary>
+    private async Task<Guid> EnsureCallerMayChangeAsync(Event existing, CancellationToken cancellationToken)
     {
         var (userId, role) = await CallerRoleAsync(existing.BabyId, cancellationToken);
         existing.EnsureChangeableBy(userId, role);
+        return userId;
     }
 
-    private async Task EnsureCallerMayEditAsync(Event existing, UpsertEventRequest request, DateTimeOffset now, CancellationToken cancellationToken)
+    /// <summary>Throws when the caller may not make this edit of <paramref name="existing"/>; returns the caller's user id.</summary>
+    private async Task<Guid> EnsureCallerMayEditAsync(Event existing, UpsertEventRequest request, DateTimeOffset now, CancellationToken cancellationToken)
     {
         var (userId, role) = await CallerRoleAsync(existing.BabyId, cancellationToken);
         existing.EnsureEditableBy(userId, role, new EventEdit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes), now);
+        return userId;
     }
 
     private async Task<(Guid UserId, BabyRole? Role)> CallerRoleAsync(Guid babyId, CancellationToken cancellationToken)
@@ -162,8 +176,18 @@ internal sealed class EventService : IEventService
         return (user.Id, member?.Role);
     }
 
+    /// <summary>Tells the silent push signal when the write changed the stored event (an unchanged edit or a repeated delete keeps <c>UpdatedAt</c>).</summary>
+    private void SignalIfChanged(Event stored, DateTimeOffset updatedAtBefore, Guid userId)
+    {
+        if (stored.UpdatedAt != updatedAtBefore)
+        {
+            _silentPush.BabyChanged(stored.BabyId, userId);
+        }
+    }
+
     private UpsertEventResult Created(Event created)
     {
+        _silentPush.BabyChanged(created.BabyId, created.CreatedBy);
         _logger.LogInformation("Created event {EventId} of type {EventTypeId} for baby {BabyId}", created.Id, created.TypeId, created.BabyId);
         return new UpsertEventResult(created, Created: true);
     }

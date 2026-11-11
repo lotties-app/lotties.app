@@ -86,6 +86,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>Push subscriptions including revoked ones (revocation is soft).</summary>
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
+    /// <summary>App installs that want silent pushes for their widgets, including revoked ones (docs/design/37b-widget-silent-push.md).</summary>
+    public DbSet<Lotties.Domain.SilentPush.SilentPushDevice> SilentPushDevices => Set<Lotties.Domain.SilentPush.SilentPushDevice>();
+
     public DbSet<UserNotificationSettings> UserNotificationSettings => Set<UserNotificationSettings>();
 
     public DbSet<BabyNotificationPreferences> BabyNotificationPreferences => Set<BabyNotificationPreferences>();

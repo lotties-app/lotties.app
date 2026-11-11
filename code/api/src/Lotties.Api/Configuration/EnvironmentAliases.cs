@@ -1,9 +1,10 @@
 using Lotties.Infrastructure.Persistence.AutoMigration;
 using Lotties.Infrastructure.Push;
+using Lotties.Infrastructure.SilentPush;
 
 namespace Lotties.Api.Configuration;
 
-/// <summary>Maps the flat environment variable names used by docker compose onto configuration keys (push VAPID secrets, <c>DB_AUTO_MIGRATE</c> and the trusted proxy networks included).</summary>
+/// <summary>Maps the flat environment variable names used by docker compose onto configuration keys (push VAPID secrets, the silent push switch and APNs/FCM credentials, <c>DB_AUTO_MIGRATE</c> and the trusted proxy networks included).</summary>
 internal static class EnvironmentAliases
 {
     public static readonly IReadOnlyDictionary<string, string> VariableToKey = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -16,6 +17,7 @@ internal static class EnvironmentAliases
         ["FORWARDED_HEADERS_TRUSTED_NETWORKS"] = "ForwardedHeaders:TrustedNetworks",
     }
     .Concat(PushEnvironmentVariables.VariableToKey)
+    .Concat(SilentPushEnvironmentVariables.VariableToKey)
     .Concat(DatabaseMigrationSettings.VariableToKey)
     .ToDictionary(alias => alias.Key, alias => alias.Value, StringComparer.Ordinal);
 

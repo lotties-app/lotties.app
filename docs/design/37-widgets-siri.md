@@ -453,7 +453,8 @@ The data contract (2.1, 2.2) is unchanged.
    decision: a background push (APNs `content-available` / FCM data message; native push is design 19, not built) that
    wakes native code to fetch a summary; a widget-side fetch with its own token (changes the "no network in the widget"
    rule and the privacy policy); `BGAppRefreshTask` / WorkManager, which iOS and Android run when they choose. All need
-   native code that reads the server, since a native process cannot read the app's IndexedDB.
+   native code that reads the server, since a native process cannot read the app's IndexedDB. **Decided 2026-11-11:
+   silent push** (section 17).
 2. **Siri and Android voice entries** (sections 8 and 14) go to the server through MCP only; the phone's snapshot is not
    touched, so the widget shows them after the app pulls. Applying the same optimistic change as the widget buttons
    (`LottiesLogger.log`, `WidgetOutbox.applyToSnapshot`) after a successful MCP write would close it on the same phone.
@@ -471,3 +472,12 @@ every return to the foreground (the 30-second tick still pulls if not); the iOS 
 `ios-compile-check` workflow; how late Android 12+'s inexact alarm comes for the one-minute renders. The web side is
 covered by `WidgetSync.test.tsx` and `SyncEngine.test.ts`; the Android `TextChanges` and `RefreshPlan` by
 `WidgetLogicTest`.
+
+## 17. Silent push (2026-11-11, docs/design/37b-widget-silent-push.md)
+
+Owner decision for 16.3.1: a content-free silent push from the server wakes the app, which pulls the sync; the
+existing runner (16.1) rewrites the snapshot and the widgets reload. Server side built and off by default
+(`SilentPush:Enabled`), iOS receive path written (not compiled, not run), Android not built (needs the Firebase
+Messaging library), privacy text held. It works only while the app process and its WebView are alive (suspended in the
+background); a terminated app keeps today's behaviour (design 37b section 5.3). Siri and Android voice entries (16.3.2)
+reach the same phone's widget through the same push once it is on (design 37b section 8).

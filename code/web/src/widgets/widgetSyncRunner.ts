@@ -39,7 +39,8 @@ const NOTHING_DRAINED = { written: 0, removed: 0 };
  *   pull merging what other phones logged, a drain): debounced;
  * - the selected baby, the cached predictions or the app language changing: debounced;
  * - the app leaving the foreground (appStateChange, visibilitychange): right away, the OS suspends it soon after;
- * - Hub > About "send now" (`refreshWidgetNow`): right away, even when nothing changed.
+ * - Hub > About "send now" (`refreshWidgetNow`): right away, even when nothing changed;
+ * - a silent push's sync (`flushWidgetSnapshot`, widgets/silentPush.ts): right away, only when something changed.
  * Every run drains the widget outbox first, so the app never writes a snapshot that hides a widget tap it has not
  * applied yet. Runs never overlap; a trigger during a run asks for one more.
  */
@@ -51,7 +52,7 @@ export function startWidgetSync({
 }: WidgetSyncOptions): () => void {
   let stopped = false;
   let lastJson = '';
-  let running = false;
+  let loop: Promise<void> | undefined;
   let again = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -84,17 +85,7 @@ export function startWidgetSync({
     await publish(json);
   };
 
-  const refresh = async () => {
-    if (timer !== undefined) {
-      clearTimeout(timer);
-      timer = undefined;
-    }
-    if (stopped) return;
-    if (running) {
-      again = true;
-      return;
-    }
-    running = true;
+  const runLoop = async () => {
     try {
       do {
         again = false;
@@ -103,8 +94,23 @@ export function startWidgetSync({
     } catch (error) {
       setWidgetStatus({ state: 'error', message: errorText(error) });
     } finally {
-      running = false;
+      loop = undefined;
     }
+  };
+
+  /** Runs now, or asks the running run for one more; resolves when the snapshot is written (or found unchanged). */
+  const refresh = (): Promise<void> => {
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      timer = undefined;
+    }
+    if (stopped) return Promise.resolve();
+    if (loop) {
+      again = true;
+      return loop;
+    }
+    loop = runLoop();
+    return loop;
   };
 
   const refreshSoon = () => {
@@ -117,8 +123,8 @@ export function startWidgetSync({
   };
 
   void refresh();
-  setWidgetRefresher(async () => {
-    lastJson = '';
+  setWidgetRefresher(async (force) => {
+    if (force) lastJson = '';
     await refresh();
   });
 

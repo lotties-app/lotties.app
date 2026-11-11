@@ -81,6 +81,7 @@ internal static class DomainExceptionStatusCodes
         [typeof(ProposalNotPendingException)] = StatusCodes.Status409Conflict,
         [typeof(ReplacedPrescriptionNotFoundException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(PushNotConfiguredException)] = StatusCodes.Status409Conflict,
+        [typeof(SilentPushNotConfiguredException)] = StatusCodes.Status409Conflict,
         [typeof(PushEndpointNotAllowedException)] = StatusCodes.Status422UnprocessableEntity,
         [typeof(NotificationActionNotFoundException)] = StatusCodes.Status404NotFound,
         [typeof(SnoozeLimitReachedException)] = StatusCodes.Status409Conflict,

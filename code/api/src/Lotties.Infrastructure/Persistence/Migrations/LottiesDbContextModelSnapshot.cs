@@ -2648,6 +2648,79 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("user_rest_settings", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.SilentPush.SilentPushDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApnsEnvironment")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("apns_environment");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("channel");
+
+                    b.Property<int>("ConsecutiveFailures")
+                        .HasColumnType("integer")
+                        .HasColumnName("consecutive_failures");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<DateTimeOffset?>("LastSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_sent_at");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("RevokedReason")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("revoked_reason");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("token");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(43)
+                        .HasColumnType("character(43)")
+                        .HasColumnName("token_hash")
+                        .IsFixedLength();
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_silent_push_devices");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_silent_push_devices_token_hash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_silent_push_devices_user_id")
+                        .HasFilter("revoked_at IS NULL");
+
+                    b.ToTable("silent_push_devices", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Stores.BabyStoreAssignment", b =>
                 {
                     b.Property<Guid>("BabyId")
@@ -3735,6 +3808,16 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_user_rest_settings_users_user_id");
+                });
+
+            modelBuilder.Entity("Lotties.Domain.SilentPush.SilentPushDevice", b =>
+                {
+                    b.HasOne("Lotties.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_silent_push_devices_users_user_id");
                 });
 
             modelBuilder.Entity("Lotties.Domain.Stores.BabyStoreAssignment", b =>

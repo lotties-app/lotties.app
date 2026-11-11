@@ -57,6 +57,7 @@ public sealed class ConsentGateCoverageTests(ApiFactory factory) : IClassFixture
         ["POST /api/v1/push/subscriptions/revoke"] = "Switching a device off.",
         ["DELETE /api/v1/push/subscriptions/{subscriptionId:guid}"] = "Switching a device off.",
         ["POST /api/v1/push/deliveries/{deliveryId:guid}/actions"] = OutsideReason,
+        ["DELETE /api/v1/push/devices/{deviceId:guid}"] = "Switching a device off.",
 
         ["POST /api/v1/alexa"] = OutsideReason + " The command layer answers 'open the Lotties app to accept the terms'.",
         ["POST /api/v1/mcp"] = OutsideReason + " The command layer answers an MCP error.",
