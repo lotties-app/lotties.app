@@ -233,6 +233,9 @@ export const apiPaths = {
   pushSettings: () => `${API_PREFIX}/push/settings`,
   pushPreferences: () => `${API_PREFIX}/push/preferences`,
   pushTest: () => `${API_PREFIX}/push/test`,
+  /** The app installs that want silent pushes for their widgets (docs/design/37b-widget-silent-push.md). */
+  pushDevices: () => `${API_PREFIX}/push/devices`,
+  pushDevice: (deviceId: string) => `${API_PREFIX}/push/devices/${enc(deviceId)}`,
   /** Anonymous: body `{ action, token }`, the per-delivery token is the credential. */
   pushDeliveryAction: (deliveryId: string) =>
     `${API_PREFIX}/push/deliveries/${enc(deliveryId)}/actions`,

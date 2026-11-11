@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { flushSync } from 'react-dom';
 import { Box, CircularProgress } from '@mui/material';
+import type { ApiClient } from '../api/apiClient';
 import { useApiClient } from '../api/ApiClientContext';
 import { useAuth } from '../auth/useAuth';
 import { useConsent } from '../consent/ConsentContext';
@@ -10,6 +11,7 @@ import { DatabaseProvider } from '../db/DatabaseProvider';
 import { requeueDeadLetters } from '../db/outbox';
 import { isNativeApp } from '../platform/nativeApp';
 import { SyncProvider } from '../sync/SyncProvider';
+import { WidgetPushSync } from '../widgets/WidgetPushSync';
 import { WidgetSync } from '../widgets/WidgetSync';
 import type { SyncEngineOptions } from '../sync/SyncEngine';
 import { deleteLegacyDatabase, openAccountDatabase } from './accountDatabase';
@@ -78,7 +80,7 @@ function AccountData({ accountId, syncOptions, children }: Props & { accountId: 
     end: async () => {
       // Unmount every screen first, so no live query touches the database while it is deleted.
       flushSync(() => setEnding(true));
-      await endAccountSession(db, logout, releaseThisDevice(api));
+      await endAccountSession(db, logout, releaseDevices(api));
     },
   };
 
@@ -94,9 +96,26 @@ function AccountData({ accountId, syncOptions, children }: Props & { accountId: 
       <DatabaseProvider db={db}>
         <SyncProvider options={syncOptions} enabled={consent.syncAllowed}>
           {isNativeApp() && <WidgetSync />}
+          {isNativeApp() && <WidgetPushSync />}
           {children}
         </SyncProvider>
       </DatabaseProvider>
     </AccountSessionContext>
   );
+}
+
+/**
+ * What this device registered for the account, released on sign-out while the token still works: the Web Push
+ * subscription and, in the app, the widgets' silent push registration (docs/design/37b-widget-silent-push.md). Best
+ * effort each.
+ */
+function releaseDevices(api: ApiClient): () => Promise<void> {
+  const releasePush = releaseThisDevice(api);
+  return async () => {
+    await releasePush().catch(() => undefined);
+    if (!isNativeApp()) return;
+    await import('../widgets/silentPush')
+      .then(({ releaseSilentPushDevice }) => releaseSilentPushDevice(api))
+      .catch(() => undefined);
+  };
 }

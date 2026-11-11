@@ -38,6 +38,11 @@ interface Loaded {
 
 let plugin: Promise<Loaded> | undefined;
 
+/** The `LottiesShared` Capacitor plugin proxy, registered once (widgets/silentPushBridge.ts uses it too). */
+export function loadLottiesShared(): Promise<{ native: unknown }> {
+  return load();
+}
+
 function load(): Promise<Loaded> {
   plugin ??= import('@capacitor/core').then(({ registerPlugin }) => ({
     native: registerPlugin<LottiesSharedPlugin>('LottiesShared'),
