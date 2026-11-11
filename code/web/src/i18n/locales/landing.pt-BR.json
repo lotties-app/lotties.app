@@ -92,6 +92,10 @@
         "caption": "Gráficos de sono, mamadas e fraldas",
         "alt": "A tela Insights com 14 dias de sono em um gráfico de barras e a média de sono por dia"
       },
+      "rhythm": {
+        "caption": "O ritmo dela, só com o registro dela",
+        "alt": "A seção de ritmo em Insights: horários habituais de dormir e acordar, duração da noite como faixa, sonecas e mamadas por dia e o que o registro mostra, como fatos simples"
+      },
       "vaccines": {
         "caption": "Vacinas, com o calendário do seu país",
         "alt": "A tela de vacinas com as doses aplicadas e as previstas por idade"

@@ -1,6 +1,6 @@
 # 48. Her rhythm (design, 2026-11-10)
 
-Status: **API built, web not started.** Owner request: the app learns each baby's own pattern from the events already
+Status: **API and web built** (web: section 9). Owner request: the app learns each baby's own pattern from the events already
 logged and shows it as plain facts: when she usually goes to bed and wakes up, how long the night is, how many naps and
 feeds a day and the usual gap between feeds, and descriptive associations such as "nights after 3 or more evening feeds
 vs. fewer" or "nights after a day with a dirty diaper vs. none".
@@ -194,3 +194,27 @@ repository, so an unreachable store is the usual retriable 503.
   `Lotties.Api.Tests/Endpoints/RhythmEndpointTests.cs` (200 with the wire shape, a soft-deleted night left out, query
   validation, roles and doctor scope, unknown baby 403, empty baby), `Application/RhythmServiceTests.cs` (unknown baby
   null, load window).
+
+## 9. Web
+
+- `code/web/src/rhythm/`: `rhythmApi.ts` (types, defensive `parseRhythm`: an unknown status becomes `unknown`, a value
+  is kept only with `ok` and real numbers, an `ok` outcome without a difference, or an `evening_feeds` one without a
+  threshold, is not shown; `getRhythm` maps 403/404 to `null`), `useRhythm.ts` (react-query, memory cache only, never
+  Dexie, localStorage or the outbox; online only; no retry on 4xx), `rhythmModel.ts` (what a metric still needs from the
+  `rule` of the answer, clocks and ranges through the Intl helpers, one descriptive sentence per `ok` outcome, the
+  rule in plain words), `RhythmSection.tsx`, `rhythmFixtures.ts` (synthetic answers), strings
+  `i18n/locales/{en,pt-BR}/rhythm.json`.
+- Shown in Insights under the insight cards (`pages/InsightsPage.tsx`), titled with the baby's name (no pronoun: the app
+  has no gender setting). Cards: Sleep (bed time and wake-up "around 19:45" or "Varies" with the spread, night length
+  and the two stretches as p25 to p75 with the median), Naps (per day, usual starts), Feeds (per day, time between
+  feeds), What the log shows (the sentences; when none passed, "Not enough nights to compare yet." with the nights so
+  far, or "No clear difference between the nights in the log yet." when a comparison had enough nights but did not
+  pass). A metric not ready says what it needs ("Needs 2 more nights in the log"), never a value. Footer: the rule in one
+  line and "How this is worked out" with the rule values.
+- States: skeleton while loading, a muted line with Reload on error, a muted line offline with nothing cached (the
+  cached answer is shown otherwise), nothing at all on 403/404 or an answer not shaped like a rhythm.
+- No chart (the optional night-length range bar was not built).
+- Preview `/dev/rhythm?state=ok|partial|empty|varies|error`; showcase screenshot `rhythm` (docs/showcase-media.md).
+- Tests `rhythm/rhythm.test.tsx`: parser, model (missing counts, plural forms, sentences in en and pt-BR, varies), the
+  section states, no causal, judging or advising word in either catalog or any rendered scenario, axe in light, dark and
+  night.

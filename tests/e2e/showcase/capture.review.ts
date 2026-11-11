@@ -37,6 +37,7 @@ export const SCREENS: Screen[] = [
   { id: 'log-sleep', route: '/dev/sheet?state=sleep' },
   { id: 'log-diaper', route: '/dev/sheet?state=diaper' },
   { id: 'insights', route: '/dev/insights?state=rich' },
+  { id: 'rhythm', route: '/dev/rhythm?state=ok' },
   { id: 'vaccines', route: '/dev/vaccines?state=timeline' },
   { id: 'sharing', route: '/dev/roles' },
   { id: 'doctor', route: '/dev/doctor-dashboard?state=summary' },

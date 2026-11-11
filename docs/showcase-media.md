@@ -42,6 +42,7 @@ committing: open the new files, or the landing page at `/welcome` in a dev serve
 | `bottle-followup` | `/dev/now?state=bottlesleep` | the follow-up card after she fell asleep during the bottle |
 | `log-feed`, `log-sleep`, `log-diaper` | `/dev/sheet?state=bottle|sleep|diaper` | the event sheets |
 | `insights` | `/dev/insights?state=rich` | 14 days of charts |
+| `rhythm` | `/dev/rhythm?state=ok` | Insights > her rhythm: usual times, ranges, naps, feeds, what the log shows |
 | `vaccines` | `/dev/vaccines?state=timeline` | the vaccine timeline |
 | `sharing` | `/dev/roles` | members, roles and the invite form |
 | `doctor` | `/dev/doctor-dashboard?state=summary` | the pediatrician's summary of what was shared |

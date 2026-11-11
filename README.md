@@ -23,6 +23,7 @@ Open-source baby event-tracking PWA. Log feeds, sleep, diapers and other routine
   <td align="center"><img src="code/web/public/showcase/log-feed-light-en.webp" alt="Log a feed" width="150"><br><sub>Log a feed</sub></td>
   <td align="center"><img src="code/web/public/showcase/bottle-followup-light-en.webp" alt="Bottle follow-up" width="150"><br><sub>Bottle follow-up</sub></td>
   <td align="center"><img src="code/web/public/showcase/insights-light-en.webp" alt="Insights" width="150"><br><sub>Insights</sub></td>
+  <td align="center"><img src="code/web/public/showcase/rhythm-light-en.webp" alt="Her rhythm" width="150"><br><sub>Her rhythm</sub></td>
   <td align="center"><img src="code/web/public/showcase/vaccines-light-en.webp" alt="Vaccines" width="150"><br><sub>Vaccines</sub></td>
   <td align="center"><img src="code/web/public/showcase/sharing-light-en.webp" alt="Sharing with a caregiver" width="150"><br><sub>Sharing with a caregiver</sub></td>
   <td align="center"><img src="code/web/public/showcase/doctor-light-en.webp" alt="Doctor view" width="150"><br><sub>Doctor view</sub></td>
