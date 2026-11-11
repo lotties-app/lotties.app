@@ -178,5 +178,35 @@
     "title": "Não é um dispositivo médico",
     "body": "As estimativas vêm do seu histórico registrado e não são orientação médica. Lotties ajuda a registrar e a perceber padrões; não faz diagnósticos nem recomenda tratamentos.",
     "care": "Diante de qualquer preocupação com a saúde, ou antes de dar ou mudar um remédio, fale com o pediatra ou o farmacêutico. Em caso de emergência, ligue para o número de emergência da sua região."
+  },
+  "phoneApp": {
+    "title": "Instale o app no celular",
+    "beta": "Teste beta",
+    "intro": "Os apps de celular estão em teste beta fechado e ainda não estão nas lojas. Entre no teste abaixo para instalá-los antes. Eles podem mudar ou falhar, então continue usando o site para o que for importante.",
+    "iphone": {
+      "title": "iPhone",
+      "body": "Entre no beta pelo TestFlight, o app da Apple para testar apps antes do lançamento. Você precisa do app gratuito TestFlight no iPhone.",
+      "cta": "Entrar pelo TestFlight",
+      "note": "Não está aceitando testadores? Tente de novo mais tarde."
+    },
+    "android": {
+      "title": "Android",
+      "group": {
+        "title": "Entre no grupo de testadores",
+        "hint": "Entre primeiro no Google (com a conta que você usa no celular), depois abra o grupo e toque em Participar do grupo."
+      },
+      "optIn": {
+        "title": "Aceite o teste com a mesma conta",
+        "hint": "Abra o link no Chrome do celular, não dentro de outro app. Quando aparecer que você é testador, está pronto."
+      },
+      "cta": "Instalar pelo Google Play",
+      "note": "Confira se o perfil no app Play Store é a mesma conta. O Google Play leva algumas horas depois que você entra no grupo (em geral menos de meio dia); se o app não for encontrado, tente de novo mais tarde."
+    },
+    "bug": {
+      "before": "Achou um erro?",
+      "link": "Abra uma issue no GitHub",
+      "linkOther": "Informe um problema",
+      "after": "."
+    }
   }
 }

@@ -198,6 +198,11 @@ run on a simulator or an iPhone, and read the Xcode logs when the CI archive fai
 - Install: Android testers follow the Play opt-in link (or sideload the APK; an APK signed with the upload key cannot
   update a Play-installed copy and the reverse, pick one channel per device). iPhone testers install TestFlight and
   accept the invitation.
+- Website sign-up: the landing page's "Get the phone app" section shows the TestFlight public link and the Android
+  testers group, opt-in and Play listing links, from the build values `VITE_TESTFLIGHT_URL`,
+  `VITE_ANDROID_TESTERS_GROUP_URL`, `VITE_ANDROID_OPTIN_URL` and `VITE_PLAY_STORE_URL` (docs/DEPLOY.md "Phone app
+  links"). TestFlight public links can be full or closed: the card says to try again later. Play shows the app a few
+  hours after a tester joins the group.
 - The apps are bundled web builds: every web change that should reach the apps needs a new mobile build.
 - Server side before testers sign in: Keycloak redirect URIs and web origins, API `CORS_ALLOWED_ORIGINS`
   (docs/design/12-mobile-capacitor.md sections 4 and 5).

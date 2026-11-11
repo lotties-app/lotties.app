@@ -15,6 +15,7 @@ import { LandingFooter } from './LandingFooter';
 import { LandingHeader } from './LandingHeader';
 import { OpenSourceStrip } from './OpenSourceStrip';
 import { SessionNotice, type NoticeKind } from './SessionNotice';
+import { PhoneAppStrip } from './PhoneAppStrip';
 import { ShowcaseStrip } from './ShowcaseStrip';
 import { StepsStrip } from './StepsStrip';
 import { StoryStrip } from './StoryStrip';
@@ -108,6 +109,7 @@ export default function LandingPage({
         <InstallStrip />
         <FeatureGrid />
         <ShowcaseStrip />
+        <PhoneAppStrip />
         <StepsStrip />
         <DataChoiceStrip />
         <ImportantNotice />

@@ -457,3 +457,78 @@ describe('claims', () => {
     expect(claimed && found.length > 0, `tracking dependencies: ${found.join(', ')}`).toBe(false);
   });
 });
+
+describe('phone app section', () => {
+  const NAMES = [
+    'VITE_TESTFLIGHT_URL',
+    'VITE_ANDROID_TESTERS_GROUP_URL',
+    'VITE_ANDROID_OPTIN_URL',
+    'VITE_PLAY_STORE_URL',
+    'VITE_REPO_URL',
+    'VITE_ISSUES_URL',
+  ] as const;
+  const ALL = {
+    VITE_TESTFLIGHT_URL: 'https://testflight.example.test/join/abc',
+    VITE_ANDROID_TESTERS_GROUP_URL: 'https://groups.example.test/g/testers',
+    VITE_ANDROID_OPTIN_URL: 'https://play.example.test/apps/testing/app',
+    VITE_PLAY_STORE_URL: 'https://play.example.test/store/app',
+    VITE_REPO_URL: 'https://github.com/example/lotties',
+  };
+  const open = async (env: Partial<Record<(typeof NAMES)[number], string>> = {}) => {
+    for (const name of NAMES) vi.stubEnv(name, env[name] ?? '');
+    renderLanding();
+    await screen.findByRole('heading', { level: 1 });
+  };
+  const section = () => screen.queryByRole('region', { name: /Get the phone app/ });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('is absent when no link is configured', async () => {
+    await open();
+    expect(section()).toBeNull();
+    expect(screen.queryByText('Get the phone app')).toBeNull();
+  });
+
+  it('shows both cards as a beta test with plain new-tab links', async () => {
+    await open(ALL);
+    const box = within(section()!);
+    expect(box.getByText('Beta test')).toBeTruthy();
+    const link = (name: string | RegExp) => box.getByRole('link', { name });
+    expect(link(/Join on TestFlight/).getAttribute('href')).toBe(ALL.VITE_TESTFLIGHT_URL);
+    expect(link('Join the testers group').getAttribute('href')).toBe(
+      ALL.VITE_ANDROID_TESTERS_GROUP_URL,
+    );
+    expect(link('Opt in with the same account').getAttribute('href')).toBe(
+      ALL.VITE_ANDROID_OPTIN_URL,
+    );
+    expect(link(/Install from Google Play/).getAttribute('href')).toBe(ALL.VITE_PLAY_STORE_URL);
+    for (const a of box.getAllByRole('link')) {
+      expect(a.getAttribute('target')).toBe('_blank');
+      expect(a.getAttribute('rel')).toBe('noopener noreferrer');
+    }
+    expect(box.getByText('Not accepting testers? Try again later.')).toBeTruthy();
+    expect(box.getByRole('link', { name: 'Open an issue on GitHub' }).getAttribute('href')).toMatch(
+      /^https:\/\/github\.com\/example\/lotties\/issues\/new/,
+    );
+  });
+
+  it('hides a card, a step or the button whose link is not set', async () => {
+    await open({ VITE_ANDROID_OPTIN_URL: ALL.VITE_ANDROID_OPTIN_URL });
+    const box = within(section()!);
+    expect(box.queryByRole('heading', { name: 'iPhone' })).toBeNull();
+    expect(box.queryByRole('link', { name: /Join on TestFlight/ })).toBeNull();
+    expect(box.queryByRole('link', { name: 'Join the testers group' })).toBeNull();
+    expect(box.queryByRole('link', { name: /Install from Google Play/ })).toBeNull();
+    expect(box.getByRole('link', { name: 'Opt in with the same account' })).toBeTruthy();
+  });
+
+  it('ignores a value that is not a web address', async () => {
+    await open({ VITE_TESTFLIGHT_URL: 'javascript:alert(1)' });
+    expect(section()).toBeNull();
+  });
+
+  it('is not shown inside the store app', async () => {
+    installState = { ...BASE, native: true };
+    await open(ALL);
+    expect(section()).toBeNull();
+  });
+});

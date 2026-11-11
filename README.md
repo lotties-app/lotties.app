@@ -78,6 +78,7 @@ With Docker: copy `.env.example` to `.env`, fill in the values, then run `docker
 | `VITE_REPO_URL` | Optional web build argument: source repository link in the landing page footer (http/https only); empty (default) hides it |
 | `VITE_ISSUES_URL` | Optional web build argument: "Report a problem" link (http/https only); empty = `VITE_REPO_URL` + `/issues/new`, else a `mailto:` to `VITE_PRIVACY_CONTACT_EMAIL`, else hidden ([docs/DEPLOY.md](docs/DEPLOY.md) "Footer links") |
 | `VITE_SUPPORT_URL` | Optional web build argument: "Support Lotties" link (http/https only, a link out, no payment in the app); empty (default) hides it |
+| `VITE_TESTFLIGHT_URL`, `VITE_ANDROID_TESTERS_GROUP_URL`, `VITE_ANDROID_OPTIN_URL`, `VITE_PLAY_STORE_URL` | Optional web build arguments: the beta-test links of the landing page's "Get the phone app" section (http/https only; each empty one hides its part, all empty hide the section); docs/DEPLOY.md "Phone app links" |
 | `VITE_PRIVACY_CONTROLLER_NAME`, `VITE_PRIVACY_CONTACT_EMAIL`, `VITE_PRIVACY_DPO` | Web build arguments (public): who is responsible for the data, the privacy contact and the encarregado shown on `/privacy`; empty = neutral defaults. Set them before a store submission ([docs/PRIVACY-OWNER-CHECKLIST.md](docs/PRIVACY-OWNER-CHECKLIST.md)) |
 | `AUTH_AUTHORITY` | OIDC issuer URL (config `Auth:Authority`); required outside Development |
 | `AUTH_AUDIENCE` | API audience that access tokens must carry (config `Auth:Audience`); required outside Development |

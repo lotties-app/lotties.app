@@ -67,6 +67,7 @@ Compose reads `.env` from the repository root.
 | `VITE_REPO_URL` | web build | no (empty) | Source repository link in the landing page footer and Hub > About (http/https only; labelled "Source code on GitHub" for a github.com address); empty hides it. Set it at the public flip: it also turns on the default "Report a problem" link (`<repo>/issues/new`). See "Footer links" |
 | `VITE_ISSUES_URL` | web build | no (empty) | "Report a problem" link in the footer and Hub > About (http/https only). Empty = `VITE_REPO_URL` + `/issues/new` when the repository is set, else a `mailto:` to `VITE_PRIVACY_CONTACT_EMAIL` when that is set, else hidden |
 | `VITE_SUPPORT_URL` | web build | no (empty) | "Support the developer" link in the footer and Hub > About (http/https only, opens in a new tab; a link out, never a payment in the app: docs/design/43-funding-options.md); empty hides it |
+| `VITE_TESTFLIGHT_URL`, `VITE_ANDROID_TESTERS_GROUP_URL`, `VITE_ANDROID_OPTIN_URL`, `VITE_PLAY_STORE_URL` | web build | no (empty) | Beta-test links of the landing page "Get the phone app" section (http/https only); each empty one hides its card, step or button, all empty hide the section. See "Phone app links" |
 | `VITE_PRIVACY_CONTROLLER_NAME` | web build | before a store submission | The controller (person or company) the privacy policy names; empty = "the Lotties project maintainers". See "Privacy policy" |
 | `VITE_PRIVACY_CONTACT_EMAIL` | web build | before a store submission | Contact address for privacy requests (a plain email, shown as a `mailto:` link); empty = the GitHub issue tracker and private reports |
 | `VITE_PRIVACY_DPO` | web build | before a store submission | The encarregado (DPO) contact: a name, an email or both; empty = "the contact above" |
@@ -474,6 +475,26 @@ open `https://github.com/<you>/<throwaway>/issues/new?template=bug.yml&version=v
 flip set it (and, if wanted, `VITE_SUPPORT_URL`) in `deploy/homelab/.env` and redeploy: the changed values rebuild the
 web image. They reach the bundle like the privacy values above (compose build args, the web `Dockerfile`,
 `deploy/homelab/deploy.sh`, `code/web/.env.native.local` for the native build).
+
+### Phone app links
+
+The landing page has a "Get the phone app" section (after "See it in action") that sends visitors to the beta tests of
+the iPhone and Android apps (docs/MOBILE-RELEASE.md). It is plain outbound links in a new tab (no script, nothing about
+the person), and each part appears only when its link is set (http/https only, anything else counts as unset); with all
+four empty the whole section is absent, and the store apps never show it. Values are public build values like
+`VITE_REPO_URL`, set in `deploy/homelab/.env` (or the root `.env` for compose) and redeployed; a changed value
+rebuilds the web image.
+
+| Value | What it is | Shown as |
+|-------|------------|----------|
+| `VITE_TESTFLIGHT_URL` | TestFlight public link: App Store Connect > the app > TestFlight > External Testing > the group > Public Link (`https://testflight.apple.com/join/<code>`) | iPhone card with "Join on TestFlight" |
+| `VITE_ANDROID_TESTERS_GROUP_URL` | The Google Group whose members are the Play closed-test testers (`https://groups.google.com/g/<group>`) | Android step 1, "Join the testers group" |
+| `VITE_ANDROID_OPTIN_URL` | Play Console > the app > Testing > Closed testing > the track > Testers > "How testers join" link (`https://play.google.com/apps/testing/app.lotties.app`) | Android step 2, "Opt in with the same account" |
+| `VITE_PLAY_STORE_URL` | The Play listing (`https://play.google.com/store/apps/details?id=app.lotties.app`) | "Install from Google Play" button |
+
+The Android card is drawn when at least one of its three values is set. "Found a bug? Open an issue on GitHub" under the
+cards is the footer's "Report a problem" link (`VITE_ISSUES_URL`, else `VITE_REPO_URL` + `/issues/new`), hidden
+when neither exists.
 
 Operational facts the policy relies on (check them when the setup changes): the API logs no IP addresses, request
 lines or record content; the web container's nginx keeps its stock access log (client address from
