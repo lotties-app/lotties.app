@@ -12,7 +12,7 @@ Open-source baby event-tracking PWA. Log feeds, sleep, diapers and other routine
 
 <p align="center">
   <a href="code/web/public/showcase/demo-en.mp4" title="Open the full quality video (MP4)">
-    <img src="code/web/public/showcase/demo-en-anim.webp" alt="Demo of Lotties: logging a diaper, the bottle follow-up, insights, vaccines, sharing and the doctor view" width="240">
+    <img src="code/web/public/showcase/demo-en-anim.webp" alt="Demo of Lotties: logging a diaper, the bottle follow-up, insights, her rhythm, vaccines, sharing and the doctor view" width="240">
   </a>
   <br><sub>50 s tour, no sound. Full quality: <a href="code/web/public/showcase/demo-en.mp4">MP4</a>, <a href="code/web/public/showcase/demo-pt-BR.mp4">em português</a></sub>
 </p>
