@@ -1,0 +1,28 @@
+{
+  "communityInsights": {
+    "title": "Comparações com outros bebês",
+    "state": {
+      "none": "Desativado para {{name}}.",
+      "on": "As comparações com outros bebês estão ativadas para {{name}} desde {{date}} (ativadas por {{who}}).",
+      "off": "Desativado para {{name}} desde {{date}} (desativado por {{who}}).",
+      "renewalNeeded": "O texto mudou desde que foi ativado, por isso está desativado para {{name}} até que vocês concordem de novo.",
+      "you": "você"
+    },
+    "open": "Ativar…",
+    "turnOff": "Desativar",
+    "screen": {
+      "intro": "Você pode deixar que alguns registros de {{name}} sejam usados, junto com os de muitos outros bebês, para calcular estatísticas por idade: quanto leite bebês dessa idade costumam tomar, como o crescimento se compara, tempo de bruços, rotinas de sono e alimentação, o que mais ajuda no choro.",
+      "onlyUse": "Só usamos idade em semanas, quantidades, durações, contagens e medidas. Nunca nomes, data de nascimento, anotações, fotos, localização nem horários exatos.",
+      "groups": "Só publicamos números de grupos com pelo menos 20 bebês de famílias diferentes. Nenhum registro de {{name}} sai da conta de vocês, e nada é vendido nem usado para publicidade.",
+      "optional": "É opcional. Sem isso, o app funciona igual. Você pode desativar quando quiser: os registros de {{name}} deixam de ser usados no próximo cálculo. Números de grupo já calculados não têm como ser separados, e são substituídos.",
+      "guardian": "Sou o pai, a mãe ou o responsável legal de {{name}}.",
+      "agree": "Concordo que os registros de {{name}} sejam usados para essas estatísticas, como descrito na <privacy>política de privacidade</privacy>.",
+      "turnOn": "Ativar para {{name}}",
+      "notNow": "Agora não"
+    },
+    "errors": {
+      "outdated": "Este texto mudou. Recarregue o app e leia o texto atual.",
+      "notAllowed": "Só titulares e responsáveis podem mudar isso."
+    }
+  }
+}

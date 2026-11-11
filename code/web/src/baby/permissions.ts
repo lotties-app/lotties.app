@@ -43,6 +43,15 @@ export function canManageDataStore(baby: Pick<Baby, 'role'>): boolean {
 }
 
 /**
+ * Community insights (docs/design/34-community-insights.md section 3.1): an Owner or a Parent of the
+ * baby sees the consent and turns it on or off; Caregiver, Viewer and Doctor never see it. The
+ * server also hides the feature (404) while it is off.
+ */
+export function canManageCommunityInsights(baby: Pick<Baby, 'role'>): boolean {
+  return canWrite(baby);
+}
+
+/**
  * The baby's Doctor (docs/design/16-doctor-access.md): reads like a Viewer, writes her own notes and
  * consultation measurements, logs nothing and gets no reminders.
  */

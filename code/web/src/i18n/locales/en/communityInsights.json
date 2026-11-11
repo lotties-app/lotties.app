@@ -1,0 +1,28 @@
+{
+  "communityInsights": {
+    "title": "Community insights",
+    "state": {
+      "none": "Off for {{name}}.",
+      "on": "Community insights are on for {{name}} since {{date}} (turned on by {{who}}).",
+      "off": "Off for {{name}} since {{date}} (turned off by {{who}}).",
+      "renewalNeeded": "The text changed since it was turned on, so it is off for {{name}} until you agree again.",
+      "you": "you"
+    },
+    "open": "Turn on…",
+    "turnOff": "Turn off",
+    "screen": {
+      "intro": "You can let some of {{name}}'s records be used, together with those of many other babies, to calculate statistics by age: how much milk babies this age usually drink, how growth compares, tummy time, sleep and feeding routines, what helps most with crying.",
+      "onlyUse": "We only use age in weeks, amounts, lengths, counts and measurements. Never names, date of birth, notes, photos, location or exact times.",
+      "groups": "We only publish numbers for groups of at least 20 babies from different families. None of {{name}}'s records leave your account, and nothing is sold or used for advertising.",
+      "optional": "It is optional. Without it, the app works the same. You can turn it off at any time: {{name}}'s records stop being used from the next calculation. Group numbers already calculated cannot be separated out, and are replaced.",
+      "guardian": "I am {{name}}'s parent or legal guardian.",
+      "agree": "I agree that {{name}}'s records are used for these statistics, as described in the <privacy>privacy policy</privacy>.",
+      "turnOn": "Turn on for {{name}}",
+      "notNow": "Not now"
+    },
+    "errors": {
+      "outdated": "This text changed. Reload the app and read the current one.",
+      "notAllowed": "Only owners and parents can change this."
+    }
+  }
+}

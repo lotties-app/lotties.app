@@ -112,6 +112,9 @@ const DevRestHistoryPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/RestHistoryPreview'))
   : null;
 const DevRhythmPreview = import.meta.env.DEV ? lazy(() => import('./dev/RhythmPreview')) : null;
+const DevCommunityInsightsPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/CommunityInsightsPreview'))
+  : null;
 
 export function AppRoutes() {
   const { pathname } = useLocation();
@@ -142,6 +145,16 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevDataLocationPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevCommunityInsightsPreview && (
+        <Route
+          path="/dev/community-insights"
+          element={
+            <Suspense fallback={null}>
+              <DevCommunityInsightsPreview />
             </Suspense>
           }
         />
