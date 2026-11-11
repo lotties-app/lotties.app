@@ -8,10 +8,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Api.Tests.SilentPush;
 
-/// <summary><c>POST /push/devices</c> and <c>DELETE /push/devices/{id}</c> (docs/design/37b-widget-silent-push.md section 4.1).</summary>
+/// <summary>
+/// <c>GET /push/silent/status</c>, <c>POST /push/devices</c> and <c>DELETE /push/devices/{id}</c>
+/// (docs/design/37b-widget-silent-push.md sections 4.1 and 5.4).
+/// </summary>
 public sealed class SilentPushEndpointTests(SilentPushApiHost host) : IClassFixture<SilentPushApiHost>
 {
     private const string DevicesPath = "/api/v1/push/devices";
+    private const string StatusPath = "/api/v1/push/silent/status";
 
     private ApiFactory Factory => host.Factory;
 
@@ -129,15 +133,60 @@ public sealed class SilentPushEndpointTests(SilentPushApiHost host) : IClassFixt
         Assert.False((await StoredAsync(device.Id)).IsRevoked);
     }
 
+    [Theory]
+    [InlineData("apns")]
+    [InlineData("fcm")]
+    public async Task Status_SilentPushOn_SaysEnabledAndNothingElse(string channel)
+    {
+        var (_, client) = await NewUserAsync();
+
+        var response = await client.GetAsync($"{StatusPath}?channel={channel}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("""{"enabled":true}""", await response.Content.ReadAsStringAsync());
+    }
+
+    [Theory]
+    [InlineData("apns")]
+    [InlineData("fcm")]
+    public async Task Status_SilentPushOff_SaysNotEnabled(string channel)
+    {
+        using var off = SilentPushApiHost.Off();
+        var baby = await off.Factory.SeedBabyAsync();
+        var client = off.ClientFor(baby.OwnerSubject);
+
+        var response = await client.GetAsync($"{StatusPath}?channel={channel}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("""{"enabled":false}""", await response.Content.ReadAsStringAsync());
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("?channel=webpush")]
+    [InlineData("?channel=FCM")]
+    public async Task Status_MissingOrUnknownChannel_Returns400(string query)
+    {
+        var (_, client) = await NewUserAsync();
+
+        var response = await client.GetAsync(StatusPath + query);
+
+        var problem = await response.AssertProblemAsync(HttpStatusCode.BadRequest, "validation_failed");
+        Assert.Equal("channel", problem.GetProperty("field").GetString());
+    }
+
     [Fact]
     public async Task Routes_Anonymous_Return401()
     {
         var anonymous = host.Host.CreateClient();
 
+        var status = await anonymous.GetAsync($"{StatusPath}?channel=fcm");
         var register = await anonymous.PostAsJsonAsync(DevicesPath, SilentPushTestData.FcmBody(SilentPushTestData.NewFcmToken()));
         var unregister = await anonymous.DeleteAsync($"{DevicesPath}/{Guid.NewGuid()}");
 
-        Assert.Equal((HttpStatusCode.Unauthorized, HttpStatusCode.Unauthorized), (register.StatusCode, unregister.StatusCode));
+        Assert.Equal(
+            (HttpStatusCode.Unauthorized, HttpStatusCode.Unauthorized, HttpStatusCode.Unauthorized),
+            (status.StatusCode, register.StatusCode, unregister.StatusCode));
     }
 
     [Fact]

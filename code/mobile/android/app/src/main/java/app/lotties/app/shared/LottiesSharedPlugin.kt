@@ -131,7 +131,10 @@ class LottiesSharedPlugin : Plugin() {
     /**
      * This install's FCM registration token: `{channel: "fcm", token}`, or `{}` when the build has no Firebase
      * (no google-services.json), the phone has no Google Play services, or FCM did not answer in time. Never logged.
-     * Auto-init is off (AndroidManifest.xml), so a token exists only once a widget is installed and the app asks here.
+     * Auto-init is off (AndroidManifest.xml) and stays off: this explicit request is the only way a token is made, and
+     * the web app sends it only after the API said silent pushes are on (`GET /push/silent/status`, design 37b section
+     * 5.4) and a widget is installed. Turning auto-init on here would make later launches contact FCM by themselves,
+     * even after the server switched silent pushes off.
      */
     @PluginMethod
     fun pushToken(call: PluginCall) {

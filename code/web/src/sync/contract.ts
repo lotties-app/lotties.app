@@ -235,6 +235,9 @@ export const apiPaths = {
   pushTest: () => `${API_PREFIX}/push/test`,
   /** The app installs that want silent pushes for their widgets (docs/design/37b-widget-silent-push.md). */
   pushDevices: () => `${API_PREFIX}/push/devices`,
+  /** Whether silent pushes are on for `channel`, read before the app asks the phone for a token (37b section 5.4). */
+  silentPushStatus: (channel: string) =>
+    `${API_PREFIX}/push/silent/status?channel=${enc(channel)}`,
   pushDevice: (deviceId: string) => `${API_PREFIX}/push/devices/${enc(deviceId)}`,
   /** Anonymous: body `{ action, token }`, the per-delivery token is the credential. */
   pushDeliveryAction: (deliveryId: string) =>

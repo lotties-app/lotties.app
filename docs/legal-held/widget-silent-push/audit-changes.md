@@ -40,6 +40,8 @@ request logging (`RemoveAllLoggers`: an APNs token is in the request URL), and n
   is skipped.
 - Gaps and open points: the legal basis (contract or consent); the cold path (a terminated app cannot refresh its widget
   from a push; any fix that lets native code fetch data is a new flow to audit, design 37b section 12 question 1; owner
-  decision 2026-11-11: warm only for now). The app asks for a token before it knows whether the server has the flag on,
-  so an Android build with `google-services.json` would register with Google even while the flag is off: the secret
-  that adds the file to release builds is set only with this policy (design 37b section 9).
+  decision 2026-11-11: warm only for now). Since the gate of design 37b section 5.4 the app asks the phone for a token
+  only after `GET /push/silent/status` says silent pushes are on for its channel, and the Android manifest keeps
+  Firebase quiet at start-up (no auto-init, no Analytics, no automatic data collection): with the flag off an Android
+  build with `google-services.json` makes no registration with Google (by design and unit tests; not yet observed on a
+  device). A token made while the flag was on stays with Google or Apple after a switch-off (the app does not delete it).

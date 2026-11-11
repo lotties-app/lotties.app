@@ -273,6 +273,7 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         ["GET /api/v1/push/preferences"] = Access.SignedIn,
         ["POST /api/v1/push/test"] = Access.SignedIn,
         ["POST /api/v1/push/deliveries/{deliveryId:guid}/actions"] = Access.Anonymous,
+        ["GET /api/v1/push/silent/status"] = Access.SignedIn,
         ["POST /api/v1/push/devices"] = Access.SignedIn,
         ["DELETE /api/v1/push/devices/{deviceId:guid}"] = Access.SignedIn,
         ["PUT /api/v1/babies/{babyId:guid}/notification-preferences"] = Access.Log,

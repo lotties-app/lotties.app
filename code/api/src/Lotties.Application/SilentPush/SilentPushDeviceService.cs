@@ -9,6 +9,12 @@ namespace Lotties.Application.SilentPush;
 public interface ISilentPushDeviceService
 {
     /// <summary>
+    /// Whether silent pushes are on and <paramref name="channel"/> (<c>apns</c> or <c>fcm</c>) has credentials: the app asks
+    /// the phone for a token only after this says yes (design 37b section 5.4). 400 for a missing or unknown channel.
+    /// </summary>
+    SilentPushStatusResponse Status(string? channel);
+
+    /// <summary>
     /// Upsert by token: creates the device, or refreshes it (environment, last seen), un-revokes it and, when it belonged
     /// to another user, moves it to the caller. Then revokes the caller's least recently seen devices beyond the cap.
     /// Throws <see cref="Domain.Exceptions.SilentPushNotConfiguredException"/> when the channel is off.
@@ -26,6 +32,9 @@ internal sealed class SilentPushDeviceService(
     TimeProvider timeProvider,
     ILogger<SilentPushDeviceService> logger) : ISilentPushDeviceService
 {
+    public SilentPushStatusResponse Status(string? channel) =>
+        new(configuration.Accepts(SilentPushStatusResponse.ParseChannel(channel)));
+
     public async Task<RegisterSilentPushDeviceResult> RegisterAsync(RegisterSilentPushDeviceRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);

@@ -36,9 +36,12 @@ production nothing is collected or sent, so production keeps the shipped policy.
 - Nothing under `code/` imports from `docs/legal-held/` (`code/web/src/legal/heldLegal.test.ts`).
 - `SilentPush:Enabled` stays `false` in production until this policy is released. The server refuses device
   registrations while it is off (409 `silent_push_not_configured`), so no token is stored before the policy says so.
-- The repository secret `ANDROID_GOOGLE_SERVICES_JSON_BASE64` stays unset until this policy is released: an Android
-  build with `google-services.json` asks Google (Firebase) for a token whenever a widget is installed, even while the
-  server flag is off (design 37b section 9, "Order of provisioning"). Without it the Android app has no Firebase.
+- The repository secret `ANDROID_GOOGLE_SERVICES_JSON_BASE64` (set by the owner on 2026-11-11) no longer has to wait
+  for this policy: since the gate of design 37b section 5.4 the app asks the phone for a token only after the server
+  says silent pushes are on, and the Android manifest keeps Firebase quiet at start-up (no FCM auto-init, no Analytics,
+  no automatic data collection). With `SilentPush:Enabled=false` an Android build with `google-services.json` makes no
+  registration with Google (by design and unit tests; not yet observed on a device, design 37b section 14). The flag
+  itself is what waits for this policy.
 - Added 2026-11-11 with the Android receive path: the patch was written before it; it names Google FCM as a recipient,
   but not that on Android the Firebase library in the app registers the install with Google itself (a Firebase
   installation id and app/OS/library versions; `audit-changes.md` section 3, second row). Question 4 below.
@@ -71,6 +74,6 @@ production nothing is collected or sent, so production keeps the shipped policy.
    `code/api/src/Lotties.Domain/Consents/ConsentVersions.cs` (material or minor, question 2), with the `textDigest`
    that `consentVersions.test.ts` prints.
 5. Apply `audit-changes.md` to docs/design/33-privacy-audit.md and update the status line of design 37b section 11.
-6. Only then set `SILENT_PUSH_ENABLED=true` in production (docs/DEPLOY.md) and, for Android, the repository secret
-   `ANDROID_GOOGLE_SERVICES_JSON_BASE64` before the next release build.
+6. Only then set `SILENT_PUSH_ENABLED=true` in production (docs/DEPLOY.md); for Android, the repository secret
+   `ANDROID_GOOGLE_SERVICES_JSON_BASE64` must be in the release build that users have (set 2026-11-11).
 7. Delete this folder in the same change.

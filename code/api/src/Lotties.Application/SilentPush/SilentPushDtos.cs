@@ -32,6 +32,21 @@ public sealed record RegisterSilentPushDeviceRequest
     };
 }
 
+/// <summary>
+/// <c>GET /push/silent/status?channel=</c>: whether the app may ask the phone for a push token of that channel
+/// (docs/design/37b-widget-silent-push.md section 5.4). Only the boolean: no host, key, credential or setting.
+/// </summary>
+public sealed record SilentPushStatusResponse(bool Enabled)
+{
+    private const string ChannelField = "channel";
+
+    /// <summary>The channel of the query; 400 <c>validation_failed</c> (field <c>channel</c>) when it is missing or unknown.</summary>
+    public static SilentPushChannel ParseChannel(string? channel) =>
+        SilentPushCodes.TryParse(channel, out SilentPushChannel parsed)
+            ? parsed
+            : throw new DomainValidationException(ChannelField, "channel must be apns or fcm.");
+}
+
 /// <summary>One of the caller's registered devices. The token is never returned.</summary>
 public sealed record SilentPushDeviceResponse
 {
