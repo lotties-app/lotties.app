@@ -127,9 +127,11 @@ audit: `docs/design/33-privacy-audit.md` section 11.
   sensitive data of children, consent basis (art. 11, I and art. 14, §1), risk of re-identification in small groups.
 - [ ] **Who consents**: per baby, an Owner or a Parent who confirms being the parent or legal guardian (recommended);
   whether one yes is enough or every Owner/Parent must agree; whether the others are notified.
-- [ ] **k and noise**: the minimum group size (proposal: 20 babies from 20 families; the policy already says "at least
-  20") and whether differential privacy is applied (proposal: yes, as defence in depth, weekly releases at
-  epsilon 0.2 per statistic, about 10 per statistic per year, or monthly at 0.5; chosen after the evaluation). If no noise is used, the "random noise" sentence must go before activation.
+- [ ] **k**: the minimum group size (proposal: 20 babies from 20 families; the policy already says "at least 20").
+- [x] **Noise (O2), decided 2026-11-11** (design 34 section 5.1): differential privacy on, weekly; strict epsilon 0.2
+  per statistic for statistics that survive it (crying shares); relaxed epsilon about 5 for the other non-percentile
+  statistics, with its weak formal guarantee stated plainly; percentile statistics not in v1. The lawyer still has to
+  review the relaxed tier before activation (lawyer brief item 20).
 - [ ] **Retention of consent records** after withdrawal or erasure (proposal: 5 years, baby id hashed after erasure).
 - [ ] **Statistics open to every user or only to families that opted in** (proposal: every signed-in user).
 - [ ] Before activation: the in-app notice of policy changes (gap G6) must exist, since the policy promises to tell
