@@ -1,4 +1,4 @@
-import { useEffect, type FocusEvent } from 'react';
+import { useEffect, type CSSProperties, type FocusEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import { describeApiError } from '../../api/errorMessages';
@@ -6,12 +6,9 @@ import { CONTENT_MAX_WIDTH, RADIUS } from '../../theme/tokens';
 import { palette } from '../../ui/form/styles';
 import { ILLUSTRATIONS, Illustration, illustrationName } from '../../ui/illustrations';
 import { useQuickLogToastContext } from '../QuickLogToastContext';
-import { NAV_TOAST_BOTTOM } from '../../layout/navMetrics';
+import { STACKED_TOAST_BOTTOM, STACK_OFFSET_VAR, useSnackbarStack } from '../../ui/snackbarStack';
 import { shiftChipLabel } from '../nowText';
 import { receiptArt } from '../receiptArt';
-
-/** Just above the floating navigation pill. */
-export const TOAST_BOTTOM = NAV_TOAST_BOTTOM;
 
 function isEditable(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -51,6 +48,10 @@ export function ToastHost() {
   const toast = useQuickLogToastContext();
   const current = toast?.current ?? null;
   const undo = toast?.undo;
+  // Shares the bottom stack with the snackbars, so a snackbar open at the same time sits above it.
+  const [attachStack, stackOffset] = useSnackbarStack(
+    current !== null || (toast?.error ?? null) !== null,
+  );
 
   useEffect(() => {
     if (!current || !undo) return;
@@ -72,11 +73,13 @@ export function ToastHost() {
 
   return (
     <Box
+      ref={attachStack}
+      style={{ [STACK_OFFSET_VAR]: `${stackOffset}px` } as CSSProperties}
       sx={{
         position: 'fixed',
         left: 0,
         right: 0,
-        bottom: TOAST_BOTTOM,
+        bottom: STACKED_TOAST_BOTTOM,
         zIndex: (theme) => theme.zIndex.snackbar,
         display: 'flex',
         justifyContent: 'center',

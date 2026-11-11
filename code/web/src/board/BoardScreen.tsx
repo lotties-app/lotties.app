@@ -6,13 +6,13 @@ import {
   Box,
   Button,
   Skeleton,
-  Snackbar,
   Stack,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { useApiClient } from '../api/ApiClientContext';
+import { AppSnackbar } from '../ui/AppSnackbar';
 import { describeApiError } from '../api/errorMessages';
 import { visuallyHidden } from '../insights/charts/chartStyle';
 import { AdminDialog } from './AdminDialog';
@@ -353,7 +353,7 @@ export function BoardScreen({ me }: Props) {
         />
       )}
 
-      <Snackbar
+      <AppSnackbar
         open={!!deleted}
         autoHideDuration={8000}
         onClose={(_, reason) => reason !== 'clickaway' && setDeleted(null)}

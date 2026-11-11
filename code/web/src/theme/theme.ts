@@ -11,6 +11,7 @@ import {
   type SchemeTokens,
 } from './tokens';
 import { ALERT_ICON_MAPPING } from '../ui/alertIconMapping';
+import { STACKED_TOAST_BOTTOM } from '../ui/snackbarStack';
 import { SelectArrowIcon } from '../ui/muiIcons';
 
 /** The user's choice. `system` follows the OS and falls back to dark when it has no preference. */
@@ -408,6 +409,20 @@ export function buildTheme(localization?: Localization) {
                 '& .MuiAlert-icon': { color: pair.fg },
               };
             },
+          },
+        },
+        // Every bottom snackbar sits above the bottom dock and the safe-area inset, on every width
+        // (MUI's own 8/24 px, the 24 px in a min-width media query, would put it behind the dock),
+        // and above the notices opened before it (`ui/snackbarStack.ts`).
+        MuiSnackbar: {
+          styleOverrides: {
+            root: ({ ownerState, theme }) =>
+              ownerState.anchorOrigin?.vertical === 'top'
+                ? {}
+                : {
+                    bottom: STACKED_TOAST_BOTTOM,
+                    [theme.breakpoints.up('sm')]: { bottom: STACKED_TOAST_BOTTOM },
+                  },
           },
         },
         MuiSnackbarContent: {

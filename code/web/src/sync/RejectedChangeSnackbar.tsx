@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Snackbar } from '@mui/material';
-import { TOAST_BOTTOM } from '../now/ui/ToastHost';
+import { AppSnackbar } from '../ui/AppSnackbar';
 import { dismissRejectionNotice, useRejectionNotice } from './rejectionNotice';
 
 const NOTICE_MS = 8_000;
@@ -19,13 +18,12 @@ export function RejectedChangeSnackbar() {
   const { t } = useTranslation();
   const notice = useRejectionNotice();
   return (
-    <Snackbar
+    <AppSnackbar
       key={notice?.id ?? 'none'}
       open={notice !== null}
       autoHideDuration={NOTICE_MS}
       onClose={(_, reason) => reason !== 'clickaway' && dismissRejectionNotice(notice?.id)}
       message={notice ? t(MESSAGES[notice.kind]) : ''}
-      sx={{ bottom: TOAST_BOTTOM }}
     />
   );
 }

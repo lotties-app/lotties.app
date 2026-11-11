@@ -108,6 +108,7 @@ Drop the MUI X picker from logging. Duration types show **Start · duration chip
 - **Prevent rejections**: mirror `visibleWhen` and required-on-completion in `formModel`, and strip hidden values. Anything that still fails gets a fix path: "1 change wasn't saved: Feeding at 02:10 needs *How*. **Fix**" opens the sheet focused on that field.
 - **Copy**: say what to do, at the field, without repeating the label. "Choose one to save" / "Escolha uma opção para salvar". "Up to 400 ml" / "Até 400 ml". "End is before the start" / "O fim está antes do início". "Can't be later than now" / "Não pode ser depois de agora".
 - **Haptics**: Android only. 10 ms on commit and 10-40-10 on undo, behind a setting. This revises DESIGN §5's "haptic-free".
+- **Where notices sit**: every snackbar is `ui/AppSnackbar` (eslint forbids MUI's `Snackbar` elsewhere); its bottom comes from the theme's `MuiSnackbar` override, on every width, as `TOAST_BOTTOM` (`layout/navMetrics.ts`): above the bottom dock plus the safe-area inset while a dock is mounted (`useBottomNavSpace` in `BottomNav` and the doctor's mobile `DoctorNav` sets `--lotties-toast-bottom` on `<html>`), otherwise 16 px above the inset (doctor rail, board, screens without a dock). Notices open at the same time, the receipt toast included, stack oldest-lowest with an 8 px gap (`ui/snackbarStack.ts`) instead of overlapping.
 
 ## 5. Platform capabilities
 
