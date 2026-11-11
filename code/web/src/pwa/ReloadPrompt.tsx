@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Button, Snackbar } from '@mui/material';
+import { Button } from '@mui/material';
+import { AppSnackbar } from '../ui/AppSnackbar';
 import { useTranslation } from 'react-i18next';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { isNativeApp } from '../platform/nativeApp';
@@ -43,7 +44,7 @@ function ServiceWorkerReloadPrompt() {
   }, [needRefresh]);
 
   return (
-    <Snackbar
+    <AppSnackbar
       open={needRefresh}
       message={t('pwa.newVersion')}
       action={
@@ -53,7 +54,6 @@ function ServiceWorkerReloadPrompt() {
       }
       onClose={() => setNeedRefresh(false)}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      sx={{ bottom: { xs: 80, sm: 24 } }}
     />
   );
 }

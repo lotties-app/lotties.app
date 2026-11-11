@@ -6,6 +6,7 @@ import { palette } from '../ui/form/styles';
 import { Icon } from '../ui/Icon';
 import type { IconName } from '../ui/icons';
 import { NAV_HEIGHT, NAV_INSET } from '../layout/navMetrics';
+import { useBottomNavSpace } from '../layout/useBottomNavSpace';
 import { patientPath } from './dashboardStorage';
 import { activeNavKey, RAIL_WIDTH, type NavKey } from './navModel';
 
@@ -131,6 +132,8 @@ export function DoctorNav({ patientId, rail }: { patientId: string | null; rail:
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const active = activeNavKey(pathname);
+  // The rail is beside the content: only the bottom dock lifts the snackbars.
+  useBottomNavSpace(!rail);
   const buttons = ITEMS.map((item) => (
     <NavButton
       key={item.key}

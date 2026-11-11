@@ -58,6 +58,30 @@ export default tseslint.config(
     },
   },
   {
+    // Snackbars go through ui/AppSnackbar: above the bottom dock and the safe-area inset, stacked
+    // (docs/design/03-interaction.md). MUI's Snackbar alone would sit behind the dock.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/ui/AppSnackbar.tsx', 'src/**/*.test.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@mui/material',
+              importNames: ['Snackbar'],
+              message: 'Use AppSnackbar from src/ui/AppSnackbar (offset above the bottom dock).',
+            },
+            {
+              name: '@mui/material/Snackbar',
+              message: 'Use AppSnackbar from src/ui/AppSnackbar (offset above the bottom dock).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Developer-only tooling (never in production builds): English strings are fine.
     files: ['src/dev/**/*.tsx'],
     rules: { 'i18next/no-literal-string': 'off' },

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Snackbar } from '@mui/material';
+import { Button } from '@mui/material';
+import { AppSnackbar } from '../ui/AppSnackbar';
 import { describeApiError } from '../api/errorMessages';
 import { useDatabase } from '../db/DatabaseContext';
 import { restoreDeletedEvent } from '../now/nightEndsWakeUp';
-import { TOAST_BOTTOM } from '../now/ui/ToastHost';
 import { dismissDeletedNotice, useDeletedNotice } from './deletedEvents';
 
 const UNDO_MS = 6_000;
@@ -34,25 +34,23 @@ export function DeletedEventSnackbar() {
 
   return (
     <>
-      <Snackbar
+      <AppSnackbar
         key={notice?.id ?? 'none'}
         open={notice !== null}
         autoHideDuration={UNDO_MS}
         onClose={(_, reason) => reason !== 'clickaway' && dismissDeletedNotice(notice?.id)}
         message={notice ? t('events.deleted', { name: notice.name }) : ''}
-        sx={{ bottom: TOAST_BOTTOM }}
         action={
           <Button color="inherit" size="small" onClick={() => void undo()} sx={{ minHeight: 40 }}>
             {t('presets.undo.action')}
           </Button>
         }
       />
-      <Snackbar
+      <AppSnackbar
         open={error !== null}
         autoHideDuration={UNDO_MS}
         onClose={() => setError(null)}
         message={error}
-        sx={{ bottom: TOAST_BOTTOM }}
       />
     </>
   );

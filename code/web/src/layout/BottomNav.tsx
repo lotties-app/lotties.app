@@ -11,6 +11,7 @@ import { Icon } from '../ui/Icon';
 import type { IconName } from '../ui/icons';
 import { useAddSheet } from './addSheetContext';
 import { ADD_SIZE, NAV_HEIGHT, NAV_INSET } from './navMetrics';
+import { useBottomNavSpace } from './useBottomNavSpace';
 
 interface NavItem {
   to: string;
@@ -160,6 +161,7 @@ export function BottomNav() {
   const withAdd = add?.enabled === true;
   // The Hub tab carries a dot while something there waits for a look (vaccines due, doctor inbox...).
   const attention = useHubAttention(use(SelectedBabyContext)?.baby).total;
+  useBottomNavSpace();
 
   return (
     <Box

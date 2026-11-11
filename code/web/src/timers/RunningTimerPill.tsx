@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, ButtonBase, IconButton, Popover, Snackbar, Typography } from '@mui/material';
+import { Box, ButtonBase, IconButton, Popover, Typography } from '@mui/material';
+import { AppSnackbar } from '../ui/AppSnackbar';
 import { describeApiError } from '../api/errorMessages';
 import { canLog } from '../baby/permissions';
 import { useEventAccess } from '../baby/useEventAccess';
@@ -8,7 +9,6 @@ import { useEventTypes, useRunningEvents } from '../db/hooks';
 import type { Baby, EventType } from '../db/models';
 import { formatElapsed, useNow } from '../events/time';
 import { formatDuration } from '../i18n/format';
-import { NAV_TOAST_BOTTOM } from '../layout/navMetrics';
 import { usePresetActions } from '../presets/usePresetActions';
 import { RADIUS } from '../theme/tokens';
 import { useNightFeed } from '../theme/NightFeedContext';
@@ -319,12 +319,11 @@ export function RunningTimerPill({ baby }: { baby: Baby }) {
         />
       )}
       {actions.elements}
-      <Snackbar
+      <AppSnackbar
         open={error !== null}
         autoHideDuration={5000}
         onClose={() => setError(null)}
         message={error}
-        sx={{ bottom: NAV_TOAST_BOTTOM }}
       />
     </>
   );

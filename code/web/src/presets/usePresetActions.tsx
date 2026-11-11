@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Button, Snackbar } from '@mui/material';
+import { Button } from '@mui/material';
+import { AppSnackbar } from '../ui/AppSnackbar';
 import { describeApiError } from '../api/errorMessages';
 import { useDatabase } from '../db/DatabaseContext';
 import type { BabyEvent, EventType } from '../db/models';
@@ -131,13 +132,13 @@ export function usePresetActions(babyId: string, types: EventType[]): PresetActi
           onDone={() => setPrefill(null)}
         />
       )}
-      <Snackbar
+      <AppSnackbar
         open={error !== null}
         autoHideDuration={UNDO_SNACKBAR_MS}
         onClose={(_, reason) => reason !== 'clickaway' && setError(null)}
         message={error}
       />
-      <Snackbar
+      <AppSnackbar
         open={undoable !== null}
         autoHideDuration={UNDO_SNACKBAR_MS}
         onClose={(_, reason) => reason !== 'clickaway' && setUndoable(null)}
