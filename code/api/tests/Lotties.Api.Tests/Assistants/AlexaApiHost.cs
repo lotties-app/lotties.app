@@ -22,6 +22,9 @@ namespace Lotties.Api.Tests.Assistants;
 /// here (the discovery document is replaced by a static configuration, so the real JWT bearer validation runs: issuer,
 /// audience, lifetime, signature, <c>sub</c>). Amazon's signature cannot be produced for real requests, so the verifier is
 /// a pass-through double by default; <see cref="WithRealVerifier"/> keeps the real verifier and serves it a test chain.
+/// The skill checks the request timestamp against <see cref="AlexaRequests.SentAt"/>, the instant every test body is stamped
+/// with, not against the wall clock: a loaded CI runner can hold a request for minutes between building the body and the
+/// check, which made fresh requests "stale" (the tolerance itself is tested from that fixed instant, AlexaEndpointTests).
 /// </summary>
 public sealed class AlexaApiHost : IDisposable
 {
@@ -119,6 +122,8 @@ public sealed class AlexaApiHost : IDisposable
         {
             services.ConfigureAll<JwtBearerOptions>(options => options.Configuration = TestIssuerConfiguration());
             ReplaceVerification(services, realVerifier);
+            services.RemoveAll<AlexaSkill>();
+            services.AddScoped(provider => ActivatorUtilities.CreateInstance<AlexaSkill>(provider, (TimeProvider)new FixedTimeProvider(AlexaRequests.SentAt)));
         });
     }
 
@@ -155,6 +160,9 @@ public sealed class AlexaApiHost : IDisposable
 /// <summary>Alexa request bodies (request and response JSON reference), built like the Alexa service sends them.</summary>
 internal static class AlexaRequests
 {
+    /// <summary>When every request is sent, for the skill's timestamp check (<see cref="AlexaApiHost"/>): whole seconds, as Alexa stamps.</summary>
+    public static readonly DateTimeOffset SentAt = new(2026, 1, 15, 12, 0, 0, TimeSpan.Zero);
+
     public static readonly (string Name, string Value)[] SignedHeaders =
     [
         ("SignatureCertChainUrl", "https://s3.amazonaws.com/echo.api/echo-api-cert-test.pem"),
@@ -187,7 +195,8 @@ internal static class AlexaRequests
 
     public static string NewRequestId() => $"amzn1.echo-api.request.{Guid.NewGuid()}";
 
-    private static string Stamp(DateTimeOffset? timestamp) => (timestamp ?? DateTimeOffset.UtcNow).UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    /// <summary>A request timestamp as Alexa writes it; <see cref="SentAt"/> unless another instant is given.</summary>
+    public static string Stamp(DateTimeOffset? timestamp = null) => (timestamp ?? SentAt).UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture);
 
     private static string Envelope(object request, string? token, string skillId)
     {
