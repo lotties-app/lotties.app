@@ -100,10 +100,9 @@ export interface ThirdParty {
 export const THIRD_PARTIES: readonly ThirdParty[] = [
   // Web Push (built): Google FCM, Mozilla, Apple, Microsoft; the payload is encrypted (RFC 8291).
   { id: 'pushServices', trigger: 'optIn', abroad: true, creditIds: ['webpush'] },
-  // Silent pushes for the widgets (docs/design/37b-widget-silent-push.md): Google FCM for the Android app only (the iOS
-  // receive path is not shipped; naming Apple APNs needs its own policy change); the app's push token and a message with
-  // no content ("sync"), only while a Lotties widget is installed, plus what the Firebase library sends Google to make
-  // the token.
+  // Silent pushes for the widgets (docs/design/37b-widget-silent-push.md): Apple APNs for the iOS app (policy 14) and
+  // Google FCM for the Android app (policy 13); the app's push token and a message with no content ("sync"), only while
+  // a Lotties widget is installed, plus, on Android only, what the Firebase library sends Google to make the token.
   { id: 'appPushServices', trigger: 'userAction', abroad: true, creditIds: [] },
   // The Alexa skill (built, off until the owner enables it): Amazon hears the voice and speaks our answers (no baby name unless the parent turns on sayBabyName, no medicine name unless sayMedicineNames, no data about a doctor but a coded specialty).
   { id: 'alexa', trigger: 'optIn', abroad: true, creditIds: [] },
