@@ -235,6 +235,34 @@ describe('the data flows behind the privacy policy', () => {
     expect(PRIVACY_POLICY_LAST_UPDATED >= '2026-10-24').toBe(true);
   });
 
+  it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
+    'say in the %s policy that the widget pushes carry no content and stop with the widgets',
+    (locale) => {
+      const noContent = locale === 'en' ? /message with no content/ : /mensagem sem conteúdo/;
+      const stops =
+        locale === 'en' ? /last Lotties widget removed/ : /último widget do Lotties foi tirado/;
+      expect(JSON.stringify(recipientRow(locale, 'appPushServices'))).toMatch(noContent);
+      expect(JSON.stringify(dataRow(locale, 'widgetUpdates'))).toMatch(/Google/);
+      expect(JSON.stringify(sectionOf(locale, 'retention'))).toMatch(stops);
+      expect(JSON.stringify(sectionOf(locale, 'transfers'))).toMatch(/Firebase Cloud Messaging/);
+    },
+  );
+
+  it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
+    'name only the Android app and Google for the widget pushes in the %s policy (iOS is not shipped)',
+    (locale) => {
+      // The iOS receive path is not shipped (docs/design/37b-widget-silent-push.md section 11): Apple joins these rows
+      // with its own policy change, never before.
+      const firebaseDocs =
+        locale === 'en' ? /per Firebase's documentation/ : /segundo a documentação do Firebase/;
+      for (const row of [recipientRow(locale, 'appPushServices'), dataRow(locale, 'widgetUpdates')]) {
+        expect(JSON.stringify(row)).toMatch(/Android/);
+        expect(JSON.stringify(row)).not.toMatch(/Apple|APNs|iOS/);
+      }
+      expect(JSON.stringify(recipientRow(locale, 'appPushServices'))).toMatch(firebaseDocs);
+    },
+  );
+
   it('name the countries question for every recipient abroad in the transfers section', () => {
     // Every recipient here may process data outside Brazil; the transfers section must exist and
     // cite LGPD art. 33 in each language.

@@ -6,8 +6,9 @@ app so it pulls and rewrites the widget snapshot). Not a widget-side fetch, not 
 
 **Status (2026-11-11): server side built, off by default (`SilentPush:Enabled=false`); iOS receive path written, never
 compiled or run; Android receive path built (Firebase Messaging, section 9: compiles, lints and passes its unit tests,
-never run on a device or against FCM); the privacy policy text is a held draft (docs/legal-held/widget-silent-push/).**
-Nothing sends until the owner provisions the keys of section 10 and turns the flag on.
+never run on a device or against FCM); the privacy policy covers the Android app since policy 13 (2026-11-11, section
+11); the iOS app needs its own policy change first.** Nothing sends until the owner provisions the keys of section 10
+and turns the flag on, which waits until policy 13 is live in production.
 
 ## 1. What exists today (inventory, 2026-11-11)
 
@@ -352,7 +353,8 @@ gets `{}` too (the token task fails).
 (the gate, section 5.4), and Firebase auto-init is off, so a build with `google-services.json` stays silent towards
 Google while `SilentPush:Enabled` is off. The `ANDROID_GOOGLE_SERVICES_JSON_BASE64` secret (and an Android build with
 Firebase) may therefore go in before the policy release (unverified on a device, section 14). What must keep its order
-is the switch: the policy is released first (docs/legal-held/widget-silent-push/README.md), then `SILENT_PUSH_ENABLED=true`.
+is the switch: the policy is released first (policy 13, section 11: deployed and live at `/privacy`), then
+`SILENT_PUSH_ENABLED=true`.
 The server's APNs and FCM values are already in the production Secret and the flag is off.
 
 ## 10. What the owner provisions (and what the repository has)
@@ -371,7 +373,7 @@ The server's APNs and FCM values are already in the production Secret and the fl
 | Firebase: a **service account** with the "Firebase Cloud Messaging API Admin" role, its JSON key | Google Cloud console | no |
 | Server Secret `lotties-secrets`: `PUSH_APNS_KEY_ID`, `PUSH_APNS_TEAM_ID`, `PUSH_APNS_KEY_P8`, `PUSH_FCM_PROJECT_ID` (the Firebase project id, the `project_id` of `google-services.json`), `PUSH_FCM_SERVICE_ACCOUNT_JSON` (`PUSH_APNS_BUNDLE_ID` optional), then `SILENT_PUSH_ENABLED=true` (a plain value, not in the Secret) | deploy (docs/DEPLOY.md), values in `deploy/homelab/.env` | wiring yes (`deploy.sh` passes the keys to the Secret and the flag, default `false`; 2026-11-11), values no |
 | Android: the Firebase Messaging library and service (section 9) | repo | **yes** (2026-11-11) |
-| Privacy policy activation (section 11) | owner + lawyer | draft only |
+| Privacy policy activation (section 11) | owner + lawyer | Android: policy 13 (2026-11-11); iOS: not yet |
 
 ## 11. Privacy
 
@@ -379,11 +381,23 @@ New stored data: the device's push token, its channel and environment, per accou
 name, model or OS version). New recipients for the native apps: Apple (APNs) and Google (FCM) receive the token and a
 content-free message, and so learn that this app install was told "something changed" at that time. That is a new data
 flow and a new kind of stored data: the policy (both languages), `legal/dataFlows.ts`, the audit (design 33) and the
-policy version must change before the flag is turned on in production. The proposed text is held in
-docs/legal-held/widget-silent-push/ (README and patch); nothing shipped changes in this change. Android adds one fact
-(noted in the held README and audit draft, the patch text not changed): the Firebase library inside the app registers
-the install with Google when it makes the token (per Firebase's documentation a Firebase installation id and app, OS and
-library versions), only once the server says silent pushes are on (section 5.4) and a widget is installed (auto-init off) and only in a build with `google-services.json`.
+policy version must change before the flag is turned on in production. Android adds one fact: the Firebase library
+inside the app registers the install with Google when it makes the token (per Firebase's documentation a Firebase
+installation id, the app's package and Firebase app id, and app, Android and library versions), only once the server
+says silent pushes are on (section 5.4) and a widget is installed (auto-init off) and only in a build with
+`google-services.json`.
+
+**Status (2026-11-11): released for the Android app in policy 13** (2026-11-11), consent version `2026-11-11.1`, minor
+(owner decisions of 2026-11-11: legal basis contract, LGPD art. 7, V, with two points sent to the lawyer and not answered
+yet; minor consent version; no change for the widget files on the device; the Firebase registration named in the
+recipient row with "per Firebase's documentation"). The text names only the Android app and Google Firebase Cloud
+Messaging (`widgetUpdates`, `appPushServices` in `legal/dataFlows.ts`; facts in design 33 section 18). The held draft
+folder was deleted with the release. `SILENT_PUSH_ENABLED` stays off until policy 13 is deployed and live.
+
+**iOS needs a second, minor policy change when it ships**: Apple APNs as a recipient, the APNs token and its
+environment as stored data, and "iOS app" in the rows, in both languages, before an iOS build that registers a token
+reaches people (the server's APNs channel answers `enabled` once it has credentials and the flag is on, so that build
+must not ship first).
 
 ## 12. Owner questions
 
@@ -400,10 +414,7 @@ Decided 2026-11-11 (with the Android change):
 5. **The Firebase Messaging dependency** on Android: **approved** (Firebase BoM, an exact version at least two weeks
    old), section 9.
 
-Still open:
-
-6. **Policy**: which policy version and whether the consent change is minor or material (a new recipient for the app
-   users only, content-free).
+6. **Policy**: **policy 13, minor consent version `2026-11-11.1`**, Android app only (section 11).
 
 ## 13. Tests
 
