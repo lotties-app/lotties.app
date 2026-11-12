@@ -1,6 +1,6 @@
 # 34. Community insights: opt-in pooled statistics (design, 2026-10-23)
 
-Status: **design only, nothing built.** The privacy policy describes it as "not active yet" (section
+Status: **partly built, off by default.** Task T2 (per-baby consent record, `GET/PUT /babies/{id}/community-consent`, Settings > Community insights) is merged (PR #88) and the T4 statistics catalog (`code/api/data/community-statistics.json`, validated at startup, nothing served) is built, behind `CommunityInsights:Enabled` (default `false`); nothing is collected, aggregated or published (T5/T6 not built). The privacy policy describes it as "not active yet" (section
 `community-insights` of `code/web/src/legal/privacy.<lang>.ts`, flow `communityInsights` in
 `code/web/src/legal/dataFlows.ts` `PLANNED_FLOWS`, with status `planned`); tests fail if that wording is removed
 while the flow is planned. **Not legal advice**: the LGPD points below are a starting point for the owner and a

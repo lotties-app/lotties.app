@@ -685,8 +685,8 @@ its header; see "Connections to user stores" below) and set `StoreEndpointGuard_
   already on its own database keeps being served there (the allowlist guards the data store routes, not the routing).
 
 **6. Consent and policy.** Setting up a store requires the optional consent `byo_database` (the app asks for it). The privacy
-policy (version 13) already has the "Your own database" section; its sentence about the opt-in wipe at account deletion
-waits for the next material policy version (docs/design/33-privacy-audit.md section 17).
+policy does not have the "Your own database" section yet: the shipped policy is version 14 and that section is held in
+docs/legal-held/byo-database/ until the next material policy version (docs/design/33-privacy-audit.md section 17).
 
 #### Applying migrations to user stores
 

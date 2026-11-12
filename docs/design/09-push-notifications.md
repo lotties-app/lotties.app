@@ -1,6 +1,6 @@
 # Push notifications: self-hosted Web Push with VAPID (design, 2026-10-21)
 
-Status: design only, nothing implemented. Owner decisions: Web Push sent by our own .NET API with VAPID (RFC 8292), no FCM SDK, OneSignal or other paid/hosted service, no account with any vendor; push is separate from SMTP (email stays for Keycloak account flows only). Task N4 (section 19) removes "push notifications" from the SPEC MVP non-goals and adds the API contract to docs/SPEC.md.
+Status: built (web push); native push is design 19. Owner decisions: Web Push sent by our own .NET API with VAPID (RFC 8292), no FCM SDK, OneSignal or other paid/hosted service, no account with any vendor; push is separate from SMTP (email stays for Keycloak account flows only). Task N4 (section 19) removes "push notifications" from the SPEC MVP non-goals and adds the API contract to docs/SPEC.md.
 
 "Self-hosted" means: the API encrypts (RFC 8291, `aes128gcm`) and signs (VAPID) every message and POSTs it to the push service the browser chose (Google FCM for Chrome, Mozilla autopush for Firefox, Apple for Safari, Microsoft WNS for Edge). We never register with those services, pay nothing, and they cannot read the payload; they only see the endpoint, the size and the timing.
 
