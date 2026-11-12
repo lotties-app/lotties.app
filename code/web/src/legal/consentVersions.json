@@ -31,6 +31,14 @@
       "material": false,
       "date": "2026-11-06",
       "textDigest": "87078831f83d6a856d46bf48a8a2cbd36adda3c9e21bf6e027441e23c6c7ed49"
+    },
+    {
+      "version": "2026-11-11.1",
+      "terms": "1",
+      "privacyPolicy": "13",
+      "material": false,
+      "date": "2026-11-11",
+      "textDigest": "cc61e34701b0fb91c1b27e95d0350f821cb1b0ce96cda67b734d6f717f70f096"
     }
   ]
 }

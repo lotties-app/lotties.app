@@ -55,7 +55,7 @@ Compose reads `.env` from the repository root.
 | `CORS_ALLOWED_ORIGINS` | api | no | Comma-separated origins. Only if the web app is served from a different origin than the API, or for the iOS/Android app (`https://localhost,capacitor://localhost`, see "Native apps (iOS/Android)") |
 | `FORWARDED_HEADERS_TRUSTED_NETWORKS` | api | no (private ranges) | CIDR list of proxies whose `X-Forwarded-For`/`-Proto` are applied; see "Reverse proxy and TLS" |
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
-| `SILENT_PUSH_ENABLED`, `PUSH_APNS_KEY_ID`, `PUSH_APNS_TEAM_ID`, `PUSH_APNS_KEY_P8`, `PUSH_FCM_PROJECT_ID`, `PUSH_FCM_SERVICE_ACCOUNT_JSON` | api | no (`false`; per channel all or none) | Silent pushes that keep the app's widgets current; held behind the privacy policy; see "Silent pushes for the widgets" |
+| `SILENT_PUSH_ENABLED`, `PUSH_APNS_KEY_ID`, `PUSH_APNS_TEAM_ID`, `PUSH_APNS_KEY_P8`, `PUSH_FCM_PROJECT_ID`, `PUSH_FCM_SERVICE_ACCOUNT_JSON` | api | no (`false`; per channel all or none) | Silent pushes that keep the app's widgets current; on only once privacy policy 13 is live; see "Silent pushes for the widgets" |
 | `Demo__SigningKey` (home lab: `DEMO_SIGNING_KEY` in `deploy/homelab/.env`) | api | no | Try-it demo; 32+ characters, secret. Blank = demo off. Tuning: `Demo__LifetimeDays` (3), `Demo__MaxLiveAccounts` (200), `Demo__StartPermitsPerHour` (3), `Demo__CleanupMinutes` (30); see docs/design/45-try-it-demo.md |
 | `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
 | `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
@@ -310,7 +310,8 @@ Apply the `PushNotifications` migration (`20261021182304_PushNotifications`) as 
 
 Content-free APNs/FCM pushes that tell the family's other phones that a baby's records changed, so the app syncs and
 its home-screen widgets update (docs/design/37b-widget-silent-push.md). **Off by default, and it stays off in production
-until the held privacy policy text is released** (docs/legal-held/widget-silent-push/README.md). Needs migration
+until privacy policy 13 (2026-11-11, the Android app) is deployed and live at `/privacy`** (docs/design/37b section
+11); the policy names Google FCM only, the iOS app needs its own policy change first. Needs migration
 `SilentPushDevices` (table `silent_push_devices`; back up before deploying it). While off, `POST /api/v1/push/devices`
 answers 409 `silent_push_not_configured` and nothing is queued or sent, and `GET /api/v1/push/silent/status` answers
 `{"enabled": false}`, so the apps never ask the phone for a push token (no contact with Apple or Google; design 37b
