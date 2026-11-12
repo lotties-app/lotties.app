@@ -14,6 +14,8 @@ production nothing is collected or sent, so production keeps the shipped policy.
 
 ## What is here
 
+- `DECISION-BRIEF.md`: the four decisions below framed for the owner and the lawyer, with a recommendation for each
+  (written 2026-11-11).
 - `privacy-policy-widget-silent-push.patch`: proposed changes under `code/web/src/legal/` (made against `main` at
   `3b6adcb`, policy 12 of 2026-11-06):
   - `privacy.en.ts`, `privacy.pt-BR.ts`: a "Widget updates" row in "What we collect" (`widgetUpdates`), an "App push
