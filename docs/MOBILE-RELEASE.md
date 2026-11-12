@@ -4,9 +4,11 @@ How the Capacitor apps in `code/mobile` are built, signed and sent to Google Pla
 without a local Android SDK or a Mac. Design of the apps: docs/design/12-mobile-capacitor.md. Store forms and policy
 drafts: docs/design/20-store-readiness.md. The workflow is `.github/workflows/mobile-release.yml`.
 
-**Status: written, never run.** It was validated only as YAML (the parser caught one real error) and by reading it
-against the Gradle and Xcode projects. Expect a few fixes on the first runs, which are cheap (a manual run builds in
-about 15 minutes on Android and 20 on iOS, and runs only when started).
+**Status: runs on CI.** Since the first run on 2026-10-31 the workflow has run 40 times (35 green, 3 failed, 2
+cancelled as of 2026-11-12); the latest run (42981940159, 2026-11-11) finished with both the iOS and the Android jobs
+green. Proven: both jobs build, sign and finish their upload step on CI. Not proven by us: that the builds show up
+and install from Play Console internal testing or TestFlight (nobody here has looked), and no Xcode or real-device run.
+A manual run builds in about 15 minutes on Android and 20 on iOS, and runs only when started.
 
 ## 1. GitHub Actions or Azure DevOps
 
@@ -222,17 +224,15 @@ run on a simulator or an iPhone, and read the Xcode logs when the CI archive fai
 
 ## 7. What is unverified
 
-- The whole workflow (never run); `scheme App` is built from Xcode's auto-created scheme because the template has no
-  shared scheme; the Capacitor Java level (JDK 21 assumed); that the Apple API key flags work for archive and export on
-  `macos-26` with Xcode 26.5; the TestFlight upload through `destination=upload`.
-- A first iOS run may fail on signing; the log names the missing piece (App ID, team id, key role).
+- Proven on CI (40 runs to 2026-11-12, latest 42981940159 on 2026-11-11 green): the iOS job (manual signing, archive,
+  export with `destination=upload`) and the Android job finish green on `macos-26` / Ubuntu. Still unproven: that the
+  uploads appear in Play Console and TestFlight and install (not observed by us), and any run in Xcode or on a device.
 - First runs (0.0.1, 2026-10-31): Android stopped at `./gradlew: Permission denied` (committed without the execute bit; now
   mode 100755) and then built. iOS stopped at the archive with "Your team has no devices from which to generate a
   provisioning profile" (automatic signing needs a registered device); forcing `CODE_SIGN_IDENTITY="Apple Distribution"`
-  fails too ("conflicting provisioning settings"). The workflow now signs manually (4.3); that path is **not run yet**: the
-  `PROVISIONING_PROFILE_SPECIFIER` override reaching the Swift package targets, the export `provisioningProfiles` map and
-  the keychain import on `macos-26` are the parts to watch on the next iOS run.
+  fails too ("conflicting provisioning settings"). The workflow now signs manually (4.3), and later iOS runs on that
+  path are green.
 - Push Notifications (4.3 step 4c, 2026-11-11, edited without Xcode): the `aps-environment` entitlement is
   `$(LOTTIES_APS_ENVIRONMENT)`, a build setting of the App target (`production` in Release, `development` in Debug);
   that Xcode expands it before matching the profile, the new profile check and the archive with the regenerated
-  profile have never run.
+  profile have not run yet (the latest run, 2026-11-11 07:46 UTC, predates that change).
