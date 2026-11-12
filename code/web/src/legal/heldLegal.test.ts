@@ -7,7 +7,7 @@ import { POLICY_SECTION_IDS } from './policyTypes';
 
 /*
  * The privacy policy and consent for "bring your own database" are held until the general release of the feature
- * (docs/legal-held/byo-database/README.md): the shipped policy (13, consent 2026-11-11.1) does not carry it. The held
+ * (docs/legal-held/byo-database/README.md): the shipped policy (14, consent 2026-11-12.1) does not carry it. The held
  * texts live outside the app, and nothing in it may import them. Delete this test when the held content is released
  * (step 7 of that README).
  */

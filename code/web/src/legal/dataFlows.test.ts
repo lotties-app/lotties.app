@@ -242,24 +242,31 @@ describe('the data flows behind the privacy policy', () => {
       const stops =
         locale === 'en' ? /last Lotties widget removed/ : /último widget do Lotties foi tirado/;
       expect(JSON.stringify(recipientRow(locale, 'appPushServices'))).toMatch(noContent);
+      expect(JSON.stringify(dataRow(locale, 'widgetUpdates'))).toMatch(/Apple/);
       expect(JSON.stringify(dataRow(locale, 'widgetUpdates'))).toMatch(/Google/);
       expect(JSON.stringify(sectionOf(locale, 'retention'))).toMatch(stops);
+      expect(JSON.stringify(sectionOf(locale, 'transfers'))).toMatch(/Apple Push Notification service/);
       expect(JSON.stringify(sectionOf(locale, 'transfers'))).toMatch(/Firebase Cloud Messaging/);
     },
   );
 
   it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
-    'name only the Android app and Google for the widget pushes in the %s policy (iOS is not shipped)',
+    'name both apps and both push services for the widget pushes in the %s policy',
     (locale) => {
-      // The iOS receive path is not shipped (docs/design/37b-widget-silent-push.md section 11): Apple joins these rows
-      // with its own policy change, never before.
+      // Policy 13 shipped the Android app (Google FCM), policy 14 added the iOS app (Apple APNs): the server sends to
+      // both once the flag is on and a channel is configured (docs/design/37b-widget-silent-push.md section 11).
+      const noContent = locale === 'en' ? /message with no content/ : /mensagem sem conteúdo/;
       const firebaseDocs =
         locale === 'en' ? /per Firebase's documentation/ : /segundo a documentação do Firebase/;
-      for (const row of [recipientRow(locale, 'appPushServices'), dataRow(locale, 'widgetUpdates')]) {
-        expect(JSON.stringify(row)).toMatch(/Android/);
-        expect(JSON.stringify(row)).not.toMatch(/Apple|APNs|iOS/);
+      const recipient = JSON.stringify(recipientRow(locale, 'appPushServices'));
+      for (const row of [recipient, JSON.stringify(dataRow(locale, 'widgetUpdates'))]) {
+        expect(row).toMatch(/iOS/);
+        expect(row).toMatch(/Android/);
       }
-      expect(JSON.stringify(recipientRow(locale, 'appPushServices'))).toMatch(firebaseDocs);
+      expect(recipient).toMatch(/Apple Push Notification service/);
+      expect(recipient).toMatch(/Google Firebase Cloud Messaging/);
+      expect(recipient).toMatch(noContent);
+      expect(recipient).toMatch(firebaseDocs);
     },
   );
 

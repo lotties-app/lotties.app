@@ -237,7 +237,7 @@ configure() {
   # Where the web pod's nginx would send /api/ (the Ingress sends /api to the API directly).
   API_UPSTREAM="lotties-api.$NS.svc.cluster.local:8080"
   DB_AUTO_MIGRATE=$(parse_bool "${DB_AUTO_MIGRATE:-false}") || die "DB_AUTO_MIGRATE must be true or false"
-  # Widget silent pushes: off unless set (a deploy without it turns them off); on only once privacy policy 13 is live.
+  # Widget silent pushes: off unless set (a deploy without it turns them off); on only once privacy policy 14 is live.
   SILENT_PUSH_ENABLED=$(parse_bool "${SILENT_PUSH_ENABLED:-false}") || die "SILENT_PUSH_ENABLED must be true or false"
   BUILT=0
   WOULD_BUILD=0

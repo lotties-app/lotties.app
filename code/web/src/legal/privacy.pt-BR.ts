@@ -16,7 +16,7 @@ export const privacyPtBR: PolicyDocument = {
         items: [
           'Sua conta de acesso: nome, e-mail e senha, guardados pelo nosso próprio servidor de login.',
           'O que você e as pessoas que você convida registram sobre o bebê, inclusive informações de saúde, como remédios e vacinas.',
-          'O que o serviço precisa para funcionar: as configurações de lembretes, se você ativá-los, o token de push do app de Android enquanto ele mostra um widget do Lotties, e registros técnicos.',
+          'O que o serviço precisa para funcionar: as configurações de lembretes, se você ativá-los, o token de push do app de iOS ou de Android enquanto ele mostra um widget do Lotties, e registros técnicos.',
           'Se você ligar o Monitor de choro: o microfone, analisado só no seu aparelho e nunca gravado; só ficam salvos os períodos de choro detectados.',
           'Se você ligar a estimativa de descanso, que é opcional: seus horários de trabalho e da noite e o fuso horário; a estimativa é calculada quando você pede, aparece só para você e nunca é guardada.',
         ],
@@ -26,7 +26,7 @@ export const privacyPtBR: PolicyDocument = {
         items: [
           'Nada de publicidade, de ferramentas de análise ou rastreamento, nem de venda de dados.',
           'Nada de orientação médica: o Lotties não é um dispositivo médico.',
-          'Seus dados só chegam a outras empresas quando você usa um recurso que depende delas, como lembretes, widgets na tela inicial ou a Alexa.',
+          'Seus dados só chegam a outras empresas quando você usa um recurso que depende delas, como lembretes, os widgets dos apps ou a Alexa.',
         ],
       },
       {
@@ -163,8 +163,8 @@ export const privacyPtBR: PolicyDocument = {
             {
               id: 'widgetUpdates',
               cells: [
-                'Atualização dos widgets (app de Android)',
-                'Só no app de Android, enquanto houver um widget do Lotties na tela inicial: o token de push que o Google dá ao app nesse aparelho, quando ele foi registrado e renovado pela última vez, quando enviamos para ele pela última vez, se os envios falharam e quando e por que ele foi desativado. Nenhum nome ou modelo de aparelho.',
+                'Atualização dos widgets (apps de iOS e Android)',
+                'Só no app de iOS ou de Android, enquanto houver um widget do Lotties na tela inicial (ou, no app de iOS, na tela de bloqueio): o token de push que a Apple ou o Google dá ao app nesse aparelho, qual dos dois é, na Apple se é uma versão de desenvolvimento, quando ele foi registrado e renovado pela última vez, quando enviamos para ele pela última vez, se os envios falharam e quando e por que ele foi desativado. Nenhum nome ou modelo de aparelho.',
                 'Para avisar o app nos seus outros aparelhos, e nos da sua família, que algo mudou nos registros de um bebê, para que ele atualize os widgets. A mensagem não leva conteúdo: o app então busca as mudanças pela conexão normal com a gente.',
               ],
             },
@@ -256,7 +256,7 @@ export const privacyPtBR: PolicyDocument = {
             'Sua conta, seus registros e o compartilhamento com as pessoas que você convida: execução do serviço que você pediu (LGPD, art. 7º, V).',
             'Informações de saúde do seu bebê (dados sensíveis): seu consentimento para essa finalidade (art. 11, I). Você o dá ao escolher registrar essas informações no app, para manter o histórico da criança. Você pode revogá-lo quando quiser, apagando esses registros ou a sua conta.',
             'Compartilhamento com um médico que você convida: seu consentimento específico, dado ao criar o convite e escolher as seções que o médico verá (art. 11, I). Você pode mudar as seções ou encerrar o acesso a qualquer momento.',
-            'Atualização dos widgets: execução do que você pediu ao adicionar um widget do Lotties no app de Android, um widget que se mantém atualizado (art. 7º, V). A mensagem não leva conteúdo, e sair da conta, ou tirar os widgets e abrir o app, interrompe o envio.',
+            'Atualização dos widgets: execução do que você pediu ao adicionar um widget do Lotties no app de iOS ou de Android, um widget que se mantém atualizado (art. 7º, V). A mensagem não leva conteúdo, e sair da conta, ou tirar os widgets e abrir o app, interrompe o envio.',
             'Recursos opcionais que você ativa (lembretes, a skill da Alexa, a busca de endereço): seu consentimento (art. 7º, I, e art. 11, I quando o lembrete for de um remédio ou de uma vacina). Para revogá-lo, desative o recurso ou desvincule a skill.',
             'A estimativa de descanso: seu consentimento, dado quando você a liga para você em Insights, porque ela pode revelar quando você trabalha e descansa (art. 7, I, e art. 11, I, por poder ser lida como informação de saúde). Ninguém pode ligá-la por você. Você a revoga desligando-a, e pode apagar os ajustes e as respostas ali mesmo.',
             'O Monitor de choro: seu consentimento específico, pedido em cada aparelho antes de ligar, a um membro que pode registrar para o bebê (art. 11, I, e art. 14, § 1º). Você o revoga na página do monitor; os períodos já registrados continuam como registros comuns até você apagá-los.',
@@ -344,9 +344,9 @@ export const privacyPtBR: PolicyDocument = {
                 {
                   id: 'appPushServices',
                   cells: [
-                    'Serviço de push do app: Google Firebase Cloud Messaging (app de Android)',
-                    'O token de push do app no seu aparelho e, quando algo muda nos registros de um bebê que você acompanha, uma mensagem sem conteúdo: nenhum nome, nenhum registro, nenhum horário de registro, nada sobre o bebê. Pelas mensagens, o Google só fica sabendo que este app foi avisado para se atualizar, e quando. Para criar o token, a biblioteca do Firebase dentro do app também envia ao Google, segundo a documentação do Firebase, um identificador de instalação do Firebase, o pacote do app e o identificador do app no Firebase, e as versões do app, do Android e da biblioteca.',
-                    'Só no app de Android, enquanto houver um widget do Lotties na tela inicial.',
+                    'Serviços de push dos apps: Apple Push Notification service (app de iOS) e Google Firebase Cloud Messaging (app de Android)',
+                    'O token de push do app no seu aparelho e, quando algo muda nos registros de um bebê que você acompanha, uma mensagem sem conteúdo: nenhum nome, nenhum registro, nenhum horário de registro, nada sobre o bebê. Pelas mensagens, a Apple e o Google só ficam sabendo que este app foi avisado para se atualizar, e quando. No app de Android, para criar o token, a biblioteca do Firebase dentro do app também envia ao Google, segundo a documentação do Firebase, um identificador de instalação do Firebase, o pacote do app e o identificador do app no Firebase, e as versões do app, do Android e da biblioteca. O app de iOS não acrescenta nenhuma biblioteca para isso: ele pede o token ao próprio iOS.',
+                    'Só no app de iOS ou de Android, enquanto houver um widget do Lotties na tela inicial (ou, no app de iOS, na tela de bloqueio).',
                   ],
                 },
                 {
@@ -475,7 +475,7 @@ export const privacyPtBR: PolicyDocument = {
             'Sua escolha de unidades de medida: até você mudá-la ou excluir sua conta.',
             'Os ajustes da estimativa de descanso e os horários de "já acordei" que você respondeu: até você mudá-los, desligar a estimativa e apagá-los ali, ou excluir sua conta. A estimativa em si nunca é guardada.',
             'Lembretes: o registro de envio por 14 dias; adiamentos e dispensas por 7 dias após a última mudança. Um aparelho que fica 90 dias sem abrir o app para de receber lembretes, e o endereço de push de um aparelho desativado é apagado 30 dias depois.',
-            'Atualização dos widgets: o token de push de um aparelho é desativado quando você sai da conta nele, quando o app percebe que o último widget do Lotties foi tirado (ele confere toda vez que abre), quando o Google avisa que ele não funciona mais ou os envios para ele falham seguidamente, ou quando o app não o renova há 60 dias; tokens desativados são apagados 30 dias depois.',
+            'Atualização dos widgets: o token de push de um aparelho é desativado quando você sai da conta nele, quando o app percebe que o último widget do Lotties foi tirado (ele confere toda vez que abre), quando a Apple ou o Google avisam que ele não funciona mais ou os envios para ele falham seguidamente, ou quando o app não o renova há 60 dias; tokens desativados são apagados 30 dias depois.',
             'Registro de acessos de médicos e convites: ficam com o bebê até ele ser excluído.',
             'Monitor de choro: o som nunca é guardado. Os períodos de choro que ele registra são registros comuns (acima); o consentimento fica no aparelho até você retirá-lo ou sair da conta.',
             'Registros técnicos (logs): só pelo tempo necessário para operar e proteger o serviço.',
@@ -526,7 +526,7 @@ export const privacyPtBR: PolicyDocument = {
           kind: 'list',
           items: [
             'Notificações: os serviços de push do Google, da Mozilla, da Apple e da Microsoft, que funcionam no mundo todo, inclusive nos Estados Unidos. Eles não conseguem ler o conteúdo dos lembretes nem dos alertas.',
-            'Atualização dos widgets no app de Android: o Google, que opera o Firebase Cloud Messaging no mundo todo, inclusive nos Estados Unidos. As mensagens não levam conteúdo.',
+            'Atualização dos widgets nos apps de iOS e Android: a Apple, que opera o Apple Push Notification service, e o Google, que opera o Firebase Cloud Messaging, ambos no mundo todo, inclusive nos Estados Unidos. As mensagens não levam conteúdo.',
             'Alexa: a Amazon, que processa os pedidos de voz nos próprios data centers, inclusive nos Estados Unidos.',
             'Busca de endereço: o Nominatim do OpenStreetMap é mantido pela OpenStreetMap Foundation, sediada no Reino Unido. A BrasilAPI e o ViaCEP também podem usar servidores fora do Brasil.',
             'As lojas de apps da Apple e do Google e o GitHub, quando você os usa, segundo os termos deles.',

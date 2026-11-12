@@ -39,6 +39,14 @@
       "material": false,
       "date": "2026-11-11",
       "textDigest": "cc61e34701b0fb91c1b27e95d0350f821cb1b0ce96cda67b734d6f717f70f096"
+    },
+    {
+      "version": "2026-11-12.1",
+      "terms": "1",
+      "privacyPolicy": "14",
+      "material": false,
+      "date": "2026-11-12",
+      "textDigest": "ef9a7039b45eabb80690bbc96c25813786db68e071a947ebb4b09cde3d347682"
     }
   ]
 }
