@@ -87,13 +87,13 @@ public sealed class XminConcurrencyPostgresTests(PostgresFixture postgres)
     }
 
     /// <remarks>
-    /// Current behavior on Postgres: the losing save fails on the baby row first (EF writes it before the invite and Npgsql reports
-    /// only that entry), so the loser gets <see cref="ConcurrentModificationException"/>, not the
-    /// <see cref="InviteAlreadyAcceptedException"/> that <see cref="IBabyRepository.SaveChangesAsync"/> and <c>IInviteService.AcceptAsync</c>
-    /// document; the retry it asks for then gets <see cref="InviteAlreadyAcceptedException"/>. Nothing of the loser is saved.
+    /// The losing save fails on the baby row first (EF writes it before the invite and Npgsql reports only that entry); the
+    /// repository still checks the invite it was saving, so the loser gets the <see cref="InviteAlreadyAcceptedException"/> that
+    /// <see cref="IBabyRepository.SaveChangesAsync"/> and <c>IInviteService.AcceptAsync</c> document, and so does a retry. Nothing
+    /// of the loser is saved.
     /// </remarks>
     [PostgresFact]
-    public async Task Same_invite_accepted_twice_admits_the_first_and_the_second_learns_it_was_accepted_on_retry()
+    public async Task Same_invite_accepted_twice_admits_the_first_and_the_second_learns_it_was_accepted()
     {
         await using var world = await BuiltInWorld.CreateAsync(postgres, "xmininvite");
         var (ownerId, babyId) = await AddFamilyAsync(world);
@@ -109,7 +109,8 @@ public sealed class XminConcurrencyPostgresTests(PostgresFixture postgres)
         await first.Babies.SaveChangesAsync();
         second.Baby.AdmitWith(second.Invite, secondGuest, Now.AddMinutes(2));
 
-        await Assert.ThrowsAsync<ConcurrentModificationException>(() => second.Babies.SaveChangesAsync());
+        var conflict = await Assert.ThrowsAsync<InviteAlreadyAcceptedException>(() => second.Babies.SaveChangesAsync());
+        Assert.Equal("invite_already_accepted", conflict.Code);
         await using var retryScope = world.Scope(secondGuest);
         var retry = await LoadForAcceptAsync(retryScope, babyId, inviteId);
         Assert.Throws<InviteAlreadyAcceptedException>(() => retry.Baby.AdmitWith(retry.Invite, secondGuest, Now.AddMinutes(3)));
