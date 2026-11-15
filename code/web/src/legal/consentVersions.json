@@ -47,6 +47,14 @@
       "material": false,
       "date": "2026-11-12",
       "textDigest": "ef9a7039b45eabb80690bbc96c25813786db68e071a947ebb4b09cde3d347682"
+    },
+    {
+      "version": "2026-11-15.1",
+      "terms": "1",
+      "privacyPolicy": "15",
+      "material": true,
+      "date": "2026-11-15",
+      "textDigest": "794fd8494404f46fcd27dee55c5d31fde1614d83958322fe1a09d297c7e1e4d7"
     }
   ]
 }

@@ -131,6 +131,14 @@
       "licenseUrl": null
     },
     {
+      "id": "cloudflare",
+      "kind": "service",
+      "name": "Cloudflare (DNS and reverse proxy)",
+      "url": "https://www.cloudflare.com/",
+      "license": "Proprietary service (traffic routing only; no code dependency)",
+      "licenseUrl": "https://www.cloudflare.com/terms/"
+    },
+    {
       "id": "webpush",
       "kind": "platform",
       "name": "Web Push and VAPID (IETF RFC 8030, 8291 and 8292)",

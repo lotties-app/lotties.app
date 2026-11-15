@@ -330,6 +330,14 @@ export const privacyEn: PolicyDocument = {
               columns: ['Who', 'What they receive', 'When'],
               rows: [
                 {
+                  id: 'cloudflare',
+                  cells: [
+                    'Cloudflare (DNS and reverse proxy)',
+                    'All traffic to lotties.app and auth.lotties.app passes through Cloudflare\'s network before reaching our servers. Cloudflare sees your network address, the pages and API routes you request, and the encrypted content of those requests. It does not receive your account credentials or baby records in a form it can read beyond what HTTPS allows a proxy to see.',
+                    'Always, whenever you use lotties.app.',
+                  ],
+                },
+                {
                   id: 'pushServices',
                   cells: [
                     'Browser push services: Google (Chrome and most Android browsers), Mozilla (Firefox), Apple (Safari) and Microsoft (Edge)',
@@ -521,6 +529,7 @@ export const privacyEn: PolicyDocument = {
         {
           kind: 'list',
           items: [
+            'Cloudflare: DNS and reverse proxy for lotties.app and auth.lotties.app. All traffic passes through Cloudflare\'s network, which operates worldwide, including in the United States. Cloudflare sees your network address and the routes you request; the content is encrypted between your browser and our servers.',
             'Notifications: the push services of Google, Mozilla, Apple and Microsoft, which operate worldwide, including in the United States. They cannot read the content of reminders or alerts.',
             'Widget updates in the iOS and Android apps: Apple, which runs the Apple Push Notification service, and Google, which runs Firebase Cloud Messaging, both worldwide, including in the United States. The messages carry no content.',
             'Alexa: Amazon, which processes voice requests in its own data centers, including in the United States.',

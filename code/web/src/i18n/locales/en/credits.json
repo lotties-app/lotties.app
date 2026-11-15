@@ -39,6 +39,7 @@
       "postgresql": "The database that stores the family's synced data.",
       "dotnet": "The runtime and web framework of the Lotties server.",
       "buildtools": "The tools that build and test the app. They are used while building and are not part of what runs on your phone.",
+      "cloudflare": "Routes all traffic to lotties.app through its network (DNS and reverse proxy), so every request passes through Cloudflare's servers before reaching ours.",
       "webpush": "Reminders reach your phone through the open Web Push standard with VAPID keys, sent by our own server (no third-party push service SDK).",
       "fraunces": "The display font of headings, self-hosted through Fontsource.",
       "tabler": "The line icons used across the app.",

@@ -39,6 +39,7 @@
       "postgresql": "O banco de dados que guarda os dados sincronizados da família.",
       "dotnet": "O ambiente de execução e o framework web do servidor do Lotties.",
       "buildtools": "As ferramentas que compilam e testam o app. São usadas na construção e não fazem parte do que roda no seu celular.",
+      "cloudflare": "Encaminha todo o tráfego para lotties.app pela sua rede (DNS e proxy reverso), de modo que cada pedido passa pelos servidores da Cloudflare antes de chegar aos nossos.",
       "webpush": "Os lembretes chegam ao seu celular pelo padrão aberto Web Push com chaves VAPID, enviados pelo nosso próprio servidor (sem SDK de serviço de push de terceiros).",
       "fraunces": "A fonte de destaque dos títulos, hospedada por nós via Fontsource.",
       "tabler": "Os ícones de traço usados em todo o app.",

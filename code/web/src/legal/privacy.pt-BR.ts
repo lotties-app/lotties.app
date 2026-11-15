@@ -334,6 +334,14 @@ export const privacyPtBR: PolicyDocument = {
               columns: ['Quem', 'O que recebe', 'Quando'],
               rows: [
                 {
+                  id: 'cloudflare',
+                  cells: [
+                    'Cloudflare (DNS e proxy reverso)',
+                    'Todo o tráfego para lotties.app e auth.lotties.app passa pela rede da Cloudflare antes de chegar aos nossos servidores. A Cloudflare vê o seu endereço de rede, as páginas e rotas de API que você acessa e o conteúdo criptografado dessas requisições. Ela não recebe as credenciais da sua conta nem os registros do bebê em uma forma que possa ler além do que o HTTPS permite a um proxy ver.',
+                    'Sempre, sempre que você usa o lotties.app.',
+                  ],
+                },
+                {
                   id: 'pushServices',
                   cells: [
                     'Serviços de push dos navegadores: Google (Chrome e a maioria dos navegadores Android), Mozilla (Firefox), Apple (Safari) e Microsoft (Edge)',
@@ -525,6 +533,7 @@ export const privacyPtBR: PolicyDocument = {
         {
           kind: 'list',
           items: [
+            'Cloudflare: DNS e proxy reverso para lotties.app e auth.lotties.app. Todo o tráfego passa pela rede da Cloudflare, que opera no mundo todo, inclusive nos Estados Unidos. A Cloudflare vê o seu endereço de rede e as rotas que você acessa; o conteúdo é criptografado entre o seu navegador e os nossos servidores.',
             'Notificações: os serviços de push do Google, da Mozilla, da Apple e da Microsoft, que funcionam no mundo todo, inclusive nos Estados Unidos. Eles não conseguem ler o conteúdo dos lembretes nem dos alertas.',
             'Atualização dos widgets nos apps de iOS e Android: a Apple, que opera o Apple Push Notification service, e o Google, que opera o Firebase Cloud Messaging, ambos no mundo todo, inclusive nos Estados Unidos. As mensagens não levam conteúdo.',
             'Alexa: a Amazon, que processa os pedidos de voz nos próprios data centers, inclusive nos Estados Unidos.',

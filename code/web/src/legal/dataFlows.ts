@@ -77,6 +77,7 @@ export const ON_DEVICE_FLOWS: readonly OnDeviceFlow[] = [
 
 /** The rows of the "Companies and services that receive data" table, in order. */
 export const THIRD_PARTY_IDS = [
+  'cloudflare',
   'pushServices',
   'appPushServices',
   'alexa',
@@ -98,6 +99,8 @@ export interface ThirdParty {
 }
 
 export const THIRD_PARTIES: readonly ThirdParty[] = [
+  // Cloudflare: DNS and reverse proxy for lotties.app and auth.lotties.app; all traffic passes through its network.
+  { id: 'cloudflare', trigger: 'userAction', abroad: true, creditIds: ['cloudflare'] },
   // Web Push (built): Google FCM, Mozilla, Apple, Microsoft; the payload is encrypted (RFC 8291).
   { id: 'pushServices', trigger: 'optIn', abroad: true, creditIds: ['webpush'] },
   // Silent pushes for the widgets (docs/design/37b-widget-silent-push.md): Apple APNs for the iOS app (policy 14) and
@@ -189,6 +192,7 @@ export type CreditPrivacy =
  * service to the credits forces the question "does it receive personal data?".
  */
 export const CURATED_CREDIT_PRIVACY: Readonly<Record<CuratedId, CreditPrivacy>> = {
+  cloudflare: { kind: 'recipient', thirdParty: 'cloudflare' },
   anvisa: { kind: 'noPersonalData' },
   pni: { kind: 'noPersonalData' },
   sbp: { kind: 'noPersonalData' },
