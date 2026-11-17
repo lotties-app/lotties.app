@@ -1,0 +1,3510 @@
+{
+  "parameters": {
+    "k": 20,
+    "epsilon": 0.2,
+    "seed": 42,
+    "resamples": 1000,
+    "trials": 2000,
+    "hysteresis": 18,
+    "dominance": 0.25,
+    "cap_days": 14
+  },
+  "results": [
+    {
+      "size": 100,
+      "rate": 0.05,
+      "opted_in_babies": 2,
+      "opted_in_families": 2,
+      "statistics": {
+        "bottle_ml_per_feed": {
+          "coverage": {
+            "bands": 78,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 78
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "tummy_minutes_per_day": {
+          "coverage": {
+            "bands": 19,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 19
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "night_sleep_minutes": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 39
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "naps_per_day": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 39
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "cry_outcome_by_cause": {
+          "coverage": {
+            "bands": 16,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 16
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        }
+      }
+    },
+    {
+      "size": 100,
+      "rate": 0.2,
+      "opted_in_babies": 18,
+      "opted_in_families": 14,
+      "statistics": {
+        "bottle_ml_per_feed": {
+          "coverage": {
+            "bands": 78,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 78
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "tummy_minutes_per_day": {
+          "coverage": {
+            "bands": 19,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 19
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "night_sleep_minutes": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 39
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "naps_per_day": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 39
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "cry_outcome_by_cause": {
+          "coverage": {
+            "bands": 16,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 16
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        }
+      }
+    },
+    {
+      "size": 100,
+      "rate": 0.5,
+      "opted_in_babies": 45,
+      "opted_in_families": 38,
+      "statistics": {
+        "bottle_ml_per_feed": {
+          "coverage": {
+            "bands": 78,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 78
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "tummy_minutes_per_day": {
+          "coverage": {
+            "bands": 19,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 19
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "night_sleep_minutes": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 39
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "naps_per_day": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 39
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "cry_outcome_by_cause": {
+          "coverage": {
+            "bands": 16,
+            "fine": 0.25,
+            "covered": 0.25,
+            "fine_suppressed": {
+              "below_k": 12
+            }
+          },
+          "error": {
+            "cells": 4,
+            "pooled": 17.349452153245124,
+            "prior_cells": 4,
+            "pooled_on_prior_cells": 17.349452153245124,
+            "prior": 10.123727283883454
+          },
+          "error_exact": {
+            "cells": 4,
+            "pooled": 2.4771324654405875,
+            "prior_cells": 4,
+            "pooled_on_prior_cells": 2.4771324654405875,
+            "prior": 10.123727283883454
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 26,
+              "to_weeks": 104,
+              "dimension": "morning",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.001999999999999974,
+              "ci95": [
+                -0.05199999999999999,
+                0.04799999999999999
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.025999999999999995,
+              "ci95": [
+                -0.01605,
+                0.068
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 26,
+              "to_weeks": 104,
+              "dimension": "morning",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.09199999999999997,
+              "ci95": [
+                0.025950000000000025,
+                0.15400000000000003
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "rate": 0.05,
+      "opted_in_babies": 43,
+      "opted_in_families": 36,
+      "statistics": {
+        "bottle_ml_per_feed": {
+          "coverage": {
+            "bands": 78,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 78
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "tummy_minutes_per_day": {
+          "coverage": {
+            "bands": 19,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 19
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "night_sleep_minutes": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 39
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "naps_per_day": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.0,
+            "covered": 0.0,
+            "fine_suppressed": {
+              "below_k": 39
+            }
+          },
+          "error": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 0,
+            "pooled": null,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "cry_outcome_by_cause": {
+          "coverage": {
+            "bands": 16,
+            "fine": 0.1875,
+            "covered": 0.1875,
+            "fine_suppressed": {
+              "below_k": 12,
+              "dominance": 1
+            }
+          },
+          "error": {
+            "cells": 3,
+            "pooled": 20.55541781110386,
+            "prior_cells": 3,
+            "pooled_on_prior_cells": 20.55541781110386,
+            "prior": 10.226825381947698
+          },
+          "error_exact": {
+            "cells": 3,
+            "pooled": 5.829267598890631,
+            "prior_cells": 3,
+            "pooled_on_prior_cells": 5.829267598890631,
+            "prior": 10.226825381947698
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 26,
+              "to_weeks": 104,
+              "dimension": "afternoon",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.04799999999999993,
+              "ci95": [
+                -0.10204999999999997,
+                0.014000000000000012
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.020000000000000018,
+              "ci95": [
+                -0.08204999999999996,
+                0.03600000000000003
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 26,
+              "to_weeks": 104,
+              "dimension": "afternoon",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.12,
+              "ci95": [
+                0.05999999999999994,
+                0.1760499999999999
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "rate": 0.2,
+      "opted_in_babies": 184,
+      "opted_in_families": 140,
+      "statistics": {
+        "bottle_ml_per_feed": {
+          "coverage": {
+            "bands": 78,
+            "fine": 0.0,
+            "covered": 0.07692307692307693,
+            "fine_suppressed": {
+              "below_k": 78
+            }
+          },
+          "error": {
+            "cells": 6,
+            "pooled": 155.0,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 6,
+            "pooled": 1.3700064718311182,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": 97.38903394255874,
+            "ci95": [
+              93.63260962111536,
+              100.0
+            ],
+            "babies": 190
+          },
+          "calibration_exact": {
+            "share": 73.62924281984334,
+            "ci95": [
+              66.35247176177205,
+              80.5776980083372
+            ],
+            "babies": 190
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "tummy_minutes_per_day": {
+          "coverage": {
+            "bands": 19,
+            "fine": 0.0,
+            "covered": 0.21052631578947367,
+            "fine_suppressed": {
+              "below_k": 19
+            }
+          },
+          "error": {
+            "cells": 4,
+            "pooled": 88.25,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 4,
+            "pooled": 9.963385546975097,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": 2.0905923344947737,
+            "ci95": [
+              0.6534068761206833,
+              4.271674489542568
+            ],
+            "babies": 91
+          },
+          "calibration_exact": {
+            "share": 65.1567944250871,
+            "ci95": [
+              57.342315664791236,
+              72.28490870032223
+            ],
+            "babies": 91
+          },
+          "membership_noise": {},
+          "membership_exact": {}
+        },
+        "night_sleep_minutes": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.3076923076923077,
+            "covered": 0.6153846153846154,
+            "fine_suppressed": {
+              "below_k": 27
+            }
+          },
+          "error": {
+            "cells": 24,
+            "pooled": 92.60271884608426,
+            "prior_cells": 7,
+            "pooled_on_prior_cells": 76.93416789396169,
+            "prior": 4.860176730486013
+          },
+          "error_exact": {
+            "cells": 24,
+            "pooled": 14.60630918294522,
+            "prior_cells": 7,
+            "pooled_on_prior_cells": 12.425700625173704,
+            "prior": 4.860176730486013
+          },
+          "cold_start": {
+            "points": 2091,
+            "babies": 189,
+            "pooled_mae": 109.58660600916265,
+            "prior_mae": 60.54920659274871,
+            "delta": 49.03739941641394,
+            "ci95": [
+              35.74781464050423,
+              63.66461425274486
+            ]
+          },
+          "cold_start_exact": {
+            "points": 2091,
+            "babies": 189,
+            "pooled_mae": 61.12166469609394,
+            "prior_mae": 60.54920659274871,
+            "delta": 0.5724581033452267,
+            "ci95": [
+              -0.5919933663265059,
+              1.9321192792020674
+            ]
+          },
+          "calibration": {
+            "share": 87.37655646200085,
+            "ci95": [
+              85.47519068212652,
+              89.14415483048052
+            ],
+            "babies": 746
+          },
+          "calibration_exact": {
+            "share": 73.8085015027909,
+            "ci95": [
+              69.98680699446246,
+              77.47919580407206
+            ],
+            "babies": 746
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 68,
+              "to_weeks": 72,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.0020000000000000018,
+              "ci95": [
+                -0.01200000000000001,
+                0.016000000000000014
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.03599999999999992,
+              "ci95": [
+                -0.020000000000000018,
+                0.08799999999999997
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 68,
+              "to_weeks": 72,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.14,
+              "ci95": [
+                0.08594999999999997,
+                0.19805
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "naps_per_day": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.3076923076923077,
+            "covered": 0.6153846153846154,
+            "fine_suppressed": {
+              "below_k": 27
+            }
+          },
+          "error": {
+            "cells": 24,
+            "pooled": 1.9910857371794872,
+            "prior_cells": 24,
+            "pooled_on_prior_cells": 1.9910857371794872,
+            "prior": 0.22269631410256416
+          },
+          "error_exact": {
+            "cells": 24,
+            "pooled": 0.2491920405982906,
+            "prior_cells": 24,
+            "pooled_on_prior_cells": 0.2491920405982906,
+            "prior": 0.22269631410256416
+          },
+          "cold_start": {
+            "points": 7117,
+            "babies": 638,
+            "pooled_mae": 2.1133202191934806,
+            "prior_mae": 0.7701419137276941,
+            "delta": 1.3431783054657864,
+            "ci95": [
+              1.2353594101212475,
+              1.4437106084600797
+            ]
+          },
+          "cold_start_exact": {
+            "points": 7117,
+            "babies": 638,
+            "pooled_mae": 0.7024729520865534,
+            "prior_mae": 0.7701419137276941,
+            "delta": -0.06766896164114078,
+            "ci95": [
+              -0.0876795742406761,
+              -0.04732865915081556
+            ]
+          },
+          "calibration": {
+            "share": 80.03434950622584,
+            "ci95": [
+              78.15299290636095,
+              81.98063401956566
+            ],
+            "babies": 746
+          },
+          "calibration_exact": {
+            "share": 84.07041648776298,
+            "ci95": [
+              80.85055065686133,
+              87.20323255690549
+            ],
+            "babies": 746
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 68,
+              "to_weeks": 72,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.04199999999999998,
+              "ci95": [
+                -0.019999999999999962,
+                0.09799999999999998
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.027999999999999997,
+              "ci95": [
+                -0.07799999999999999,
+                0.01804999999999994
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 68,
+              "to_weeks": 72,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.04399999999999993,
+              "ci95": [
+                -0.10799999999999998,
+                0.01804999999999997
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.906,
+              "ci95": [
+                0.87995,
+                0.93205
+              ]
+            }
+          }
+        },
+        "cry_outcome_by_cause": {
+          "coverage": {
+            "bands": 16,
+            "fine": 0.75,
+            "covered": 0.75,
+            "fine_suppressed": {
+              "below_k": 4
+            }
+          },
+          "error": {
+            "cells": 12,
+            "pooled": 13.127642087325958,
+            "prior_cells": 12,
+            "pooled_on_prior_cells": 13.127642087325958,
+            "prior": 8.358881011668037
+          },
+          "error_exact": {
+            "cells": 12,
+            "pooled": 3.5842435339346594,
+            "prior_cells": 12,
+            "pooled_on_prior_cells": 3.5842435339346594,
+            "prior": 8.358881011668037
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 6,
+              "to_weeks": 13,
+              "dimension": "night",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.04399999999999993,
+              "ci95": [
+                -0.014050000000000007,
+                0.10599999999999998
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.01200000000000001,
+              "ci95": [
+                -0.05799999999999994,
+                0.03204999999999998
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 6,
+              "to_weeks": 13,
+              "dimension": "night",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.18800000000000006,
+              "ci95": [
+                0.138,
+                0.24
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "rate": 0.5,
+      "opted_in_babies": 491,
+      "opted_in_families": 378,
+      "statistics": {
+        "bottle_ml_per_feed": {
+          "coverage": {
+            "bands": 78,
+            "fine": 0.4230769230769231,
+            "covered": 0.7051282051282052,
+            "fine_suppressed": {
+              "below_k": 31,
+              "dominance": 14
+            }
+          },
+          "error": {
+            "cells": 55,
+            "pooled": 69.29052291974727,
+            "prior_cells": 12,
+            "pooled_on_prior_cells": 80.76796327300427,
+            "prior": 6.2484215050084115
+          },
+          "error_exact": {
+            "cells": 55,
+            "pooled": 13.589204161601272,
+            "prior_cells": 12,
+            "pooled_on_prior_cells": 13.18564174685009,
+            "prior": 6.2484215050084115
+          },
+          "cold_start": {
+            "points": 6757,
+            "babies": 99,
+            "pooled_mae": 109.90800027941697,
+            "prior_mae": 51.36737996000673,
+            "delta": 58.54062031941024,
+            "ci95": [
+              51.496360502807626,
+              65.57288127417706
+            ]
+          },
+          "cold_start_exact": {
+            "points": 6757,
+            "babies": 99,
+            "pooled_mae": 47.28491675802599,
+            "prior_mae": 51.36737996000673,
+            "delta": -4.082463201980737,
+            "ci95": [
+              -6.239639407288617,
+              -0.972558861092444
+            ]
+          },
+          "calibration": {
+            "share": 90.53444945267225,
+            "ci95": [
+              88.33289817232375,
+              92.59265436216738
+            ],
+            "babies": 473
+          },
+          "calibration_exact": {
+            "share": 74.62974887314874,
+            "ci95": [
+              70.32331719149072,
+              79.21362742912723
+            ],
+            "babies": 473
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 16,
+              "to_weeks": 18,
+              "dimension": "breast_milk",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.09199999999999997,
+              "ci95": [
+                0.06594999999999995,
+                0.11804999999999995
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.11000000000000001,
+              "ci95": [
+                0.07800000000000001,
+                0.14204999999999998
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 16,
+              "to_weeks": 18,
+              "dimension": "breast_milk",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.12,
+              "ci95": [
+                0.06,
+                0.184
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "tummy_minutes_per_day": {
+          "coverage": {
+            "bands": 19,
+            "fine": 0.7894736842105263,
+            "covered": 0.7894736842105263,
+            "fine_suppressed": {
+              "below_k": 4
+            }
+          },
+          "error": {
+            "cells": 15,
+            "pooled": 43.96666666666667,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 15,
+            "pooled": 3.3609690252007103,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": 52.736318407960205,
+            "ci95": [
+              47.74033756117048,
+              57.23091702357603
+            ],
+            "babies": 132
+          },
+          "calibration_exact": {
+            "share": 74.12935323383084,
+            "ci95": [
+              67.60651580823304,
+              80.37813276312066
+            ],
+            "babies": 132
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.004,
+              "ci95": [
+                -0.018,
+                0.024
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.05600000000000005,
+              "ci95": [
+                -0.09999999999999998,
+                -0.014000000000000012
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.08,
+              "ci95": [
+                0.036000000000000004,
+                0.12604999999999997
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "night_sleep_minutes": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.8974358974358975,
+            "covered": 0.8974358974358975,
+            "fine_suppressed": {
+              "below_k": 4
+            }
+          },
+          "error": {
+            "cells": 35,
+            "pooled": 167.93204433764825,
+            "prior_cells": 10,
+            "pooled_on_prior_cells": 159.17343461747151,
+            "prior": 4.507702658708626
+          },
+          "error_exact": {
+            "cells": 35,
+            "pooled": 9.243332719359394,
+            "prior_cells": 10,
+            "pooled_on_prior_cells": 12.238872306420864,
+            "prior": 4.507702658708626
+          },
+          "cold_start": {
+            "points": 1824,
+            "babies": 171,
+            "pooled_mae": 191.98551628742405,
+            "prior_mae": 61.67993725382786,
+            "delta": 130.3055790335962,
+            "ci95": [
+              113.0676989592487,
+              147.52455797771736
+            ]
+          },
+          "cold_start_exact": {
+            "points": 1824,
+            "babies": 171,
+            "pooled_mae": 63.03649852387832,
+            "prior_mae": 61.67993725382786,
+            "delta": 1.356561270050463,
+            "ci95": [
+              -0.4445109402355003,
+              3.1379216987882725
+            ]
+          },
+          "calibration": {
+            "share": 80.45310853530032,
+            "ci95": [
+              78.60820182502847,
+              82.36653422988051
+            ],
+            "babies": 507
+          },
+          "calibration_exact": {
+            "share": 79.29399367755532,
+            "ci95": [
+              75.20039253021426,
+              83.06315658908039
+            ],
+            "babies": 507
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.033999999999999975,
+              "ci95": [
+                -0.024050000000000016,
+                0.09599999999999997
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.0040000000000000036,
+              "ci95": [
+                -0.03200000000000003,
+                0.04200000000000004
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.07,
+              "ci95": [
+                0.034,
+                0.10604999999999996
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "naps_per_day": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.8974358974358975,
+            "covered": 0.8974358974358975,
+            "fine_suppressed": {
+              "below_k": 4
+            }
+          },
+          "error": {
+            "cells": 35,
+            "pooled": 2.0063873626373625,
+            "prior_cells": 35,
+            "pooled_on_prior_cells": 2.0063873626373625,
+            "prior": 0.24328296703296703
+          },
+          "error_exact": {
+            "cells": 35,
+            "pooled": 0.2136858974358974,
+            "prior_cells": 35,
+            "pooled_on_prior_cells": 0.2136858974358974,
+            "prior": 0.24328296703296703
+          },
+          "cold_start": {
+            "points": 5566,
+            "babies": 489,
+            "pooled_mae": 2.3321954725116782,
+            "prior_mae": 0.8060546173194395,
+            "delta": 1.5261408551922386,
+            "ci95": [
+              1.4022713664452278,
+              1.6340050349150126
+            ]
+          },
+          "cold_start_exact": {
+            "points": 5566,
+            "babies": 489,
+            "pooled_mae": 0.7306863097376931,
+            "prior_mae": 0.8060546173194395,
+            "delta": -0.0753683075817464,
+            "ci95": [
+              -0.09545885320129871,
+              -0.05401243759641281
+            ]
+          },
+          "calibration": {
+            "share": 73.44573234984195,
+            "ci95": [
+              71.06575664057338,
+              75.65530286090637
+            ],
+            "babies": 507
+          },
+          "calibration_exact": {
+            "share": 86.82824025289779,
+            "ci95": [
+              83.66104183122533,
+              90.04817525449928
+            ],
+            "babies": 507
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.009999999999999995,
+              "ci95": [
+                -0.046,
+                0.027999999999999997
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.0040000000000000036,
+              "ci95": [
+                -0.068,
+                0.057999999999999996
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.16400000000000003,
+              "ci95": [
+                0.11000000000000004,
+                0.22004999999999997
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.148,
+              "ci95": [
+                0.118,
+                0.18
+              ]
+            }
+          }
+        },
+        "cry_outcome_by_cause": {
+          "coverage": {
+            "bands": 16,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 16,
+            "pooled": 9.509582398821237,
+            "prior_cells": 16,
+            "pooled_on_prior_cells": 9.509582398821237,
+            "prior": 8.020153580701418
+          },
+          "error_exact": {
+            "cells": 16,
+            "pooled": 3.517140972168339,
+            "prior_cells": 16,
+            "pooled_on_prior_cells": 3.517140972168339,
+            "prior": 8.020153580701418
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 6,
+              "dimension": "night",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.02200000000000002,
+              "ci95": [
+                -0.03600000000000003,
+                0.07999999999999996
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.019999999999999907,
+              "ci95": [
+                -0.027999999999999914,
+                0.0680499999999999
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 6,
+              "dimension": "night",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.286,
+              "ci95": [
+                0.22599999999999998,
+                0.34600000000000003
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "size": 10000,
+      "rate": 0.05,
+      "opted_in_babies": 477,
+      "opted_in_families": 382,
+      "statistics": {
+        "bottle_ml_per_feed": {
+          "coverage": {
+            "bands": 78,
+            "fine": 0.5384615384615384,
+            "covered": 0.782051282051282,
+            "fine_suppressed": {
+              "below_k": 31,
+              "dominance": 5
+            }
+          },
+          "error": {
+            "cells": 61,
+            "pooled": 69.09879842659925,
+            "prior_cells": 22,
+            "pooled_on_prior_cells": 85.23082450123903,
+            "prior": 5.789109016953057
+          },
+          "error_exact": {
+            "cells": 61,
+            "pooled": 7.435663539046841,
+            "prior_cells": 22,
+            "pooled_on_prior_cells": 5.781895287102876,
+            "prior": 5.789109016953057
+          },
+          "cold_start": {
+            "points": 190455,
+            "babies": 2837,
+            "pooled_mae": 100.28057159201914,
+            "prior_mae": 49.74225637620674,
+            "delta": 50.5383152158124,
+            "ci95": [
+              47.39695561469261,
+              53.534728603336035
+            ]
+          },
+          "cold_start_exact": {
+            "points": 190455,
+            "babies": 2837,
+            "pooled_mae": 50.27523913131855,
+            "prior_mae": 49.74225637620674,
+            "delta": 0.53298275511181,
+            "ci95": [
+              0.241288080479025,
+              0.8329903931494421
+            ]
+          },
+          "calibration": {
+            "share": 83.49228316134662,
+            "ci95": [
+              83.00718293251236,
+              84.00688811638611
+            ],
+            "babies": 9239
+          },
+          "calibration_exact": {
+            "share": 75.87472547308884,
+            "ci95": [
+              74.87669960787225,
+              76.87763542299112
+            ],
+            "babies": 9239
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 56,
+              "to_weeks": 60,
+              "dimension": "breast_milk",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.013999999999999957,
+              "ci95": [
+                -0.04799999999999999,
+                0.07800000000000001
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.026000000000000023,
+              "ci95": [
+                -0.03600000000000003,
+                0.08605000000000003
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 56,
+              "to_weeks": 60,
+              "dimension": "breast_milk",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.14,
+              "ci95": [
+                0.07395000000000002,
+                0.20600000000000002
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "tummy_minutes_per_day": {
+          "coverage": {
+            "bands": 19,
+            "fine": 0.7894736842105263,
+            "covered": 1.0,
+            "fine_suppressed": {
+              "below_k": 4
+            }
+          },
+          "error": {
+            "cells": 19,
+            "pooled": 60.55263157894737,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 19,
+            "pooled": 1.7449436846027497,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": 51.343376300667806,
+            "ci95": [
+              50.176060698257245,
+              52.389390870266766
+            ],
+            "babies": 2443
+          },
+          "calibration_exact": {
+            "share": 75.99782574933997,
+            "ci95": [
+              74.28795682863958,
+              77.61535940108882
+            ],
+            "babies": 2443
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.0,
+              "ci95": [
+                -0.020000000000000018,
+                0.020000000000000018
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.016000000000000014,
+              "ci95": [
+                -0.030049999999999997,
+                0.066
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.04799999999999999,
+              "ci95": [
+                0.016,
+                0.084
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "night_sleep_minutes": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.8974358974358975,
+            "covered": 1.0,
+            "fine_suppressed": {
+              "below_k": 4
+            }
+          },
+          "error": {
+            "cells": 39,
+            "pooled": 135.30090014886542,
+            "prior_cells": 10,
+            "pooled_on_prior_cells": 147.30833857840474,
+            "prior": 4.507702658708626
+          },
+          "error_exact": {
+            "cells": 39,
+            "pooled": 10.257769396516231,
+            "prior_cells": 10,
+            "pooled_on_prior_cells": 8.600736555816763,
+            "prior": 4.507702658708626
+          },
+          "cold_start": {
+            "points": 35826,
+            "babies": 3357,
+            "pooled_mae": 152.770106783278,
+            "prior_mae": 60.95959505368985,
+            "delta": 91.81051172958816,
+            "ci95": [
+              87.55059810332946,
+              96.16718643369857
+            ]
+          },
+          "cold_start_exact": {
+            "points": 35826,
+            "babies": 3357,
+            "pooled_mae": 61.15673624052797,
+            "prior_mae": 60.95959505368985,
+            "delta": 0.19714118683811677,
+            "ci95": [
+              -0.07771428219074519,
+              0.471390781792405
+            ]
+          },
+          "calibration": {
+            "share": 81.59901599015991,
+            "ci95": [
+              81.14741702395982,
+              82.05996219288805
+            ],
+            "babies": 9523
+          },
+          "calibration_exact": {
+            "share": 75.35055350553506,
+            "ci95": [
+              74.40623754689524,
+              76.2968979399907
+            ],
+            "babies": 9523
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.038000000000000034,
+              "ci95": [
+                -0.10199999999999998,
+                0.026000000000000023
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.026000000000000023,
+              "ci95": [
+                -0.08999999999999997,
+                0.03999999999999998
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.108,
+              "ci95": [
+                0.08,
+                0.134
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "naps_per_day": {
+          "coverage": {
+            "bands": 39,
+            "fine": 0.8974358974358975,
+            "covered": 1.0,
+            "fine_suppressed": {
+              "below_k": 4
+            }
+          },
+          "error": {
+            "cells": 39,
+            "pooled": 1.9214373767258381,
+            "prior_cells": 39,
+            "pooled_on_prior_cells": 1.9214373767258381,
+            "prior": 0.29643737672583825
+          },
+          "error_exact": {
+            "cells": 39,
+            "pooled": 0.20304487179487174,
+            "prior_cells": 39,
+            "pooled_on_prior_cells": 0.20304487179487174,
+            "prior": 0.29643737672583825
+          },
+          "cold_start": {
+            "points": 109140,
+            "babies": 9523,
+            "pooled_mae": 2.249106652006597,
+            "prior_mae": 0.7721028037383177,
+            "delta": 1.4770038482682792,
+            "ci95": [
+              1.4491603864031912,
+              1.5057856704874262
+            ]
+          },
+          "cold_start_exact": {
+            "points": 109140,
+            "babies": 9523,
+            "pooled_mae": 0.7014545537841305,
+            "prior_mae": 0.7721028037383177,
+            "delta": -0.07064824995418728,
+            "ci95": [
+              -0.07614504682909749,
+              -0.06540346109778108
+            ]
+          },
+          "calibration": {
+            "share": 76.65983326499932,
+            "ci95": [
+              76.07442195439776,
+              77.20207155550673
+            ],
+            "babies": 9523
+          },
+          "calibration_exact": {
+            "share": 87.36094027606943,
+            "ci95": [
+              86.62662578885622,
+              88.11457264861644
+            ],
+            "babies": 9523
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.05600000000000005,
+              "ci95": [
+                -0.008000000000000007,
+                0.12199999999999994
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.010000000000000009,
+              "ci95": [
+                -0.04999999999999993,
+                0.07199999999999995
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 4,
+              "to_weeks": 5,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.298,
+              "ci95": [
+                0.24200000000000002,
+                0.356
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "cry_outcome_by_cause": {
+          "coverage": {
+            "bands": 16,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 16,
+            "pooled": 13.00650279978034,
+            "prior_cells": 16,
+            "pooled_on_prior_cells": 13.00650279978034,
+            "prior": 8.020153580701418
+          },
+          "error_exact": {
+            "cells": 16,
+            "pooled": 2.892963856807843,
+            "prior_cells": 16,
+            "pooled_on_prior_cells": 2.892963856807843,
+            "prior": 8.020153580701418
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 6,
+              "dimension": "morning",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.05399999999999994,
+              "ci95": [
+                0.0040000000000000036,
+                0.11404999999999994
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.07799999999999996,
+              "ci95": [
+                -0.134,
+                -0.02200000000000002
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 6,
+              "dimension": "morning",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.15000000000000002,
+              "ci95": [
+                0.11399999999999999,
+                0.18599999999999994
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "size": 10000,
+      "rate": 0.2,
+      "opted_in_babies": 1965,
+      "opted_in_families": 1511,
+      "statistics": {
+        "bottle_ml_per_feed": {
+          "coverage": {
+            "bands": 78,
+            "fine": 0.9743589743589743,
+            "covered": 1.0,
+            "fine_suppressed": {
+              "below_k": 2
+            }
+          },
+          "error": {
+            "cells": 78,
+            "pooled": 74.34523405269319,
+            "prior_cells": 25,
+            "pooled_on_prior_cells": 66.87554694263929,
+            "prior": 6.202108242610998
+          },
+          "error_exact": {
+            "cells": 78,
+            "pooled": 4.872026741777993,
+            "prior_cells": 25,
+            "pooled_on_prior_cells": 3.899444057483898,
+            "prior": 6.202108242610998
+          },
+          "cold_start": {
+            "points": 174103,
+            "babies": 2540,
+            "pooled_mae": 85.1214573736979,
+            "prior_mae": 48.69826732366003,
+            "delta": 36.42319005003786,
+            "ci95": [
+              34.32451064392487,
+              38.76554332133684
+            ]
+          },
+          "cold_start_exact": {
+            "points": 174103,
+            "babies": 2540,
+            "pooled_mae": 48.121547405457974,
+            "prior_mae": 48.69826732366003,
+            "delta": -0.576719918202059,
+            "ci95": [
+              -0.9076072569138605,
+              -0.24414732550945686
+            ]
+          },
+          "calibration": {
+            "share": 83.12346635670929,
+            "ci95": [
+              82.52311955780198,
+              83.72746702678366
+            ],
+            "babies": 8035
+          },
+          "calibration_exact": {
+            "share": 76.37543587756683,
+            "ci95": [
+              75.30210934941707,
+              77.48880597014926
+            ],
+            "babies": 8035
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 1,
+              "to_weeks": 2,
+              "dimension": "breast_milk",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.0020000000000000018,
+              "ci95": [
+                -0.03599999999999992,
+                0.029999999999999916
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.035999999999999976,
+              "ci95": [
+                -0.022050000000000014,
+                0.09205000000000003
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 1,
+              "to_weeks": 2,
+              "dimension": "breast_milk",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.06400000000000006,
+              "ci95": [
+                -0.0020000000000000018,
+                0.12405000000000001
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "tummy_minutes_per_day": {
+          "coverage": {
+            "bands": 19,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 19,
+            "pooled": 64.65789473684211,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 19,
+            "pooled": 1.131711219653902,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": 57.77077151335311,
+            "ci95": [
+              56.508467084156976,
+              59.193657541326594
+            ],
+            "babies": 2063
+          },
+          "calibration_exact": {
+            "share": 81.50964391691394,
+            "ci95": [
+              79.83149392407555,
+              83.17967420802566
+            ],
+            "babies": 2063
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.03600000000000003,
+              "ci95": [
+                -0.020000000000000018,
+                0.09200000000000008
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.006000000000000005,
+              "ci95": [
+                -0.038000000000000006,
+                0.05204999999999997
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.13,
+              "ci95": [
+                0.07194999999999996,
+                0.18400000000000005
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "night_sleep_minutes": {
+          "coverage": {
+            "bands": 39,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 39,
+            "pooled": 113.61862069925013,
+            "prior_cells": 10,
+            "pooled_on_prior_cells": 90.94372002170371,
+            "prior": 4.507702658708626
+          },
+          "error_exact": {
+            "cells": 39,
+            "pooled": 6.368898741351136,
+            "prior_cells": 10,
+            "pooled_on_prior_cells": 7.583453661706528,
+            "prior": 4.507702658708626
+          },
+          "cold_start": {
+            "points": 30324,
+            "babies": 2838,
+            "pooled_mae": 124.96470265297765,
+            "prior_mae": 60.93791844521526,
+            "delta": 64.02678420776239,
+            "ci95": [
+              60.58255697897231,
+              67.3876902855603
+            ]
+          },
+          "cold_start_exact": {
+            "points": 30324,
+            "babies": 2838,
+            "pooled_mae": 61.19221329639369,
+            "prior_mae": 60.93791844521526,
+            "delta": 0.25429485117842887,
+            "ci95": [
+              0.005851344064617876,
+              0.49310593600827024
+            ]
+          },
+          "calibration": {
+            "share": 92.53196435490119,
+            "ci95": [
+              92.16365057599498,
+              92.90677678654848
+            ],
+            "babies": 8035
+          },
+          "calibration_exact": {
+            "share": 78.70011623401783,
+            "ci95": [
+              77.75366837378843,
+              79.79816747145485
+            ],
+            "babies": 8035
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.062,
+              "ci95": [
+                0.0020000000000000018,
+                0.12405000000000001
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.011999999999999997,
+              "ci95": [
+                -0.024000000000000007,
+                0.052000000000000005
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.066,
+              "ci95": [
+                0.005949999999999953,
+                0.126
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "naps_per_day": {
+          "coverage": {
+            "bands": 39,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 39,
+            "pooled": 1.3568828073635764,
+            "prior_cells": 39,
+            "pooled_on_prior_cells": 1.3568828073635764,
+            "prior": 0.29643737672583825
+          },
+          "error_exact": {
+            "cells": 39,
+            "pooled": 0.19347879684418137,
+            "prior_cells": 39,
+            "pooled_on_prior_cells": 0.19347879684418137,
+            "prior": 0.29643737672583825
+          },
+          "cold_start": {
+            "points": 92111,
+            "babies": 8035,
+            "pooled_mae": 1.5453691741485815,
+            "prior_mae": 0.7716201105188305,
+            "delta": 0.773749063629751,
+            "ci95": [
+              0.751010816422258,
+              0.7951348579783042
+            ]
+          },
+          "cold_start_exact": {
+            "points": 92111,
+            "babies": 8035,
+            "pooled_mae": 0.6961709242110062,
+            "prior_mae": 0.7716201105188305,
+            "delta": -0.07544918630782427,
+            "ci95": [
+              -0.08094361672559819,
+              -0.07000403977370231
+            ]
+          },
+          "calibration": {
+            "share": 88.60906625339015,
+            "ci95": [
+              88.19908855017357,
+              89.02354014437111
+            ],
+            "babies": 8035
+          },
+          "calibration_exact": {
+            "share": 91.37931034482759,
+            "ci95": [
+              90.64795097517859,
+              92.07645494005756
+            ],
+            "babies": 8035
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.006000000000000005,
+              "ci95": [
+                -0.028000000000000025,
+                0.016000000000000014
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.02799999999999997,
+              "ci95": [
+                -0.025999999999999968,
+                0.08000000000000002
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.0,
+              "ci95": [
+                0.0,
+                0.0
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.906,
+              "ci95": [
+                0.88,
+                0.93
+              ]
+            }
+          }
+        },
+        "cry_outcome_by_cause": {
+          "coverage": {
+            "bands": 16,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 16,
+            "pooled": 4.831533995889535,
+            "prior_cells": 16,
+            "pooled_on_prior_cells": 4.831533995889535,
+            "prior": 8.020153580701418
+          },
+          "error_exact": {
+            "cells": 16,
+            "pooled": 2.0366904739605562,
+            "prior_cells": 16,
+            "pooled_on_prior_cells": 2.0366904739605562,
+            "prior": 8.020153580701418
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 6,
+              "dimension": "night",
+              "babies": "50-99"
+            },
+            "single": {
+              "advantage": 0.04799999999999993,
+              "ci95": [
+                -0.0020000000000000018,
+                0.09599999999999997
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.018000000000000016,
+              "ci95": [
+                -0.07599999999999996,
+                0.03600000000000003
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 6,
+              "dimension": "night",
+              "babies": "50-99"
+            },
+            "single": {
+              "advantage": 0.186,
+              "ci95": [
+                0.128,
+                0.244
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "size": 10000,
+      "rate": 0.5,
+      "opted_in_babies": 5032,
+      "opted_in_families": 3899,
+      "statistics": {
+        "bottle_ml_per_feed": {
+          "coverage": {
+            "bands": 78,
+            "fine": 0.9871794871794872,
+            "covered": 1.0,
+            "fine_suppressed": {
+              "below_k": 1
+            }
+          },
+          "error": {
+            "cells": 78,
+            "pooled": 50.82034638103614,
+            "prior_cells": 25,
+            "pooled_on_prior_cells": 45.588676856145604,
+            "prior": 6.202108242610998
+          },
+          "error_exact": {
+            "cells": 78,
+            "pooled": 4.010249667837031,
+            "prior_cells": 25,
+            "pooled_on_prior_cells": 4.2352976793460035,
+            "prior": 6.202108242610998
+          },
+          "cold_start": {
+            "points": 109752,
+            "babies": 1631,
+            "pooled_mae": 61.139840863346606,
+            "prior_mae": 48.25033734729438,
+            "delta": 12.889503516052223,
+            "ci95": [
+              10.115264548738788,
+              15.549661653923124
+            ]
+          },
+          "cold_start_exact": {
+            "points": 109752,
+            "babies": 1631,
+            "pooled_mae": 47.552401267968925,
+            "prior_mae": 48.25033734729438,
+            "delta": -0.6979360793254585,
+            "ci95": [
+              -1.0182157760102495,
+              -0.36445317440610875
+            ]
+          },
+          "calibration": {
+            "share": 88.17888043364952,
+            "ci95": [
+              87.39695325432957,
+              88.95575408056061
+            ],
+            "babies": 4968
+          },
+          "calibration_exact": {
+            "share": 77.89534035234024,
+            "ci95": [
+              76.47464881521083,
+              79.29992824485217
+            ],
+            "babies": 4968
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "formula",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.020000000000000018,
+              "ci95": [
+                -0.030000000000000027,
+                0.06999999999999995
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.014000000000000012,
+              "ci95": [
+                -0.04600000000000004,
+                0.07400000000000007
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "formula",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.118,
+              "ci95": [
+                0.06,
+                0.174
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "tummy_minutes_per_day": {
+          "coverage": {
+            "bands": 19,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 19,
+            "pooled": 40.276315789473685,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "error_exact": {
+            "cells": 19,
+            "pooled": 0.7164279607878659,
+            "prior_cells": 0,
+            "pooled_on_prior_cells": null,
+            "prior": null
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": 71.94676027497441,
+            "ci95": [
+              70.31634411034267,
+              73.61926771077606
+            ],
+            "babies": 1285
+          },
+          "calibration_exact": {
+            "share": 78.48471551850227,
+            "ci95": [
+              76.05406327936922,
+              80.99286843422739
+            ],
+            "babies": 1285
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.0020000000000000018,
+              "ci95": [
+                -0.062000000000000055,
+                0.058050000000000004
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.04999999999999993,
+              "ci95": [
+                0.0,
+                0.10004999999999993
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.10999999999999999,
+              "ci95": [
+                0.055999999999999994,
+                0.164
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "night_sleep_minutes": {
+          "coverage": {
+            "bands": 39,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 39,
+            "pooled": 62.6586919320506,
+            "prior_cells": 10,
+            "pooled_on_prior_cells": 42.99861313076506,
+            "prior": 4.507702658708626
+          },
+          "error_exact": {
+            "cells": 39,
+            "pooled": 5.916984928289868,
+            "prior_cells": 10,
+            "pooled_on_prior_cells": 6.464880134363068,
+            "prior": 4.507702658708626
+          },
+          "cold_start": {
+            "points": 18072,
+            "babies": 1695,
+            "pooled_mae": 74.35856596705884,
+            "prior_mae": 61.08336368069945,
+            "delta": 13.275202286359388,
+            "ci95": [
+              11.519323069765203,
+              14.934183717723469
+            ]
+          },
+          "cold_start_exact": {
+            "points": 18072,
+            "babies": 1695,
+            "pooled_mae": 61.176644015518825,
+            "prior_mae": 61.08336368069945,
+            "delta": 0.09328033481937581,
+            "ci95": [
+              -0.25917516873931046,
+              0.4062206234792576
+            ]
+          },
+          "calibration": {
+            "share": 95.49150422182842,
+            "ci95": [
+              95.09168685159031,
+              95.87999765125096
+            ],
+            "babies": 4968
+          },
+          "calibration_exact": {
+            "share": 80.44407380381529,
+            "ci95": [
+              79.03196482963925,
+              81.62083550417697
+            ],
+            "babies": 4968
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.04200000000000004,
+              "ci95": [
+                -0.10205000000000009,
+                0.01200000000000001
+              ]
+            },
+            "withdrawal": {
+              "advantage": 0.015999999999999903,
+              "ci95": [
+                -0.03199999999999992,
+                0.061999999999999944
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": 0.064,
+              "ci95": [
+                0.017999999999999988,
+                0.10999999999999999
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "naps_per_day": {
+          "coverage": {
+            "bands": 39,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 39,
+            "pooled": 0.8783818211702823,
+            "prior_cells": 39,
+            "pooled_on_prior_cells": 0.8783818211702823,
+            "prior": 0.29643737672583825
+          },
+          "error_exact": {
+            "cells": 39,
+            "pooled": 0.19545118343195256,
+            "prior_cells": 39,
+            "pooled_on_prior_cells": 0.19545118343195256,
+            "prior": 0.29643737672583825
+          },
+          "cold_start": {
+            "points": 56899,
+            "babies": 4968,
+            "pooled_mae": 1.1141672085625407,
+            "prior_mae": 0.7699115977433698,
+            "delta": 0.3442556108191709,
+            "ci95": [
+              0.32275273986237857,
+              0.36631071098655227
+            ]
+          },
+          "cold_start_exact": {
+            "points": 56899,
+            "babies": 4968,
+            "pooled_mae": 0.6927889769591733,
+            "prior_mae": 0.7699115977433698,
+            "delta": -0.07712262078419652,
+            "ci95": [
+              -0.08431807296282855,
+              -0.06992687847235646
+            ]
+          },
+          "calibration": {
+            "share": 92.37986031481289,
+            "ci95": [
+              91.90667720361245,
+              92.87172617397628
+            ],
+            "babies": 4968
+          },
+          "calibration_exact": {
+            "share": 90.75367455436255,
+            "ci95": [
+              89.80666427498699,
+              91.60780467941709
+            ],
+            "babies": 4968
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.008000000000000007,
+              "ci95": [
+                -0.03399999999999992,
+                0.016000000000000014
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.010000000000000002,
+              "ci95": [
+                -0.034,
+                0.018000000000000002
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 1,
+              "dimension": "all",
+              "babies": "20-49"
+            },
+            "single": {
+              "advantage": -0.027999999999999914,
+              "ci95": [
+                -0.08199999999999996,
+                0.03004999999999998
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        },
+        "cry_outcome_by_cause": {
+          "coverage": {
+            "bands": 16,
+            "fine": 1.0,
+            "covered": 1.0,
+            "fine_suppressed": {}
+          },
+          "error": {
+            "cells": 16,
+            "pooled": 2.9367099403713057,
+            "prior_cells": 16,
+            "pooled_on_prior_cells": 2.9367099403713057,
+            "prior": 8.020153580701418
+          },
+          "error_exact": {
+            "cells": 16,
+            "pooled": 1.9670560794629166,
+            "prior_cells": 16,
+            "pooled_on_prior_cells": 1.9670560794629166,
+            "prior": 8.020153580701418
+          },
+          "cold_start": {
+            "points": 0
+          },
+          "cold_start_exact": {
+            "points": 0
+          },
+          "calibration": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "calibration_exact": {
+            "share": null,
+            "ci95": null,
+            "babies": 0
+          },
+          "membership_noise": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 6,
+              "dimension": "night",
+              "babies": "100+"
+            },
+            "single": {
+              "advantage": -0.02400000000000002,
+              "ci95": [
+                -0.06405000000000005,
+                0.014000000000000012
+              ]
+            },
+            "withdrawal": {
+              "advantage": -0.04799999999999993,
+              "ci95": [
+                -0.09599999999999997,
+                -0.004000000000000001
+              ]
+            }
+          },
+          "membership_exact": {
+            "cell": {
+              "from_weeks": 0,
+              "to_weeks": 6,
+              "dimension": "night",
+              "babies": "100+"
+            },
+            "single": {
+              "advantage": 0.23800000000000004,
+              "ci95": [
+                0.178,
+                0.30005
+              ]
+            },
+            "withdrawal": {
+              "advantage": 1.0,
+              "ci95": [
+                1.0,
+                1.0
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "sweep": {
+    "size": 10000,
+    "rate": 0.2,
+    "statistics": {
+      "bottle_ml_per_feed": {
+        "exact": {
+          "error": 4.872026741777993,
+          "calibration": 76.37543587756683
+        },
+        "0.2": {
+          "error": 59.61182101003288,
+          "calibration": 83.80149812734082
+        },
+        "0.5": {
+          "error": 50.45399387916346,
+          "calibration": 87.02376339919927
+        },
+        "1.0": {
+          "error": 33.607840033009616,
+          "calibration": 89.62934263205476
+        },
+        "2.0": {
+          "error": 14.9057607125004,
+          "calibration": 89.54862456412243
+        },
+        "5.0": {
+          "error": 5.827472124423225,
+          "calibration": 82.97494511171381
+        },
+        "10.0": {
+          "error": 5.497093095567095,
+          "calibration": 79.11662146454861
+        }
+      },
+      "tummy_minutes_per_day": {
+        "exact": {
+          "error": 1.131711219653902,
+          "calibration": 81.50964391691394
+        },
+        "0.2": {
+          "error": 59.453947368421055,
+          "calibration": 53.19918397626113
+        },
+        "0.5": {
+          "error": 32.93421052631579,
+          "calibration": 77.69844213649851
+        },
+        "1.0": {
+          "error": 16.763157894736842,
+          "calibration": 84.99629080118694
+        },
+        "2.0": {
+          "error": 2.513157894736842,
+          "calibration": 87.30526706231454
+        },
+        "5.0": {
+          "error": 1.7105263157894737,
+          "calibration": 84.92210682492582
+        },
+        "10.0": {
+          "error": 1.4605263157894737,
+          "calibration": 82.31639465875371
+        }
+      },
+      "night_sleep_minutes": {
+        "exact": {
+          "error": 6.368898741351136,
+          "calibration": 78.70011623401783
+        },
+        "0.2": {
+          "error": 119.48052979395354,
+          "calibration": 90.53338499289681
+        },
+        "0.5": {
+          "error": 64.26494539282386,
+          "calibration": 94.83081492961385
+        },
+        "1.0": {
+          "error": 22.221579643001235,
+          "calibration": 93.2745705798786
+        },
+        "2.0": {
+          "error": 13.295005078119562,
+          "calibration": 87.12708252615265
+        },
+        "5.0": {
+          "error": 7.159941010337109,
+          "calibration": 80.18532868397263
+        },
+        "10.0": {
+          "error": 6.847336421943045,
+          "calibration": 79.66550432648845
+        }
+      },
+      "naps_per_day": {
+        "exact": {
+          "error": 0.19347879684418137,
+          "calibration": 91.37931034482759
+        },
+        "0.2": {
+          "error": 1.0937499999999996,
+          "calibration": 83.05243445692884
+        },
+        "0.5": {
+          "error": 0.6960675542406312,
+          "calibration": 92.86452279478239
+        },
+        "1.0": {
+          "error": 0.4647066074950689,
+          "calibration": 92.63528348185459
+        },
+        "2.0": {
+          "error": 0.37989398422090725,
+          "calibration": 91.6989538938396
+        },
+        "5.0": {
+          "error": 0.3422214003944773,
+          "calibration": 89.35167247836756
+        },
+        "10.0": {
+          "error": 0.3550419132149901,
+          "calibration": 88.06018339145034
+        }
+      },
+      "cry_outcome_by_cause": {
+        "exact": {
+          "error": 2.0366904739605562,
+          "calibration": null
+        },
+        "0.2": {
+          "error": 5.104298299654622,
+          "calibration": null
+        },
+        "0.5": {
+          "error": 3.0457712965572377,
+          "calibration": null
+        },
+        "1.0": {
+          "error": 2.3947393732177504,
+          "calibration": null
+        },
+        "2.0": {
+          "error": 2.159419993111572,
+          "calibration": null
+        },
+        "5.0": {
+          "error": 2.0718559890012838,
+          "calibration": null
+        },
+        "10.0": {
+          "error": 2.0471232964756085,
+          "calibration": null
+        }
+      }
+    }
+  },
+  "runtime_seconds": 566.7219275749521
+}

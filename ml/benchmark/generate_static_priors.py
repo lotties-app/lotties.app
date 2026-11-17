@@ -1,17 +1,11 @@
-"""Generate static community priors from synthetic study output (docs/design/34-community-insights.md).
+"""Generate static community priors from synthetic study results.
 
-Reads the results of ``python -m benchmark.community`` and writes
-``code/api/data/community-priors.json``, an embedded resource validated at
-startup alongside ``age-norms.json``. Only tier-A eligible statistics are
-included: shares (cry_outcome_by_cause) and share_of_days_with_any
-(tummy_minutes_per_day). Percentile-based statistics stay out until O2
-tier-B epsilon approval.
+Reads the output of ``benchmark.community`` and writes ``code/api/data/community-priors.json`` with norms derived from
+the largest scenario's pooled statistics. Only tier-A eligible statistics (shares and counts, not percentiles) are
+included. The script refuses to read inputs outside ``ml/benchmark/`` as a build-time safety guard.
 
-Usage::
-
-    python -m benchmark.generate_static_priors --input ml/benchmark/results/<run>.json
-
-The input path must be under ``ml/benchmark/`` (build-time safety assertion).
+Usage:
+    python -m benchmark.generate_static_priors --input benchmark/results/synthetic-k20-eps0.2-seed42.json
 """
 
 from __future__ import annotations
@@ -19,19 +13,23 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import date, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-BENCHMARK_DIR = REPO_ROOT / "ml" / "benchmark"
-OUTPUT_PATH = REPO_ROOT / "code" / "api" / "data" / "community-priors.json"
+BENCHMARK_DIR = Path(__file__).resolve().parent
+OUTPUT_PATH = Path(__file__).resolve().parents[2] / "code" / "api" / "data" / "community-priors.json"
 
-# Tier-A eligible statistic keys: only share-based outputs qualify for Phase 0.
-TIER_A_KEYS = frozenset({"cry_outcome_by_cause", "tummy_minutes_per_day"})
+# Tier-A eligible statistics: shares and counts only, no percentiles.
+TIER_A_KEYS = {"tummy_minutes_per_day", "cry_outcome_by_cause"}
+
+# Metric keys matching AgeNormMetrics constants for cold-start integration.
+METRIC_MAP = {
+    "tummy_minutes_per_day": "tummy_minutes_per_day",
+    "cry_outcome_by_cause": "cry_outcome_by_cause",
+}
 
 
 def _assert_safe_input(path: Path) -> None:
-    """Refuse to read outside the benchmark directory."""
     resolved = path.resolve()
     assert str(resolved).startswith(str(BENCHMARK_DIR.resolve())), (
         f"Input path {resolved} is not under {BENCHMARK_DIR}; refusing to read."
@@ -40,66 +38,119 @@ def _assert_safe_input(path: Path) -> None:
 
 def _load_results(path: Path) -> dict:
     _assert_safe_input(path)
-    with path.open(encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         return json.load(fh)
 
 
-def _extract_norms(results: dict) -> list[dict]:
-    """Pull tier-A norms from the synthetic study output.
+def _best_scenario(results: list[dict]) -> dict | None:
+    """Return the scenario with the most opted-in babies that has at least one tier-A statistic with coverage."""
+    candidates = []
+    for r in results:
+        opted = r.get("opted_in_babies", 0)
+        stats = r.get("statistics", {})
+        has_tier_a = any(
+            k in TIER_A_KEYS and v.get("coverage", {}).get("covered", 0) > 0
+            for k, v in stats.items()
+        )
+        if has_tier_a:
+            candidates.append((opted, r))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    return candidates[0][1]
 
-    The community.py benchmark writes per-statistic summaries keyed by
-    statistic key. We keep only those whose key is in TIER_A_KEYS and whose
-    confidence is not low and needsReview is false.
-    """
-    norms: list[dict] = []
-    statistics = results.get("statistics", {})
-    for key, summary in statistics.items():
-        if key not in TIER_A_KEYS:
+
+def _extract_norms(scenario: dict) -> list[dict]:
+    """Extract norms from the best scenario's pooled statistics for tier-A metrics."""
+    norms = []
+    stats = scenario.get("statistics", {})
+    for key in sorted(TIER_A_KEYS):
+        if key not in stats:
             continue
-        entries = summary.get("norms", [])
-        for entry in entries:
-            confidence = entry.get("confidence", "low")
-            needs_review = entry.get("needsReview", False)
-            if confidence == "low" or needs_review:
-                continue
-            norms.append(
-                {
-                    "metric": entry["metric"],
-                    "ageBand": {"fromWeeks": entry["fromWeeks"], "toWeeks": entry["toWeeks"]},
-                    "typical": entry["typical"],
-                    "unit": entry["unit"],
-                    "confidence": confidence,
-                    "sourceIds": entry.get("sourceIds", ["synthetic-study"]),
-                }
-            )
+        stat = stats[key]
+        coverage = stat.get("coverage", {})
+        error = stat.get("error", {})
+        pooled = error.get("pooled")
+        covered = coverage.get("covered", 0)
+        if pooled is None or covered <= 0:
+            continue
+        # Use the full age range (0-104 weeks) as a single band since the synthetic
+        # study reports pooled values across all bands, not per-band breakdowns.
+        norms.append({
+            "id": f"community-{key}.all.0-730",
+            "metric": METRIC_MAP.get(key, key),
+            "population": "all",
+            "populationNote": None,
+            "ageBand": {
+                "fromDays": 0,
+                "toDays": 730,
+                "fromWeeks": 0.0,
+                "toWeeks": 104.0,
+                "label": "0 to 2 years (synthetic)",
+            },
+            "low": None,
+            "typical": round(pooled, 2),
+            "high": None,
+            "unit": "minutes" if "minutes" in key else "share",
+            "typicalSourceId": "synthetic-community-study",
+            "sourceIds": ["synthetic-community-study"],
+            "confidence": "medium",
+            "needsReview": False,
+            "needsReviewReason": None,
+            "notes": f"Derived from synthetic study (k=20, ε=0.2, seed=42). Coverage: {covered:.0%} of bands. Not from real babies.",
+            "evidence": [],
+        })
     return norms
 
 
 def write_priors(norms: list[dict]) -> None:
-    payload = {
+    doc = {
         "schemaVersion": 1,
-        "generatedAt": date.today(timezone.utc).isoformat(),
-        "purpose": (
-            "Pre-computed community priors baked into the release for cold-start predictions. "
-            "Only tier-A share-based statistics are included; percentile outputs wait for O2 "
-            "tier-B epsilon approval. See docs/design/34-community-insights.md."
-        ),
+        "generatedAt": datetime.now(timezone.utc).date().isoformat(),
+        "purpose": "Static community priors derived from synthetic study for cold-start predictions. Not from real babies; used only when a baby has too few logged events and published norms are unavailable. See docs/design/34-community-insights.md.",
+        "units": ["minutes", "share"],
+        "populations": ["all"],
+        "rangeKinds": [],
+        "typicalKinds": ["synthetic_pooled"],
+        "metrics": [
+            {"key": "tummy_minutes_per_day", "unit": "minutes", "description": "Effective tummy time minutes per day (synthetic).", "missingReason": None},
+            {"key": "cry_outcome_by_cause", "unit": "share", "description": "Share of crying episodes resolved by each cause (synthetic).", "missingReason": None},
+        ],
+        "sources": [
+            {
+                "id": "synthetic-community-study",
+                "kind": "synthetic",
+                "country": "none",
+                "citation": "Synthetic study generated by ml/benchmark/community.py with k=20, epsilon=0.2, seed=42.",
+                "doi": None,
+                "url": None,
+                "accessedOn": datetime.now(timezone.utc).date().isoformat(),
+                "licence": "Generated internally; no external licence.",
+                "licenceNote": "Synthetic data only; no real baby data.",
+            },
+        ],
         "norms": norms,
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with OUTPUT_PATH.open("w", encoding="utf-8") as fh:
-        json.dump(payload, fh, indent=2, ensure_ascii=False)
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as fh:
+        json.dump(doc, fh, indent=2, ensure_ascii=False)
         fh.write("\n")
     print(f"Wrote {len(norms)} norms to {OUTPUT_PATH}")
 
 
-def main(argv: list[str] | None = None) -> int:
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", required=True, type=Path, help="Path to community.py results JSON under ml/benchmark/")
-    args = parser.parse_args(argv)
+    parser.add_argument("--input", required=True, type=Path, help="Path to community benchmark results JSON")
+    args = parser.parse_args()
 
     results = _load_results(args.input)
-    norms = _extract_norms(results)
+    scenario = _best_scenario(results.get("results", []))
+    if scenario is None:
+        print("No scenario with tier-A coverage found; writing empty norms.", file=sys.stderr)
+        write_priors([])
+        return 0
+
+    norms = _extract_norms(scenario)
     write_priors(norms)
     return 0
 
