@@ -1,5 +1,7 @@
 using Lotties.Api.Tests.Support;
+using Lotties.Application.AgeNorms;
 using Lotties.Application.Predictions;
+using Lotties.Domain.AgeNorms;
 using Lotties.Domain.Babies;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Predictions;
@@ -178,7 +180,25 @@ public sealed class PredictionServiceTests
     }
 
     private static PredictionService CreateService(IPredictionHistoryRepository repository, BabyMember? caller = null) =>
-        new(repository, new FakeBabyAccessService(BabyAccessDecision.Granted, caller ?? OwnerOf()), PredictionOptions.Default, NullLogger<PredictionService>.Instance);
+        new(repository, new FakeBabyAccessService(BabyAccessDecision.Granted, caller ?? OwnerOf()), new FakeAgeNormsProvider(), PredictionOptions.Default, NullLogger<PredictionService>.Instance);
+
+    private sealed class FakeAgeNormsProvider : IAgeNormsProvider
+    {
+        public AgeNormSet Norms { get; } = new(
+            AgeNormSet.SupportedSchemaVersion,
+            new DateOnly(2026, 1, 1),
+            "test",
+            ["minutes"],
+            [AgeNormPopulations.All],
+            ["recommended"],
+            ["median"],
+            [],
+            [],
+            []);
+
+        public ReadOnlyMemory<byte> Json => Array.Empty<byte>();
+        public string ETag => "\"test\"";
+    }
 
     private sealed class FakePredictionHistoryRepository(PredictionHistory? history) : IPredictionHistoryRepository
     {

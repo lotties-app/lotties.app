@@ -7,8 +7,17 @@ public sealed record PredictionOptions
 {
     public static PredictionOptions Default { get; } = new();
 
-    /// <summary>How far back events are considered.</summary>
+    /// <summary>How far back events are considered (default when adaptation is disabled or has no reason to change).</summary>
     public TimeSpan LookBack { get; init; } = TimeSpan.FromDays(14);
+
+    /// <summary>Shortest look-back the adaptive window may shrink to (regime-change signal).</summary>
+    public TimeSpan MinLookBack { get; init; } = TimeSpan.FromDays(7);
+
+    /// <summary>Longest look-back the adaptive window may extend to (sparse-logger signal).</summary>
+    public TimeSpan MaxLookBack { get; init; } = TimeSpan.FromDays(28);
+
+    /// <summary>Whether <see cref="AdaptiveLookBack"/> adjusts the window per type based on sample density and variance.</summary>
+    public bool LookBackAdaptationEnabled { get; init; } = false;
 
     /// <summary>A sample this old weighs half as much as one from now (exponential recency weighting).</summary>
     public TimeSpan RecencyHalfLife { get; init; } = TimeSpan.FromDays(4);

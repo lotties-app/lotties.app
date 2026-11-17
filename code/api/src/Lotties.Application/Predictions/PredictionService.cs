@@ -1,3 +1,4 @@
+using Lotties.Application.AgeNorms;
 using Lotties.Application.Babies;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Patterns;
@@ -10,13 +11,15 @@ internal sealed class PredictionService : IPredictionService
 {
     private readonly IPredictionHistoryRepository _history;
     private readonly IBabyAccessService _access;
+    private readonly IAgeNormsProvider _ageNorms;
     private readonly PredictionOptions _options;
     private readonly ILogger<PredictionService> _logger;
 
-    public PredictionService(IPredictionHistoryRepository history, IBabyAccessService access, PredictionOptions options, ILogger<PredictionService> logger)
+    public PredictionService(IPredictionHistoryRepository history, IBabyAccessService access, IAgeNormsProvider ageNorms, PredictionOptions options, ILogger<PredictionService> logger)
     {
         _history = history ?? throw new ArgumentNullException(nameof(history));
         _access = access ?? throw new ArgumentNullException(nameof(access));
+        _ageNorms = ageNorms ?? throw new ArgumentNullException(nameof(ageNorms));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -31,7 +34,7 @@ internal sealed class PredictionService : IPredictionService
         }
 
         var history = VisibleIn(stored, await _access.ViewOfCallerAsync(babyId, cancellationToken));
-        var predictions = PredictionEngine.Predict(history.Events, new PredictionContext(history.BirthDate, now), _options);
+        var predictions = PredictionEngine.Predict(history.Events, new PredictionContext(history.BirthDate, now), _options, _ageNorms.Norms);
         _logger.LogDebug(
             "Computed {PredictionCount} predictions for baby {BabyId} from {EventCount} events ({InsufficientCount} types lack data)",
             predictions.Predictions.Count,

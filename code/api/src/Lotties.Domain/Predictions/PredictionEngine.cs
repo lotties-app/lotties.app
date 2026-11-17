@@ -1,3 +1,4 @@
+using Lotties.Domain.AgeNorms;
 using Lotties.Domain.EventTypes;
 
 namespace Lotties.Domain.Predictions;
@@ -28,7 +29,12 @@ public static class PredictionEngine
         [new AwakeWindowStrategy(), new StartIntervalStrategy()];
 
     /// <param name="events">Past events that are not soft deleted, in any order; events outside the look-back window or after now are ignored.</param>
-    public static PredictionSet Predict(IEnumerable<ObservedEvent> events, PredictionContext context, PredictionOptions options)
+    /// <param name="ageNorms">
+    /// Optional published age norms for cold-start predictions. When provided and a type has fewer than
+    /// <see cref="PredictionOptions.MinimumSamples"/> usable gaps, the engine seeds a Low-confidence prediction from
+    /// the norm instead of reporting insufficient data. Pass <c>null</c> to keep the current behaviour.
+    /// </param>
+    public static PredictionSet Predict(IEnumerable<ObservedEvent> events, PredictionContext context, PredictionOptions options, AgeNormSet? ageNorms = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(context);
@@ -38,7 +44,27 @@ public static class PredictionEngine
             .OrderBy(group => group.Key.Value, StringComparer.Ordinal)
             .Select(group => new TypeEvents(group.Key, SessionsOf(group, context, options)))
             .ToArray();
-        var outcomes = byType.Select(type => PredictType(type, context, options)).ToArray();
+        var ageDays = CompletedDays(context.BirthDate, context.LocalDateOf(context.Now));
+        var outcomes = byType.Select(type => PredictType(type, context, options, ResolveColdStart(type.TypeKey, ageNorms, ageDays))).ToList();
+
+        // When there are no events at all but norms provide a cold-start prior, seed predictions for supported types.
+        if (byType.Length == 0 && ageNorms is not null && ageDays >= 0)
+        {
+            foreach (var typeKey in ColdStartSupportedTypes())
+            {
+                var prior = ResolveColdStart(typeKey, ageNorms, ageDays);
+                if (prior is not null)
+                {
+                    var strategy = Strategies.First(candidate => candidate.CanHandle(typeKey, options));
+                    var outcome = new TypePredictor(typeKey, [], context, options, strategy, prior).Predict();
+                    if (outcome.Prediction is not null)
+                    {
+                        outcomes.Add(new TypePredictionOutcome(outcome.Prediction, null));
+                    }
+                }
+            }
+        }
+
         return new PredictionSet(
             outcomes.Select(outcome => outcome.Prediction).OfType<Prediction>().ToArray(),
             outcomes.Select(outcome => outcome.InsufficientData).OfType<InsufficientPredictionData>().ToArray())
@@ -46,6 +72,31 @@ public static class PredictionEngine
             BedTime = BedTimePredictor.Predict(SleepSessionsOf(byType, options), context, options),
         };
     }
+
+    private static IEnumerable<EventTypeKey> ColdStartSupportedTypes()
+    {
+        yield return BuiltInEventTypes.Feeding.Key;
+    }
+
+    private static ColdStartPrior? ResolveColdStart(EventTypeKey typeKey, AgeNormSet? ageNorms, int ageDays)
+    {
+        if (ageNorms is null || ageDays < 0)
+        {
+            return null;
+        }
+
+        var metric = ColdStartMetrics.For(typeKey);
+        if (metric is null)
+        {
+            return null;
+        }
+
+        var norm = ageNorms.PriorFor(metric, AgeNormPopulations.All, ageDays);
+        return norm is null ? null : ColdStartMetrics.FromNorm(typeKey, norm, ageDays);
+    }
+
+    private static int CompletedDays(DateOnly birthDate, DateOnly date) =>
+        date < birthDate ? -1 : (int)(date.ToDateTime(TimeOnly.MinValue) - birthDate.ToDateTime(TimeOnly.MinValue)).TotalDays;
 
     private static IEnumerable<ObservedEvent> InWindow(IEnumerable<ObservedEvent> events, PredictionContext context, PredictionOptions options)
     {
@@ -63,7 +114,7 @@ public static class PredictionEngine
         byType.FirstOrDefault(type => type.TypeKey == options.AwakeWindowTypeKey)?.Events ?? [];
 
     /// <remarks>A type whose events yield no sessions (e.g. only night wakings) is reported with zero samples.</remarks>
-    private static TypePredictionOutcome PredictType(TypeEvents type, PredictionContext context, PredictionOptions options)
+    private static TypePredictionOutcome PredictType(TypeEvents type, PredictionContext context, PredictionOptions options, ColdStartPrior? coldStartPrior)
     {
         var chronological = type.Events
             .OrderBy(item => item.StartedAt)
@@ -71,11 +122,13 @@ public static class PredictionEngine
             .ToArray();
         if (chronological.Length == 0)
         {
-            return new TypePredictionOutcome(null, new InsufficientPredictionData(type.TypeKey, 0, options.MinimumSamples, options.LookBack));
+            return coldStartPrior is not null
+                ? new TypePredictionOutcome(new TypePredictor(type.TypeKey, [], context, options, Strategies.First(candidate => candidate.CanHandle(type.TypeKey, options)), coldStartPrior).Predict().Prediction, null)
+                : new TypePredictionOutcome(null, new InsufficientPredictionData(type.TypeKey, 0, options.MinimumSamples, options.LookBack));
         }
 
         var strategy = Strategies.First(candidate => candidate.CanHandle(type.TypeKey, options));
-        return new TypePredictor(type.TypeKey, chronological, context, options, strategy).Predict();
+        return new TypePredictor(type.TypeKey, chronological, context, options, strategy, coldStartPrior).Predict();
     }
 
     /// <summary>The events (sessions, for sleep) of one type in the look-back window.</summary>

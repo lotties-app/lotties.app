@@ -17,6 +17,7 @@ internal sealed class TypePredictor
     private readonly INextStartStrategy _strategy;
     private readonly SampleSelector _selector;
     private readonly DurationEstimator _durations;
+    private readonly ColdStartPrior? _coldStartPrior;
     private readonly bool _classifiesSleepKinds;
 
     public TypePredictor(
@@ -24,7 +25,8 @@ internal sealed class TypePredictor
         IReadOnlyList<ObservedEvent> chronological,
         PredictionContext context,
         PredictionOptions options,
-        INextStartStrategy strategy)
+        INextStartStrategy strategy,
+        ColdStartPrior? coldStartPrior = null)
     {
         _typeKey = typeKey;
         _events = chronological;
@@ -33,19 +35,48 @@ internal sealed class TypePredictor
         _strategy = strategy;
         _selector = new SampleSelector(context, options, options.DayNightTypeKeys.Contains(typeKey));
         _durations = new DurationEstimator(chronological, _selector, context, options);
+        _coldStartPrior = coldStartPrior;
         _classifiesSleepKinds = typeKey == options.AwakeWindowTypeKey;
     }
 
     public TypePredictionOutcome Predict()
     {
-        var anchor = _strategy.FindAnchor(_events, _context.Now, TypicalDurationOfRunning);
-        var gaps = _selector.Select(_strategy.CollectGaps(_events), anchor.At);
-        return gaps.Samples.Count < _options.MinimumSamples
-            ? new TypePredictionOutcome(null, new InsufficientPredictionData(_typeKey, gaps.Samples.Count, _options.MinimumSamples, _options.LookBack))
-            : new TypePredictionOutcome(BuildPrediction(anchor, gaps), null);
+        // Cold start with no events at all: anchor is now, no gaps to collect.
+        if (_events.Count == 0 && _coldStartPrior is not null)
+        {
+            return new TypePredictionOutcome(BuildColdStartPrediction(new NextStartAnchor(_context.Now, false), _coldStartPrior), null);
+        }
+
+        var effectiveLookBack = AdaptiveLookBack.Resolve(_events, _context, _options);
+        var windowStart = _context.Now - effectiveLookBack;
+        var inWindow = _events.Where(item => item.StartedAt >= windowStart && item.StartedAt <= _context.Now).ToArray();
+
+        if (inWindow.Length == 0 && _coldStartPrior is not null)
+        {
+            return new TypePredictionOutcome(BuildColdStartPrediction(new NextStartAnchor(_context.Now, false), _coldStartPrior), null);
+        }
+
+        if (inWindow.Length == 0)
+        {
+            return new TypePredictionOutcome(null, new InsufficientPredictionData(_typeKey, 0, _options.MinimumSamples, effectiveLookBack));
+        }
+
+        var anchor = _strategy.FindAnchor(inWindow, _context.Now, TypicalDurationOfRunning);
+        var gaps = _selector.Select(_strategy.CollectGaps(inWindow), anchor.At);
+        if (gaps.Samples.Count >= _options.MinimumSamples)
+        {
+            return new TypePredictionOutcome(BuildPrediction(anchor, gaps, effectiveLookBack), null);
+        }
+
+        if (_coldStartPrior is not null)
+        {
+            return new TypePredictionOutcome(BuildColdStartPrediction(anchor, _coldStartPrior), null);
+        }
+
+        return new TypePredictionOutcome(null, new InsufficientPredictionData(_typeKey, gaps.Samples.Count, _options.MinimumSamples, effectiveLookBack));
     }
 
-    private Prediction BuildPrediction(NextStartAnchor anchor, SampleSelection gaps)
+    private Prediction BuildPrediction(NextStartAnchor anchor, SampleSelection gaps, TimeSpan effectiveLookBack)
     {
         var median = Quantile(gaps.Samples, MedianQuantile);
         var window = new NextStartWindow(
@@ -58,12 +89,34 @@ internal sealed class TypePredictor
             _strategy.Basis,
             median,
             count,
-            _options.LookBack,
+            effectiveLookBack,
             gaps.AgeBand,
             gaps.Phase,
             duration,
             anchor.FromEventInProgress);
         return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason, Utc(anchor.At));
+    }
+
+    /// <summary>
+    /// A prediction seeded from a published age norm when the baby has too few logged events. Uses Low confidence and
+    /// reports zero samples so consumers can distinguish it from a data-driven prediction.
+    /// </summary>
+    private Prediction BuildColdStartPrediction(NextStartAnchor anchor, ColdStartPrior prior)
+    {
+        var window = new NextStartWindow(
+            Utc(anchor.At + prior.MedianGap),
+            Utc(anchor.At + prior.MedianGap),
+            Utc(anchor.At + prior.MedianGap));
+        var reason = new PredictionReason(
+            _strategy.Basis,
+            prior.MedianGap,
+            0,
+            TimeSpan.Zero,
+            null,
+            null,
+            prior.TypicalDuration is { } duration ? new DurationEstimate(duration, 0) : null,
+            anchor.FromEventInProgress);
+        return new Prediction(_typeKey, window, prior.TypicalDuration is { } dur ? new DurationEstimate(dur, 0) : null, PredictionConfidence.Low, 0, reason, Utc(anchor.At));
     }
 
     /// <summary>
