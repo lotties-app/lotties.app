@@ -42,8 +42,21 @@ public static partial class CommunityStatisticsValidator
         "night_sleep_minutes", "feeds_per_day", "diapers_per_day", "routine_shift_scale", "cry_outcome_by_cause",
     ];
 
-    /// <summary>The statistics that stay out of v1 (O6: no pooled growth, WHO curves first).</summary>
-    public static readonly IReadOnlyList<string> NotInV1Keys = ["growth_vs_age"];
+    /// <summary>
+    /// The statistics that stay out of v1. O6 excludes pooled growth (WHO curves first); O2 excludes every statistic
+    /// whose outputs are percentiles (tier-B epsilon approval required; Phase 0 uses only tier-A shares).
+    /// </summary>
+    public static readonly IReadOnlyList<string> NotInV1Keys =
+    [
+        "growth_vs_age",
+        "bottle_ml_per_feed",
+        "naps_per_day",
+        "day_sleep_minutes",
+        "night_sleep_minutes",
+        "feeds_per_day",
+        "diapers_per_day",
+        "routine_shift_scale",
+    ];
 
     public static readonly IReadOnlyList<string> Releases = ["weekly", "monthly"];
 

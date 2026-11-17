@@ -3,17 +3,33 @@ using Lotties.Domain.EventTypes;
 
 namespace Lotties.Domain.Predictions;
 
+/// <summary>Identifies where a cold-start prior came from.</summary>
+public enum PriorOrigin
+{
+    /// <summary>Derived from published age norms (e.g. WHO, CDC).</summary>
+    PublishedNorm,
+
+    /// <summary>Derived from pre-computed community statistics baked into the release.</summary>
+    CommunityStatic,
+
+    /// <summary>Derived from live community aggregates (future phase).</summary>
+    CommunityLive,
+}
+
 /// <summary>
 /// A prediction seed derived from published age norms when a baby has too few logged events. Pure, no I/O: the caller
 /// resolves the norm from <see cref="AgeNormSet"/> and passes it in. Only norms that
 /// <see cref="AgeNorm.IsUsableAsPrior"/> may be used (the caller checks via <see cref="AgeNormSet.PriorFor"/>).
 /// </summary>
-internal sealed record ColdStartPrior(
+public sealed record ColdStartPrior(
     EventTypeKey TypeKey,
     TimeSpan MedianGap,
     TimeSpan? TypicalDuration,
     int AgeDays,
-    string Metric);
+    string Metric,
+    PriorOrigin Origin = PriorOrigin.PublishedNorm,
+    double? PriorWeight = null,
+    double? PriorLogSd = null);
 
 /// <summary>Maps event types to the age-norm metric keys that can seed their cold-start predictions.</summary>
 internal static class ColdStartMetrics
@@ -50,6 +66,19 @@ internal static class ColdStartMetrics
         }
 
         return new ColdStartPrior(typeKey, medianGap.Value, null, ageDays, metric);
+    }
+
+    /// <summary>
+    /// Builds a cold-start prior from pre-computed community statistics. Returns <c>null</c> when the gap is not positive.
+    /// </summary>
+    public static ColdStartPrior? FromCommunityStatic(EventTypeKey typeKey, TimeSpan medianGap, int ageDays, string metric)
+    {
+        if (medianGap <= TimeSpan.Zero)
+        {
+            return null;
+        }
+
+        return new ColdStartPrior(typeKey, medianGap, null, ageDays, metric, PriorOrigin.CommunityStatic);
     }
 
     private static TimeSpan? ToTimeSpan(decimal value, string unit) => unit switch

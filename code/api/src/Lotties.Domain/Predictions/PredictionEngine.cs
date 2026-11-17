@@ -32,9 +32,20 @@ public static class PredictionEngine
     /// <param name="ageNorms">
     /// Optional published age norms for cold-start predictions. When provided and a type has fewer than
     /// <see cref="PredictionOptions.MinimumSamples"/> usable gaps, the engine seeds a Low-confidence prediction from
-    /// the norm instead of reporting insufficient data. Pass <c>null</c> to keep the current behaviour.
+    /// the norm instead of reporting insufficient data. Pass <c>null</c> to keep the current behaviour. Ignored when
+    /// <paramref name="priorProviders"/> is supplied.
     /// </param>
-    public static PredictionSet Predict(IEnumerable<ObservedEvent> events, PredictionContext context, PredictionOptions options, AgeNormSet? ageNorms = null)
+    /// <param name="priorProviders">
+    /// Optional ordered list of prior providers. When supplied, the engine uses a composite of these providers instead
+    /// of the direct <see cref="AgeNormSet"/> lookup, enabling community-prior blending. Pass <c>null</c> to fall back
+    /// to <paramref name="ageNorms"/>.
+    /// </param>
+    public static PredictionSet Predict(
+        IEnumerable<ObservedEvent> events,
+        PredictionContext context,
+        PredictionOptions options,
+        AgeNormSet? ageNorms = null,
+        IReadOnlyList<IPriorProvider>? priorProviders = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(context);
@@ -45,14 +56,15 @@ public static class PredictionEngine
             .Select(group => new TypeEvents(group.Key, SessionsOf(group, context, options)))
             .ToArray();
         var ageDays = CompletedDays(context.BirthDate, context.LocalDateOf(context.Now));
-        var outcomes = byType.Select(type => PredictType(type, context, options, ResolveColdStart(type.TypeKey, ageNorms, ageDays))).ToList();
+        var resolver = BuildResolver(ageNorms, priorProviders);
+        var outcomes = byType.Select(type => PredictType(type, context, options, ResolveColdStart(type.TypeKey, ageDays, resolver))).ToList();
 
-        // When there are no events at all but norms provide a cold-start prior, seed predictions for supported types.
-        if (byType.Length == 0 && ageNorms is not null && ageDays >= 0)
+        // When there are no events at all but a resolver can provide a cold-start prior, seed predictions for configured types.
+        if (byType.Length == 0 && resolver is not null && ageDays >= 0)
         {
-            foreach (var typeKey in ColdStartSupportedTypes())
+            foreach (var typeKey in options.ColdStartTypeKeys)
             {
-                var prior = ResolveColdStart(typeKey, ageNorms, ageDays);
+                var prior = ResolveColdStart(typeKey, ageDays, resolver);
                 if (prior is not null)
                 {
                     var strategy = Strategies.First(candidate => candidate.CanHandle(typeKey, options));
@@ -73,27 +85,18 @@ public static class PredictionEngine
         };
     }
 
-    private static IEnumerable<EventTypeKey> ColdStartSupportedTypes()
+    private static IPriorProvider? BuildResolver(AgeNormSet? ageNorms, IReadOnlyList<IPriorProvider>? priorProviders)
     {
-        yield return BuiltInEventTypes.Feeding.Key;
-    }
-
-    private static ColdStartPrior? ResolveColdStart(EventTypeKey typeKey, AgeNormSet? ageNorms, int ageDays)
-    {
-        if (ageNorms is null || ageDays < 0)
+        if (priorProviders is not null && priorProviders.Count > 0)
         {
-            return null;
+            return new CompositePriorProvider(priorProviders);
         }
 
-        var metric = ColdStartMetrics.For(typeKey);
-        if (metric is null)
-        {
-            return null;
-        }
-
-        var norm = ageNorms.PriorFor(metric, AgeNormPopulations.All, ageDays);
-        return norm is null ? null : ColdStartMetrics.FromNorm(typeKey, norm, ageDays);
+        return ageNorms is null ? null : new AgeNormPriorProvider(ageNorms);
     }
+
+    private static ColdStartPrior? ResolveColdStart(EventTypeKey typeKey, int ageDays, IPriorProvider? resolver) =>
+        resolver?.GetPrior(typeKey, ageDays);
 
     private static int CompletedDays(DateOnly birthDate, DateOnly date) =>
         date < birthDate ? -1 : (int)(date.ToDateTime(TimeOnly.MinValue) - birthDate.ToDateTime(TimeOnly.MinValue)).TotalDays;

@@ -153,6 +153,9 @@ public sealed class PredictionResponse
 
     public PredictionBasisResponse Basis { get; set; } = new();
 
+    /// <summary>Where the prior came from: <c>PublishedNorm</c>, <c>CommunityStatic</c> or <c>CommunityLive</c>.</summary>
+    public string Origin { get; set; } = string.Empty;
+
     public static implicit operator PredictionResponse(Prediction prediction)
     {
         ArgumentNullException.ThrowIfNull(prediction);
@@ -165,6 +168,7 @@ public sealed class PredictionResponse
             SampleCount = prediction.SampleCount,
             Reason = prediction.Reason.Text,
             Basis = prediction.Reason,
+            Origin = prediction.Origin.ToString(),
         };
     }
 }

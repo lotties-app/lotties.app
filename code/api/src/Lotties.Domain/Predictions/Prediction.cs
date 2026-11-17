@@ -42,6 +42,7 @@ public sealed record DurationEstimate(TimeSpan Median, int SampleCount);
 
 /// <summary>A prediction for one event type.</summary>
 /// <param name="SampleCount">Number of intervals behind <see cref="NextStart"/>.</param>
+/// <param name="Origin">Where the prior came from when this is a cold-start prediction; data-driven predictions use <see cref="PriorOrigin.PublishedNorm"/> as the default.</param>
 /// <param name="AnchorAt">
 /// The instant (UTC) the next start is measured from: the last start (<see cref="PredictionBasis.StartInterval"/>), the
 /// end of the last sleep session (<see cref="PredictionBasis.AwakeWindow"/>), or the expected end of the one in progress.
@@ -54,7 +55,8 @@ public sealed record Prediction(
     PredictionConfidence Confidence,
     int SampleCount,
     PredictionReason Reason,
-    DateTimeOffset AnchorAt);
+    PriorOrigin Origin = PriorOrigin.PublishedNorm,
+    DateTimeOffset AnchorAt = default);
 
 /// <summary>An event type that has events but too few usable intervals to predict.</summary>
 public sealed record InsufficientPredictionData(EventTypeKey TypeKey, int SampleCount, int RequiredSamples, TimeSpan LookBack)

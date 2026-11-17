@@ -34,8 +34,8 @@
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": false,
-      "notInV1Reason": null
+      "notInV1": true,
+      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
     },
     {
       "key": "growth_vs_age",
@@ -93,8 +93,8 @@
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": false,
-      "notInV1Reason": null
+      "notInV1": true,
+      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
     },
     {
       "key": "day_sleep_minutes",
@@ -112,8 +112,8 @@
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": false,
-      "notInV1Reason": null
+      "notInV1": true,
+      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
     },
     {
       "key": "night_sleep_minutes",
@@ -131,8 +131,8 @@
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": false,
-      "notInV1Reason": null
+      "notInV1": true,
+      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
     },
     {
       "key": "feeds_per_day",
@@ -150,8 +150,8 @@
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": false,
-      "notInV1Reason": null
+      "notInV1": true,
+      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
     },
     {
       "key": "diapers_per_day",
@@ -169,8 +169,8 @@
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": false,
-      "notInV1Reason": null
+      "notInV1": true,
+      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
     },
     {
       "key": "routine_shift_scale",
@@ -192,8 +192,8 @@
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": false,
-      "notInV1Reason": null
+      "notInV1": true,
+      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
     },
     {
       "key": "cry_outcome_by_cause",

@@ -79,4 +79,13 @@ public sealed record PredictionOptions
     /// (a 00:30 bed time is a late one, not an early one).
     /// </summary>
     public TimeOnly EveningDayStartsAt { get; init; } = new(4, 0);
+
+    /// <summary>Whether community-derived static priors may supplement published norms during cold start.</summary>
+    public bool UseCommunityStaticPriors { get; init; } = true;
+
+    /// <summary>Event types eligible for cold-start predictions. Defaults to feeding only.</summary>
+    public IReadOnlySet<EventTypeKey> ColdStartTypeKeys { get; init; } = new HashSet<EventTypeKey>
+    {
+        BuiltInEventTypes.Feeding.Key,
+    };
 }

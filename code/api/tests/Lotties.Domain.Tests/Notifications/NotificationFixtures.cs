@@ -122,7 +122,7 @@ internal static class NotificationFixtures
         var expected = earliest + ((latest - earliest) / 2);
         var reason = new PredictionReason(basis, expected - anchor, 12, TimeSpan.FromDays(14), null, DayPhase.Day, null, asleep);
         var window = new NextStartWindow(earliest.ToUniversalTime(), expected.ToUniversalTime(), latest.ToUniversalTime());
-        var prediction = new Prediction(SleepKey, window, null, confidence, 12, reason, anchor.ToUniversalTime());
+        var prediction = new Prediction(SleepKey, window, null, confidence, 12, reason, PriorOrigin.PublishedNorm, anchor.ToUniversalTime());
         return new PredictionSet([prediction], []);
     }
 

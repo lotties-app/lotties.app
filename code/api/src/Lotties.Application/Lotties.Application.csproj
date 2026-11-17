@@ -22,6 +22,8 @@
     <EmbeddedResource Include="..\..\data\age-norms.json" LogicalName="Lotties.Application.AgeNorms.age-norms.json" WithCulture="false" />
     <!-- The community statistics catalog (docs/design/34-community-insights.md, T4): validated at startup, served by no route. -->
     <EmbeddedResource Include="..\..\data\community-statistics.json" LogicalName="Lotties.Application.CommunityInsights.community-statistics.json" WithCulture="false" />
+    <!-- Pre-computed community priors for cold-start predictions (Phase 0, tier-A shares only): embedded, loaded at startup. -->
+    <EmbeddedResource Include="..\..\data\community-priors.json" LogicalName="Lotties.Application.CommunityInsights.community-priors.json" WithCulture="false" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -94,7 +94,7 @@ internal sealed class TypePredictor
             gaps.Phase,
             duration,
             anchor.FromEventInProgress);
-        return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason, Utc(anchor.At));
+        return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason, PriorOrigin.PublishedNorm, Utc(anchor.At));
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ internal sealed class TypePredictor
             null,
             prior.TypicalDuration is { } duration ? new DurationEstimate(duration, 0) : null,
             anchor.FromEventInProgress);
-        return new Prediction(_typeKey, window, prior.TypicalDuration is { } dur ? new DurationEstimate(dur, 0) : null, PredictionConfidence.Low, 0, reason, Utc(anchor.At));
+        return new Prediction(_typeKey, window, prior.TypicalDuration is { } dur ? new DurationEstimate(dur, 0) : null, PredictionConfidence.Low, 0, reason, prior.Origin, Utc(anchor.At));
     }
 
     /// <summary>

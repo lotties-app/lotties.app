@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-17",
+  "purpose": "Pre-computed community priors baked into the release for cold-start predictions. Only tier-A share-based statistics are included; percentile outputs wait for O2 tier-B epsilon approval. See docs/design/34-community-insights.md.",
+  "norms": []
+}
