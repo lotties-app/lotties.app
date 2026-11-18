@@ -21,6 +21,11 @@ export interface ConsentApi {
   syncAllowed: boolean;
   /** The version a "policy updated" notice is shown for (a minor change not dismissed yet), else `null`. */
   noticeVersion: string | null;
+  /**
+   * The server asks for a consent version this build does not carry (`consentClientStanding` = `stale`): this app is older than
+   * the server, so it cannot show the text to accept. The consent screen asks for an update instead of offering Accept.
+   */
+  stale: boolean;
   /** Records the core consent for the current version; rejects when the server cannot be reached or refuses. */
   accept: (capacity: ConsentCapacity) => Promise<void>;
   /** Asks the server again (after the device came back online, or on request). */
@@ -42,6 +47,7 @@ export const SIGNED_OUT_CONSENT: ConsentApi = {
   view: null,
   syncAllowed: true,
   noticeVersion: null,
+  stale: false,
   accept: () => Promise.resolve(),
   refresh: () => Promise.resolve(),
   dismissNotice: noop,

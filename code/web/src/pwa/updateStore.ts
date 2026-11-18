@@ -69,7 +69,7 @@ export function setWaiting(next: boolean) {
 }
 
 /** Resolves when the worker finishes installing (or fails, or the wait runs out). */
-function whenInstalled(worker: ServiceWorker): Promise<void> {
+export function whenInstalled(worker: ServiceWorker): Promise<void> {
   return new Promise((resolve) => {
     const done = () => {
       worker.removeEventListener('statechange', onChange);

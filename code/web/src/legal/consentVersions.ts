@@ -40,6 +40,27 @@ export function requiresAcceptance(accepted: string | null | undefined): boolean
   return at < 0 || CONSENT_VERSIONS.slice(at + 1).some((entry) => entry.material);
 }
 
+/**
+ * Where this build stands against the version the server asks for (`GET /me/consents` `currentVersion`), by position in the
+ * list (docs/design/38-consent-and-terms.md section 10):
+ * - `current`: the same version, or the server did not say;
+ * - `stale`: the server's version is later in the list, or unknown to this build: this app is older than the server and cannot
+ *   show the text the server asks her to accept (an installed native build, or a browser held on an old bundle);
+ * - `ahead`: this build is later than the server (the web deployed before the API): not stale, the server decides as usual.
+ */
+export type ConsentClientStanding = 'current' | 'stale' | 'ahead';
+
+export function consentClientStanding(
+  serverVersion: string | null | undefined,
+  bundled: string = CONSENT_VERSION,
+  versions: readonly ConsentVersionEntry[] = CONSENT_VERSIONS,
+): ConsentClientStanding {
+  if (!serverVersion || serverVersion === bundled) return 'current';
+  const server = versions.findIndex((entry) => entry.version === serverVersion);
+  const own = versions.findIndex((entry) => entry.version === bundled);
+  return server < 0 || server > own ? 'stale' : 'ahead';
+}
+
 /** She accepted an older version and only minor entries came since: a notice, not a new consent. */
 export function hasMinorChangeSince(accepted: string | null | undefined): boolean {
   const at = indexOf(accepted);

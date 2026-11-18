@@ -8,8 +8,10 @@ import {
   CURRENT_CONSENT,
   TERMS_LAST_UPDATED,
   TERMS_VERSION,
+  consentClientStanding,
   hasMinorChangeSince,
   requiresAcceptance,
+  type ConsentVersionEntry,
 } from './consentVersions';
 import { privacyEn } from './privacy.en';
 import { privacyPtBR } from './privacy.pt-BR';
@@ -84,5 +86,41 @@ describe('consent versions', () => {
     expect(requiresAcceptance(CONSENT_VERSION)).toBe(false);
     expect(hasMinorChangeSince(CONSENT_VERSION)).toBe(false);
     expect(hasMinorChangeSince(null)).toBe(false);
+  });
+});
+
+describe('consentClientStanding', () => {
+  const entry = (version: string): ConsentVersionEntry => ({
+    version,
+    terms: '1',
+    privacyPolicy: '1',
+    material: true,
+    date: version.slice(0, 10),
+    textDigest: 'x',
+  });
+  const LIST = [entry('2026-01-01.1'), entry('2026-02-01.1'), entry('2026-03-01.1')];
+
+  it('is current when the server asks for the version this build carries, or does not say', () => {
+    expect(consentClientStanding('2026-02-01.1', '2026-02-01.1', LIST)).toBe('current');
+    expect(consentClientStanding(null, '2026-02-01.1', LIST)).toBe('current');
+    expect(consentClientStanding('', '2026-02-01.1', LIST)).toBe('current');
+    expect(consentClientStanding(CONSENT_VERSION)).toBe('current');
+  });
+
+  it('is stale when the server asks for a later version of the list', () => {
+    expect(consentClientStanding('2026-03-01.1', '2026-02-01.1', LIST)).toBe('stale');
+    expect(consentClientStanding('2026-03-01.1', '2026-01-01.1', LIST)).toBe('stale');
+  });
+
+  it('is stale when the server asks for a version this build does not know', () => {
+    expect(consentClientStanding('2027-01-01.1', '2026-03-01.1', LIST)).toBe('stale');
+    expect(consentClientStanding('2099-12-31.1')).toBe('stale');
+  });
+
+  it('is ahead, not stale, when this build is later than the server (web deployed first)', () => {
+    expect(consentClientStanding('2026-01-01.1', '2026-03-01.1', LIST)).toBe('ahead');
+    expect(consentClientStanding(CONSENT_VERSIONS[0].version)).toBe(
+      CONSENT_VERSIONS.length > 1 ? 'ahead' : 'current',
+    );
   });
 });
