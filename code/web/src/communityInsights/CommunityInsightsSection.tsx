@@ -50,8 +50,9 @@ function StateLine({ view, name }: { view: CommunityConsentView; name: string })
   );
 }
 
-/** The three points of the opt-in screen, in order. */
+/** The four points of the opt-in screen, in order. */
 const SCREEN_POINTS = [
+  'communityInsights.screen.predictions',
   'communityInsights.screen.onlyUse',
   'communityInsights.screen.groups',
   'communityInsights.screen.optional',

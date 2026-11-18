@@ -57,6 +57,15 @@ internal static class CommunityInsightsAccessExtensions
         ArgumentNullException.ThrowIfNull(configuration);
         services.AddOptions<CommunityInsightsOptions>().Bind(configuration.GetSection(CommunityInsightsOptions.SectionName));
         services.AddOptions<CommunityAggregationOptions>().Bind(configuration.GetSection(CommunityAggregationOptions.SectionName)).ValidateOnStart();
+        services.AddOptions<Lotties.Domain.Predictions.PredictionOptions>()
+            .Bind(configuration.GetSection("PredictionOptions"))
+            .PostConfigure(options =>
+            {
+                if (options.ColdStartTypeKeys.Count == 0)
+                {
+                    options = options with { ColdStartTypeKeys = new HashSet<Lotties.Domain.EventTypes.EventTypeKey> { Lotties.Domain.EventTypes.BuiltInEventTypes.Feeding.Key } };
+                }
+            });
         services.AddSingleton<IValidateOptions<CommunityAggregationOptions>, CommunityAggregationOptionsValidator>();
         services.AddHostedService<CommunityAggregationJob>();
         return services;

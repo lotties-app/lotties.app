@@ -53,7 +53,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Backups.IBackupExportService, Backups.BackupExportService>();
         services.AddScoped<Backups.BackupApplier>();
         services.AddScoped<Backups.IBackupImportService, Backups.BackupImportService>();
-        services.TryAddSingleton(Lotties.Domain.Predictions.PredictionOptions.Default);
+        services.TryAddSingleton(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Lotties.Domain.Predictions.PredictionOptions>>().Value);
         services.AddHttpClient("CommunityStatistics", client => client.Timeout = TimeSpan.FromSeconds(5));
         services.AddScoped<Lotties.Domain.Predictions.IPriorProvider, Predictions.CommunityLivePriorProvider>();
         services.AddScoped<Lotties.Domain.Predictions.IPriorProvider, Predictions.CommunityStaticPriorProvider>();

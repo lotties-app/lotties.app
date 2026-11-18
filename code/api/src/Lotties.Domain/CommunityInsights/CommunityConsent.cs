@@ -36,7 +36,7 @@ public enum CommunityConsentStatus
 public static class CommunityConsentTexts
 {
     /// <summary>The opt-in screen in force (en and pt-BR say the same thing).</summary>
-    public const string CurrentTextVersion = "ci-1";
+    public const string CurrentTextVersion = "ci-2";
 
     /// <summary>The only purpose of v1: all of the published list, all or nothing (open decision O5; the column is a list for later).</summary>
     public const string AllPurposes = "all";
