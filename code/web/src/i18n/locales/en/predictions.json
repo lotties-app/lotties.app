@@ -1,9 +1,7 @@
 {
-  "predictions": {
-    "origin": {
-      "publishedNorm": "Based on published research studies",
-      "communityStatic": "Based on aggregated community data, used when your baby has few logged events",
-      "communityLive": "Based on live community aggregates"
-    }
+  "predictionOrigin": {
+    "publishedNorm": "Based on published research studies",
+    "communityStatic": "Based on aggregated community data, used when your baby has few logged events",
+    "communityLive": "Based on live community aggregates"
   }
 }
