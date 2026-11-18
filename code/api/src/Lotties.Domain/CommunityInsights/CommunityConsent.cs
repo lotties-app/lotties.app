@@ -270,4 +270,11 @@ public interface ICommunityConsentRepository
 
     /// <summary>Appends a line and saves it.</summary>
     Task AddAsync(CommunityConsentEntry entry, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Filters the given baby IDs to only those whose owner is a real (non-demo, non-deleted) user. Demo accounts
+    /// and deleted accounts are excluded because they do not represent active family usage and must not contribute
+    /// to community statistics.
+    /// </summary>
+    Task<IReadOnlyList<Guid>> FilterEligibleBabiesAsync(IReadOnlyList<Guid> babyIds, CancellationToken cancellationToken = default);
 }

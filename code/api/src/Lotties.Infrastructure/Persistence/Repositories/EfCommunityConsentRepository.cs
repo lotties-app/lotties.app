@@ -1,4 +1,6 @@
+using Lotties.Domain.Babies;
 using Lotties.Domain.CommunityInsights;
+using Lotties.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Infrastructure.Persistence.Repositories;
@@ -35,5 +37,24 @@ internal sealed class EfCommunityConsentRepository(LottiesDbContext context) : I
         ArgumentNullException.ThrowIfNull(entry);
         context.CommunityConsents.Add(entry);
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Guid>> FilterEligibleBabiesAsync(IReadOnlyList<Guid> babyIds, CancellationToken cancellationToken = default)
+    {
+        if (babyIds.Count == 0)
+        {
+            return [];
+        }
+
+        var eligibleBabyIds = await context.BabyMembers.AsNoTracking()
+            .Where(m => babyIds.Contains(m.BabyId) && m.Role == BabyRole.Owner)
+            .Join(
+                context.Users.AsNoTracking().Where(u => u.Issuer != User.DemoIssuer && u.Issuer != User.DeletedIssuer),
+                member => member.UserId,
+                user => user.Id,
+                (member, _) => member.BabyId)
+            .ToListAsync(cancellationToken);
+
+        return [.. eligibleBabyIds.Order()];
     }
 }

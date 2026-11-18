@@ -111,8 +111,24 @@ internal sealed class CommunityAggregationRunner(
             return;
         }
 
-        logger.LogInformation("Run {RunId}: {BabyCount} babies opted in, {StatisticCount} statistics in catalog",
-            runId, optedInBabies.Count, catalog.Statistics.Count);
+        // Exclude babies whose owner is a demo or deleted account.
+        // Only babies owned by real users should contribute to community statistics.
+        var eligibleBabies = await consents.FilterEligibleBabiesAsync(optedInBabies, cancellationToken);
+        if (eligibleBabies.Count == 0)
+        {
+            logger.LogInformation("Run {RunId}: all {Total} opted-in babies excluded (demo/test/inactive); graceful no-op",
+                runId, optedInBabies.Count);
+            return;
+        }
+
+        if (eligibleBabies.Count < optedInBabies.Count)
+        {
+            logger.LogInformation("Run {RunId}: excluded {Excluded} of {Total} opted-in babies (demo/test/inactive), {Eligible} eligible",
+                runId, optedInBabies.Count - eligibleBabies.Count, optedInBabies.Count, eligibleBabies.Count);
+        }
+
+        logger.LogInformation("Run {RunId}: {BabyCount} eligible babies, {StatisticCount} statistics in catalog",
+            runId, eligibleBabies.Count, catalog.Statistics.Count);
 
         // TODO: Load events for opted-in babies (excluding BYO stores via IStoreScope fail-closed contract).
         // TODO: Apply clipping per catalog Clip ranges, per-baby cap of 14 days per cell (keyed hash of baby id + day).
@@ -134,4 +150,5 @@ internal sealed class CommunityAggregationRunner(
         await releases.PruneOldReleasesAsync(cancellationToken);
         logger.LogInformation("Run {RunId}: pruned old releases", runId);
     }
-}
+
+    }
