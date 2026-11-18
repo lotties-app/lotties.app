@@ -73,7 +73,15 @@
     <meta name="twitter:image" content="/social-preview.png" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Fallback: shown only if React fails to mount (e.g. stale SW serving broken assets).
+           The app removes this div on successful render; if it stays visible after 8s, show reload. -->
+      <div id="app-fallback" style="display:none;position:fixed;inset:0;background:#1b1814;color:#f5efe4;font-family:system-ui,sans-serif;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:2rem;z-index:9999;">
+        <p style="font-size:1.2rem;margin-bottom:1.5rem;">Unable to load Lotties.<br/>A new version may be installing.</p>
+        <button onclick="location.reload(true)" style="padding:0.75rem 2rem;font-size:1rem;border:none;border-radius:8px;background:#f5efe4;color:#1b1814;cursor:pointer;font-weight:600;">Reload page</button>
+      </div>
+    </div>
+    <script type="module" src="/src/fallback-timer.ts"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

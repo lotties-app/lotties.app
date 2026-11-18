@@ -21,10 +21,10 @@ export function OriginBadge({ origin }: Props) {
   if (!origin) return null;
   const label =
     origin === 'PublishedNorm'
-      ? t('predictions.origin.publishedNorm')
+      ? t('predictionOrigin.publishedNorm')
       : origin === 'CommunityStatic'
-        ? t('predictions.origin.communityStatic')
-        : t('predictions.origin.communityLive');
+        ? t('predictionOrigin.communityStatic')
+        : t('predictionOrigin.communityLive');
   return (
     <Chip
       size="small"
