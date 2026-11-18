@@ -6,7 +6,12 @@ import { useAuth } from '../auth/useAuth';
 import { accountDatabaseName } from '../session/accountDatabase';
 import { claimDeviceState } from '../session/deviceState';
 import { useLocale } from '../i18n/useLocale';
-import { CONSENT_VERSION, hasMinorChangeSince, requiresAcceptance } from '../legal/consentVersions';
+import {
+  CONSENT_VERSION,
+  consentClientStanding,
+  hasMinorChangeSince,
+  requiresAcceptance,
+} from '../legal/consentVersions';
 import {
   acceptCoreConsent,
   getConsents,
@@ -130,17 +135,25 @@ function AccountConsent({ accountId, children }: { accountId: string; children: 
 
   const accept = useCallback(
     async (capacity: ConsentCapacity) => {
-      const view = await acceptCoreConsent(
-        apiRef.current,
-        CONSENT_VERSION,
-        capacity,
-        localeRef.current,
-      );
+      let view: ConsentsView;
+      try {
+        view = await acceptCoreConsent(
+          apiRef.current,
+          CONSENT_VERSION,
+          capacity,
+          localeRef.current,
+        );
+      } catch (error) {
+        // The server moved on while she was reading (a deploy): ask it again, so a server now ahead of this build shows the
+        // update panel (`stale`) instead of a reload that cannot help. The caller still gets the refusal.
+        if (error instanceof ApiError && error.code === 'consent_version_outdated') await refresh();
+        throw error;
+      }
       storeSeenConsentVersion(view.currentVersion);
       setSeen(view.currentVersion);
       adopt(view);
     },
-    [adopt],
+    [adopt, refresh],
   );
 
   const flushOptional = useCallback(async () => {
@@ -187,18 +200,21 @@ function AccountConsent({ accountId, children }: { accountId: string; children: 
       ? CONSENT_VERSION
       : null;
 
+  const stale = consentClientStanding(standing.view?.currentVersion) === 'stale';
+
   const value = useMemo<ConsentApi>(
     () => ({
       status: standing.status,
       view: standing.view,
       syncAllowed: standing.status === 'accepted' && (standing.verified || standing.cached),
       noticeVersion,
+      stale,
       accept,
       refresh,
       dismissNotice,
       recordOptional,
     }),
-    [standing, noticeVersion, accept, refresh, dismissNotice, recordOptional],
+    [standing, noticeVersion, stale, accept, refresh, dismissNotice, recordOptional],
   );
   return <ConsentContext value={value}>{children}</ConsentContext>;
 }

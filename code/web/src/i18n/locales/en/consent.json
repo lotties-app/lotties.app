@@ -39,6 +39,21 @@
     "offline": "You are offline. Connect to the internet to accept.",
     "failed": "We could not save your answer. Check your connection and try again.",
     "outdated": "The text changed while you were reading it. Reload the page and read it again.",
+    "stale": {
+      "title": "Update Lotties to continue",
+      "body": "The terms or the privacy policy changed, and this version of Lotties cannot show the new text. You can only accept a text you have read, so Lotties needs to be updated first.",
+      "updating": "Getting the latest version of Lotties…",
+      "native": {
+        "ios": "Install the latest version of Lotties from the App Store (or from TestFlight, if you test the beta), then open it again.",
+        "android": "Install the latest version of Lotties from Google Play, then open it again.",
+        "other": "Install the latest version of Lotties from your app store, then open it again.",
+        "openPlayStore": "Open Lotties on Google Play"
+      },
+      "web": {
+        "reopen": "This copy of Lotties could not update itself. Close every Lotties tab, or the installed app, and open it again.",
+        "clearData": "If this screen comes back, clear this site's data in your browser settings and sign in again. Changes on this device that were not uploaded yet would be lost."
+      }
+    },
     "declineDialog": {
       "title": "Decline and sign out?",
       "body": "You will be signed out, and nothing about a child will be stored. You can accept later by signing in again.",

@@ -174,3 +174,38 @@ skipped (not in the first design).
 **Not done.** The Keycloak "Terms and conditions" required action stays off; the Playwright helper `acceptConsentIfShown` is
 written but was not run here.
 
+
+## 10. A client older than the server (2026-11-18)
+
+**Why.** The app accepts the consent version it was built with (`CONSENT_VERSION`, the last entry of
+`code/web/src/legal/consentVersions.json`) and the API accepts only its own current version (409
+`consent_version_outdated` otherwise). After a material version, every installed iOS/Android build older than it, and any
+browser or PWA held on an old service-worker bundle, showed the consent screen with a text it could not accept: Accept
+always answered 409 and "reload the page" cannot help an app whose web bundle is inside the binary.
+
+**Detection.** `GET /me/consents` returns `currentVersion`; `consentClientStanding(currentVersion)` (consentVersions.ts)
+compares it with the bundled version by position in the list: `current` (same, or not said), `stale` (the server's version
+is later, or unknown to this build: the app is older than the server), `ahead` (this build is later: the web deployed
+before the API; not stale, the server decides as before). `ConsentProvider` exposes it as `stale`.
+
+**What she sees.** While `stale`, the consent screen (same frame) shows an "Update Lotties to continue" panel instead of
+the Accept form: there is no Accept button, because accepting would record a text she never saw. Decline (sign out) and
+"Leave Lotties instead" stay.
+- Store app (`isNativeApp()`): install the latest version from the App Store (or TestFlight) / Google Play and open it
+  again; Android shows a link to the Play listing when `VITE_PLAY_STORE_URL` is set (there is no App Store address
+  variable, so iOS is text only).
+- Browser or PWA: the first time in a session the screen says it is getting the latest version, asks the service worker
+  for its script again (`registration.update()`), tells a waiting version to take over (`SKIP_WAITING`) and reloads once
+  (`consent/staleClient.ts`). A `sessionStorage` flag, set before the attempt, allows one attempt per session (storage that
+  cannot be read or written counts as tried, so no attempt is made): if the reloaded page is still old, the panel says to
+  close every Lotties tab or the installed app and open it again, or else clear the site's data (with the warning that
+  changes not yet uploaded would be lost). No loop, no silent retry.
+
+**Race.** A 409 `consent_version_outdated` on Accept (a deploy while she read) makes the provider ask
+`GET /me/consents` again before the error reaches the screen: if the server is now ahead of the build, the panel replaces
+the form and takes focus; otherwise the existing "The text changed while you were reading it" message stays.
+
+No API, text or version change: the strings are under `consent.stale` in `locales/{en,pt-BR}/consent.json`, outside the
+keys the text digest covers. Tests: `legal/consentVersions.test.ts` (the comparison), `consent/staleClient.test.ts` (the
+attempt), `consent/ConsentStaleClient.test.tsx` (native, web, not stale, build ahead, the 409 race, both languages, axe).
+Not seen on a real device or a real stale service worker.

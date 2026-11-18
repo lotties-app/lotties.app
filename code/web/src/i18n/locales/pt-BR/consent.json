@@ -39,6 +39,21 @@
     "offline": "Você está sem conexão. Conecte-se à internet para aceitar.",
     "failed": "Não conseguimos salvar a sua resposta. Verifique a conexão e tente de novo.",
     "outdated": "O texto mudou enquanto você lia. Recarregue a página e leia de novo.",
+    "stale": {
+      "title": "Atualize o Lotties para continuar",
+      "body": "Os termos ou a política de privacidade mudaram, e esta versão do Lotties não consegue mostrar o novo texto. Você só pode aceitar um texto que leu, então o Lotties precisa ser atualizado antes.",
+      "updating": "Buscando a versão mais recente do Lotties…",
+      "native": {
+        "ios": "Instale a versão mais recente do Lotties pela App Store (ou pelo TestFlight, se você testa o beta) e abra o app de novo.",
+        "android": "Instale a versão mais recente do Lotties pelo Google Play e abra o app de novo.",
+        "other": "Instale a versão mais recente do Lotties pela loja de aplicativos e abra o app de novo.",
+        "openPlayStore": "Abrir o Lotties no Google Play"
+      },
+      "web": {
+        "reopen": "Esta cópia do Lotties não conseguiu se atualizar sozinha. Feche todas as abas do Lotties, ou o app instalado, e abra de novo.",
+        "clearData": "Se esta tela voltar, apague os dados deste site nas configurações do navegador e entre de novo. Alterações deste dispositivo que ainda não foram enviadas seriam perdidas."
+      }
+    },
     "declineDialog": {
       "title": "Recusar e sair?",
       "body": "Você vai sair do app e nada sobre uma criança será guardado. Você pode aceitar depois, entrando de novo.",
