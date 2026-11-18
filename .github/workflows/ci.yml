@@ -151,10 +151,21 @@ jobs:
       - run: npm run test -- --run --shard=${{ matrix.shard }}/5
         working-directory: code/web
 
+  # Build-time guard: verifies community-priors.json was generated exclusively from synthetic fixtures.
+  # Checks: (1) every source has kind "synthetic", (2) no source URL points outside the repository,
+  # (3) the purpose field mentions "synthetic". Runs on every CI invocation regardless of changed paths,
+  # because the file is checked-in data that must never silently drift to real-baby provenance.
+  priors-provenance:
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify community-priors.json provenance
+        run: bash scripts/verify-community-priors-provenance.sh
+
   # The one check to require in branch protection: skipped suites (nothing relevant changed) pass, failed or cancelled ones do not.
   ci-ok:
     if: always()
-    needs: [changes, api, web, web-test]
+    needs: [changes, api, web, web-test, priors-provenance]
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - env:

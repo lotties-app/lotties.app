@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, Typography } from '@mui/material';
 import { describeBedTime, describeBedTimeReason } from '../../predictions/predictionModel';
+import { OriginBadge } from '../../predictions/OriginBadge';
 import type { BedTimeDto } from '../../sync/contract';
 import { Icon } from '../../ui/Icon';
 import { SheetFrame } from './SheetFrame';
@@ -30,6 +31,7 @@ export function BedtimeLine({ bedTime, now }: { bedTime: BedTimeDto; now: Date }
       >
         <Icon name="moon" size={16} />
         <span>{describeBedTime(bedTime, now)}</span>
+        <OriginBadge origin={bedTime.origin} />
       </Typography>
       <Button
         size="small"

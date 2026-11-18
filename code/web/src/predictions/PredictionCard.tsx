@@ -7,6 +7,7 @@ import { safeColor } from '../events/safeColor';
 import type { PredictionConfidence, PredictionDto } from '../sync/contract';
 import { getOwn } from '../util/ownProperty';
 import { describeDuration, describeReason, describeWindow, isOverdue } from './predictionModel';
+import { OriginBadge } from './OriginBadge';
 
 const CONFIDENCE_COLOR: Record<PredictionConfidence, 'success' | 'info' | 'default'> = {
   High: 'success',
@@ -53,6 +54,7 @@ export function PredictionCard({ prediction, type, name, now }: Props) {
           color={getOwn(CONFIDENCE_COLOR, prediction.confidence) ?? 'default'}
           label={t(CONFIDENCE_LABEL[prediction.confidence])}
         />
+        <OriginBadge origin={prediction.origin} />
       </Stack>
       <Typography sx={{ mt: 1 }}>
         {duration

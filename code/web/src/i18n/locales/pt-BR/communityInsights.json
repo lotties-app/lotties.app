@@ -12,6 +12,7 @@
     "turnOff": "Desativar",
     "screen": {
       "intro": "Você pode deixar que alguns registros de {{name}} sejam usados, junto com os de muitos outros bebês, para calcular estatísticas por idade: quanto leite bebês dessa idade costumam tomar, como o crescimento se compara, tempo de bruços, rotinas de sono e alimentação, o que mais ajuda no choro.",
+      "predictions": "Ao ativar, estatísticas anonimizados e agregadas de famílias participantes também podem ser usadas para melhorar a precisão das previsões para bebês com poucos eventos registrados. Os dados individuais do seu bebê nunca são compartilhados; apenas estatísticas agrupadas de muitas famílias são usadas. Estatísticas agregadas não conseguem identificar nenhum bebê individualmente.",
       "onlyUse": "Só usamos idade em semanas, quantidades, durações, contagens e medidas. Nunca nomes, data de nascimento, anotações, fotos, localização nem horários exatos.",
       "groups": "Só publicamos números de grupos com pelo menos 20 bebês de famílias diferentes. Nenhum registro de {{name}} sai da conta de vocês, e nada é vendido nem usado para publicidade.",
       "optional": "É opcional. Sem isso, o app funciona igual. Você pode desativar quando quiser: os registros de {{name}} deixam de ser usados no próximo cálculo. Números de grupo já calculados não têm como ser separados, e são substituídos.",

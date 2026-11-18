@@ -12,6 +12,7 @@
     "turnOff": "Turn off",
     "screen": {
       "intro": "You can let some of {{name}}'s records be used, together with those of many other babies, to calculate statistics by age: how much milk babies this age usually drink, how growth compares, tummy time, sleep and feeding routines, what helps most with crying.",
+      "predictions": "When you opt in, anonymized and aggregated statistics from participating families may also be used to improve prediction accuracy for babies with few logged events. Your baby's individual data is never shared; only pooled statistics across many families are used. Aggregated statistics cannot identify any individual baby.",
       "onlyUse": "We only use age in weeks, amounts, lengths, counts and measurements. Never names, date of birth, notes, photos, location or exact times.",
       "groups": "We only publish numbers for groups of at least 20 babies from different families. None of {{name}}'s records leave your account, and nothing is sold or used for advertising.",
       "optional": "It is optional. Without it, the app works the same. You can turn it off at any time: {{name}}'s records stop being used from the next calculation. Group numbers already calculated cannot be separated out, and are replaced.",

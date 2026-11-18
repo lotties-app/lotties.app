@@ -141,12 +141,12 @@ internal sealed class CommunityStaticPriorProvider : IPriorProvider
                 {
                     if (bandEl.TryGetProperty("fromWeeks", out var fromEl) && fromEl.ValueKind == JsonValueKind.Number)
                     {
-                        fromDays = (int)(fromEl.GetInt32() * 7);
+                        fromDays = (int)(fromEl.GetDouble() * 7);
                     }
 
                     if (bandEl.TryGetProperty("toWeeks", out var toEl) && toEl.ValueKind == JsonValueKind.Number)
                     {
-                        toDays = (int)(toEl.GetInt32() * 7);
+                        toDays = (int)(toEl.GetDouble() * 7);
                     }
                 }
 

@@ -9,7 +9,7 @@ import { API_PREFIX } from '../sync/contract';
  */
 
 /** The opt-in screen this build shows (`locales/<lang>/communityInsights.json`); the server refuses a yes for another one. */
-export const COMMUNITY_CONSENT_TEXT_VERSION = 'ci-1';
+export const COMMUNITY_CONSENT_TEXT_VERSION = 'ci-2';
 
 export type CommunityConsentStatus = 'none' | 'on' | 'off' | 'renewal_needed';
 

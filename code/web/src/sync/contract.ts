@@ -468,6 +468,9 @@ export interface CreateEventTypeRequest extends EventTypeRequest {
  */
 export type PredictionConfidence = 'Low' | 'Medium' | 'High';
 
+/** Where a prediction's prior came from (matches API `PriorOrigin`). */
+export type PriorOrigin = 'PublishedNorm' | 'CommunityStatic' | 'CommunityLive';
+
 export interface PredictionDto {
   typeKey: string;
   nextStart: { earliest: string; expected: string; latest: string };
@@ -477,6 +480,8 @@ export interface PredictionDto {
   /** English explanation of how the estimate was made. */
   reason: string;
   basis: Record<string, unknown>;
+  /** Where the prior came from; absent on older servers. */
+  origin?: PriorOrigin;
 }
 
 export interface InsufficientDataDto {
@@ -496,6 +501,8 @@ export interface BedTimeDto {
   sampleCount: number;
   reason: string;
   basis: Record<string, unknown>;
+  /** Where the prior came from; absent on older servers. */
+  origin?: PriorOrigin;
 }
 
 /** One supporting day of a pattern: `yyyy-MM-dd` and its local `HH:mm` times inside the window. */
