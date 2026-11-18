@@ -1215,6 +1215,45 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("community_consents", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Domain.CommunityInsights.CommunityStatisticsRelease", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<DateTimeOffset>("GeneratedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("generated_at_utc");
+
+                    b.Property<string>("ReleaseId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("release_id");
+
+                    b.Property<int>("ReleaseSequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("release_sequence");
+
+                    b.Property<string>("StatisticsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("statistics_json");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_community_statistics_releases");
+
+                    b.ToTable("community_statistics_releases", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Domain.Consents.UserConsent", b =>
                 {
                     b.Property<Guid>("UserId")
