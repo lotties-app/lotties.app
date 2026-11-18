@@ -39,6 +39,7 @@ internal static class UserRateLimits
         rateLimiter.AddPolicy(RequestLimitPolicies.Board, context => FixedWindow($"board:{PartitionKey(context)}", limits.BoardPermitsPerMinute));
         rateLimiter.AddPolicy(RequestLimitPolicies.DataStoreWrite, context => FixedWindow($"data-store-write:{PartitionKey(context)}", limits.DataStoreWritePermitsPerHour, Hour));
         rateLimiter.AddPolicy(RequestLimitPolicies.DataStoreTest, context => FixedWindow($"data-store-test:{PartitionKey(context)}", limits.DataStoreTestPermitsPerHour, Hour));
+        rateLimiter.AddPolicy(RequestLimitPolicies.CommunityStatisticsRead, context => FixedWindow($"community-statistics-read:{PartitionKey(context)}", limits.CommunityStatisticsReadPermitsPerHour, Hour));
         rateLimiter.OnRejected = WriteRejectionAsync;
     }
 

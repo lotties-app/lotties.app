@@ -254,7 +254,7 @@ for a later task; until then the catalog is the earlier proposal and this sectio
 
 ## 6. What is published back
 
-- `GET /api/v1/community-statistics` (any signed-in user, like `GET /age-norms`): the current file (schema 1:
+- `GET /api/v1/community/statistics` (any signed-in user, like `GET /age-norms`): the current file (schema 1:
   `{schemaVersion, generatedAt, catalogVersion, k, epsilon, cells: [{statistic, band {fromWeeks, toWeeks},
   dimension?, outputs {...}, babies: "20-49" | "50-99" | "100+"}]}`; exact counts are not published), strong ETag
   `"community-{generatedAt}-{hash8}"`, `Cache-Control: private, max-age=86400`, 304 on `If-None-Match`; served even to
@@ -380,7 +380,7 @@ when activated (task T9).
 | T3 | Web consent screen and state in Settings > Baby (`communityInsights.json` en + pt-BR, `baby/permissions.ts` gate, axe light/dark) | Sonnet | T2 |
 | T4 | Catalog `community-statistics.json` + validator (like `AgeNormsValidator`), embedded, schema test. **Catalog (T4): built**, catalog only: `code/api/data/community-statistics.json` (schema 1, the 10 use cases of section 4, every entry `planned` with the proposed values of section 13 marked `proposed: true`, `growth_vs_age` `notInV1` per O6, fixed band grids), `Domain/CommunityInsights` (model, strict parser, `CommunityStatisticsValidator`: known keys, k >= 20, inputs from an allow-list and never a "Never read" category, epsilon in (0, 1], status `planned`), embedded in Lotties.Application and validated at startup; nothing served, collected or consented, no table. **Follow-up for O2 (decided 2026-11-11, section 5.1)**: the catalog still carries epsilon 0.2 everywhere; it needs the tiers (an epsilon above the validator's maximum of 1 for tier B, per-output tiers for tummy time, `notInV1` for the percentile statistics) | Sonnet | T0 |
 | T5 | Aggregation job: inputs per use case, caps, clipping, bands, k, dominance, suppression, DP per the tiers of section 5.1 (no percentile output in v1), run log, read-only role, flag; property tests (a cell never below k, a withdrawn baby absent from the next run, a single heavy family bounded) | Opus plan, Sonnet build | T2, T4 |
-| T6 | `GET /community-statistics` with ETag (like `/age-norms`), matrix row | Haiku | T5 |
+| T6 | `GET /community/statistics` with ETag (like `/age-norms`), matrix row | Haiku | T5 |
 | T7 | Web cache + `useCommunityStatistics()`, fallback chain pooled > norms > default, the context lines (wording reviewed) | Sonnet | T6 |
 | T8 | `ml/benchmark/community.py` synthetic study, then the pilot backtest (section 9). **Synthetic study done** (docs/ml/COMMUNITY-SYNTHETIC.md); **pilot backtest still to do** | Sonnet | T4 |
 | T9 | Activation: policy section rewritten from "not active yet" to the final text, `PLANNED_FLOWS` entry moved to an active flow (data category row, status), version/date raised, in-app notice (gap G6), audit section 11 and docs/design/20 updated, store forms | Opus review, Sonnet edit | T1-T8 green |

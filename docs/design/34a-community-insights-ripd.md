@@ -102,7 +102,7 @@ owner's family plus testers), so at activation most or all cells would be suppre
    summaries in memory, applies caps, clipping, bands, k, dominance and complementary suppression and the noise of
    its epsilon tier (design 34 sections 5 and 5.1), and writes **only** the published statistics file and one run row. **No staging table
    of per-baby values.**
-3. `GET /api/v1/community-statistics` serves the static file (no query parameters, no filters) to signed-in users
+3. `GET /api/v1/community/statistics` serves the static file (no query parameters, no filters) to signed-in users
    (O10); the web app caches it and shows context lines with "From families who chose to share, not advice".
 
 ### 2.7 Retention (Retenção) — planned

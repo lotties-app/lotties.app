@@ -59,6 +59,9 @@ public sealed class RequestLimitsOptions
     /// </summary>
     public int DataStoreTestPermitsPerHour { get; set; } = 5;
 
+    /// <summary>Community statistics reads per user per fixed one-hour window (default 60; docs/design/34-community-insights.md section 5).</summary>
+    public int CommunityStatisticsReadPermitsPerHour { get; set; } = 60;
+
     /// <summary>Largest project board request body in bytes (default 256 KiB).</summary>
     public long BoardMaxRequestBodyBytes { get; set; } = 256 * 1024;
 
@@ -84,6 +87,7 @@ public sealed class RequestLimitsOptions
             (nameof(BoardPermitsPerMinute), BoardPermitsPerMinute),
             (nameof(DataStoreWritePermitsPerHour), DataStoreWritePermitsPerHour),
             (nameof(DataStoreTestPermitsPerHour), DataStoreTestPermitsPerHour),
+            (nameof(CommunityStatisticsReadPermitsPerHour), CommunityStatisticsReadPermitsPerHour),
             (nameof(BoardMaxRequestBodyBytes), BoardMaxRequestBodyBytes),
             (nameof(BoardBulkMaxRequestBodyBytes), BoardBulkMaxRequestBodyBytes),
         }

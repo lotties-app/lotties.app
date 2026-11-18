@@ -83,9 +83,27 @@ public sealed record PredictionOptions
     /// <summary>Whether community-derived static priors may supplement published norms during cold start.</summary>
     public bool UseCommunityStaticPriors { get; init; } = true;
 
+    /// <summary>Whether live community statistics may supplement static priors during cold start (Phase 1 kill switch).</summary>
+    public bool UseCommunityLivePriors { get; init; } = false;
+
+    /// <summary>Maximum age of a community statistics release before it is considered stale and ignored.</summary>
+    public TimeSpan MaxCommunityPriorAge { get; init; } = TimeSpan.FromDays(14);
+
     /// <summary>Event types eligible for cold-start predictions. Defaults to feeding only.</summary>
     public IReadOnlySet<EventTypeKey> ColdStartTypeKeys { get; init; } = new HashSet<EventTypeKey>
     {
         BuiltInEventTypes.Feeding.Key,
     };
+
+    /// <summary>Kill switch for Bayesian prior blending. When false, TypePredictor uses pure personal data or pure cold-start priors.</summary>
+    public bool BlendingEnabled { get; init; } = false;
+
+    /// <summary>EMA smoothing factor for the blended weight to prevent oscillation near adaptive look-back regime boundaries.</summary>
+    public double BlendingEmaAlpha { get; init; } = 0.3;
+
+    /// <summary>Below this effective personal sample count, the prior alone drives the prediction (weight = 1).</summary>
+    public int BlendingMinPersonalSamples { get; init; } = 5;
+
+    /// <summary>Above this effective personal sample count, personal data alone drives the prediction (weight = 0).</summary>
+    public int BlendingMaxPersonalSamples { get; init; } = 30;
 }

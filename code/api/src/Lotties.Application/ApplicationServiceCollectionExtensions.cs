@@ -54,9 +54,13 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Backups.BackupApplier>();
         services.AddScoped<Backups.IBackupImportService, Backups.BackupImportService>();
         services.TryAddSingleton(Lotties.Domain.Predictions.PredictionOptions.Default);
+        services.AddHttpClient("CommunityStatistics", client => client.Timeout = TimeSpan.FromSeconds(5));
+        services.AddScoped<Lotties.Domain.Predictions.IPriorProvider, Predictions.CommunityLivePriorProvider>();
+        services.AddScoped<Lotties.Domain.Predictions.IPriorProvider, Predictions.CommunityStaticPriorProvider>();
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
         services.AddScoped<Rhythm.IRhythmService, Rhythm.RhythmService>();
         services.AddScoped<CommunityInsights.ICommunityConsentService, CommunityInsights.CommunityConsentService>();
+        services.AddScoped<CommunityInsights.CommunityAggregationRunner>();
         services.AddScoped<Clinical.DailyObservationReader>();
         services.AddScoped<Clinical.VaccineOverviewReader>();
         services.AddScoped<Clinical.IClinicalSummaryService, Clinical.ClinicalSummaryService>();

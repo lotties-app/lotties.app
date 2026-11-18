@@ -33,6 +33,9 @@ public static class RequestLimitPolicies
     /// <summary>Rate limit policy of data store connection tests (per user, per hour, <see cref="RequestLimitsOptions.DataStoreTestPermitsPerHour"/>).</summary>
     public const string DataStoreTest = "data-store-test";
 
+    /// <summary>Rate limit policy of community statistics reads (per user, per hour, <see cref="RequestLimitsOptions.CommunityStatisticsReadPermitsPerHour"/>).</summary>
+    public const string CommunityStatisticsRead = "community-statistics-read";
+
     /// <summary>
     /// Gives an import endpoint the import body size limit (<see cref="RequestLimitsOptions.ImportMaxRequestBodyBytes"/>),
     /// timeout and rate limit instead of the defaults.

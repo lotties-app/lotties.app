@@ -180,7 +180,7 @@ public sealed class PredictionServiceTests
     }
 
     private static PredictionService CreateService(IPredictionHistoryRepository repository, BabyMember? caller = null) =>
-        new(repository, new FakeBabyAccessService(BabyAccessDecision.Granted, caller ?? OwnerOf()), new FakeAgeNormsProvider(), PredictionOptions.Default, NullLogger<PredictionService>.Instance);
+        new(repository, new FakeBabyAccessService(BabyAccessDecision.Granted, caller ?? OwnerOf()), new FakeAgeNormsProvider(), Array.Empty<IPriorProvider>(), PredictionOptions.Default, NullLogger<PredictionService>.Instance);
 
     private sealed class FakeAgeNormsProvider : IAgeNormsProvider
     {

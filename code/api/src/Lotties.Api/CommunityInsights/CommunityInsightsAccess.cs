@@ -3,6 +3,21 @@ using Microsoft.Extensions.Options;
 
 namespace Lotties.Api.CommunityInsights;
 
+/// <summary>Startup validation of <see cref="CommunityAggregationOptions"/>: the run hour must be in [0,23].</summary>
+internal sealed class CommunityAggregationOptionsValidator : IValidateOptions<CommunityAggregationOptions>
+{
+    public ValidateOptionsResult Validate(string? name, CommunityAggregationOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.RunHourUtc is < 0 or > 23)
+        {
+            return ValidateOptionsResult.Fail("CommunityAggregation:RunHourUtc must be between 0 and 23.");
+        }
+
+        return ValidateOptionsResult.Success;
+    }
+}
+
 /// <summary>Endpoint metadata: the route belongs to community insights (docs/design/34-community-insights.md, task T2).</summary>
 internal sealed class CommunityInsightsEndpointMetadata
 {
@@ -35,12 +50,15 @@ internal sealed class CommunityInsightsRequestGuard(RequestDelegate next, IOptio
 
 internal static class CommunityInsightsAccessExtensions
 {
-    /// <summary>Binds <see cref="CommunityInsightsOptions"/> (section <c>CommunityInsights</c>, e.g. env <c>CommunityInsights__Enabled</c>; off by default).</summary>
+    /// <summary>Binds <see cref="CommunityInsightsOptions"/> (section <c>CommunityInsights</c>, e.g. env <c>CommunityInsights__Enabled</c>; off by default) and the aggregation job options (<c>CommunityAggregation</c>; off by default).</summary>
     public static IServiceCollection AddCommunityInsightsAccess(this IServiceCollection services, IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
         services.AddOptions<CommunityInsightsOptions>().Bind(configuration.GetSection(CommunityInsightsOptions.SectionName));
+        services.AddOptions<CommunityAggregationOptions>().Bind(configuration.GetSection(CommunityAggregationOptions.SectionName)).ValidateOnStart();
+        services.AddSingleton<IValidateOptions<CommunityAggregationOptions>, CommunityAggregationOptionsValidator>();
+        services.AddHostedService<CommunityAggregationJob>();
         return services;
     }
 

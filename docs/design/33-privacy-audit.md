@@ -518,3 +518,60 @@ had to name Apple before any iOS build that registers a token can reach people. 
   APNs sender is tested against a fake handler only. A build that registers a token also needs the Apple provisioning
   of design 37b section 10 (Push Notifications on the App ID, the regenerated `Lotties App Store` profile with
   `aps-environment`, the `IOS_PROFILE_BASE64` secret).
+
+## 19. Community insights aggregation and serving (2026-11-18, docs/design/34-community-insights.md, docs/design/34a-community-insights-ripd.md, docs/agents/RIPD-COMMUNITY-INSIGHTS-UPDATE.md)
+
+**Status: partly built, off by default.** The consent record (`community_consents`, T2), the statistics catalog
+(`code/api/data/community-statistics.json`, T4), the aggregation job (`CommunityAggregationJob`) and the serving
+endpoint (`GET /api/v1/community/statistics/{statisticKey}`, no hyphen in `community`) are built behind
+`CommunityInsights:Enabled` (default `false`). Nothing is collected, aggregated or served while the flag is off. The
+privacy policy describes the feature as "not active yet" (`PLANNED_FLOWS` status `planned` in `legal/dataFlows.ts`).
+This section documents the data flows for when the feature is activated. **ON_DEVICE_FLOWS is NOT affected**: community
+statistics are computed entirely on the server; no device sensor is involved.
+
+### 19.1 Aggregation (what goes in, what comes out)
+
+- **Inputs:** opted-in babies' live events read through the normal repositories by a weekly background job
+  (`CommunityAggregationJob`, Sunday 03:30 server time). Per-baby summaries are computed in memory; no staging table
+  of per-baby values exists. Inputs are limited to age in completed weeks, amounts, durations, counts and measurements
+  per local day; never names, birth date (computed to weeks and dropped), timestamps finer than local day / part of day,
+  notes, custom field text, medications, prescriptions, vaccines, symptoms, temperatures, appointments, care providers,
+  members, doctor data, push or assistant data, or the account. Demo accounts and babies stored in the family's own
+  database are excluded.
+- **Safeguards applied in memory:** per-baby contribution cap (`capPerBaby`, deterministic keyed sampling), clipping to
+  published ranges, per-baby summaries before percentiles, k-suppression (k = 20 distinct babies from 20 distinct
+  families), dominance suppression (one family > 25% of values suppresses the cell), complementary suppression,
+  hysteresis (publish at 20, suppress at 18 once published), fixed band edges from the catalog, differential privacy
+  in two tiers (strict epsilon 0.2 for crying shares; relaxed epsilon ~5 for tummy-time share of days and, when
+  promoted, percentile outputs; see docs/design/34-community-insights-tier-b.md).
+- **Outputs:** a release row (`community_statistics_releases`) containing the aggregated cells as JSON, plus one run
+  log row (`community_runs`, no baby ids). Only the current and previous release are kept; the previous is deleted on
+  the following run.
+- **Who can access the inputs during aggregation:** nobody. The job reads with a read-only database role on the event,
+  baby, membership and consent tables; write access is limited to `community_runs` and the release table. No human runs
+  ad-hoc pooled queries.
+- **Legal basis:** explicit consent (LGPD art. 11, I and art. 14, §1); legitimate interest is NOT the basis for the
+  inputs (sensitive data).
+- **Retention:** inputs exist in memory only during the run; releases: current + previous only; run log: 2 years;
+  consent records: while the baby exists, then as long as needed to prove consent (needs lawyer, O8; proposal 5 years,
+  baby id hashed after erasure).
+
+### 19.2 Serving (what is served, caching, rate limiting)
+
+- **Endpoint:** `GET /api/v1/community/statistics/{statisticKey}` (no hyphen in `community`; per owner route naming
+  preference). Returns the latest active release cell for the caller's baby's age band.
+- **What is served:** age-band-filtered pooled statistics (statistic key, age band label, value or null, sample size
+  range as a string never an exact count, confidence label, release timestamp, suppression reason). Nothing identifies
+  any baby or family; no free text, no names, no timestamps finer than the release date.
+- **Access controls:** authentication required; active community insights consent on at least one of the caller's
+  babies; demo accounts excluded; doctors refused (family-level, not clinical); feature flag `CommunityInsights:Enabled`
+  gates the entire endpoint (bare 404 when off).
+- **Caching:** `Cache-Control: private, max-age=300` (five minutes); strong ETag `"releaseId:statisticKey"`;
+  304 Not Modified on `If-None-Match`. No shared cache.
+- **Rate limiting:** per user per hour (`RequestLimitPolicies.CommunityStatisticsRead`).
+- **Third parties:** none. Computed and served on the home lab servers; no processor, no recipient. In transit, the
+  response passes through Cloudflare's proxy like all traffic (audit section 1, C2).
+- **International transfer:** none beyond the Cloudflare proxy already disclosed.
+- **Web client:** Dexie table `communityStatistics` (one row, like `ageNorms`), `useCommunityStatistics()` hook; each
+  caller uses a pooled cell when it exists and passes its gate, else `priorFor` of the age norms, else its built-in
+  default. Offline: the last downloaded copy.

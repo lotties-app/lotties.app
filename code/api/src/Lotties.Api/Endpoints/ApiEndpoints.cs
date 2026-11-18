@@ -54,6 +54,7 @@ public static class ApiEndpoints
         api.MapBackupRestoreEndpoints();
         api.MapDataStoreEndpoints();
         api.MapCommunityConsentEndpoints();
+        api.MapCommunityStatisticsEndpoint();
         api.MapPushEndpoints();
         api.MapSilentPushEndpoints();
         api.MapBabyScopedGroup().MapNotificationPreferenceEndpoints();

@@ -12,14 +12,22 @@ internal sealed class PredictionService : IPredictionService
     private readonly IPredictionHistoryRepository _history;
     private readonly IBabyAccessService _access;
     private readonly IAgeNormsProvider _ageNorms;
+    private readonly IEnumerable<IPriorProvider> _priorProviders;
     private readonly PredictionOptions _options;
     private readonly ILogger<PredictionService> _logger;
 
-    public PredictionService(IPredictionHistoryRepository history, IBabyAccessService access, IAgeNormsProvider ageNorms, PredictionOptions options, ILogger<PredictionService> logger)
+    public PredictionService(
+        IPredictionHistoryRepository history,
+        IBabyAccessService access,
+        IAgeNormsProvider ageNorms,
+        IEnumerable<IPriorProvider> priorProviders,
+        PredictionOptions options,
+        ILogger<PredictionService> logger)
     {
         _history = history ?? throw new ArgumentNullException(nameof(history));
         _access = access ?? throw new ArgumentNullException(nameof(access));
         _ageNorms = ageNorms ?? throw new ArgumentNullException(nameof(ageNorms));
+        _priorProviders = priorProviders ?? throw new ArgumentNullException(nameof(priorProviders));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -34,7 +42,8 @@ internal sealed class PredictionService : IPredictionService
         }
 
         var history = VisibleIn(stored, await _access.ViewOfCallerAsync(babyId, cancellationToken));
-        var predictions = PredictionEngine.Predict(history.Events, new PredictionContext(history.BirthDate, now), _options, _ageNorms.Norms);
+        var priorList = BuildPriorProviders();
+        var predictions = PredictionEngine.Predict(history.Events, new PredictionContext(history.BirthDate, now), _options, _ageNorms.Norms, priorList);
         _logger.LogDebug(
             "Computed {PredictionCount} predictions for baby {BabyId} from {EventCount} events ({InsufficientCount} types lack data)",
             predictions.Predictions.Count,
@@ -70,4 +79,29 @@ internal sealed class PredictionService : IPredictionService
         WakeWindows.Measure(history.Events, now, clock, WakeWindowOptions.Default, _options) is { } window
             ? WakeWindowResponse.For(window, now, clock, WakeWindowOptions.Default)
             : null;
+
+    /// <summary>
+    /// Builds the ordered prior provider chain for this prediction run. When live community priors are enabled,
+    /// CommunityLive > CommunityStatic; otherwise just CommunityStatic. The age-norm fallback is handled by
+    /// <see cref="PredictionEngine"/> via the <c>ageNorms</c> parameter (not added here because
+    /// <c>AgeNormPriorProvider</c> is internal to Domain).
+    /// </summary>
+    private IReadOnlyList<IPriorProvider> BuildPriorProviders()
+    {
+        var providers = new List<IPriorProvider>();
+
+        foreach (var provider in _priorProviders)
+        {
+            // CommunityLivePriorProvider self-gates on UseCommunityLivePriors inside GetPrior,
+            // but we also skip adding it to keep the chain clean when disabled.
+            if (!_options.UseCommunityLivePriors && provider is CommunityLivePriorProvider)
+            {
+                continue;
+            }
+
+            providers.Add(provider);
+        }
+
+        return providers;
+    }
 }

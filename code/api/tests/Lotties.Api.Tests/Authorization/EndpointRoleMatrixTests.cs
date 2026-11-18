@@ -262,6 +262,9 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         // is off (before any 401; on in this host). Blocked in the demo. No store binding (control plane).
         ["GET /api/v1/babies/{babyId:guid}/community-consent"] = Access.Write,
         ["PUT /api/v1/babies/{babyId:guid}/community-consent"] = Access.Write,
+        // Community statistics (docs/design/34-community-insights.md section 5): any signed-in user with an active consent on
+        // at least one baby; the handler checks consent and demo status internally. Not baby-scoped (no {babyId} in the route).
+        ["GET /api/v1/community/statistics/{statisticKey}"] = Access.SignedIn,
 
         ["GET /api/v1/push/config"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions"] = Access.SignedIn,

@@ -79,6 +79,29 @@ internal sealed class TypePredictor
     private Prediction BuildPrediction(NextStartAnchor anchor, SampleSelection gaps, TimeSpan effectiveLookBack)
     {
         var median = Quantile(gaps.Samples, MedianQuantile);
+        var origin = PriorOrigin.PublishedNorm;
+
+        // Blend with prior when enabled and a community/norm prior is available.
+        if (_options.BlendingEnabled && _coldStartPrior is not null && gaps.Samples.Count > 0)
+        {
+            var blended = WeightedSampleSet.BlendQuantile(
+                gaps.Samples,
+                MedianQuantile,
+                _context.Now,
+                _options.RecencyHalfLife,
+                _coldStartPrior.MedianGap,
+                _coldStartPrior.PriorLogSd ?? 0.5,
+                _options);
+
+            median = WeightedStatistics.RoundToMinute(blended.BlendedMedian);
+            origin = blended.Source switch
+            {
+                BlendSource.PriorOnly => _coldStartPrior.Origin,
+                BlendSource.Blended => _coldStartPrior.Origin,
+                _ => PriorOrigin.PublishedNorm,
+            };
+        }
+
         var window = new NextStartWindow(
             Utc(anchor.At + Quantile(gaps.Samples, _options.WindowLowerQuantile)),
             Utc(anchor.At + median),
@@ -94,7 +117,7 @@ internal sealed class TypePredictor
             gaps.Phase,
             duration,
             anchor.FromEventInProgress);
-        return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason, PriorOrigin.PublishedNorm, Utc(anchor.At));
+        return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason, origin, Utc(anchor.At));
     }
 
     /// <summary>

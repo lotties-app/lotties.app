@@ -131,7 +131,7 @@ public interface IPriorProvider {
 
 #### Step 1.3: Serving Endpoint (T6) (Week 4)
 
-- `GET /api/v1/community-statistics/{statisticKey}`: Returns latest release for caller's baby's age band. Gated by `CommunityInsights:Enabled` + caller consent. ETag-cached. Never queryable by baby.
+- `GET /api/v1/community/statistics/{statisticKey}`: Returns latest release for caller's baby's age band. Gated by `CommunityInsights:Enabled` + caller consent. ETag-cached. Never queryable by baby.
 - **Rate limiting**: Max N requests/account/hour. Exclude demo accounts. Log anomalous cross-account patterns.
 - **Transparency**: Distinguish "no data yet" vs "suppressed for privacy" in response. Include confidence/sample-size-range indicator (e.g., "20-49 families"). Feedback mechanism for reporting suspicious numbers.
 - **Files**: New endpoint, rate limiter config, response DTOs.
@@ -244,7 +244,7 @@ public interface IPriorProvider {
 - Transactional writes with staging table swap and release_id idempotency
 - Consent snapshot at job start time to prevent race conditions
 - BYO-database exclusion enforced via IStoreScope fail-closed contract
-- GET /api/v1/community-statistics serving endpoint with ETag caching
+- GET /api/v1/community/statistics serving endpoint with ETag caching
 - Rate limiting and demo account exclusion on serving endpoint
 - Mandatory smoothing (EMA) for prior weight to prevent oscillation
 - DP noise variance propagation into PriorValue.LogSd
