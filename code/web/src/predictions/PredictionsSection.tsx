@@ -52,6 +52,7 @@ function PredictionList({ data, baby, types }: Props & { data: PredictionsDto })
           prediction={p}
           type={typeForKey(types, p.typeKey, baby.id)}
           name={nameOf(p.typeKey)}
+          babyId={baby.id}
           now={now}
         />
       ))}

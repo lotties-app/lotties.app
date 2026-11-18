@@ -224,6 +224,7 @@ export const apiPaths = {
   predictions: (babyId: string, utcOffsetMinutes: number, timeZone?: string) =>
     `${API_PREFIX}/babies/${enc(babyId)}/predictions?utcOffsetMinutes=${utcOffsetMinutes}` +
     (timeZone ? `&timeZone=${encodeURIComponent(timeZone)}` : ''),
+  predictionFeedback: (babyId: string) => `${API_PREFIX}/babies/${enc(babyId)}/predictions/feedback`,
   pushConfig: () => `${API_PREFIX}/push/config`,
   pushSubscriptions: () => `${API_PREFIX}/push/subscriptions`,
   /** Body `{ endpoint }`: the endpoint never travels in a URL. */

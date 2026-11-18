@@ -57,6 +57,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddHttpClient("CommunityStatistics", client => client.Timeout = TimeSpan.FromSeconds(5));
         services.AddScoped<Lotties.Domain.Predictions.IPriorProvider, Predictions.CommunityLivePriorProvider>();
         services.AddScoped<Lotties.Domain.Predictions.IPriorProvider, Predictions.CommunityStaticPriorProvider>();
+        services.AddScoped<Predictions.PredictionOutcomeResolutionService>();
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
         services.AddScoped<Rhythm.IRhythmService, Rhythm.RhythmService>();
         services.AddScoped<CommunityInsights.ICommunityConsentService, CommunityInsights.CommunityConsentService>();

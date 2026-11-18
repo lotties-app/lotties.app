@@ -8,6 +8,9 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Lotties.Domain.Tests" />
+    <InternalsVisibleTo Include="Lotties.Application" />
+    <InternalsVisibleTo Include="Lotties.Infrastructure" />
+    <InternalsVisibleTo Include="Lotties.Api.Tests" />
   </ItemGroup>
 
 </Project>

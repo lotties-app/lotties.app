@@ -106,4 +106,10 @@ public sealed record PredictionOptions
 
     /// <summary>Above this effective personal sample count, personal data alone drives the prediction (weight = 0).</summary>
     public int BlendingMaxPersonalSamples { get; init; } = 30;
+
+    /// <summary>Kill switch for prediction accuracy tracking. When false, outcomes are not recorded.</summary>
+    public bool AccuracyTrackingEnabled { get; init; } = false;
+
+    /// <summary>Maximum number of unresolved prediction outcomes kept per baby per event type.</summary>
+    public int MaxPendingOutcomes { get; init; } = 50;
 }

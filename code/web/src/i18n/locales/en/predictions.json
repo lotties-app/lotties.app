@@ -3,5 +3,11 @@
     "publishedNorm": "Based on published research studies",
     "communityStatic": "Based on aggregated community data, used when your baby has few logged events",
     "communityLive": "Based on live community aggregates"
+  },
+  "predictionFeedback": {
+    "accurate": "This prediction was accurate",
+    "inaccurate": "This prediction was inaccurate",
+    "submitted": "Thank you for your feedback",
+    "error": "Could not submit feedback"
   }
 }

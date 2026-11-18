@@ -8,6 +8,7 @@ import type { PredictionConfidence, PredictionDto } from '../sync/contract';
 import { getOwn } from '../util/ownProperty';
 import { describeDuration, describeReason, describeWindow, isOverdue } from './predictionModel';
 import { OriginBadge } from './OriginBadge';
+import { PredictionFeedbackButton } from './PredictionFeedbackButton';
 
 const CONFIDENCE_COLOR: Record<PredictionConfidence, 'success' | 'info' | 'default'> = {
   High: 'success',
@@ -25,10 +26,11 @@ interface Props {
   prediction: PredictionDto;
   type: EventType | undefined;
   name: string;
+  babyId: string;
   now: Date;
 }
 
-export function PredictionCard({ prediction, type, name, now }: Props) {
+export function PredictionCard({ prediction, type, name, babyId, now }: Props) {
   const { t } = useTranslation();
   const [showReason, setShowReason] = useState(false);
   const overdue = isOverdue(prediction, now);
@@ -55,6 +57,12 @@ export function PredictionCard({ prediction, type, name, now }: Props) {
           label={t(CONFIDENCE_LABEL[prediction.confidence])}
         />
         <OriginBadge origin={prediction.origin} />
+        {prediction.nextStart?.expected && (
+          <PredictionFeedbackButton
+            predictionId={`${prediction.typeKey}:${prediction.nextStart.expected}`}
+            babyId={babyId}
+          />
+        )}
       </Stack>
       <Typography sx={{ mt: 1 }}>
         {duration

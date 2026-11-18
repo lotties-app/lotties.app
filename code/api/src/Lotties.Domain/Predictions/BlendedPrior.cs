@@ -45,6 +45,15 @@ public static class BlendedPrior
     /// The EMA-smoothed weight from the previous prediction for this type, or <c>null</c> on first call.
     /// Used to prevent oscillation near adaptive look-back regime boundaries.
     /// </param>
+    /// <param name="accuracyAdjustment">
+    /// Optional accuracy-based weight adjustment derived from historical prediction error (MAE).
+    /// When positive (high MAE, prior has been inaccurate), the prior weight is reduced proportionally:
+    /// <c>adjusted_weight = raw_weight * max(0, 1 - accuracyAdjustment)</c>.
+    /// When negative (low MAE, prior has been accurate), the prior weight is increased:
+    /// <c>adjusted_weight = raw_weight * min(2, 1 + abs(accuracyAdjustment))</c>.
+    /// A value of <c>null</c> or zero preserves the existing behavior exactly.
+    /// The adjustment is clamped so the effective weight stays in [0, 1].
+    /// </param>
     public static BlendedResult Blend(
         TimeSpan personalMedian,
         int personalSampleCount,
@@ -52,7 +61,8 @@ public static class BlendedPrior
         TimeSpan priorMedian,
         double priorLogSd,
         PredictionOptions options,
-        double? previousSmoothedWeight = null)
+        double? previousSmoothedWeight = null,
+        double? accuracyAdjustment = null)
     {
         // Kill switch: blending disabled -> personal data only (caller should not have called us, but be safe).
         if (!options.BlendingEnabled)
@@ -99,6 +109,14 @@ public static class BlendedPrior
 
         // Effective weight of the prior in [0, 1]: prior_precision / total_precision.
         var rawWeight = priorPrecision / totalPrecision;
+
+        // Apply accuracy-based adjustment: high MAE reduces trust in the prior, low MAE increases it.
+        if (accuracyAdjustment.HasValue && accuracyAdjustment.Value != 0.0)
+        {
+            rawWeight = accuracyAdjustment.Value > 0
+                ? rawWeight * Math.Max(0.0, 1.0 - accuracyAdjustment.Value)
+                : rawWeight * Math.Min(2.0, 1.0 + Math.Abs(accuracyAdjustment.Value));
+        }
 
         // EMA smoothing to prevent oscillation when the adaptive look-back window shifts sample counts.
         var smoothedWeight = previousSmoothedWeight.HasValue

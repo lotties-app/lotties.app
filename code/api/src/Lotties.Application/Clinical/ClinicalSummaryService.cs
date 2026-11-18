@@ -84,7 +84,7 @@ internal sealed class ClinicalSummaryService : IClinicalSummaryService
         var range = ClinicalRange.Parse(request.From, request.To);
         var scopes = await ScopesOfCallerAsync(babyId, cancellationToken);
         var now = _timeProvider.GetUtcNow();
-        var window = ClinicalWindow.Create(range, LocalClock.ForZoneOrOffset(request.TimeZone, request.UtcOffset), now);
+        var window = ClinicalWindow.Create(range, Lotties.Domain.Patterns.LocalClock.ForZoneOrOffset(request.TimeZone, request.UtcOffset), now);
         var daily = scopes.Contains(DoctorScope.DailyLog) ? await _daily.LoadAsync(babyId, window, cancellationToken) : null;
         _logger.LogDebug("Clinical summary of baby {BabyId} for {From}..{To} with sections {Scopes}", babyId, range.From, range.To, scopes.ToStorage());
         return new ClinicalSummaryResponse

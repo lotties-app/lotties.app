@@ -3,5 +3,11 @@
     "publishedNorm": "Baseado em estudos de pesquisa publicados",
     "communityStatic": "Baseado em dados agregados da comunidade, usado quando seu bebê tem poucos eventos registrados",
     "communityLive": "Baseado em agregações da comunidade em tempo real"
+  },
+  "predictionFeedback": {
+    "accurate": "Esta previsão foi precisa",
+    "inaccurate": "Esta previsão não foi precisa",
+    "submitted": "Obrigado pelo seu feedback",
+    "error": "Não foi possível enviar o feedback"
   }
 }

@@ -179,8 +179,20 @@ public sealed class PredictionServiceTests
         return baby.AdmitWith(issued.Invite, Guid.NewGuid(), Now, isDeclaredProfessional: true);
     }
 
-    private static PredictionService CreateService(IPredictionHistoryRepository repository, BabyMember? caller = null) =>
-        new(repository, new FakeBabyAccessService(BabyAccessDecision.Granted, caller ?? OwnerOf()), new FakeAgeNormsProvider(), Array.Empty<IPriorProvider>(), PredictionOptions.Default, NullLogger<PredictionService>.Instance);
+    private static PredictionService CreateService(IPredictionHistoryRepository repository, BabyMember? caller = null)
+    {
+        var options = PredictionOptions.Default;
+        var resolutionService = new PredictionOutcomeResolutionService(
+            new FakePredictionOutcomeRepository(), options, NullLogger<PredictionOutcomeResolutionService>.Instance);
+        return new PredictionService(
+            repository,
+            new FakeBabyAccessService(BabyAccessDecision.Granted, caller ?? OwnerOf()),
+            new FakeAgeNormsProvider(),
+            Array.Empty<IPriorProvider>(),
+            resolutionService,
+            options,
+            NullLogger<PredictionService>.Instance);
+    }
 
     private sealed class FakeAgeNormsProvider : IAgeNormsProvider
     {
@@ -209,5 +221,16 @@ public sealed class PredictionServiceTests
             Calls.Add((babyId, since));
             return Task.FromResult(history);
         }
+    }
+
+    private sealed class FakePredictionOutcomeRepository : IPredictionOutcomeRepository
+    {
+        public Task SaveAsync(PredictionOutcome outcome, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<IReadOnlyList<PredictionOutcome>> GetPendingAsync(Guid babyId, EventTypeKey typeKey, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<PredictionOutcome>>(Array.Empty<PredictionOutcome>());
+
+        public Task<IReadOnlyList<PredictionOutcome>> GetResolvedAsync(Guid babyId, EventTypeKey typeKey, int limit, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<PredictionOutcome>>(Array.Empty<PredictionOutcome>());
     }
 }

@@ -283,8 +283,8 @@ AssistantForecasts forecasts,
         new(member.Baby.Id, sayBabyName && member.Baby.Name.Length > 0 ? member.Baby.Name : null, member.Role.ToString().ToLowerInvariant(), member.Role.CanLogEvents(), member.IsDefault);
 
     /// <summary>The user's local clock, or UTC days when no zone is known (summaries then report <c>UTC</c>).</summary>
-    private static LocalClock ClockOf(AssistantSubject subject) =>
-        subject.Zone is { } zone ? LocalClock.InZone(zone) : LocalClock.WithOffset(TimeSpan.Zero);
+    private static Lotties.Domain.Patterns.LocalClock ClockOf(AssistantSubject subject) =>
+        subject.Zone is { } zone ? Lotties.Domain.Patterns.LocalClock.InZone(zone) : Lotties.Domain.Patterns.LocalClock.WithOffset(TimeSpan.Zero);
 
     private async Task<AssistantResult> StartSleepAsync(AssistantInvocation invocation, AssistantSubject subject, CancellationToken cancellationToken)
     {
@@ -594,7 +594,7 @@ AssistantForecasts forecasts,
 
     private async Task<AssistantResult> DueVaccinesAsync(AssistantSubject subject, CancellationToken cancellationToken)
     {
-        var today = subject.Zone is { } zone ? LocalClock.InZone(zone).DateOf(subject.Now) : DateOnly.FromDateTime(subject.Now.UtcDateTime);
+        var today = subject.Zone is { } zone ? Lotties.Domain.Patterns.LocalClock.InZone(zone).DateOf(subject.Now) : DateOnly.FromDateTime(subject.Now.UtcDateTime);
         var overview = await vaccines.ReadAsync(subject.Baby, today, cancellationToken);
         return overview.DueOrOverdue == 0
             ? subject.Result(AssistantResultCode.NoVaccinesDue)
@@ -670,7 +670,7 @@ AssistantForecasts forecasts,
 
     private static DateTimeOffset LocalMidnight(TimeZoneInfo zone, DateTimeOffset now)
     {
-        var clock = LocalClock.InZone(zone);
+        var clock = Lotties.Domain.Patterns.LocalClock.InZone(zone);
         return clock.ToInstant(clock.DateOf(now).ToDateTime(TimeOnly.MinValue));
     }
 

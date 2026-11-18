@@ -1,4 +1,5 @@
 using Lotties.Application.Babies;
+using Lotties.Application.Predictions;
 using Lotties.Application.SilentPush;
 using Lotties.Application.Users;
 using Lotties.Domain.Babies;
@@ -40,6 +41,7 @@ internal sealed class EventService : IEventService
     private readonly IBabyAccessService _access;
     private readonly ICurrentUser _currentUser;
     private readonly ISilentPushSignal _silentPush;
+    private readonly IPredictionOutcomeResolutionService? _predictionOutcomes;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<EventService> _logger;
 
@@ -52,6 +54,7 @@ internal sealed class EventService : IEventService
         IBabyAccessService access,
         ICurrentUser currentUser,
         ISilentPushSignal silentPush,
+        IPredictionOutcomeResolutionService? predictionOutcomes,
         TimeProvider timeProvider,
         ILogger<EventService> logger)
     {
@@ -63,6 +66,7 @@ internal sealed class EventService : IEventService
         _access = access ?? throw new ArgumentNullException(nameof(access));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _silentPush = silentPush ?? throw new ArgumentNullException(nameof(silentPush));
+        _predictionOutcomes = predictionOutcomes; // nullable: tracking may be disabled
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -128,9 +132,29 @@ internal sealed class EventService : IEventService
             request.Notes,
             _timeProvider.GetUtcNow(),
             request.UpdatedAt);
-        return await _events.TryAddAsync(created, cancellationToken)
+        var result = await _events.TryAddAsync(created, cancellationToken)
             ? Created(created)
             : await UpdateAsync(babyId, await FindConcurrentWinnerAsync(eventId, cancellationToken), request, cancellationToken);
+
+        // Automatically resolve pending prediction outcomes when a new event is created.
+        // Fire-and-forget: never blocks the response or throws on failure.
+        if (_predictionOutcomes is not null && result.Event is { } evt)
+        {
+            var typeKey = eventType.Key;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _predictionOutcomes.ResolvePendingAsync(evt.BabyId, typeKey, evt.StartedAt, default);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to auto-resolve prediction outcomes for event {EventId} of baby {BabyId}", evt.Id, evt.BabyId);
+                }
+            });
+        }
+
+        return result;
     }
 
     private async Task<UpsertEventResult> UpdateAsync(Guid babyId, Event existing, UpsertEventRequest request, CancellationToken cancellationToken)
@@ -150,6 +174,25 @@ internal sealed class EventService : IEventService
         existing.Edit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes, now, request.UpdatedAt);
         await _events.SaveChangesAsync(cancellationToken);
         SignalIfChanged(existing, before, userId);
+
+        // Automatically resolve pending prediction outcomes when an event is updated.
+        // Fire-and-forget: never blocks the response or throws on failure.
+        if (_predictionOutcomes is not null)
+        {
+            var updateTypeKey = eventType.Key;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _predictionOutcomes.ResolvePendingAsync(existing.BabyId, updateTypeKey, existing.StartedAt, default);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to auto-resolve prediction outcomes for updated event {EventId} of baby {BabyId}", existing.Id, existing.BabyId);
+                }
+            });
+        }
+
         return new UpsertEventResult(existing, Created: false);
     }
 

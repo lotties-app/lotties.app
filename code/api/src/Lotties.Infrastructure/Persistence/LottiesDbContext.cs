@@ -146,6 +146,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>The latest move of each baby's records between the built-in store and the owner's store (task T7).</summary>
     public DbSet<Lotties.Domain.Stores.DataStoreMove> DataStoreMoves => Set<Lotties.Domain.Stores.DataStoreMove>();
 
+    /// <summary>Prediction accuracy tracking outcomes (pending and resolved).</summary>
+    public DbSet<Persistence.Entities.PredictionOutcomeEntity> PredictionOutcomes => Set<Persistence.Entities.PredictionOutcomeEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDbContext).Assembly);
