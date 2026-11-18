@@ -57,7 +57,11 @@ public sealed class CommunityStatisticsDataTests
         Assert.Equal("weekly", ShippedCommunityStatistics.Catalog.Release);
         Assert.All(statistics, statistic => Assert.Equal((20, 18, 0.2m, "planned", true), (statistic.K, statistic.KHysteresis, statistic.Epsilon, statistic.Status, statistic.Proposed)));
         Assert.All(statistics.Where(statistic => statistic.KTails is not null), statistic => Assert.Equal(50, statistic.KTails));
-        Assert.Equal(["growth_vs_age"], statistics.Where(statistic => statistic.NotInV1).Select(statistic => statistic.Key));
+        // O6 keeps pooled growth out; O2 (design 34 section 5) defers every percentile statistic: only the crying shares and the
+        // tummy-time statistic (its share of days) stay candidates for v1.
+        Assert.Equal(
+            ["bottle_ml_per_feed", "growth_vs_age", "naps_per_day", "day_sleep_minutes", "night_sleep_minutes", "feeds_per_day", "diapers_per_day", "routine_shift_scale"],
+            statistics.Where(statistic => statistic.NotInV1).Select(statistic => statistic.Key));
     }
 
     [Fact]

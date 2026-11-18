@@ -11,6 +11,7 @@ public sealed class CommunityStatisticsValidatorTests
     private const string Bottle = "bottle_ml_per_feed";
     private const string Growth = "growth_vs_age";
     private const string Naps = "naps_per_day";
+    private const string Cry = "cry_outcome_by_cause";
 
     private static CommunityStatisticsCatalog Valid => ShippedCommunityStatistics.Catalog;
 
@@ -163,7 +164,7 @@ public sealed class CommunityStatisticsValidatorTests
     public void Validate_GrowthInV1_IsRejected()
     {
         AssertReports(WithStatistic(Growth, statistic => statistic with { NotInV1 = false, NotInV1Reason = null }), $"statistic '{Growth}' must be marked notInV1 (O6).");
-        AssertReports(WithStatistic(Naps, statistic => statistic with { NotInV1 = true, NotInV1Reason = "x" }), $"statistic '{Naps}' must not be marked notInV1.");
+        AssertReports(WithStatistic(Cry, statistic => statistic with { NotInV1 = true, NotInV1Reason = "x" }), $"statistic '{Cry}' must not be marked notInV1.");
         AssertReports(WithStatistic(Growth, statistic => statistic with { NotInV1Reason = null }), "needs a notInV1Reason exactly when notInV1 is true.");
     }
 

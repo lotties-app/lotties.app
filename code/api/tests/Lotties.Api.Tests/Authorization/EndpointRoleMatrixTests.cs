@@ -1,10 +1,12 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 using Lotties.Api.Tests.Board;
 using Lotties.Api.Tests.Support;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Board;
+using Lotties.Domain.CommunityInsights;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,6 +63,14 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         Propose,
 
         /// <summary>
+        /// Family members (Owner, Parent, Caregiver, Viewer) of a baby whose community insights consent is on: the community
+        /// statistics (docs/design/34-community-insights.md, audit docs/design/33 section 19.2). The route has no <c>{babyId}</c>, so
+        /// the handler decides; a Doctor (even of an opted-in baby), a non-member and a family without the consent get 403. The
+        /// matrix turns the consent on for the seeded baby before calling (<see cref="FamilyWithoutCommunityConsent_Is403"/> has the off case).
+        /// </summary>
+        CommunityReader,
+
+        /// <summary>
         /// Project board readers (<c>BoardRead</c>: a board realm role or a board API key, no baby involved; docs/design/36).
         /// Every baby caller is refused (no board role): 401 anonymous, else 403. <see cref="BoardMatrix"/> has the board callers.
         /// </summary>
@@ -101,6 +111,9 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
     public static readonly IReadOnlyDictionary<string, Access> Matrix = new Dictionary<string, Access>(StringComparer.Ordinal)
     {
         ["GET /health"] = Access.Anonymous,
+        // The community priors probe (docs/design/34-community-insights.md): whether the statistics catalog loaded and its version,
+        // no user or baby data, like /health.
+        ["GET /health/community-priors"] = Access.Anonymous,
         // The running release (name, version, commit, build time): public, shown on the About screen.
         ["GET /api/v1/version"] = Access.Anonymous,
         // The try-it demo (docs/design/45-try-it-demo.md): anonymous by nature, the start is rate limited per address.
@@ -262,9 +275,10 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         // is off (before any 401; on in this host). Blocked in the demo. No store binding (control plane).
         ["GET /api/v1/babies/{babyId:guid}/community-consent"] = Access.Write,
         ["PUT /api/v1/babies/{babyId:guid}/community-consent"] = Access.Write,
-        // Community statistics (docs/design/34-community-insights.md section 5): any signed-in user with an active consent on
-        // at least one baby; the handler checks consent and demo status internally. Not baby-scoped (no {babyId} in the route).
-        ["GET /api/v1/community/statistics/{statisticKey}"] = Access.SignedIn,
+        // Community statistics (docs/design/34-community-insights.md section 5, audit docs/design/33 section 19.2): a family member of
+        // a baby whose community insights consent is on; the Doctor never (family-level, not clinical; no Doctor scope), a demo
+        // never. Not baby-scoped (no {babyId} in the route): the handler decides. 404 while CommunityInsights:Enabled is off.
+        ["GET /api/v1/community/statistics/{statisticKey}"] = Access.CommunityReader,
 
         ["GET /api/v1/push/config"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions"] = Access.SignedIn,
@@ -476,10 +490,39 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
     public async Task Route_ByCaller_FollowsTheMatrix(string route, Caller caller)
     {
         var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer, BabyRole.Doctor);
+        if (Matrix[route] == Access.CommunityReader)
+        {
+            await TurnOnCommunityInsightsAsync(baby);
+        }
 
         var response = await SendAsync(ClientFor(baby, caller), route, baby.BabyId);
 
         AssertOutcome(Expected(Matrix[route], caller), response, $"{route} as {caller}");
+    }
+
+    [Theory]
+    [InlineData(Caller.Owner)]
+    [InlineData(Caller.Parent)]
+    [InlineData(Caller.Caregiver)]
+    [InlineData(Caller.Viewer)]
+    public async Task FamilyWithoutCommunityConsent_Is403(Caller caller)
+    {
+        var baby = await factory.SeedBabyAsync(BabyRole.Parent, BabyRole.Caregiver, BabyRole.Viewer, BabyRole.Doctor);
+
+        foreach (var route in Matrix.Where(entry => entry.Value == Access.CommunityReader).Select(entry => entry.Key))
+        {
+            var response = await SendAsync(ClientFor(baby, caller), route, baby.BabyId);
+
+            Assert.True(response.StatusCode == HttpStatusCode.Forbidden, $"{route} as {caller} without the consent: expected 403, got {(int)response.StatusCode}");
+        }
+    }
+
+    private async Task TurnOnCommunityInsightsAsync(SeededBaby baby)
+    {
+        var response = await factory.CreateClientFor(baby.OwnerSubject).PutAsJsonAsync(
+            $"/api/v1/babies/{baby.BabyId}/community-consent",
+            new { granted = true, textVersion = CommunityConsentTexts.CurrentTextVersion, guardianConfirmed = true, locale = "en" });
+        Assert.True(response.IsSuccessStatusCode, $"turning community insights on: {(int)response.StatusCode}");
     }
 
     [Fact]
@@ -660,6 +703,7 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         (Access.Measure, Caller.Owner or Caller.Parent or Caller.Doctor) => null,
         (Access.Note, Caller.Doctor) => null,
         (Access.Propose, Caller.Doctor) => null,
+        (Access.CommunityReader, Caller.Owner or Caller.Parent or Caller.Caregiver or Caller.Viewer) => null,
         _ => HttpStatusCode.Forbidden,
     };
 

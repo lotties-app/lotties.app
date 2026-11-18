@@ -1,3 +1,4 @@
+using Lotties.Api.Consents;
 using Lotties.Application.CommunityInsights;
 
 namespace Lotties.Api.CommunityInsights;
@@ -30,7 +31,7 @@ internal static class CommunityPriorsHealthEndpoint
             {
                 return Results.Ok(new HealthResponse(Status: "failed", Release: null, FileVersion: null));
             }
-        }).AllowAnonymous().DisableRateLimiting();
+        }).AllowAnonymous().AllowWithoutConsent("A health probe: the community statistics catalog's load state and version, no user data.").DisableRateLimiting();
         return app;
     }
 

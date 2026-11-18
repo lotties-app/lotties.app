@@ -22,6 +22,7 @@ public sealed class ConsentGateCoverageTests(ApiFactory factory) : IClassFixture
     public static readonly IReadOnlyDictionary<string, string> Exempt = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["GET /health"] = "The liveness probe.",
+        ["GET /health/community-priors"] = "A health probe: the community statistics catalog's load state and version, no user data.",
         ["GET /api/v1/version"] = "The running release: public build facts.",
         ["GET /api/v1/demo"] = "The try-it demo status: reached before any account exists, no baby data.",
         ["POST /api/v1/demo/start"] = "Creates the demo account and records its own demo consent in the same request; no baby data of a real person.",
