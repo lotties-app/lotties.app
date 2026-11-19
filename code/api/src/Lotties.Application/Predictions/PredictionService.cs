@@ -14,6 +14,7 @@ internal sealed class PredictionService : IPredictionService
     private readonly IAgeNormsProvider _ageNorms;
     private readonly IEnumerable<IPriorProvider> _priorProviders;
     private readonly PredictionOutcomeResolutionService _outcomeRecorder;
+    private readonly PredictionAccuracyAdjustmentService _accuracyAdjustment;
     private readonly PredictionOptions _options;
     private readonly ILogger<PredictionService> _logger;
 
@@ -23,6 +24,7 @@ internal sealed class PredictionService : IPredictionService
         IAgeNormsProvider ageNorms,
         IEnumerable<IPriorProvider> priorProviders,
         PredictionOutcomeResolutionService outcomeRecorder,
+        PredictionAccuracyAdjustmentService accuracyAdjustment,
         PredictionOptions options,
         ILogger<PredictionService> logger)
     {
@@ -31,6 +33,7 @@ internal sealed class PredictionService : IPredictionService
         _ageNorms = ageNorms ?? throw new ArgumentNullException(nameof(ageNorms));
         _priorProviders = priorProviders ?? throw new ArgumentNullException(nameof(priorProviders));
         _outcomeRecorder = outcomeRecorder ?? throw new ArgumentNullException(nameof(outcomeRecorder));
+        _accuracyAdjustment = accuracyAdjustment ?? throw new ArgumentNullException(nameof(accuracyAdjustment));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -46,7 +49,38 @@ internal sealed class PredictionService : IPredictionService
 
         var history = VisibleIn(stored, await _access.ViewOfCallerAsync(babyId, cancellationToken));
         var priorList = BuildPriorProviders();
-        var predictions = PredictionEngine.Predict(history.Events, new PredictionContext(history.BirthDate, now), _options, _ageNorms.Norms, priorList);
+
+        // Compute per-type accuracy adjustments from historical prediction outcomes.
+        // This uses real MAE data from the prediction_outcomes table to adjust blending weights:
+        // high MAE reduces trust in the prior, low MAE increases it.
+        IReadOnlyDictionary<Lotties.Domain.EventTypes.EventTypeKey, double>? accuracyAdjustments = null;
+        if (_options.AccuracyTrackingEnabled && _options.BlendingEnabled)
+        {
+            try
+            {
+                var typeKeys = history.Events.Select(e => e.TypeKey).Distinct().ToList();
+                var adjustments = new Dictionary<Lotties.Domain.EventTypes.EventTypeKey, double>();
+                foreach (var typeKey in typeKeys)
+                {
+                    var adj = await _accuracyAdjustment.GetAccuracyAdjustmentAsync(babyId, typeKey, ageBand: null, phase: null, cancellationToken);
+                    if (adj.HasValue)
+                    {
+                        adjustments[typeKey] = adj.Value;
+                    }
+                }
+
+                if (adjustments.Count > 0)
+                {
+                    accuracyAdjustments = adjustments;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to compute accuracy adjustments for baby {BabyId}; proceeding without", babyId);
+            }
+        }
+
+        var predictions = PredictionEngine.Predict(history.Events, new PredictionContext(history.BirthDate, now), _options, _ageNorms.Norms, priorList, accuracyAdjustments);
         _logger.LogDebug(
             "Computed {PredictionCount} predictions for baby {BabyId} from {EventCount} events ({InsufficientCount} types lack data)",
             predictions.Predictions.Count,
@@ -63,7 +97,7 @@ internal sealed class PredictionService : IPredictionService
                 {
                     foreach (var prediction in predictions.Predictions)
                     {
-                        await _outcomeRecorder.RecordPredictionAsync(prediction, babyId, PredictionEngine.Version, CancellationToken.None);
+                        await _outcomeRecorder.RecordPredictionAsync(prediction, babyId, PredictionEngine.Version, cancellationToken: CancellationToken.None);
                     }
                 }
                 catch (Exception ex)

@@ -28,4 +28,10 @@ public sealed class PredictionOutcomeEntity
     public string? Phase { get; set; }
 
     public bool Resolved { get; set; }
+
+    /// <summary>Whether the event that resolved this outcome was logged retrospectively (null = unknown).</summary>
+    public bool? IsRetrospective { get; set; }
+
+    /// <summary>Whether the resolving event was a top-up feed following closely after another (null = unknown).</summary>
+    public bool? IsTopUp { get; set; }
 }

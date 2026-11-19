@@ -15,6 +15,7 @@ namespace Lotties.Domain.Predictions;
 /// <param name="AgeBand">The age band bucket at prediction time, if narrowed.</param>
 /// <param name="Phase">The day/night phase bucket at prediction time, if narrowed.</param>
 internal sealed record PredictionOutcome(
+    Guid Id,
     Guid BabyId,
     EventTypeKey TypeKey,
     DateTimeOffset PredictedAt,
@@ -25,9 +26,11 @@ internal sealed record PredictionOutcome(
     string EngineVersion,
     int SampleCount,
     AgeBand? AgeBand,
-    DayPhase? Phase)
+    DayPhase? Phase,
+    bool? IsRetrospective = null,
+    bool? IsTopUp = null)
 {
-    /// <summary>Returns a copy of this outcome with the actual next start and absolute error populated.</summary>
+    /// <summary>Returns a copy of this outcome with the actual next start and absolute error populated, preserving the same Id.</summary>
     public PredictionOutcome Resolve(DateTimeOffset actualNextStart)
     {
         var error = Math.Abs((actualNextStart - ExpectedNextStart).TotalMinutes);

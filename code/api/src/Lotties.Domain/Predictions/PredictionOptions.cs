@@ -112,4 +112,10 @@ public sealed record PredictionOptions
 
     /// <summary>Maximum number of unresolved prediction outcomes kept per baby per event type.</summary>
     public int MaxPendingOutcomes { get; init; } = 50;
+
+    /// <summary>Kill switch for prediction intervals. When true, TypePredictor computes P10-P90 intervals alongside point estimates.</summary>
+    public bool UsePredictionIntervals { get; init; } = false;
+
+    /// <summary>Kill switch for cry-cause classification. When false, the classifier is not invoked.</summary>
+    public bool CryCauseClassificationEnabled { get; init; } = false;
 }

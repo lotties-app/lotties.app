@@ -10,6 +10,7 @@ public sealed class PredictionOutcomeTests
     private static readonly DateTimeOffset Expected = Anchor.AddHours(3);
 
     private static PredictionOutcome CreatePending() => new(
+        Id: Guid.NewGuid(),
         BabyId: Guid.NewGuid(),
         TypeKey: FeedingKey,
         PredictedAt: Anchor,
@@ -73,6 +74,7 @@ public sealed class PredictionAccuracyCalculatorTests
     private static readonly DateTimeOffset Anchor = new(2025, 6, 15, 10, 0, 0, TimeSpan.Zero);
 
     private static PredictionOutcome CreateResolved(double errorMinutes, AgeBand? ageBand = null, DayPhase? phase = null) => new(
+        Id: Guid.NewGuid(),
         BabyId: Guid.NewGuid(),
         TypeKey: FeedingKey,
         PredictedAt: Anchor,
@@ -86,6 +88,7 @@ public sealed class PredictionAccuracyCalculatorTests
         Phase: phase);
 
     private static PredictionOutcome CreateUnresolved() => new(
+        Id: Guid.NewGuid(),
         BabyId: Guid.NewGuid(),
         TypeKey: FeedingKey,
         PredictedAt: Anchor,

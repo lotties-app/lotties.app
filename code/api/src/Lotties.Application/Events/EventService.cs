@@ -8,6 +8,7 @@ using Lotties.Domain.EventTypes;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Formulas;
 using Lotties.Domain.Prescriptions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Lotties.Application.Events;
@@ -41,7 +42,7 @@ internal sealed class EventService : IEventService
     private readonly IBabyAccessService _access;
     private readonly ICurrentUser _currentUser;
     private readonly ISilentPushSignal _silentPush;
-    private readonly IPredictionOutcomeResolutionService? _predictionOutcomes;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<EventService> _logger;
 
@@ -54,7 +55,7 @@ internal sealed class EventService : IEventService
         IBabyAccessService access,
         ICurrentUser currentUser,
         ISilentPushSignal silentPush,
-        IPredictionOutcomeResolutionService? predictionOutcomes,
+        IServiceScopeFactory scopeFactory,
         TimeProvider timeProvider,
         ILogger<EventService> logger)
     {
@@ -66,7 +67,7 @@ internal sealed class EventService : IEventService
         _access = access ?? throw new ArgumentNullException(nameof(access));
         _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _silentPush = silentPush ?? throw new ArgumentNullException(nameof(silentPush));
-        _predictionOutcomes = predictionOutcomes; // nullable: tracking may be disabled
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -137,19 +138,25 @@ internal sealed class EventService : IEventService
             : await UpdateAsync(babyId, await FindConcurrentWinnerAsync(eventId, cancellationToken), request, cancellationToken);
 
         // Automatically resolve pending prediction outcomes when a new event is created.
-        // Fire-and-forget: never blocks the response or throws on failure.
-        if (_predictionOutcomes is not null && result.Event is { } evt)
+        // Uses an owned DI scope so the background work outlives the request scope safely.
+        if (result.Event is { } evt)
         {
-            var typeKey = eventType.Key;
+            var resolveTypeKey = eventType.Key;
+            var resolveBabyId = evt.BabyId;
+            var resolveStartedAt = evt.StartedAt;
+            var resolveEventId = evt.Id;
             _ = Task.Run(async () =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var resolver = scope.ServiceProvider.GetService<IPredictionOutcomeResolutionService>();
+                if (resolver is null) return;
                 try
                 {
-                    await _predictionOutcomes.ResolvePendingAsync(evt.BabyId, typeKey, evt.StartedAt, default);
+                    await resolver.ResolvePendingAsync(resolveBabyId, resolveTypeKey, resolveStartedAt, default);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to auto-resolve prediction outcomes for event {EventId} of baby {BabyId}", evt.Id, evt.BabyId);
+                    _logger.LogWarning(ex, "Failed to auto-resolve prediction outcomes for event {EventId} of baby {BabyId}", resolveEventId, resolveBabyId);
                 }
             });
         }
@@ -170,25 +177,38 @@ internal sealed class EventService : IEventService
 
         var eventType = await LoadAvailableTypeAsync(babyId, request.TypeId, cancellationToken);
         await EnsureValidEditPayloadAsync(babyId, existing, eventType, request, cancellationToken);
+        var oldStartedAt = existing.StartedAt;
         var before = existing.UpdatedAt;
         existing.Edit(request.TypeId, request.StartedAt, request.EndedAt, request.Payload, request.Notes, now, request.UpdatedAt);
         await _events.SaveChangesAsync(cancellationToken);
         SignalIfChanged(existing, before, userId);
 
-        // Automatically resolve pending prediction outcomes when an event is updated.
-        // Fire-and-forget: never blocks the response or throws on failure.
-        if (_predictionOutcomes is not null)
+        // Automatically invalidate stale outcomes and resolve pending prediction outcomes when an event is updated.
+        // Uses an owned DI scope so the background work outlives the request scope safely.
         {
-            var updateTypeKey = eventType.Key;
+            var resolveUpdateTypeKey = eventType.Key;
+            var resolveNewStartedAt = existing.StartedAt;
+            var resolveBabyId = existing.BabyId;
+            var resolveEventId = existing.Id;
             _ = Task.Run(async () =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var resolver = scope.ServiceProvider.GetService<IPredictionOutcomeResolutionService>();
+                if (resolver is null) return;
                 try
                 {
-                    await _predictionOutcomes.ResolvePendingAsync(existing.BabyId, updateTypeKey, existing.StartedAt, default);
+                    // If the start time changed, remove any resolved outcome anchored at the old timestamp
+                    // so the correction does not leave a phantom error behind.
+                    if (oldStartedAt != resolveNewStartedAt)
+                    {
+                        await resolver.InvalidateStaleOutcomeAsync(resolveBabyId, resolveUpdateTypeKey, oldStartedAt, default);
+                    }
+
+                    await resolver.ResolvePendingAsync(resolveBabyId, resolveUpdateTypeKey, resolveNewStartedAt, default);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to auto-resolve prediction outcomes for updated event {EventId} of baby {BabyId}", existing.Id, existing.BabyId);
+                    _logger.LogWarning(ex, "Failed to auto-resolve prediction outcomes for updated event {EventId} of baby {BabyId}", resolveEventId, resolveBabyId);
                 }
             });
         }

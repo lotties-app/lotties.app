@@ -56,7 +56,8 @@ public sealed record Prediction(
     int SampleCount,
     PredictionReason Reason,
     PriorOrigin Origin = PriorOrigin.PublishedNorm,
-    DateTimeOffset AnchorAt = default);
+    DateTimeOffset AnchorAt = default,
+    PredictionInterval? Interval = null);
 
 /// <summary>An event type that has events but too few usable intervals to predict.</summary>
 public sealed record InsufficientPredictionData(EventTypeKey TypeKey, int SampleCount, int RequiredSamples, TimeSpan LookBack)
@@ -72,6 +73,18 @@ public sealed record PredictionSet(IReadOnlyList<Prediction> Predictions, IReadO
 
     /// <summary>The next night's start (bed time), or <c>null</c> when there is none to predict (see <see cref="BedTimePrediction"/>).</summary>
     public BedTimePrediction? BedTime { get; init; }
+
+    /// <summary>Feeding volume predictions per (age band, day phase) bucket, or <c>null</c> when insufficient data.</summary>
+    public IReadOnlyList<FeedingVolumePrediction>? FeedingVolumes { get; init; }
+
+    /// <summary>Predicted feeding duration for the median volume, or <c>null</c> when insufficient data.</summary>
+    public FeedingDurationPrediction? FeedingDuration { get; init; }
+
+    /// <summary>Diaper pattern analysis with separate wet/dirty gap statistics, or <c>null</c> when not computed.</summary>
+    public DiaperPatternAnalysis? DiaperPatterns { get; init; }
+
+    /// <summary>Cry-cause classification for the latest fussy/crying event, or <c>null</c> when not computed.</summary>
+    public CryCauseAssessment? CryCause { get; init; }
 
     /// <summary>The rules that produced this set (<see cref="PredictionEngine.Version"/>).</summary>
     public string EngineVersion => PredictionEngine.Version;

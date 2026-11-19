@@ -182,14 +182,18 @@ public sealed class PredictionServiceTests
     private static PredictionService CreateService(IPredictionHistoryRepository repository, BabyMember? caller = null)
     {
         var options = PredictionOptions.Default;
+        var fakeRepo = new FakePredictionOutcomeRepository();
         var resolutionService = new PredictionOutcomeResolutionService(
-            new FakePredictionOutcomeRepository(), options, NullLogger<PredictionOutcomeResolutionService>.Instance);
+            fakeRepo, options, NullLogger<PredictionOutcomeResolutionService>.Instance);
+        var accuracyService = new PredictionAccuracyAdjustmentService(
+            fakeRepo, options, NullLogger<PredictionAccuracyAdjustmentService>.Instance);
         return new PredictionService(
             repository,
             new FakeBabyAccessService(BabyAccessDecision.Granted, caller ?? OwnerOf()),
             new FakeAgeNormsProvider(),
             Array.Empty<IPriorProvider>(),
             resolutionService,
+            accuracyService,
             options,
             NullLogger<PredictionService>.Instance);
     }
@@ -232,5 +236,11 @@ public sealed class PredictionServiceTests
 
         public Task<IReadOnlyList<PredictionOutcome>> GetResolvedAsync(Guid babyId, EventTypeKey typeKey, int limit, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<PredictionOutcome>>(Array.Empty<PredictionOutcome>());
+
+        public Task<double?> GetMaeAsync(Guid babyId, EventTypeKey typeKey, AgeBand? ageBand, DayPhase? phase, int minSamples, CancellationToken cancellationToken = default)
+            => Task.FromResult<double?>(null);
+
+        public Task InvalidateByAnchorAsync(Guid babyId, EventTypeKey typeKey, DateTimeOffset oldAnchorAt, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }

@@ -45,7 +45,8 @@ public static class PredictionEngine
         PredictionContext context,
         PredictionOptions options,
         AgeNormSet? ageNorms = null,
-        IReadOnlyList<IPriorProvider>? priorProviders = null)
+        IReadOnlyList<IPriorProvider>? priorProviders = null,
+        IReadOnlyDictionary<EventTypeKey, double>? accuracyAdjustments = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(context);
@@ -57,7 +58,11 @@ public static class PredictionEngine
             .ToArray();
         var ageDays = CompletedDays(context.BirthDate, context.LocalDateOf(context.Now));
         var resolver = BuildResolver(ageNorms, priorProviders);
-        var outcomes = byType.Select(type => PredictType(type, context, options, ResolveColdStart(type.TypeKey, ageDays, resolver))).ToList();
+        var outcomes = byType.Select(type =>
+        {
+            var adj = accuracyAdjustments is not null && accuracyAdjustments.TryGetValue(type.TypeKey, out var v) ? (double?)v : null;
+            return PredictType(type, context, options, ResolveColdStart(type.TypeKey, ageDays, resolver), adj);
+        }).ToList();
 
         // When there are no events at all but a resolver can provide a cold-start prior, seed predictions for configured types.
         if (byType.Length == 0 && resolver is not null && ageDays >= 0)
@@ -77,12 +82,62 @@ public static class PredictionEngine
             }
         }
 
-        return new PredictionSet(
+        var predictionSet = new PredictionSet(
             outcomes.Select(outcome => outcome.Prediction).OfType<Prediction>().ToArray(),
             outcomes.Select(outcome => outcome.InsufficientData).OfType<InsufficientPredictionData>().ToArray())
         {
             BedTime = BedTimePredictor.Predict(SleepSessionsOf(byType, options), context, options),
         };
+
+        // P1: Feeding volume and duration predictions.
+        var feedingEvents = byType.FirstOrDefault(type => type.TypeKey == BuiltInEventTypes.Feeding.Key)?.Events ?? [];
+        if (feedingEvents.Count > 0)
+        {
+            predictionSet = predictionSet with
+            {
+                FeedingVolumes = FeedingVolumePredictor.Predict(feedingEvents, context, options),
+                FeedingDuration = ComputeFeedingDuration(feedingEvents, context, options),
+            };
+        }
+
+        // P2: Diaper pattern analysis.
+        var diaperEvents = byType.FirstOrDefault(type => type.TypeKey == BuiltInEventTypes.Diaper.Key)?.Events ?? [];
+        if (diaperEvents.Count > 0)
+        {
+            predictionSet = predictionSet with
+            {
+                DiaperPatterns = DiaperPatternAnalyzer.Analyze(diaperEvents, context.Now, options.LookBack),
+            };
+        }
+
+        // P3: Cry-cause classification for the latest fussy/crying event.
+        if (options.CryCauseClassificationEnabled)
+        {
+            var allEventsInWindow = InWindow(events, context, options).ToArray();
+            var latestCry = allEventsInWindow
+                .Where(e => e.TypeKey == BuiltInEventTypes.Fussy.Key && !e.ConfirmedNotCrying)
+                .OrderByDescending(e => e.StartedAt)
+                .FirstOrDefault();
+
+            if (latestCry is not null)
+            {
+                var assessment = CryCauseClassifier.Classify(allEventsInWindow, latestCry, context, options, predictionSet: predictionSet);
+                if (assessment is not null)
+                {
+                    predictionSet = predictionSet with { CryCause = assessment };
+                }
+            }
+        }
+
+        return predictionSet;
+    }
+
+    private static FeedingDurationPrediction? ComputeFeedingDuration(IReadOnlyList<ObservedEvent> feedingEvents, PredictionContext context, PredictionOptions options)
+    {
+        // Use median volume from the volume predictor as the target, or fall back to a default of 120ml.
+        var volumes = FeedingVolumePredictor.Predict(feedingEvents, context, options);
+        var targetVolume = volumes is { Count: > 0 } ? volumes[0].MedianVolumeMl : 120.0;
+        return FeedingDurationPredictor.Predict(feedingEvents, targetVolume, context, options);
     }
 
     private static IPriorProvider? BuildResolver(AgeNormSet? ageNorms, IReadOnlyList<IPriorProvider>? priorProviders)
@@ -117,7 +172,7 @@ public static class PredictionEngine
         byType.FirstOrDefault(type => type.TypeKey == options.AwakeWindowTypeKey)?.Events ?? [];
 
     /// <remarks>A type whose events yield no sessions (e.g. only night wakings) is reported with zero samples.</remarks>
-    private static TypePredictionOutcome PredictType(TypeEvents type, PredictionContext context, PredictionOptions options, ColdStartPrior? coldStartPrior)
+    private static TypePredictionOutcome PredictType(TypeEvents type, PredictionContext context, PredictionOptions options, ColdStartPrior? coldStartPrior, double? accuracyAdjustment = null)
     {
         var chronological = type.Events
             .OrderBy(item => item.StartedAt)
@@ -126,12 +181,12 @@ public static class PredictionEngine
         if (chronological.Length == 0)
         {
             return coldStartPrior is not null
-                ? new TypePredictionOutcome(new TypePredictor(type.TypeKey, [], context, options, Strategies.First(candidate => candidate.CanHandle(type.TypeKey, options)), coldStartPrior).Predict().Prediction, null)
+                ? new TypePredictionOutcome(new TypePredictor(type.TypeKey, [], context, options, Strategies.First(candidate => candidate.CanHandle(type.TypeKey, options)), coldStartPrior, accuracyAdjustment).Predict().Prediction, null)
                 : new TypePredictionOutcome(null, new InsufficientPredictionData(type.TypeKey, 0, options.MinimumSamples, options.LookBack));
         }
 
         var strategy = Strategies.First(candidate => candidate.CanHandle(type.TypeKey, options));
-        return new TypePredictor(type.TypeKey, chronological, context, options, strategy, coldStartPrior).Predict();
+        return new TypePredictor(type.TypeKey, chronological, context, options, strategy, coldStartPrior, accuracyAdjustment).Predict();
     }
 
     /// <summary>The events (sessions, for sleep) of one type in the look-back window.</summary>

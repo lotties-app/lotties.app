@@ -29,7 +29,8 @@ internal static class WeightedSampleSet
         TimeSpan priorMedian,
         double priorLogSd,
         PredictionOptions options,
-        double? previousSmoothedWeight = null)
+        double? previousSmoothedWeight = null,
+        double? accuracyAdjustment = null)
     {
         if (!options.BlendingEnabled || personalSamples.Count == 0)
         {
@@ -58,7 +59,8 @@ internal static class WeightedSampleSet
             priorMedian,
             priorLogSd,
             options,
-            previousSmoothedWeight);
+            previousSmoothedWeight,
+            accuracyAdjustment);
     }
 
     /// <summary>

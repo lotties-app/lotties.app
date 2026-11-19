@@ -18,6 +18,7 @@ internal sealed class TypePredictor
     private readonly SampleSelector _selector;
     private readonly DurationEstimator _durations;
     private readonly ColdStartPrior? _coldStartPrior;
+    private readonly double? _accuracyAdjustment;
     private readonly bool _classifiesSleepKinds;
 
     public TypePredictor(
@@ -26,7 +27,8 @@ internal sealed class TypePredictor
         PredictionContext context,
         PredictionOptions options,
         INextStartStrategy strategy,
-        ColdStartPrior? coldStartPrior = null)
+        ColdStartPrior? coldStartPrior = null,
+        double? accuracyAdjustment = null)
     {
         _typeKey = typeKey;
         _events = chronological;
@@ -36,6 +38,7 @@ internal sealed class TypePredictor
         _selector = new SampleSelector(context, options, options.DayNightTypeKeys.Contains(typeKey));
         _durations = new DurationEstimator(chronological, _selector, context, options);
         _coldStartPrior = coldStartPrior;
+        _accuracyAdjustment = accuracyAdjustment;
         _classifiesSleepKinds = typeKey == options.AwakeWindowTypeKey;
     }
 
@@ -91,7 +94,8 @@ internal sealed class TypePredictor
                 _options.RecencyHalfLife,
                 _coldStartPrior.MedianGap,
                 _coldStartPrior.PriorLogSd ?? 0.5,
-                _options);
+                _options,
+                accuracyAdjustment: _accuracyAdjustment);
 
             median = WeightedStatistics.RoundToMinute(blended.BlendedMedian);
             origin = blended.Source switch
@@ -117,7 +121,13 @@ internal sealed class TypePredictor
             gaps.Phase,
             duration,
             anchor.FromEventInProgress);
-        return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason, origin, Utc(anchor.At));
+        var interval = _options.UsePredictionIntervals && gaps.Samples.Count > 0
+            ? PredictionInterval.FromPercentiles(
+                gaps.Samples.Select(s => s.Length).ToArray(),
+                _options.WindowLowerQuantile,
+                _options.WindowUpperQuantile)
+            : null;
+        return new Prediction(_typeKey, window, duration, PredictionConfidences.For(count, _options), count, reason, origin, Utc(anchor.At), interval);
     }
 
     /// <summary>

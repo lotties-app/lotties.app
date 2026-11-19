@@ -19,7 +19,8 @@ public sealed record ObservedEvent(
     string? Kind = null,
     TimeSpan Paused = default,
     string? Content = null,
-    bool ConfirmedNotCrying = false)
+    bool ConfirmedNotCrying = false,
+    double? VolumeMl = null)
 {
     /// <summary>Length without the pauses (<see cref="Events.EffectiveDuration"/>), or <c>null</c> while running.</summary>
     public TimeSpan? EffectiveDuration => EndedAt is { } endedAt ? Events.EffectiveDuration.Of(StartedAt, endedAt, Paused) : null;

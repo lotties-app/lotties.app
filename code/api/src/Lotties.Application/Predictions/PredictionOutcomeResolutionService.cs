@@ -16,9 +16,11 @@ internal sealed class PredictionOutcomeResolutionService(
     /// <summary>
     /// Records a prediction as a pending outcome for later resolution against the actual next event.
     /// Enforces <see cref="PredictionOptions.MaxPendingOutcomes"/> by dropping the oldest pending outcome if exceeded.
+    /// When <paramref name="createdAt"/> is provided, flags the outcome as retrospective if the event was logged
+    /// significantly after its own start time (see <see cref="FeedingPatternAnalyzer.IsRetrospectiveEntry"/>).
     /// </summary>
     public async Task RecordPredictionAsync(
-        Prediction prediction, Guid babyId, string engineVersion, CancellationToken cancellationToken = default)
+        Prediction prediction, Guid babyId, string engineVersion, DateTimeOffset? createdAt = null, CancellationToken cancellationToken = default)
     {
         if (!options.AccuracyTrackingEnabled)
         {
@@ -27,7 +29,12 @@ internal sealed class PredictionOutcomeResolutionService(
 
         try
         {
+            var isRetrospective = createdAt.HasValue
+                ? FeedingPatternAnalyzer.IsRetrospectiveEntry(createdAt.Value, prediction.AnchorAt)
+                : (bool?)null;
+
             var outcome = new PredictionOutcome(
+                Guid.NewGuid(),
                 babyId,
                 prediction.TypeKey,
                 prediction.AnchorAt,
@@ -38,7 +45,8 @@ internal sealed class PredictionOutcomeResolutionService(
                 engineVersion,
                 prediction.SampleCount,
                 prediction.Reason.AgeBand,
-                prediction.Reason.Phase);
+                prediction.Reason.Phase,
+                IsRetrospective: isRetrospective);
 
             await repository.SaveAsync(outcome, cancellationToken);
 
@@ -150,6 +158,34 @@ internal sealed class PredictionOutcomeResolutionService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to resolve prediction outcome for baby {BabyId} type {TypeKey}", babyId, typeKey.Value);
+        }
+    }
+
+    /// <summary>
+    /// Removes any resolved prediction outcome anchored at <paramref name="oldAnchorAt"/> so a retrospective
+    /// correction of an event's start time does not leave a stale scored outcome behind.
+    /// </summary>
+    public async Task InvalidateStaleOutcomeAsync(
+        Guid babyId, EventTypeKey typeKey, DateTimeOffset oldAnchorAt, CancellationToken cancellationToken = default)
+    {
+        if (!options.AccuracyTrackingEnabled)
+        {
+            return;
+        }
+
+        try
+        {
+            await repository.InvalidateByAnchorAsync(babyId, typeKey, oldAnchorAt, cancellationToken);
+
+            logger.LogDebug(
+                "Invalidated stale prediction outcomes for baby {BabyId} type {TypeKey} at anchor {AnchorAt}",
+                babyId,
+                typeKey.Value,
+                oldAnchorAt);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to invalidate stale prediction outcomes for baby {BabyId} type {TypeKey}", babyId, typeKey.Value);
         }
     }
 }

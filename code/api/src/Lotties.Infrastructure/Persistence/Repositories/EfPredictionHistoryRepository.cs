@@ -44,6 +44,13 @@ internal sealed class EfPredictionHistoryRepository(LottiesDbContext control, St
     {
         var facts = EventPayloadFacts.Read(payload);
         var notCrying = key == BuiltInEventTypes.Fussy.Key && CryDetection.IsConfirmedNotCrying(payload);
-        return new ObservedEvent(key, startedAt, endedAt, facts.Kind, facts.Paused, facts.Content, notCrying);
+        var volumeMl = key == BuiltInEventTypes.Feeding.Key ? ReadVolumeMl(payload) : null;
+        return new ObservedEvent(key, startedAt, endedAt, facts.Kind, facts.Paused, facts.Content, notCrying, volumeMl);
+    }
+
+    private static double? ReadVolumeMl(EventPayload payload)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(payload.Value);
+        return BottleAmounts.DrunkMl(document.RootElement);
     }
 }

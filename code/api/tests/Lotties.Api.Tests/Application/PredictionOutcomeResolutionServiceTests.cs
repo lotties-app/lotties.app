@@ -76,10 +76,10 @@ public sealed class PredictionOutcomeResolutionServiceTests
 
         // Seed two pending outcomes; the first is older.
         var older = new PredictionOutcome(
-            BabyId, FeedingKey, Anchor.AddHours(-6), Anchor.AddHours(-6),
+            Guid.NewGuid(), BabyId, FeedingKey, Anchor.AddHours(-6), Anchor.AddHours(-6),
             Anchor.AddHours(-3), null, null, "1.1", 8, null, null);
         var newer = new PredictionOutcome(
-            BabyId, FeedingKey, Anchor, Anchor,
+            Guid.NewGuid(), BabyId, FeedingKey, Anchor, Anchor,
             Anchor.AddHours(3), null, null, "1.1", 10, null, null);
         repo.Pending[BabyId] = [older, newer];
 
@@ -111,10 +111,10 @@ public sealed class PredictionOutcomeResolutionServiceTests
 
         // Pre-seed 2 pending outcomes so adding one more exceeds the limit.
         var old1 = new PredictionOutcome(
-            BabyId, FeedingKey, Anchor.AddHours(-10), Anchor.AddHours(-10),
+            Guid.NewGuid(), BabyId, FeedingKey, Anchor.AddHours(-10), Anchor.AddHours(-10),
             Anchor.AddHours(-7), null, null, "1.1", 5, null, null);
         var old2 = new PredictionOutcome(
-            BabyId, FeedingKey, Anchor.AddHours(-5), Anchor.AddHours(-5),
+            Guid.NewGuid(), BabyId, FeedingKey, Anchor.AddHours(-5), Anchor.AddHours(-5),
             Anchor.AddHours(-2), null, null, "1.1", 7, null, null);
         repo.Pending[BabyId] = [old1, old2];
 
@@ -162,5 +162,49 @@ public sealed class PredictionOutcomeResolutionServiceTests
                 .ToList();
             return Task.FromResult<IReadOnlyList<PredictionOutcome>>(resolved);
         }
+
+        public Task<double?> GetMaeAsync(Guid babyId, EventTypeKey typeKey, AgeBand? ageBand, DayPhase? phase, int minSamples, CancellationToken cancellationToken = default)
+        {
+            // Tests don't exercise accuracy adjustment; always return null.
+            return Task.FromResult<double?>(null);
+        }
+
+        public List<(Guid BabyId, EventTypeKey TypeKey, DateTimeOffset OldAnchorAt)> Invalidated { get; } = [];
+
+        public Task InvalidateByAnchorAsync(Guid babyId, EventTypeKey typeKey, DateTimeOffset oldAnchorAt, CancellationToken cancellationToken = default)
+        {
+            Invalidated.Add((babyId, typeKey, oldAnchorAt));
+            // Also remove any saved resolved outcomes matching the anchor so subsequent GetPending calls are consistent.
+            Saved.RemoveAll(o => o.BabyId == babyId && o.TypeKey == typeKey && o.AnchorAt == oldAnchorAt && o.ActualNextStart is not null);
+            return Task.CompletedTask;
+        }
+    }
+
+    [Fact]
+    public async Task InvalidateStaleOutcomeAsync_DelegatesToRepository()
+    {
+        var repo = new FakePredictionOutcomeRepository();
+        var options = new PredictionOptions { AccuracyTrackingEnabled = true };
+        var service = new PredictionOutcomeResolutionService(repo, options, NullLogger<PredictionOutcomeResolutionService>.Instance);
+        var oldAnchor = Anchor.AddHours(-3);
+
+        await service.InvalidateStaleOutcomeAsync(BabyId, FeedingKey, oldAnchor);
+
+        Assert.Single(repo.Invalidated);
+        Assert.Equal(BabyId, repo.Invalidated[0].BabyId);
+        Assert.Equal(FeedingKey, repo.Invalidated[0].TypeKey);
+        Assert.Equal(oldAnchor, repo.Invalidated[0].OldAnchorAt);
+    }
+
+    [Fact]
+    public async Task InvalidateStaleOutcomeAsync_DoesNothingWhenTrackingDisabled()
+    {
+        var repo = new FakePredictionOutcomeRepository();
+        var options = new PredictionOptions { AccuracyTrackingEnabled = false };
+        var service = new PredictionOutcomeResolutionService(repo, options, NullLogger<PredictionOutcomeResolutionService>.Instance);
+
+        await service.InvalidateStaleOutcomeAsync(BabyId, FeedingKey, Anchor);
+
+        Assert.Empty(repo.Invalidated);
     }
 }
