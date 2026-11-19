@@ -11,7 +11,7 @@ namespace Lotties.Application.Predictions;
 internal sealed class PredictionOutcomeResolutionService(
     IPredictionOutcomeRepository repository,
     PredictionOptions options,
-    ILogger<PredictionOutcomeResolutionService> logger)
+    ILogger<PredictionOutcomeResolutionService> logger) : IPredictionOutcomeResolutionService
 {
     /// <summary>
     /// Records a prediction as a pending outcome for later resolution against the actual next event.
@@ -67,6 +67,52 @@ internal sealed class PredictionOutcomeResolutionService(
         {
             // Fire-and-forget: never let outcome recording break the prediction response.
             logger.LogError(ex, "Failed to record prediction outcome for baby {BabyId} type {TypeKey}", babyId, prediction.TypeKey.Value);
+        }
+    }
+
+    /// <summary>
+    /// Records manual user feedback on whether a prediction was accurate.
+    /// Creates or updates a resolved outcome based on the feedback.
+    /// </summary>
+    public async Task RecordFeedbackAsync(Guid babyId, string predictionId, bool accurate, CancellationToken cancellationToken = default)
+    {
+        if (!options.AccuracyTrackingEnabled)
+        {
+            return;
+        }
+
+        try
+        {
+            // Parse predictionId as "typeKey:timestampTicks" format from PredictionFeedbackButton
+            var parts = predictionId.Split(':', 2);
+            if (parts.Length != 2 || !long.TryParse(parts[1], out var ticks))
+            {
+                logger.LogWarning("Invalid predictionId format '{PredictionId}' for feedback from baby {BabyId}", predictionId, babyId);
+                return;
+            }
+
+            var typeKey = EventTypeKey.From(parts[0]);
+            var predictedAt = new DateTimeOffset(ticks, TimeSpan.Zero);
+
+            // Find the matching pending outcome and resolve it
+            var pending = await repository.GetPendingAsync(babyId, typeKey, cancellationToken);
+            var match = pending.FirstOrDefault(p => p.PredictedAt == predictedAt);
+            if (match is null)
+            {
+                logger.LogDebug("No pending outcome found for predictionId '{PredictionId}' on baby {BabyId}", predictionId, babyId);
+                return;
+            }
+
+            // For manual feedback: if accurate, error = 0; if inaccurate, error = large sentinel
+            var actualTime = accurate ? match.ExpectedNextStart : match.ExpectedNextStart.AddHours(24);
+            var resolved = match.Resolve(actualTime);
+            await repository.SaveAsync(resolved, cancellationToken);
+
+            logger.LogDebug("Recorded manual feedback for baby {BabyId} predictionId '{PredictionId}': accurate={Accurate}", babyId, predictionId, accurate);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to record feedback for baby {BabyId} predictionId '{PredictionId}'", babyId, predictionId);
         }
     }
 
