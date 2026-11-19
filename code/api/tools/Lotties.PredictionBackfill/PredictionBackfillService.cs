@@ -136,26 +136,29 @@ internal sealed class PredictionBackfillService(LottiesDbContext context, TextWr
     {
         // Load all non-deleted events for this baby, ordered chronologically. The global query filter on
         // LottiesDbContext.Events excludes soft-deleted rows, which is what the prediction engine expects.
-        var events = await context.Events
+        // We load events without joining EventTypes (EF Core can't translate the join + Key.Value ordering),
+        // then resolve type keys in a separate lookup.
+        var rawEvents = await context.Events
             .AsNoTracking()
             .Where(e => e.BabyId == baby.Id)
-            .Join(context.EventTypes.AsNoTracking(), e => e.TypeId, t => t.Id, (e, t) => new
-            {
-                e.StartedAt,
-                e.EndedAt,
-                e.Payload,
-                t.Key,
-            })
             .OrderBy(e => e.StartedAt)
-            .ThenBy(e => e.Key.Value)
+            .Select(e => new { e.TypeId, e.StartedAt, e.EndedAt, e.Payload })
             .ToListAsync(cancellationToken);
 
-        if (events.Count == 0)
+        if (rawEvents.Count == 0)
         {
             return (0, 0);
         }
 
-        var observed = events.Select(e => ToObserved(e.Key, e.StartedAt, e.EndedAt, e.Payload)).ToArray();
+        // Resolve TypeId → EventTypeKey in bulk to avoid N+1 queries.
+        var typeIds = rawEvents.Select(e => e.TypeId).Distinct().ToList();
+        var typeKeyMap = await context.EventTypes.AsNoTracking()
+            .Where(t => typeIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Key.Value, cancellationToken);
+
+        var observed = rawEvents
+            .Select(e => ToObserved(EventTypeKey.From(typeKeyMap.GetValueOrDefault(e.TypeId, "unknown")), e.StartedAt, e.EndedAt, e.Payload))
+            .ToArray();
         var created = 0;
         var skipped = 0;
         var pendingBatch = new List<PredictionOutcomeEntity>();
