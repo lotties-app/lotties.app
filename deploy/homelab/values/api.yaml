@@ -51,6 +51,10 @@ env:
   # so the system learns from every sleep/feed/diaper event without manual feedback. Off by default in code;
   # enabled here for production learning. Set to "false" to disable without a code change.
   PredictionOptions__AccuracyTrackingEnabled: "true"
+  # Prediction intervals: show P10–P90 ranges instead of single point estimates so parents see
+  # "expected between X and Y minutes" rather than a misleading exact time. Off by default in code;
+  # enabled here now that historical backfill data validates interval quality on the dashboard.
+  PredictionOptions__UsePredictionIntervals: "true"
 
 # The Secret lotties-secrets is made by deploy.sh from deploy/homelab/.env (or keeps what it already has).
 secretEnv:
