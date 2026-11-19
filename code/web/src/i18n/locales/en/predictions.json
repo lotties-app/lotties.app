@@ -9,5 +9,21 @@
     "inaccurate": "This prediction was inaccurate",
     "submitted": "Thank you for your feedback",
     "error": "Could not submit feedback"
+  },
+  "intervalRange": "Usually between {{lower}}–{{upper}} min",
+  "cryCause": {
+    "title": "Likely cause of crying",
+    "hunger": "Hungry — near predicted feeding time",
+    "overtired": "Overtired — awake longer than usual",
+    "gasPostFeed": "Gas or discomfort after feeding",
+    "prePoopDiscomfort": "May need to poop",
+    "overstimulation": "Overstimulated — lots of activity recently",
+    "unknown": "Unclear cause"
+  },
+  "feedingInsight": {
+    "volumeTitle": "Typical feeding volume",
+    "volumeRange": "{{lower}}–{{upper}} ml at this time of day",
+    "durationTitle": "Expected feeding duration",
+    "durationValue": "About {{minutes}} min for {{volume}} ml"
   }
 }

@@ -472,6 +472,43 @@ export type PredictionConfidence = 'Low' | 'Medium' | 'High';
 /** Where a prediction's prior came from (matches API `PriorOrigin`). */
 export type PriorOrigin = 'PublishedNorm' | 'CommunityStatic' | 'CommunityLive';
 
+/** Prediction interval bounds (P10–P90) instead of a single point estimate. Absent when UsePredictionIntervals is disabled or insufficient data. */
+export interface PredictionIntervalDto {
+  lowerMinutes: number;
+  upperMinutes: number;
+  medianMinutes: number;
+  confidenceLevel: number;
+}
+
+/** Feeding volume prediction per (age_band, day_phase) bucket. */
+export interface FeedingVolumePredictionDto {
+  medianVolumeMl: number;
+  lowerBoundMl: number;
+  upperBoundMl: number;
+  sampleCount: number;
+  ageBand: string | null;
+  dayPhase: string | null;
+}
+
+/** Feeding duration prediction based on volume regression. */
+export interface FeedingDurationPredictionDto {
+  expectedDurationMinutes: number;
+  volumeMl: number;
+  sampleCount: number;
+}
+
+/** Probable cause of crying with normalized probability. */
+export interface CryCauseProbabilityDto {
+  cause: 'Hunger' | 'Overtired' | 'GasPostFeed' | 'PrePoopDiscomfort' | 'Overstimulation' | 'Unknown';
+  probability: number;
+  reason: string;
+}
+
+/** Ranked list of probable cry causes. */
+export interface CryCauseAssessmentDto {
+  causes: CryCauseProbabilityDto[];
+}
+
 export interface PredictionDto {
   typeKey: string;
   nextStart: { earliest: string; expected: string; latest: string };
@@ -483,6 +520,8 @@ export interface PredictionDto {
   basis: Record<string, unknown>;
   /** Where the prior came from; absent on older servers. */
   origin?: PriorOrigin;
+  /** Prediction interval (P10–P90); absent when intervals are disabled or insufficient data. */
+  interval?: PredictionIntervalDto | null;
 }
 
 export interface InsufficientDataDto {
@@ -653,6 +692,12 @@ export interface PredictionsDto {
   wakeWindow?: WakeWindowDto | null;
   /** The next wet and dirty diaper (additive; absent on older servers). */
   diaper?: DiaperPredictionsDto | null;
+  /** Feeding volume predictions per (age_band, day_phase) bucket; absent when insufficient data. */
+  feedingVolumes?: FeedingVolumePredictionDto[] | null;
+  /** Feeding duration prediction based on volume regression; absent when insufficient data. */
+  feedingDuration?: FeedingDurationPredictionDto | null;
+  /** Probable causes of the latest cry event; absent when classification is disabled or no cry event. */
+  cryCause?: CryCauseAssessmentDto | null;
 }
 
 /** Normalizes any ISO-8601 timestamp to UTC `Z` with millisecond precision. */

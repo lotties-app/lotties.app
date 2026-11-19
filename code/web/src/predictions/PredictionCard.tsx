@@ -72,6 +72,14 @@ export function PredictionCard({ prediction, type, name, babyId, now }: Props) {
             })
           : describeWindow(prediction, now)}
       </Typography>
+      {prediction.interval && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          {t('intervalRange', {
+            lower: Math.round(prediction.interval.lowerMinutes),
+            upper: Math.round(prediction.interval.upperMinutes),
+          })}
+        </Typography>
+      )}
       <Button
         size="small"
         onClick={() => setShowReason((v) => !v)}

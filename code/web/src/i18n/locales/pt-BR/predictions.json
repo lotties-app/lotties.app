@@ -9,5 +9,21 @@
     "inaccurate": "Esta previsão não foi precisa",
     "submitted": "Obrigado pelo seu feedback",
     "error": "Não foi possível enviar o feedback"
+  },
+  "intervalRange": "Geralmente entre {{lower}}–{{upper}} min",
+  "cryCause": {
+    "title": "Causa provável do choro",
+    "hunger": "Fome — próximo ao horário previsto de mamada",
+    "overtired": "Cansado demais — acordado há mais tempo que o habitual",
+    "gasPostFeed": "Gases ou desconforto após a mamada",
+    "prePoopDiscomfort": "Pode precisar fazer cocô",
+    "overstimulation": "Superestimulado — muita atividade recentemente",
+    "unknown": "Causa indefinida"
+  },
+  "feedingInsight": {
+    "volumeTitle": "Volume típico de mamada",
+    "volumeRange": "{{lower}}–{{upper}} ml neste horário",
+    "durationTitle": "Duração esperada da mamada",
+    "durationValue": "Cerca de {{minutes}} min para {{volume}} ml"
   }
 }

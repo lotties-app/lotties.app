@@ -727,6 +727,65 @@ export function StateCard({
         </Box>
       ) : null}
       {bedTime && <BedtimeLine bedTime={bedTime} now={now} />}
+      {predictions?.cryCause && predictions.cryCause.causes.length > 0 && (
+        <Box
+          sx={(theme) => ({
+            mt: 1.5,
+            p: 1.5,
+            borderRadius: `${RADIUS.input}px`,
+            backgroundColor: palette(theme).surfaceRaised,
+          })}
+        >
+          <Typography variant="subtitle2" component="h3">
+            {t('cryCause.title')}
+          </Typography>
+          {predictions.cryCause.causes.slice(0, 3).map((cause) => (
+            <Typography key={cause.cause} variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              {Math.round(cause.probability * 100)}% — {t(`cryCause.${cause.cause.charAt(0).toLowerCase() + cause.cause.slice(1)}` as any)}
+            </Typography>
+          ))}
+        </Box>
+      )}
+      {predictions?.feedingVolumes && predictions.feedingVolumes.length > 0 && (
+        <Box
+          sx={(theme) => ({
+            mt: 1.5,
+            p: 1.5,
+            borderRadius: `${RADIUS.input}px`,
+            backgroundColor: palette(theme).surfaceRaised,
+          })}
+        >
+          <Typography variant="subtitle2" component="h3">
+            {t('feedingInsight.volumeTitle')}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t('feedingInsight.volumeRange', {
+              lower: Math.round(predictions.feedingVolumes[0].lowerBoundMl),
+              upper: Math.round(predictions.feedingVolumes[0].upperBoundMl),
+            })}
+          </Typography>
+        </Box>
+      )}
+      {predictions?.feedingDuration && (
+        <Box
+          sx={(theme) => ({
+            mt: 1.5,
+            p: 1.5,
+            borderRadius: `${RADIUS.input}px`,
+            backgroundColor: palette(theme).surfaceRaised,
+          })}
+        >
+          <Typography variant="subtitle2" component="h3">
+            {t('feedingInsight.durationTitle')}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t('feedingInsight.durationValue', {
+              minutes: Math.round(predictions.feedingDuration.expectedDurationMinutes),
+              volume: Math.round(predictions.feedingDuration.volumeMl),
+            })}
+          </Typography>
+        </Box>
+      )}
       {state.learning && <LearningBlock learning={state.learning} babyName={babyName} />}
       {sleepButtons}
       <RhythmCollapse>
