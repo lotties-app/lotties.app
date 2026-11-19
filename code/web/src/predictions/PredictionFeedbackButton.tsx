@@ -36,8 +36,8 @@ export function PredictionFeedbackButton({ predictionId, babyId, onFeedbackSubmi
 
   if (submitted) {
     return (
-      <Tooltip title={t('predictions.predictionFeedback.submitted')}>
-        <Check fontSize="small" color="success" aria-label={t('predictions.predictionFeedback.submitted')} />
+      <Tooltip title={t('predictionFeedback.submitted')}>
+        <Check fontSize="small" color="success" aria-label={t('predictionFeedback.submitted')} />
       </Tooltip>
     );
   }
@@ -45,24 +45,24 @@ export function PredictionFeedbackButton({ predictionId, babyId, onFeedbackSubmi
   return (
     <Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}>
       {submitting ? (
-        <CircularProgress size={16} aria-label={t('predictions.predictionFeedback.accurate')} />
+        <CircularProgress size={16} aria-label={t('predictionFeedback.accurate')} />
       ) : (
         <>
-          <Tooltip title={t('predictions.predictionFeedback.accurate')}>
+          <Tooltip title={t('predictionFeedback.accurate')}>
             <IconButton
               size="small"
               onClick={() => handleSubmit(true)}
-              aria-label={t('predictions.predictionFeedback.accurate')}
+              aria-label={t('predictionFeedback.accurate')}
               sx={{ p: 0.5 }}
             >
               <ThumbUp fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title={t('predictions.predictionFeedback.inaccurate')}>
+          <Tooltip title={t('predictionFeedback.inaccurate')}>
             <IconButton
               size="small"
               onClick={() => handleSubmit(false)}
-              aria-label={t('predictions.predictionFeedback.inaccurate')}
+              aria-label={t('predictionFeedback.inaccurate')}
               sx={{ p: 0.5 }}
             >
               <ThumbDown fontSize="small" />
