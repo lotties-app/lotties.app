@@ -65,7 +65,24 @@ internal sealed class TypePredictor
         }
 
         var anchor = _strategy.FindAnchor(inWindow, _context.Now, TypicalDurationOfRunning);
-        var gaps = _selector.Select(_strategy.CollectGaps(inWindow), anchor.At);
+
+        // When predicting awake windows (sleep/naps) and the current time falls in the night phase,
+        // use a daytime reference for phase filtering so we select nap-relevant samples rather than
+        // night-sleep samples. Without this, checking the app after NightStartsAt (e.g. 19:00) would
+        // filter to night-only samples and return insufficient data despite abundant daytime naps.
+        var sampleReference = anchor.At;
+        if (_classifiesSleepKinds && _options.DayNightTypeKeys.Contains(_typeKey))
+        {
+            var currentPhase = DayPhases.Of(_context.Now, _context.LocalOffset, _options);
+            if (currentPhase == DayPhase.Night)
+            {
+                // Use noon today as a representative daytime reference for nap prediction
+                var todayNoon = new DateTimeOffset(_context.LocalDateOf(_context.Now), new TimeOnly(12, 0), _context.LocalOffset);
+                sampleReference = todayNoon;
+            }
+        }
+
+        var gaps = _selector.Select(_strategy.CollectGaps(inWindow), sampleReference);
         if (gaps.Samples.Count >= _options.MinimumSamples)
         {
             return new TypePredictionOutcome(BuildPrediction(anchor, gaps, effectiveLookBack), null);
