@@ -108,7 +108,7 @@ internal sealed class PredictionService : IPredictionService
         }
 
         var clock = LocalClock.ForZoneOrOffset(timeZone, now.Offset);
-        return PredictionsResponse.Create(babyId, now, predictions, Patterns(history, now, clock), WakeWindowOf(history, now, clock), DiapersOf(history, now));
+        return PredictionsResponse.Create(babyId, now, predictions, Patterns(history, now, clock), WakeWindowOf(history, now, clock), DiapersOf(history, now, predictions.DiaperPatterns));
     }
 
     /// <summary>The history of the event types the caller's view shows (a Doctor without medications predicts no medication dose).</summary>
@@ -116,8 +116,8 @@ internal sealed class PredictionService : IPredictionService
         history with { Events = history.Events.Where(item => view.ShowsType(item.TypeKey)).ToArray() };
 
     /// <summary>The next wet and dirty diaper (docs/design/11-patterns.md section 8); elapsed gaps, so no clock is needed.</summary>
-    private static DiaperPredictionsResponse DiapersOf(PredictionHistory history, DateTimeOffset now) =>
-        DiaperPredictionsResponse.For(DiaperPredictions.Predict(history.Events, now), DiaperPredictionOptions.Default);
+    private static DiaperPredictionsResponse DiapersOf(PredictionHistory history, DateTimeOffset now, DiaperPatternAnalysis? patterns = null) =>
+        DiaperPredictionsResponse.For(DiaperPredictions.Predict(history.Events, now), DiaperPredictionOptions.Default, patterns);
 
     /// <summary>The recurring patterns (docs/design/11-patterns.md): belly pain, then fussiness; only the ones found.</summary>
     private static IReadOnlyList<TimeOfDayPatternResponse> Patterns(PredictionHistory history, DateTimeOffset now, LocalClock clock)

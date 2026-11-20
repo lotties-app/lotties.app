@@ -149,6 +149,9 @@ public sealed class LottiesDbContext(DbContextOptions<LottiesDbContext> options)
     /// <summary>Prediction accuracy tracking outcomes (pending and resolved).</summary>
     public DbSet<Persistence.Entities.PredictionOutcomeEntity> PredictionOutcomes => Set<Persistence.Entities.PredictionOutcomeEntity>();
 
+    /// <summary>Anonymized community prediction aggregates; no baby_id or PII (docs/design/34-community-insights.md).</summary>
+    public DbSet<Persistence.Entities.CommunityPredictionAggregateEntity> CommunityPredictionAggregates => Set<Persistence.Entities.CommunityPredictionAggregateEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDbContext).Assembly);

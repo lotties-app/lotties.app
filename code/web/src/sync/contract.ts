@@ -670,11 +670,27 @@ export interface DiaperRuleDto {
   graceMinutes: number;
 }
 
+/** Gap statistics for one diaper sub-type (wet-only or dirty-only) from the pattern analyzer. */
+export interface DiaperGapStatsDto {
+  medianGapMinutes: number;
+  p10GapMinutes: number;
+  p90GapMinutes: number;
+  sampleCount: number;
+}
+
+/** Separate wet and dirty gap statistics from the diaper pattern analyzer (additive; absent on older servers). */
+export interface DiaperPatternAnalysisDto {
+  wet: DiaperGapStatsDto | null;
+  dirty: DiaperGapStatsDto | null;
+}
+
 /** The diaper predictions: each part `null` when its gate did not pass (nothing is guessed). */
 export interface DiaperPredictionsDto {
   wet: DiaperGapDto | null;
   dirty: DirtyDiaperDto | null;
   rule: DiaperRuleDto;
+  /** Separate gap statistics per sub-type from the pattern analyzer; absent on older servers. */
+  patterns?: DiaperPatternAnalysisDto | null;
 }
 
 export interface PredictionsDto {

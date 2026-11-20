@@ -3117,6 +3117,82 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.ToTable("vaccinations", (string)null);
                 });
 
+            modelBuilder.Entity("Lotties.Infrastructure.Persistence.Entities.CommunityPredictionAggregateEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AgeBandLabel")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("age_band_label");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("integer")
+                        .HasColumnName("count");
+
+                    b.Property<string>("EngineVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("engine_version");
+
+                    b.Property<DateTimeOffset>("GeneratedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("generated_at_utc");
+
+                    b.Property<double?>("MedianErrorMinutes")
+                        .HasColumnType("double precision")
+                        .HasColumnName("median_error_minutes");
+
+                    b.Property<double?>("P10ErrorMinutes")
+                        .HasColumnType("double precision")
+                        .HasColumnName("p10error_minutes");
+
+                    b.Property<double?>("P90ErrorMinutes")
+                        .HasColumnType("double precision")
+                        .HasColumnName("p90error_minutes");
+
+                    b.Property<string>("Phase")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("phase");
+
+                    b.Property<double>("SumErrorMinutes")
+                        .HasColumnType("double precision")
+                        .HasColumnName("sum_error_minutes");
+
+                    b.Property<double>("SumSquaredError")
+                        .HasColumnType("double precision")
+                        .HasColumnName("sum_squared_error");
+
+                    b.Property<string>("TemporalBucket")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("temporal_bucket");
+
+                    b.Property<string>("TypeKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("type_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_community_prediction_aggregates");
+
+                    b.HasIndex("AgeBandLabel", "TypeKey", "Phase", "GeneratedAtUtc")
+                        .HasDatabaseName("ix_community_prediction_aggregates_lookup");
+
+                    b.HasIndex("AgeBandLabel", "TypeKey", "Phase", "TemporalBucket", "EngineVersion")
+                        .IsUnique()
+                        .HasDatabaseName("ix_community_prediction_aggregates_dimensions");
+
+                    b.ToTable("community_prediction_aggregates", (string)null);
+                });
+
             modelBuilder.Entity("Lotties.Infrastructure.Persistence.Entities.PredictionOutcomeEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3153,6 +3229,14 @@ namespace Lotties.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("ExpectedNextStart")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expected_next_start");
+
+                    b.Property<bool?>("IsRetrospective")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_retrospective");
+
+                    b.Property<bool?>("IsTopUp")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_top_up");
 
                     b.Property<string>("Phase")
                         .HasMaxLength(16)

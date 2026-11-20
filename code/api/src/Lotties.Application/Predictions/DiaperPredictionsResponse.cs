@@ -15,7 +15,10 @@ public sealed class DiaperPredictionsResponse
 
     public DiaperRuleResponse Rule { get; set; } = new();
 
-    public static DiaperPredictionsResponse For(DiaperPrediction prediction, DiaperPredictionOptions rules)
+    /// <summary>Separate gap statistics for wet-only and dirty-only diapers from the pattern analyzer (additive; absent on older servers).</summary>
+    public DiaperPatternAnalysisResponse? Patterns { get; set; }
+
+    public static DiaperPredictionsResponse For(DiaperPrediction prediction, DiaperPredictionOptions rules, DiaperPatternAnalysis? patterns = null)
     {
         ArgumentNullException.ThrowIfNull(prediction);
         ArgumentNullException.ThrowIfNull(rules);
@@ -24,6 +27,49 @@ public sealed class DiaperPredictionsResponse
             Wet = prediction.Wet is { } wet ? DiaperGapResponse.For(wet, prediction.WetTrend) : null,
             Dirty = prediction.Dirty is { } dirty ? (DirtyDiaperResponse)dirty : null,
             Rule = DiaperRuleResponse.For(rules),
+            Patterns = patterns is { } p ? DiaperPatternAnalysisResponse.For(p) : null,
+        };
+    }
+}
+
+/// <summary>Gap statistics for one diaper sub-type (wet-only or dirty-only) from the pattern analyzer.</summary>
+public sealed class DiaperGapStatsResponse
+{
+    public int MedianGapMinutes { get; set; }
+
+    public int P10GapMinutes { get; set; }
+
+    public int P90GapMinutes { get; set; }
+
+    public int SampleCount { get; set; }
+
+    public static implicit operator DiaperGapStatsResponse(DiaperGapStats stats)
+    {
+        ArgumentNullException.ThrowIfNull(stats);
+        return new DiaperGapStatsResponse
+        {
+            MedianGapMinutes = WholeMinutes.Of(stats.MedianGap),
+            P10GapMinutes = WholeMinutes.Of(stats.P10Gap),
+            P90GapMinutes = WholeMinutes.Of(stats.P90Gap),
+            SampleCount = stats.SampleCount,
+        };
+    }
+}
+
+/// <summary>Separate wet and dirty gap statistics from the diaper pattern analyzer.</summary>
+public sealed class DiaperPatternAnalysisResponse
+{
+    public DiaperGapStatsResponse? Wet { get; set; }
+
+    public DiaperGapStatsResponse? Dirty { get; set; }
+
+    public static DiaperPatternAnalysisResponse For(DiaperPatternAnalysis analysis)
+    {
+        ArgumentNullException.ThrowIfNull(analysis);
+        return new DiaperPatternAnalysisResponse
+        {
+            Wet = analysis.WetGapStats is { } wet ? (DiaperGapStatsResponse)wet : null,
+            Dirty = analysis.DirtyGapStats is { } dirty ? (DiaperGapStatsResponse)dirty : null,
         };
     }
 }

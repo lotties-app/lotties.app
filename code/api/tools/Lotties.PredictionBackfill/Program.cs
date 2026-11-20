@@ -37,6 +37,12 @@ try
 catch (Exception exception) when (exception is IOException or DbUpdateException or Npgsql.NpgsqlException or OperationCanceledException)
 {
     Console.Error.WriteLine($"Backfill failed: {exception.GetType().Name}: {exception.Message}");
+    var inner = exception.InnerException;
+    while (inner is not null)
+    {
+        Console.Error.WriteLine($"  -> {inner.GetType().Name}: {inner.Message}");
+        inner = inner.InnerException;
+    }
     return 1;
 }
 

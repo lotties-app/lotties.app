@@ -10,15 +10,17 @@ using Microsoft.EntityFrameworkCore;
 namespace Lotties.PredictionBackfill;
 
 /// <summary>Arguments parsed from the command line for the prediction backfill tool.</summary>
-internal sealed record BackfillArguments(bool DryRun, Guid? BabyId, bool Help)
+internal sealed record BackfillArguments(bool DryRun, Guid? BabyId, int UtcOffsetMinutes, bool Help)
 {
     public const string Usage = """
         Usage: Lotties.PredictionBackfill [options]
 
         Options:
-          --dry-run      Log what would be created without writing to the database.
-          --baby-id <id> Backfill a single baby (GUID) instead of all babies.
-          --help         Show this help message.
+          --dry-run                Log what would be created without writing to the database.
+          --baby-id <id>           Backfill a single baby (GUID) instead of all babies.
+          --utc-offset-minutes <n> UTC offset in minutes for the family's timezone (e.g. -180 for São Paulo).
+                                   Required so age bands and day phases are computed in local time.
+          --help                   Show this help message.
 
         Environment variables (same as the API):
           DB_HOST, DB_PORT, DB_NAME, DB_APP_USER, DB_APP_PASSWORD
@@ -28,6 +30,7 @@ internal sealed record BackfillArguments(bool DryRun, Guid? BabyId, bool Help)
     {
         var dryRun = false;
         Guid? babyId = null;
+        int? utcOffsetMinutes = null;
         var help = false;
 
         for (var i = 0; i < args.Length; i++)
@@ -44,6 +47,13 @@ internal sealed record BackfillArguments(bool DryRun, Guid? BabyId, bool Help)
                     }
                     babyId = id;
                     break;
+                case "--utc-offset-minutes" when i + 1 < args.Length:
+                    if (!int.TryParse(args[++i], out var offset))
+                    {
+                        throw new ArgumentException($"Invalid UTC offset: '{args[i]}'. Must be an integer (e.g. -180).");
+                    }
+                    utcOffsetMinutes = offset;
+                    break;
                 case "--help":
                 case "-h":
                     help = true;
@@ -53,7 +63,12 @@ internal sealed record BackfillArguments(bool DryRun, Guid? BabyId, bool Help)
             }
         }
 
-        return new BackfillArguments(dryRun, babyId, help);
+        if (!help && !utcOffsetMinutes.HasValue)
+        {
+            throw new ArgumentException("--utc-offset-minutes is required. Use --help for usage.");
+        }
+
+        return new BackfillArguments(dryRun, babyId, utcOffsetMinutes ?? 0, help);
     }
 }
 
@@ -89,7 +104,7 @@ internal sealed class PredictionBackfillService(LottiesDbContext context, TextWr
         foreach (var baby in babies)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var (created, skipped) = await BackfillBabyAsync(baby, existingKeys, arguments.DryRun, cancellationToken);
+            var (created, skipped) = await BackfillBabyAsync(baby, existingKeys, arguments.DryRun, arguments.UtcOffsetMinutes, cancellationToken);
             totalCreated += created;
             totalSkipped += skipped;
             processed++;
@@ -132,6 +147,7 @@ internal sealed class PredictionBackfillService(LottiesDbContext context, TextWr
         Baby baby,
         HashSet<(Guid BabyId, string TypeKey, long PredictedAtTicks)> existingKeys,
         bool dryRun,
+        int utcOffsetMinutes,
         CancellationToken cancellationToken)
     {
         // Load all non-deleted events for this baby, ordered chronologically. The global query filter on
@@ -168,8 +184,14 @@ internal sealed class PredictionBackfillService(LottiesDbContext context, TextWr
         for (var i = 0; i < observed.Length; i++)
         {
             var historySlice = observed[..(i + 1)];
-            var now = observed[i].StartedAt;
-            var predictionContext = new PredictionContext(baby.BirthDate, now);
+            // Apply the family's UTC offset so PredictionContext.LocalOffset matches what the live API uses.
+            // Without this, Npgsql returns timestamptz as UTC (offset zero), causing AgeBands.At and DayPhases.Of
+            // to compute in UTC instead of local time, which shifts dates across age-band boundaries and produces
+            // null AgeBand/Phase in outcomes. We use a separate localNow for the context only; the original
+            // observed[i].StartedAt (UTC) is used for all database writes since Npgsql rejects non-UTC offsets.
+            var utcNow = observed[i].StartedAt;
+            var localNow = utcNow.ToOffset(TimeSpan.FromMinutes(utcOffsetMinutes));
+            var predictionContext = new PredictionContext(baby.BirthDate, localNow);
             var predictionSet = PredictionEngine.Predict(historySlice, predictionContext, Options);
 
             foreach (var prediction in predictionSet.Predictions)
@@ -181,7 +203,7 @@ internal sealed class PredictionBackfillService(LottiesDbContext context, TextWr
                     continue;
                 }
 
-                var predictedAtTicks = now.UtcTicks;
+                var predictedAtTicks = utcNow.UtcTicks;
                 var key = (baby.Id, prediction.TypeKey.Value, predictedAtTicks);
                 if (existingKeys.Contains(key))
                 {
@@ -194,18 +216,26 @@ internal sealed class PredictionBackfillService(LottiesDbContext context, TextWr
 
                 if (!dryRun)
                 {
+                    // Use the engine's own AgeBand and Phase from the prediction reason rather than
+                    // recomputing independently. This ensures the outcome records exactly what the
+                    // engine decided, avoiding divergence caused by timezone or rounding differences.
+                    var ageBand = prediction.Reason.AgeBand;
+                    var phase = prediction.Reason.Phase;
+
                     pendingBatch.Add(new PredictionOutcomeEntity
                     {
                         Id = Guid.NewGuid(),
                         BabyId = baby.Id,
                         TypeKey = prediction.TypeKey.Value,
-                        PredictedAt = now,
+                        PredictedAt = utcNow,
                         AnchorAt = prediction.AnchorAt,
                         ExpectedNextStart = prediction.NextStart.Expected,
                         ActualNextStart = actualNextStart,
                         ErrorMinutes = errorMinutes,
                         EngineVersion = PredictionEngine.Version,
                         SampleCount = prediction.SampleCount,
+                        AgeBand = ageBand?.ToString(),
+                        Phase = phase.HasValue ? DayPhases.Label(phase.Value) : null,
                         Resolved = true,
                     });
                     existingKeys.Add(key);
