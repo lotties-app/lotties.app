@@ -121,11 +121,21 @@ function useReminderLink(babyId: string, canOpenMeds: boolean, openMeds: () => v
   return { reminder, clear: () => setReminder(null) };
 }
 
-/** Predictions go stale when the state flips: ask again after a sleep starts or ends. */
+/**
+ * Predictions go stale when the state flips (sleep starts/ends) OR when any new event arrives
+ * via sync. Previously only state changes triggered a refresh, so feeding/diaper/etc events
+ * logged while the baby was awake never caused predictions to update — leaving "Aprendendo o
+ * ritmo" on screen even with plenty of recent data.
+ */
 function useRefreshPredictions(babyId: string, model: NowScreenModel) {
   const queryClient = useQueryClient();
   const state = model.state;
-  const signature = state.kind === 'unknown' ? 'unknown' : `${state.kind}:${state.since}`;
+  const stateSignature = state.kind === 'unknown' ? 'unknown' : `${state.kind}:${state.since}`;
+  // Track the newest event timestamp to detect new arrivals regardless of type.
+  const eventsSignature = model.events.length > 0
+    ? model.events[0]?.updatedAt ?? model.events[0]?.startedAt ?? ''
+    : '';
+  const signature = `${stateSignature}|${eventsSignature}`;
   const previous = useRef(signature);
   useEffect(() => {
     if (previous.current === signature) return;
