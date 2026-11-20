@@ -1,5 +1,6 @@
 using Lotties.Application.Predictions;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
 
 namespace Lotties.Api.Endpoints;
 
@@ -39,6 +40,7 @@ internal static class PredictionEndpoints
         string? timeZone,
         IPredictionService predictions,
         TimeProvider timeProvider,
+        ILogger<IPredictionService> logger,
         CancellationToken cancellationToken)
     {
         if (utcOffsetMinutes is < -MaxUtcOffsetMinutes or > MaxUtcOffsetMinutes)
@@ -47,8 +49,16 @@ internal static class PredictionEndpoints
         }
 
         var now = timeProvider.GetUtcNow().ToOffset(TimeSpan.FromMinutes(utcOffsetMinutes ?? 0));
-        var response = await predictions.GetAsync(babyId, now, timeZone, cancellationToken);
-        return response is null ? TypedResults.NotFound() : TypedResults.Ok(response);
+        try
+        {
+            var response = await predictions.GetAsync(babyId, now, timeZone, cancellationToken);
+            return response is null ? TypedResults.NotFound() : TypedResults.Ok(response);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Prediction endpoint failed for baby {BabyId} with offset {Offset} and timezone {TimeZone}", babyId, utcOffsetMinutes, timeZone);
+            throw;
+        }
     }
 
     private static ValidationProblem InvalidOffset() => TypedResults.ValidationProblem(new Dictionary<string, string[]>
