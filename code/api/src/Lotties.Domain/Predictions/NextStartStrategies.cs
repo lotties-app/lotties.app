@@ -30,24 +30,41 @@ internal sealed class AwakeWindowStrategy : INextStartStrategy
     public IEnumerable<TimedSample> CollectGaps(IReadOnlyList<ObservedEvent> chronological) =>
         chronological
             .Zip(chronological.Skip(1))
-            .Where(pair => pair.First.EndedAt is not null)
+            // Skip pairs where the first event has zero duration (started_at == ended_at), which are
+            // typically duplicate marker events created when the app records sleep start and end
+            // separately. These produce zero-length gaps that get filtered by MinimumSampleLength
+            // downstream, but also corrupt the gap sequence by breaking adjacency between valid events.
+            .Where(pair => pair.First.EndedAt is not null && pair.First.EndedAt != pair.First.StartedAt)
             .Select(pair => new TimedSample(pair.Second.StartedAt - pair.First.EndedAt!.Value, pair.First.EndedAt.Value));
 
     /// <remarks>
     /// While the last sleep is running the wake time is estimated as its start plus the typical (effective) duration of
     /// sleeps of its kind (see <see cref="TypePredictor"/>) plus the pauses it already had, and never earlier than
-    /// <paramref name="now"/> because the baby is still asleep.
+    /// <paramref name="now"/> because the baby is still asleep. Zero-duration events (started_at == ended_at) are
+    /// skipped when selecting the anchor to avoid using duplicate marker events that cannot produce valid gaps.
     /// </remarks>
     public NextStartAnchor FindAnchor(IReadOnlyList<ObservedEvent> chronological, DateTimeOffset now, Func<ObservedEvent, TimeSpan?> typicalDurationOf)
     {
-        var last = chronological[^1];
-        if (last.EndedAt is { } wokeAt)
+        // Walk backwards to find the most recent event with actual duration, skipping zero-duration
+        // marker/duplicate events that would produce invalid anchors.
+        for (var i = chronological.Count - 1; i >= 0; i--)
         {
-            return new NextStartAnchor(wokeAt, false);
+            var candidate = chronological[i];
+            if (candidate.EndedAt is { } wokeAt && candidate.EndedAt != candidate.StartedAt)
+            {
+                return new NextStartAnchor(wokeAt, false);
+            }
+
+            // If this event is still running (no EndedAt), use it as anchor with estimated wake time.
+            if (candidate.EndedAt is null)
+            {
+                var expectedWake = candidate.StartedAt + (typicalDurationOf(candidate) ?? TimeSpan.Zero) + candidate.Paused;
+                return new NextStartAnchor(expectedWake > now ? expectedWake : now, true);
+            }
         }
 
-        var expectedWake = last.StartedAt + (typicalDurationOf(last) ?? TimeSpan.Zero) + last.Paused;
-        return new NextStartAnchor(expectedWake > now ? expectedWake : now, true);
+        // Fallback: all events are zero-duration markers; use current time as anchor.
+        return new NextStartAnchor(now, false);
     }
 }
 

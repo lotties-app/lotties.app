@@ -120,6 +120,16 @@ internal sealed class EventService : IEventService
     {
         var eventType = await LoadAvailableTypeAsync(babyId, request.TypeId, cancellationToken);
         eventType.EnsureValidPayload(request.Payload, request.StartedAt, request.EndedAt);
+
+        // Prevent creation of sleep events with zero duration (started_at == ended_at), which are
+        // typically duplicate marker events created when the app records sleep start and end separately.
+        // These corrupt prediction gap sequences by producing invalid anchors in AwakeWindowStrategy.
+        if (eventType.Key.Value == "sleep" && request.EndedAt.HasValue && request.StartedAt == request.EndedAt.Value)
+        {
+            throw new InvalidOperationException(
+                "Sleep events must have a non-zero duration. StartedAt and EndedAt cannot be identical.");
+        }
+
         await EnsurePayloadReferencesAsync(babyId, request, cancellationToken);
         var user = await _currentUser.GetUserAsync(cancellationToken);
         var created = Event.Create(
