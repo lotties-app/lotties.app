@@ -124,9 +124,12 @@ internal sealed class EventService : IEventService
         // Prevent creation of sleep events with zero duration (started_at == ended_at), which are
         // typically duplicate marker events created when the app records sleep start and end separately.
         // These corrupt prediction gap sequences by producing invalid anchors in AwakeWindowStrategy.
+        // Use DomainValidationException so the API returns 400 Bad Request instead of 500, allowing
+        // the mobile app to handle the rejection gracefully during sync rather than failing entirely.
         if (eventType.Key.Value == "sleep" && request.EndedAt.HasValue && request.StartedAt == request.EndedAt.Value)
         {
-            throw new InvalidOperationException(
+            throw new DomainValidationException(
+                "endedAt",
                 "Sleep events must have a non-zero duration. StartedAt and EndedAt cannot be identical.");
         }
 
