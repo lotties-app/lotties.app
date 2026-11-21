@@ -11,7 +11,7 @@ import { useTestLocale } from '../test/locale';
 import { fakeApi, httpError, testDatabase, type ApiCall } from '../test/fakeApi';
 import { renderWithDb, settleSync } from '../test/renderApp';
 import { THEME_STORAGE_KEY } from '../theme/themeStorage';
-import type { CommunityConsentView } from './communityConsentApi';
+import { COMMUNITY_CONSENT_TEXT_VERSION, type CommunityConsentView } from './communityConsentApi';
 import { CommunityInsightsSection } from './CommunityInsightsSection';
 
 /* Settings > Community insights: the per-baby consent (docs/design/34 section 3, task T2). */
@@ -34,7 +34,7 @@ const PATH = '/api/v1/babies/baby-1/community-consent';
 
 const view = (overrides: Partial<CommunityConsentView> = {}): CommunityConsentView => ({
   status: 'none',
-  currentTextVersion: 'ci-1',
+  currentTextVersion: COMMUNITY_CONSENT_TEXT_VERSION,
   latest: null,
   history: [],
   ...overrides,
@@ -45,7 +45,7 @@ const ON = view({
   latest: {
     action: 'granted',
     at: '2026-11-03T10:00:00Z',
-    textVersion: 'ci-1',
+    textVersion: COMMUNITY_CONSENT_TEXT_VERSION,
     policyVersion: '9',
     byName: 'Ana',
     byMe: false,
@@ -122,7 +122,7 @@ describe('community insights section', () => {
     expect(await screen.findByText(/on for Lia since .* \(turned on by you\)/)).toBeTruthy();
     expect(calls.find((c) => c.method === 'PUT')!.body).toEqual({
       granted: true,
-      textVersion: 'ci-1',
+      textVersion: COMMUNITY_CONSENT_TEXT_VERSION,
       guardianConfirmed: true,
       locale: 'en',
     });

@@ -8,6 +8,7 @@ using Lotties.Api.Tests.Board;
 using Lotties.Api.Tests.Support;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Board;
+using Lotties.Domain.CommunityInsights;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Notifications;
 using Lotties.Domain.SilentPush;
@@ -438,7 +439,7 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
             new { title = "Pediatrician", type = "consultation", startsAt = DateTimeOffset.UtcNow.AddDays(40), durationMinutes = 30, providerId, status = "upcoming" }));
         await Write(client.PutAsJsonAsync($"{path}/vaccinations/{Guid.NewGuid()}", new { vaccineKey = "bcg", doseId = "bcg-1", doseLabel = "Dose única", givenOn = "2026-01-05", network = "public" }));
         await Write(client.PutAsJsonAsync($"{path}/measurements/{Guid.NewGuid()}", new { date = "2026-01-09", weightKg = 5.4m }));
-        await Write(client.PutAsJsonAsync($"{path}/community-consent", new { granted = true, textVersion = "ci-1", guardianConfirmed = true, locale = "en" }));
+        await Write(client.PutAsJsonAsync($"{path}/community-consent", new { granted = true, textVersion = CommunityConsentTexts.CurrentTextVersion, guardianConfirmed = true, locale = "en" }));
         await Write(client.PutAsJsonAsync($"{path}/events/{Guid.NewGuid()}", new { typeId = BuiltInEventTypes.FeedingId, startedAt = Start, payload = new { method = "breast", side = "left" } }));
         var deleted = Guid.NewGuid();
         await Write(client.PutAsJsonAsync($"{path}/events/{deleted}", new { typeId = BuiltInEventTypes.BathId, startedAt = Start.AddHours(1), payload = new { } }));

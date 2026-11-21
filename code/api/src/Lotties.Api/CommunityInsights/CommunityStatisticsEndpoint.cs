@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Lotties.Api.Authorization;
 using Lotties.Application.Babies;
 using Lotties.Application.CommunityInsights;
 using Lotties.Application.Users;
@@ -18,7 +17,9 @@ namespace Lotties.Api.CommunityInsights;
 /// filtered to the caller's baby's age band from the latest active release. Facts only, never advice; nothing identifies any baby or
 /// family. Requires authentication, an active community insights consent on at least one of the caller's babies, and the feature flag
 /// <c>CommunityInsights:Enabled</c> (the guard answers a bare 404 while it is off). Demo accounts are excluded. Doctors are refused:
-/// community statistics are family-level, not clinical. Rate limited per user per hour.
+/// community statistics are family-level, not clinical. Rate limited per user per hour. The route has no <c>{babyId}</c>, so no baby
+/// policy can decide it (a baby policy fails every caller on such a route): the handler counts only the babies on which the caller
+/// holds a family role (<see cref="BabyRoleRules.CanReadFamilyRecords"/>), so a Doctor's patients never open it.
 /// </summary>
 internal static class CommunityStatisticsEndpoint
 {
@@ -32,7 +33,6 @@ internal static class CommunityStatisticsEndpoint
     {
         ArgumentNullException.ThrowIfNull(api);
         api.MapGet(Path, GetAsync)
-            .RequireAuthorization(BabyPolicies.ReadFamily)
             .WithMetadata(CommunityInsightsEndpointMetadata.Instance)
             .RequireRateLimiting(Limits.RequestLimitPolicies.CommunityStatisticsRead)
             .WithName("GetCommunityStatistics")
@@ -60,8 +60,10 @@ internal static class CommunityStatisticsEndpoint
             throw new DemoNotAvailableException();
         }
 
-        var callerBabies = await babies.ListAsync(cancellationToken);
-        if (callerBabies.Count == 0)
+        // Only the babies of the caller's family count: a Doctor's patients are listed too, and she never gets a pooled view
+        // (docs/design/34-community-insights.md section 3.4).
+        var callerBabies = (await babies.ListAsync(cancellationToken)).Where(baby => baby.Role.CanReadFamilyRecords()).ToArray();
+        if (callerBabies.Length == 0)
         {
             return Results.Problem(statusCode: StatusCodes.Status403Forbidden, detail: "No baby membership.");
         }

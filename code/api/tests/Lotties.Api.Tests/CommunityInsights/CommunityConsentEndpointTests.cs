@@ -20,7 +20,7 @@ namespace Lotties.Api.Tests.CommunityInsights;
 /// </summary>
 public sealed class CommunityConsentEndpointTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
-    private const string TextVersion = "ci-1";
+    private const string TextVersion = "ci-2";
     private const string DemoSigningKey = "unit-test-demo-signing-key-0123456789-abcdef";
 
     private static string PathOf(Guid babyId) => $"/api/v1/babies/{babyId}/community-consent";

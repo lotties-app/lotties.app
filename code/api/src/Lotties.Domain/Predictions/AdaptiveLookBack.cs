@@ -22,7 +22,7 @@ internal static class AdaptiveLookBack
     {
         if (!options.LookBackAdaptationEnabled || chronological.Count == 0)
         {
-            return ClampToAge(options.LookBack, context);
+            return options.LookBack;
         }
 
         var adapted = TryShrink(chronological, context, options) ?? TryExtend(chronological, context, options) ?? options.LookBack;

@@ -39,9 +39,9 @@ public sealed class CommunityConsentTests
     [Fact]
     public void Grant_RecordsTheTextPolicyPurposesDeclarationLocaleAndTime()
     {
-        var entry = CommunityConsentEntry.Grant(Baby, Ana, "ci-1", guardianConfirmed: true, Policy, "pt-BR", Now.AddTicks(7));
+        var entry = CommunityConsentEntry.Grant(Baby, Ana, "ci-2", guardianConfirmed: true, Policy, "pt-BR", Now.AddTicks(7));
 
-        Assert.Equal((Baby, Ana, CommunityConsentAction.Granted, "ci-1", Policy, true, "pt-BR"), (entry.BabyId, entry.UserId, entry.Action, entry.TextVersion, entry.PolicyVersion, entry.GuardianConfirmed, entry.Locale));
+        Assert.Equal((Baby, Ana, CommunityConsentAction.Granted, "ci-2", Policy, true, "pt-BR"), (entry.BabyId, entry.UserId, entry.Action, entry.TextVersion, entry.PolicyVersion, entry.GuardianConfirmed, entry.Locale));
         Assert.Equal(["all"], entry.Scopes);
         Assert.Equal(Now, entry.At);
         Assert.NotEqual(Guid.Empty, entry.Id);
@@ -50,7 +50,7 @@ public sealed class CommunityConsentTests
     [Fact]
     public void Grant_WithoutTheGuardianDeclaration_IsRefused()
     {
-        var error = Assert.Throws<DomainValidationException>(() => CommunityConsentEntry.Grant(Baby, Ana, "ci-1", guardianConfirmed: false, Policy, "en", Now));
+        var error = Assert.Throws<DomainValidationException>(() => CommunityConsentEntry.Grant(Baby, Ana, "ci-2", guardianConfirmed: false, Policy, "en", Now));
 
         Assert.Equal("guardianConfirmed", error.Field);
     }
@@ -71,7 +71,7 @@ public sealed class CommunityConsentTests
         var error = Assert.Throws<CommunityConsentVersionOutdatedException>(() => CommunityConsentEntry.Grant(Baby, Ana, "ci-0", guardianConfirmed: true, Policy, "en", Now));
 
         Assert.Equal("community_consent_version_outdated", error.Code);
-        Assert.Equal("ci-1", error.Details["currentTextVersion"]);
+        Assert.Equal("ci-2", error.Details["currentTextVersion"]);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed class CommunityConsentTests
     {
         var entry = No(Bruno, Now);
 
-        Assert.Equal((CommunityConsentAction.Withdrawn, false, "ci-1"), (entry.Action, entry.GuardianConfirmed, entry.TextVersion));
+        Assert.Equal((CommunityConsentAction.Withdrawn, false, "ci-2"), (entry.Action, entry.GuardianConfirmed, entry.TextVersion));
         Assert.Empty(entry.Scopes);
     }
 
@@ -121,7 +121,7 @@ public sealed class CommunityConsentTests
     [Fact]
     public void Change_YesWhenNotOn_AddsAGrant()
     {
-        var change = CommunityConsentHistory.Of([No(Bruno, Now)]).Change(true, Baby, Ana, "ci-1", guardianConfirmed: true, Policy, "en", Now.AddHours(1));
+        var change = CommunityConsentHistory.Of([No(Bruno, Now)]).Change(true, Baby, Ana, "ci-2", guardianConfirmed: true, Policy, "en", Now.AddHours(1));
 
         Assert.Equal(CommunityConsentAction.Granted, change!.Action);
         Assert.Equal(Ana, change.UserId);
@@ -132,7 +132,7 @@ public sealed class CommunityConsentTests
     {
         var history = CommunityConsentHistory.Of([Yes(Ana, Now)]);
 
-        Assert.Null(history.Change(true, Baby, Bruno, "ci-1", guardianConfirmed: true, Policy, "en", Now.AddHours(1)));
+        Assert.Null(history.Change(true, Baby, Bruno, "ci-2", guardianConfirmed: true, Policy, "en", Now.AddHours(1)));
         Assert.Throws<CommunityConsentVersionOutdatedException>(() => history.Change(true, Baby, Bruno, "ci-0", guardianConfirmed: true, Policy, "en", Now.AddHours(1)));
     }
 
@@ -162,7 +162,7 @@ public sealed class CommunityConsentTests
     {
         var history = CommunityConsentHistory.Of([]);
 
-        Assert.Throws<DomainValidationException>(() => history.Change(true, Baby, Ana, "ci-1", guardianConfirmed: false, Policy, "en", Now));
+        Assert.Throws<DomainValidationException>(() => history.Change(true, Baby, Ana, "ci-2", guardianConfirmed: false, Policy, "en", Now));
         Assert.Throws<CommunityConsentVersionOutdatedException>(() => history.Change(true, Baby, Ana, "ci-0", guardianConfirmed: true, Policy, "en", Now));
     }
 
