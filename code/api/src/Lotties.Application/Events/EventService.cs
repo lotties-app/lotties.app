@@ -121,16 +121,23 @@ internal sealed class EventService : IEventService
         var eventType = await LoadAvailableTypeAsync(babyId, request.TypeId, cancellationToken);
         eventType.EnsureValidPayload(request.Payload, request.StartedAt, request.EndedAt);
 
-        // Prevent creation of sleep events with zero duration (started_at == ended_at), which are
-        // typically duplicate marker events created when the app records sleep start and end separately.
-        // These corrupt prediction gap sequences by producing invalid anchors in AwakeWindowStrategy.
-        // Use DomainValidationException so the API returns 400 Bad Request instead of 500, allowing
-        // the mobile app to handle the rejection gracefully during sync rather than failing entirely.
+        // Allow zero-duration sleep events only when they carry a valid marker kind (woke_up,
+        // bed_time, fell_asleep, night_waking, up_for_the_day). These are intentional point-in-time
+        // markers created by the mobile app's sleep presets. Reject zero-duration events without a
+        // recognized kind, which are typically duplicate/corrupt entries that corrupt prediction gaps.
         if (eventType.Key.Value == "sleep" && request.EndedAt.HasValue && request.StartedAt == request.EndedAt.Value)
         {
-            throw new DomainValidationException(
-                "endedAt",
-                "Sleep events must have a non-zero duration. StartedAt and EndedAt cannot be identical.");
+            var kind = request.Payload.GetString("kind");
+            var validMarkerKinds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "woke_up", "bed_time", "fell_asleep", "night_waking", "up_for_the_day",
+            };
+            if (kind is null || !validMarkerKinds.Contains(kind))
+            {
+                throw new DomainValidationException(
+                    "endedAt",
+                    "Sleep events with zero duration must have a valid marker kind (woke_up, bed_time, fell_asleep, night_waking, or up_for_the_day).");
+            }
         }
 
         await EnsurePayloadReferencesAsync(babyId, request, cancellationToken);
