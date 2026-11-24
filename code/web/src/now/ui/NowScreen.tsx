@@ -57,6 +57,7 @@ import { OvertiredSuggestionCard } from './OvertiredCard';
 import { BottleFollowUpRow } from './BottleFollowUpRow';
 import { RunningNow } from './RunningNow';
 import { StateCard } from './StateCard';
+import { PredictionDebugButton } from './PredictionDebugButton';
 import { ToastHost } from './ToastHost';
 import { TodayStrip } from './TodayStrip';
 import type { TrayName } from './trays';
@@ -381,6 +382,7 @@ function NowContent({
             birthDate={baby.birthDate}
             ageNorms={ageNorms ?? null}
           />
+          <PredictionDebugButton predictions={predictions} />
           <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard
             babyId={baby.id}
