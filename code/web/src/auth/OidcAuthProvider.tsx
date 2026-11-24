@@ -187,8 +187,14 @@ function OidcBridge({
   const profile = user?.profile;
   // With a refresh token the session lives on while the access token is stale (offline-first);
   // without one, the library's own (expiry-based) state decides, as before.
+  // In Capacitor WebViews (especially iOS), oidc.isAuthenticated can return false even when a
+  // valid user object with tokens exists, due to WebView-specific storage or silent refresh
+  // quirks. We consider the user authenticated if we have a user object with a subject claim,
+  // regardless of the library's internal authenticated flag, as long as the session hasn't ended.
   const isAuthenticated =
-    status !== 'ended' && !!user && (user.refresh_token ? true : oidc.isAuthenticated);
+    status !== 'ended' &&
+    !!user &&
+    Boolean(user.profile?.sub || user.refresh_token || oidc.isAuthenticated);
   const accountId =
     isAuthenticated && profile?.sub ? accountIdOf(profile.iss || authority, profile.sub) : null;
 

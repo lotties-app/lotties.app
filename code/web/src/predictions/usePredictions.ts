@@ -37,9 +37,11 @@ function normalize(body: Partial<PredictionsDto> | undefined, babyId: string): P
 }
 
 /**
- * Server-computed predictions for a baby. Fetched only while online and signed in; the last
- * response is persisted per baby and seeds the query, so offline viewers see it (with its
- * fetch time as `dataUpdatedAt`).
+ * Server-computed predictions for a baby. Fetched when signed in; the last response is persisted
+ * per baby and seeds the query so offline viewers see cached data. The `online` flag is no longer
+ * used to gate fetching because `navigator.onLine` is unreliable in Capacitor WebViews (especially
+ * iOS), causing the query to stay disabled and return `undefined` indefinitely. Network errors are
+ * handled gracefully by React Query's retry/error state instead.
  */
 export function usePredictions(babyId: string) {
   const api = useApiClient();
@@ -53,10 +55,22 @@ export function usePredictions(babyId: string) {
       writeCachedPredictions(babyId, { data, fetchedAt: Date.now() });
       return data;
     },
-    enabled: isAuthenticated && online,
+    // Always enable when authenticated; let React Query handle network failures via error/retry
+    // instead of gating on navigator.onLine which is unreliable in mobile WebViews.
+    enabled: isAuthenticated,
     staleTime: PREDICTIONS_STALE_MS,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     initialData: () => readCachedPredictions(babyId)?.data,
-    initialDataUpdatedAt: () => readCachedPredictions(babyId)?.fetchedAt,
+    // Cap initialDataUpdatedAt so stale localStorage cache doesn't trick React Query into
+    // thinking data is fresh. If cached data is older than staleTime, treat it as stale so
+    // React Query triggers a refetch immediately instead of serving days-old predictions.
+    initialDataUpdatedAt: () => {
+      const cached = readCachedPredictions(babyId);
+      if (!cached) return undefined;
+      const maxAge = Date.now() - PREDICTIONS_STALE_MS;
+      return cached.fetchedAt > maxAge ? cached.fetchedAt : maxAge;
+    },
   });
   return { query, online };
 }

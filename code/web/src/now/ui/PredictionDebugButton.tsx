@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { Box, Button, Dialog, DialogContent, DialogTitle, Typography } from '@mui/material';
+import type { UseQueryResult } from '@tanstack/react-query';
 import type { PredictionsDto } from '../../sync/contract';
 
-/**
- * Debug-only button that opens a full-screen dialog showing the raw predictions JSON response.
- * Intended for diagnosing why predictions show "Aprendendo o ritmo" — tap to open, screenshot
- * each section, and share with the team for analysis. Hidden in production builds if desired.
- */
-export function PredictionDebugButton({
-  predictions,
-}: {
+interface PredictionDebugProps {
   predictions: PredictionsDto | undefined;
-}) {
+  /** Pass the full query result so we can display error/loading/fetchStatus for diagnostics. */
+  query?: UseQueryResult<PredictionsDto>;
+}
+
+/**
+ * Debug-only button that opens a full-screen dialog showing the raw predictions JSON response
+ * plus React Query metadata (error, fetchStatus, isFetching). Intended for diagnosing why
+ * predictions show "Aprendendo o ritmo" or "undefined" — tap to open, screenshot each section,
+ * and share with the team for analysis.
+ */
+export function PredictionDebugButton({ predictions, query }: PredictionDebugProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -36,6 +40,24 @@ export function PredictionDebugButton({
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Diagnóstico de Previsões</DialogTitle>
         <DialogContent>
+          {/* Query metadata: shows why predictions may be undefined or stale */}
+          <Box sx={{ mb: 2, p: 1.5, borderRadius: 1, bgcolor: 'rgba(255,255,255,0.05)' }}>
+            <Typography variant="subtitle2" gutterBottom>
+              React Query Status
+            </Typography>
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: 11 }}>
+              status: {query?.status ?? 'N/A'} | fetchStatus: {query?.fetchStatus ?? 'N/A'} | isFetching:{' '}
+              {String(query?.isFetching ?? 'N/A')} | isError: {String(query?.isError ?? 'N/A')} |
+              isEnabled: {String(query?.isEnabled ?? 'N/A')} | dataUpdatedAt:{' '}
+              {query?.dataUpdatedAt ? new Date(query.dataUpdatedAt).toISOString() : 'N/A'}
+            </Typography>
+            {query?.error && (
+              <Typography variant="body2" color="error" sx={{ mt: 1, fontFamily: 'monospace', fontSize: 11 }}>
+                error: {query.error instanceof Error ? query.error.message : JSON.stringify(query.error)}
+              </Typography>
+            )}
+          </Box>
+
           {!predictions ? (
             <Typography color="error">Nenhuma previsão carregada (undefined)</Typography>
           ) : (

@@ -382,7 +382,7 @@ function NowContent({
             birthDate={baby.birthDate}
             ageNorms={ageNorms ?? null}
           />
-          <PredictionDebugButton predictions={predictions} />
+          <PredictionDebugButton predictions={predictions} query={usePredictions(baby.id).query} />
           <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard
             babyId={baby.id}
