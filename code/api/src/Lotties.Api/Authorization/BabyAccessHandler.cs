@@ -1,3 +1,4 @@
+using Lotties.Api.Configuration;
 using Lotties.Api.Endpoints;
 using Lotties.Application.Babies;
 using Lotties.Domain.Babies;
@@ -8,14 +9,22 @@ namespace Lotties.Api.Authorization;
 /// <summary>
 /// Evaluates <see cref="BabyAccessRequirement"/> from the <c>{babyId}</c> route value. Anonymous callers are left to
 /// the authenticated-user requirement (401); every other failure fails the requirement (403).
+/// In Local mode, all requests are auto-granted access without membership checks.
 /// </summary>
-internal sealed class BabyAccessHandler(IBabyAccessService babyAccess, ILogger<BabyAccessHandler> logger)
+internal sealed class BabyAccessHandler(IBabyAccessService babyAccess, IHostEnvironment environment, ILogger<BabyAccessHandler> logger)
     : AuthorizationHandler<BabyAccessRequirement>
 {
     public const string MissingBabyIdMessage = "The route has no valid babyId.";
 
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, BabyAccessRequirement requirement)
     {
+        // In Local/self-hosted mode, grant access to all babies without membership checks.
+        if (environment.IsLocalMode())
+        {
+            context.Succeed(requirement);
+            return;
+        }
+
         if (context.User.Identity?.IsAuthenticated != true)
         {
             return;

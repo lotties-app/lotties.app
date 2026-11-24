@@ -1,3 +1,5 @@
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Hosting;
 using System.Security.Claims;
 using Lotties.Api.Authentication;
 using Lotties.Api.Authorization;
@@ -42,7 +44,7 @@ public sealed class BabyAccessHandlerTests
         var babyId = Guid.NewGuid();
         var access = new FakeBabyAccessService(BabyAccessDecision.Granted);
 
-        await new BabyAccessHandler(access, NullLogger<BabyAccessHandler>.Instance).HandleAsync(CreateContext(Authenticated(), WithBabyId(babyId)));
+        await new BabyAccessHandler(access, NonLocalEnvironment(), NullLogger<BabyAccessHandler>.Instance).HandleAsync(CreateContext(Authenticated(), WithBabyId(babyId)));
 
         Assert.Equal((babyId, BabyRole.Parent), Assert.Single(access.Calls));
     }
@@ -53,7 +55,7 @@ public sealed class BabyAccessHandlerTests
         var access = new FakeBabyAccessService(BabyAccessDecision.Granted);
         var context = CreateContext(new ClaimsPrincipal(new ClaimsIdentity()), WithBabyId(Guid.NewGuid()));
 
-        await new BabyAccessHandler(access, NullLogger<BabyAccessHandler>.Instance).HandleAsync(context);
+        await new BabyAccessHandler(access, NonLocalEnvironment(), NullLogger<BabyAccessHandler>.Instance).HandleAsync(context);
 
         Assert.False(context.HasSucceeded);
         Assert.False(context.HasFailed);
@@ -85,7 +87,21 @@ public sealed class BabyAccessHandlerTests
     }
 
     private static BabyAccessHandler CreateHandler(BabyAccessDecision decision) =>
-        new(new FakeBabyAccessService(decision), NullLogger<BabyAccessHandler>.Instance);
+        new(new FakeBabyAccessService(decision), NonLocalEnvironment(), NullLogger<BabyAccessHandler>.Instance);
+
+    private sealed class FakeHostEnvironment : IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = "Production";
+        public string ApplicationName { get; set; } = "Test";
+        public string ContentRootPath { get; set; } = "/tmp";
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+        public bool IsDevelopment() => false;
+        public bool IsStaging() => false;
+        public bool IsProduction() => true;
+        public bool IsEnvironment(string environmentName) => false;
+    }
+
+    private static IHostEnvironment NonLocalEnvironment() => new FakeHostEnvironment();
 
     private static AuthorizationHandlerContext CreateContext(ClaimsPrincipal user, object? resource) =>
         new([WriteRequirement], user, resource);

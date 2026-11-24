@@ -55,7 +55,7 @@ public static class ApiHostExtensions
         builder.Services.AddCommunityInsightsAccess(builder.Configuration);
         builder.Services.AddStoreManagementFallbacks();
         builder.Services.AddNotificationScheduler();
-        builder.Services.AddOidcAuthentication(builder.Configuration);
+        builder.Services.AddOidcAuthentication(builder.Configuration, builder.Environment);
         builder.Services.AddTryItDemo(builder.Configuration);
         builder.Services.AddBabyAuthorization();
         builder.Services.AddApiCors(builder.Configuration);
