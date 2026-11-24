@@ -2,7 +2,6 @@ import type { BabyEvent, EventType } from '../db/models';
 import { inferFellAsleepKind } from '../presets/status';
 import type { PredictionConfidence, PredictionsDto } from '../sync/contract';
 import {
-  DAY_MS,
   HOUR_MS,
   MINUTE_MS,
   isSleepKind,
@@ -104,8 +103,6 @@ export type NowState = AwakeState | AsleepState | UnknownState;
 export const FELL_ASLEEP_ABSORB_MS = 5 * MINUTE_MS;
 /** A lone `fell_asleep` marker older than this no longer means "asleep" (as SPEC bed_time pairing). */
 const LONE_MARKER_MAX_AGE_MS = 16 * HOUR_MS;
-const STALE_WINDOW_MS = 2 * HOUR_MS;
-const STALE_LAST_SLEEP_MS = DAY_MS;
 
 interface SleepFacts {
   sleepEvents: BabyEvent[];
@@ -197,11 +194,17 @@ function nightWakingInside(
   };
 }
 
-/** The next nap window, or why there is none. */
+/**
+ * The next nap window, or why there is none. Always returns the prediction when the server
+ * provides one — staleness checks were removed because the server recalculates predictions on
+ * every new event, and hiding a prediction that may be slightly off is worse than showing it:
+ * parents can see the confidence level and adjust accordingly. Only returns "learning" when the
+ * server genuinely has insufficient data to produce any prediction at all.
+ */
 export function napPrediction(
   predictions: PredictionsDto | undefined,
-  lastSleepEventAt: string | undefined,
-  now: Date,
+  _lastSleepEventAt: string | undefined,
+  _now: Date,
 ): { window: NapWindow } | { learning: LearningState } {
   const prediction = predictions?.predictions.find((p) => p.typeKey === 'sleep');
   if (!prediction) {
@@ -217,13 +220,6 @@ export function napPrediction(
     };
   }
   const { earliest, expected, latest } = prediction.nextStart;
-  const windowPast = now.getTime() - Date.parse(latest) > STALE_WINDOW_MS;
-  const noRecentSleep =
-    lastSleepEventAt === undefined ||
-    now.getTime() - Date.parse(lastSleepEventAt) > STALE_LAST_SLEEP_MS;
-  if (windowPast || noRecentSleep) {
-    return { learning: { reason: 'stale', sampleCount: null, requiredSamples: null } };
-  }
   return {
     window: {
       earliest,

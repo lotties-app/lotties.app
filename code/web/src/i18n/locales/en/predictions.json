@@ -25,5 +25,10 @@
     "volumeRange": "{{lower}}–{{upper}} ml at this time of day",
     "durationTitle": "Expected feeding duration",
     "durationValue": "About {{minutes}} min for {{volume}} ml"
+  },
+  "diaperPrediction": {
+    "title": "Next diaper change",
+    "wetNext": "Wet diaper expected around {{time}} ({{confidence}} confidence)",
+    "dirtyNext": "Dirty diaper expected around {{time}} ({{confidence}} confidence)"
   }
 }

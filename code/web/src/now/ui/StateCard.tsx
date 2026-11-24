@@ -786,6 +786,36 @@ export function StateCard({
           </Typography>
         </Box>
       )}
+      {predictions?.diaper && (predictions.diaper.wet || predictions.diaper.dirty?.gap) && (
+        <Box
+          sx={(theme) => ({
+            mt: 1.5,
+            p: 1.5,
+            borderRadius: `${RADIUS.input}px`,
+            backgroundColor: palette(theme).surfaceRaised,
+          })}
+        >
+          <Typography variant="subtitle2" component="h3">
+            {t('diaperPrediction.title')}
+          </Typography>
+          {predictions.diaper.wet && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              {t('diaperPrediction.wetNext', {
+                time: new Date(predictions.diaper.wet.nextStart.expected).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                confidence: predictions.diaper.wet.confidence,
+              })}
+            </Typography>
+          )}
+          {predictions.diaper.dirty?.gap && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              {t('diaperPrediction.dirtyNext', {
+                time: new Date(predictions.diaper.dirty.gap.nextStart.expected).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                confidence: predictions.diaper.dirty.gap.confidence,
+              })}
+            </Typography>
+          )}
+        </Box>
+      )}
       {state.learning && <LearningBlock learning={state.learning} babyName={babyName} />}
       {sleepButtons}
       <RhythmCollapse>

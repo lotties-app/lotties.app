@@ -25,5 +25,10 @@
     "volumeRange": "{{lower}}–{{upper}} ml neste horário",
     "durationTitle": "Duração esperada da mamada",
     "durationValue": "Cerca de {{minutes}} min para {{volume}} ml"
+  },
+  "diaperPrediction": {
+    "title": "Próxima troca de fralda",
+    "wetNext": "Fralda molhada prevista por volta das {{time}} (confiança {{confidence}})",
+    "dirtyNext": "Fralda suja prevista por volta das {{time}} (confiança {{confidence}})"
   }
 }

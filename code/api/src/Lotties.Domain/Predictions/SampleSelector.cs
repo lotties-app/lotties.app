@@ -36,6 +36,19 @@ internal sealed class SampleSelector(PredictionContext context, PredictionOption
         }
 
         var phase = DayPhases.Of(reference, context.LocalOffset, options);
+
+        // When the current time falls in the night phase but we're predicting awake windows
+        // (sleep/naps), use a daytime reference so we select nap-relevant samples rather than
+        // night-sleep samples. Without this, checking the app after NightStartsAt would filter
+        // to night-only samples and return insufficient data despite abundant daytime naps.
+        // The TypePredictor already applies this fix for its own reference; this ensures the
+        // SampleSelector also respects it when called from other paths (e.g., diaper predictions).
+        if (phase == DayPhase.Night && splitsDayAndNight)
+        {
+            var todayNoon = new DateTimeOffset(context.LocalDateOf(context.Now), new TimeOnly(12, 0), context.LocalOffset);
+            phase = DayPhases.Of(todayNoon, context.LocalOffset, options);
+        }
+
         var inPhase = selection.Samples.Where(sample => DayPhases.Of(sample.At, context.LocalOffset, options) == phase).ToArray();
         return inPhase.Length >= options.MinimumBucketSamples
             ? selection with { Samples = inPhase, Phase = phase }
