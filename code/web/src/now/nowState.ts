@@ -194,17 +194,20 @@ function nightWakingInside(
   };
 }
 
+/** Grace period (2 hours) after a prediction window's latest time before it is considered stale. */
+const STALE_WINDOW_GRACE_MS = 2 * HOUR_MS;
+
 /**
- * The next nap window, or why there is none. Always returns the prediction when the server
- * provides one — staleness checks were removed because the server recalculates predictions on
- * every new event, and hiding a prediction that may be slightly off is worse than showing it:
- * parents can see the confidence level and adjust accordingly. Only returns "learning" when the
- * server genuinely has insufficient data to produce any prediction at all.
+ * The next nap window, or why there is none. Shows the prediction when the server provides one,
+ * unless the window is fully in the past beyond the grace period AND a newer sleep event has
+ * already occurred (meaning the prediction was for a nap that already happened). This avoids
+ * showing confusing stale cards like "07:04–07:47" when it's already 10:30 and the baby has
+ * napped since then. Returns "learning" only when the server genuinely has insufficient data.
  */
 export function napPrediction(
   predictions: PredictionsDto | undefined,
-  _lastSleepEventAt: string | undefined,
-  _now: Date,
+  lastSleepEventAt: string | undefined,
+  now: Date,
 ): { window: NapWindow } | { learning: LearningState } {
   const prediction = predictions?.predictions.find((p) => p.typeKey === 'sleep');
   if (!prediction) {
@@ -220,6 +223,18 @@ export function napPrediction(
     };
   }
   const { earliest, expected, latest } = prediction.nextStart;
+
+  // Hide the window if it's fully past the grace period AND a sleep event occurred after the
+  // window started (meaning the predicted nap already happened or was superseded). Without this,
+  // parents see confusing cards like "07:04–07:47" hours later when the baby has already napped.
+  const latestMs = Date.parse(latest);
+  const windowFullyPast = now.getTime() - latestMs > STALE_WINDOW_GRACE_MS;
+  const supersededByNewerSleep =
+    lastSleepEventAt !== undefined && Date.parse(lastSleepEventAt) > Date.parse(earliest);
+  if (windowFullyPast && supersededByNewerSleep) {
+    return { learning: { reason: 'stale', sampleCount: null, requiredSamples: null } };
+  }
+
   return {
     window: {
       earliest,
