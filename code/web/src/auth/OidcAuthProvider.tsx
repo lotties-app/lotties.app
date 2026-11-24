@@ -18,7 +18,7 @@ import { SessionRenewal, type RenewalStatus } from './sessionRenewal';
 import { registerRedirect, signinArgs, type LoginState } from './signinRequest';
 
 interface Props {
-  config: AppConfig['oidc'];
+  config: NonNullable<AppConfig['oidc']>;
   /** Injected in tests; built from `config` otherwise. */
   userManager?: UserManager;
   /**
@@ -39,7 +39,7 @@ const userStore = () => new WebStorageStateStore({ store: window.localStorage })
  * everything else (stores, scopes, renewal, per-account data) is the same.
  */
 function createUserManager(
-  config: AppConfig['oidc'],
+  config: NonNullable<AppConfig['oidc']>,
   native: NativeAuthRedirects | null,
 ): UserManager {
   return new UserManager(

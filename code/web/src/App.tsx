@@ -8,6 +8,7 @@ import { SetupMessage } from './config/SetupMessage';
 import { OidcAuthProvider } from './auth/OidcAuthProvider';
 import { DemoAuthProvider } from './auth/demo/DemoAuthProvider';
 import { readDemoSession } from './auth/demo/demoSession';
+import { LocalAuthProvider } from './auth/local/LocalAuthProvider';
 import { ApiClientProvider } from './api/ApiClientProvider';
 import { ConsentProvider } from './consent/ConsentProvider';
 import { AccountDataProvider } from './session/AccountDataProvider';
@@ -18,13 +19,19 @@ import { ReloadPrompt } from './pwa/ReloadPrompt';
 
 const queryClient = new QueryClient();
 
+/** Whether the app is running in unauthenticated local/self-hosted mode (no OIDC required). */
+const IS_LOCAL_MODE = import.meta.env.VITE_LOCAL_MODE === 'true';
+
 /**
- * A valid stored demo session (docs/design/45-try-it-demo.md) replaces the identity provider for
- * the whole page load; starting or ending a demo is a full page load, so this is read once.
+ * Selects the auth provider: LocalAuthProvider for self-hosted mode, DemoAuthProvider for demo
+ * sessions, or OidcAuthProvider for standard authenticated deployments. The choice is made once
+ * per page load since switching modes requires a full reload.
  */
-function AuthSwitch({ oidc, children }: { oidc: AppConfig['oidc']; children: ReactNode }) {
+function AuthSwitch({ oidc, children }: { oidc: AppConfig['oidc'] | null; children: ReactNode }) {
   const [demo] = useState(() => readDemoSession());
+  if (IS_LOCAL_MODE) return <LocalAuthProvider>{children}</LocalAuthProvider>;
   if (demo) return <DemoAuthProvider session={demo}>{children}</DemoAuthProvider>;
+  if (!oidc) throw new Error('OIDC config is required when not in local mode');
   return <OidcAuthProvider config={oidc}>{children}</OidcAuthProvider>;
 }
 

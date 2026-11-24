@@ -14,5 +14,5 @@ export function connectedAppsUrl(authority: string): string {
 /** The configured OIDC authority, or `null` when the app has none (then the link is not shown). */
 export function configuredAuthority(): string | null {
   const config = readConfig();
-  return config.ok ? config.config.oidc.authority : null;
+  return config.ok ? config.config.oidc?.authority ?? null : null;
 }
