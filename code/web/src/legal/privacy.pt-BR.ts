@@ -121,6 +121,14 @@ export const privacyPtBR: PolicyDocument = {
               ],
             },
             {
+              id: 'predictionAccuracy',
+              cells: [
+                'Precisão das estimativas',
+                'Quando alguém que pode ver um bebê abre as estimativas dele no app (como quando o próximo sono, a próxima mamada ou a próxima fralda podem acontecer), nosso servidor guarda, para cada estimativa: o identificador interno do bebê, o tipo de registro, quando a estimativa foi feita e o horário a partir do qual ela contou, o horário esperado, quantos registros anteriores ela usou, a versão do método, a faixa de idade do bebê (como 0 a 3 meses) e a parte do dia. Quando o próximo registro desse tipo é feito, ou o horário dele é corrigido, são acrescentados o horário real e a diferença em minutos. O registro também pode guardar uma resposta sobre se a estimativa acertou, embora o app não peça essa resposta hoje. Esses registros também podem ser calculados depois, a partir de registros já feitos. Eles não têm nome, nota nem identificador de conta, não aparecem no app e não fazem parte do arquivo exportado nem do backup; você pode pedi-los a nós (veja [Seus direitos](#privacy-rights)). Eles não são combinados com registros de outras famílias.',
+                'Para conferir o quanto as estimativas chegam perto do que realmente aconteceu, para que as estimativas mostradas a você continuem precisas. Eles são calculados a partir dos registros acima (registros do dia a dia e, numa estimativa sobre a dose de um remédio, informações de saúde).',
+              ],
+            },
+            {
               id: 'careProviders',
               cells: [
                 'Médicos e clínicas que você salva',
@@ -260,6 +268,7 @@ export const privacyPtBR: PolicyDocument = {
             'Recursos opcionais que você ativa (lembretes, a skill da Alexa, a busca de endereço): seu consentimento (art. 7º, I, e art. 11, I quando o lembrete for de um remédio ou de uma vacina). Para revogá-lo, desative o recurso ou desvincule a skill.',
             'A estimativa de descanso: seu consentimento, dado quando você a liga para você em Insights, porque ela pode revelar quando você trabalha e descansa (art. 7, I, e art. 11, I, por poder ser lida como informação de saúde). Ninguém pode ligá-la por você. Você a revoga desligando-a, e pode apagar os ajustes e as respostas ali mesmo.',
             'O Monitor de choro: seu consentimento específico, pedido em cada aparelho antes de ligar, a um membro que pode registrar para o bebê (art. 11, I, e art. 14, § 1º). Você o revoga na página do monitor; os períodos já registrados continuam como registros comuns até você apagá-los.',
+            'A precisão das estimativas: calculada a partir dos seus registros para oferecer as estimativas que você vê (art. 7º, V) e, quando uma estimativa é sobre um registro de saúde, como a dose de um remédio, com base no seu consentimento para as informações de saúde (art. 11, I).',
             'Registros técnicos e proteção do serviço: nosso legítimo interesse em mantê-lo funcionando e seguro (art. 7º, IX), limitado ao necessário e sem usar informações de saúde.',
             'Quando a lei ou uma autoridade exigir que guardemos ou entreguemos dados: cumprimento de obrigação legal (art. 7º, II, e art. 11, II, a).',
           ],
@@ -478,6 +487,7 @@ export const privacyPtBR: PolicyDocument = {
           items: [
             'Seus registros: até você apagá-los, o bebê ser excluído ou você excluir sua conta.',
             'Registros apagados: ficam ocultos até o bebê ou a sua conta serem excluídos (veja [Seus direitos](#privacy-rights)).',
+            'Precisão das estimativas: fica com o bebê até ele ser excluído. Apagar um registro do dia a dia não apaga esses dados.',
             'O que você adicionou a um bebê que outras pessoas mantêm: continua com esse bebê depois que você sai ou exclui sua conta, sem o seu nome.',
             'Sua conta de login: até você excluir sua conta.',
             'Sua escolha de unidades de medida: até você mudá-la ou excluir sua conta.',

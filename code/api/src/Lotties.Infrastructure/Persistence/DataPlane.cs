@@ -16,7 +16,9 @@ namespace Lotties.Infrastructure.Persistence;
 /// <summary>
 /// The data plane of docs/design/47-bring-your-own-database.md (D2): the records about a baby's care, mapped by
 /// <see cref="LottiesDataDbContext"/>. Everything else (accounts, babies, members, invites, doctor access, consents, push,
-/// settings, board, catalog) is the control plane, mapped by <see cref="LottiesDbContext"/>.
+/// settings, board, catalog) is the control plane, mapped by <see cref="LottiesDbContext"/>. The prediction accuracy outcomes
+/// (<c>prediction_outcomes</c>, derived from the baby's events, no key to a control table) are data plane too: the control plane
+/// writes nothing derived from a baby's records.
 /// </summary>
 public static class DataPlane
 {
@@ -35,6 +37,7 @@ public static class DataPlane
         typeof(BabyNote),
         typeof(PrescriptionProposal),
         typeof(NoteRead),
+        typeof(Entities.PredictionOutcomeEntity),
     ];
 
     /// <summary>Whether <paramref name="configurationType"/> configures an aggregate of the data plane.</summary>

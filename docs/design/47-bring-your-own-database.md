@@ -823,6 +823,23 @@ detected. *Which CI runner and image tag to use was not checked.*
 3. **Stage 3**: doctors, optional low-frequency reminders, per-baby stores for one account, maybe a data-gateway pod.
 4. **Not planned**: per-session unlock, provider API integration, hybrid encryption (needs its own design).
 
+**Status (2026-11-25): `prediction_outcomes` joins the data plane** (13 data tables). The prediction commits of 2026-11-18 added
+the table (control migration `AddPredictionOutcomes`) through the control context only, so a baby on her own database would have
+had her scored predictions (derived from her events) written into the Lotties database, against section 2.3 ("the control plane
+writes nothing derived from the payload"). Evidence that it is data plane: every row has `baby_id`, nothing else names an account or
+a control row, and the table has no foreign key at all (`PlaneModelTests` keeps `CrossPlaneKeys` unchanged). Now
+`PredictionOutcomeEntity` is in `DataPlane.EntityTypes` and `LottiesDataDbContext`, `EfPredictionOutcomeRepository` gets its context
+from `StoreScope.ContextFor(babyId)`, the data chain has migration `AddPredictionOutcomes` (schema `lotties`, applied by the store
+migrator only), and `DataPlaneTables` lists it, so the move copies and verifies it (digest stamp: id and actual next start) and the
+own-database wipe deletes it. The work that writes it outside the request (the predictions answer's `PredictionOutcomeRecorder`, the
+event service's resolution after a write) runs in a DI scope of its own and enters the baby there. On the built-in store nothing
+moves: the table stays in `public`, owned by the control chain, and `EfAccountDataEraser` keeps deleting it through the control
+context. `community_prediction_aggregates` (no baby id, global) stays in the Lotties database; its aggregator, when wired, reads the
+Lotties database only, so BYO babies stay out of it (section 2.2). Tests: `DataPlaneTablesTests`, `PlaneModelTests`,
+`DataMigrationChainTests` (the new migration creates only that table, no key), `AccountErasureOwnStoreTests` (a row wiped),
+`DataStoreMoveEndpointTests` (rows copied both ways), `StorePredictionOutcomeTests` (recorded and resolved in the baby's store, none
+in the Lotties database). Privacy: docs/design/33-privacy-audit.md section 20.
+
 ## 13. Risks that remain (stated, not solved)
 
 - The operator can read BYO data (section 3.5). Marketing must not suggest otherwise.

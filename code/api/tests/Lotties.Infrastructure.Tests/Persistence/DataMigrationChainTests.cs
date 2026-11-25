@@ -13,20 +13,24 @@ namespace Lotties.Infrastructure.Tests.Persistence;
 
 /// <summary>
 /// The data migration chain of external stores (docs/design/47-bring-your-own-database.md section 4, task T5): its own context
-/// shape, history table and folder, a baseline that creates the 12 data tables and <c>store_meta</c> in schema <c>lotties</c> with
-/// the current built-in event types and no key to a control table, and every guarantee that it is never applied to the Lotties
-/// (built-in) database, which keeps its own chain. The Postgres container tests run it on a real database.
+/// shape, history table and folder, a baseline that creates the first 12 data tables and <c>store_meta</c> in schema <c>lotties</c>
+/// with the current built-in event types and no key to a control table, the later migrations that add a data table
+/// (<c>prediction_outcomes</c>), and every guarantee that it is never applied to the Lotties (built-in) database, which keeps its own
+/// chain. The Postgres container tests run it on a real database.
 /// </summary>
 public sealed class DataMigrationChainTests
 {
     private const string DataMigrationsNamespace = "Lotties.Infrastructure.Persistence.DataMigrations";
     private const string ControlMigrationsNamespace = "Lotties.Infrastructure.Persistence.Migrations";
 
-    private static readonly string[] DataTables =
+    /// <summary>The data tables the baseline created.</summary>
+    private static readonly string[] BaselineTables =
     [
         "appointments", "baby_notes", "care_providers", "event_types", "events", "formulas", "measurements", "medications",
         "note_reads", "prescription_proposals", "prescriptions", "vaccinations",
     ];
+
+    private static readonly string[] DataTables = [.. BaselineTables.Append("prediction_outcomes").Order(StringComparer.Ordinal)];
 
     private static readonly string[] ExternalTables = [.. DataTables.Append("store_meta").Order(StringComparer.Ordinal)];
 
@@ -113,11 +117,26 @@ public sealed class DataMigrationChainTests
 
         var created = operations.OfType<CreateTableOperation>().ToArray();
 
-        Assert.Equal(ExternalTables, created.Select(table => table.Name).Order(StringComparer.Ordinal));
+        Assert.Equal(BaselineTables.Append("store_meta").Order(StringComparer.Ordinal), created.Select(table => table.Name).Order(StringComparer.Ordinal));
         Assert.All(created, table => Assert.Equal("lotties", table.Schema));
-        Assert.All(created.SelectMany(table => table.ForeignKeys), key => Assert.Contains(key.PrincipalTable, DataTables));
+        Assert.All(created.SelectMany(table => table.ForeignKeys), key => Assert.Contains(key.PrincipalTable, BaselineTables));
         Assert.All(created.SelectMany(table => table.ForeignKeys), key => Assert.Equal("lotties", key.PrincipalSchema));
         Assert.Empty(operations.OfType<AddForeignKeyOperation>());
+    }
+
+    [Fact]
+    public void AddPredictionOutcomes_CreatesOnlyThatTableInSchemaLotties_WithNoKey()
+    {
+        var operations = OperationsOf("_AddPredictionOutcomes");
+
+        var created = Assert.Single(operations.OfType<CreateTableOperation>());
+
+        Assert.Equal(("prediction_outcomes", "lotties"), (created.Name, created.Schema));
+        Assert.Empty(created.ForeignKeys);
+        Assert.Contains(created.Columns, column => column.Name == "baby_id" && column.ClrType == typeof(Guid) && !column.IsNullable);
+        Assert.Empty(operations.OfType<AddForeignKeyOperation>());
+        Assert.All(operations.OfType<CreateIndexOperation>(), index => Assert.Equal(("prediction_outcomes", "lotties"), (index.Table, index.Schema)));
+        Assert.Empty(operations.Where(operation => operation is not CreateTableOperation and not CreateIndexOperation));
     }
 
     [Fact]
@@ -169,12 +188,14 @@ public sealed class DataMigrationChainTests
     private static LottiesDataDbContext External() =>
         new LottiesDataDbContextFactory().CreateDbContext([]);
 
-    private static IReadOnlyList<MigrationOperation> BaselineOperations()
+    private static IReadOnlyList<MigrationOperation> BaselineOperations() => OperationsOf("_DataBaseline");
+
+    private static IReadOnlyList<MigrationOperation> OperationsOf(string nameSuffix)
     {
         using var context = External();
         var assembly = context.GetService<IMigrationsAssembly>();
-        var baseline = assembly.Migrations.First(pair => pair.Key.EndsWith("_DataBaseline", StringComparison.Ordinal));
-        return assembly.CreateMigration(baseline.Value, context.Database.ProviderName!).UpOperations;
+        var migration = assembly.Migrations.Single(pair => pair.Key.EndsWith(nameSuffix, StringComparison.Ordinal));
+        return assembly.CreateMigration(migration.Value, context.Database.ProviderName!).UpOperations;
     }
 
     private static Type[] MigrationClassesIn(string ns) =>

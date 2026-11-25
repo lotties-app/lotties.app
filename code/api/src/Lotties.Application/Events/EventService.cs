@@ -1,12 +1,14 @@
 using Lotties.Application.Babies;
 using Lotties.Application.Predictions;
 using Lotties.Application.SilentPush;
+using Lotties.Application.Stores;
 using Lotties.Application.Users;
 using Lotties.Domain.Babies;
 using Lotties.Domain.Events;
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Exceptions;
 using Lotties.Domain.Formulas;
+using Lotties.Domain.Predictions;
 using Lotties.Domain.Prescriptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -172,6 +174,9 @@ internal sealed class EventService : IEventService
                 if (resolver is null) return;
                 try
                 {
+                    // The outcomes are a data table: with tracking on, this new scope enters the baby the request already authorized.
+                    if (!scope.ServiceProvider.GetRequiredService<PredictionOptions>().AccuracyTrackingEnabled) return;
+                    await scope.ServiceProvider.GetRequiredService<IStoreScope>().EnterAsync(resolveBabyId, default);
                     await resolver.ResolvePendingAsync(resolveBabyId, resolveTypeKey, resolveStartedAt, default);
                 }
                 catch (Exception ex)
@@ -217,6 +222,9 @@ internal sealed class EventService : IEventService
                 if (resolver is null) return;
                 try
                 {
+                    // The outcomes are a data table: with tracking on, this new scope enters the baby the request already authorized.
+                    if (!scope.ServiceProvider.GetRequiredService<PredictionOptions>().AccuracyTrackingEnabled) return;
+                    await scope.ServiceProvider.GetRequiredService<IStoreScope>().EnterAsync(resolveBabyId, default);
                     // If the start time changed, remove any resolved outcome anchored at the old timestamp
                     // so the correction does not leave a phantom error behind.
                     if (oldStartedAt != resolveNewStartedAt)

@@ -55,6 +55,14 @@
       "material": true,
       "date": "2026-11-15",
       "textDigest": "794fd8494404f46fcd27dee55c5d31fde1614d83958322fe1a09d297c7e1e4d7"
+    },
+    {
+      "version": "2026-11-25.1",
+      "terms": "1",
+      "privacyPolicy": "16",
+      "material": false,
+      "date": "2026-11-25",
+      "textDigest": "8762ced69c9ae62a9a155f196a95e93985c0357b2370c0db424bed103a2d32a0"
     }
   ]
 }

@@ -179,12 +179,59 @@ public sealed class PredictionServiceTests
         return baby.AdmitWith(issued.Invite, Guid.NewGuid(), Now, isDeclaredProfessional: true);
     }
 
-    private static PredictionService CreateService(IPredictionHistoryRepository repository, BabyMember? caller = null)
+    [Fact]
+    public async Task GetAsync_AccuracyTrackingOn_HandsThePredictionsToTheBackgroundRecorder()
     {
-        var options = PredictionOptions.Default;
+        var recorder = new FakePredictionOutcomeRecorder();
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), RegularTummyTime())), recorder: recorder, options: new PredictionOptions { AccuracyTrackingEnabled = true });
+
+        var response = await service.GetAsync(BabyId, Now);
+
+        var call = Assert.Single(recorder.Calls);
+        Assert.Equal(BabyId, call.BabyId);
+        Assert.Equal(PredictionEngine.Version, call.EngineVersion);
+        Assert.Equal(response!.Predictions.Select(prediction => prediction.TypeKey), call.Predictions.Select(prediction => prediction.TypeKey.Value));
+    }
+
+    [Fact]
+    public async Task GetAsync_AccuracyTrackingOff_RecordsNothing()
+    {
+        var recorder = new FakePredictionOutcomeRecorder();
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), RegularTummyTime())), recorder: recorder);
+
+        await service.GetAsync(BabyId, Now);
+
+        Assert.Empty(recorder.Calls);
+    }
+
+    [Fact]
+    public async Task GetAsync_RecorderStillRunning_AnswersWithoutWaitingForIt()
+    {
+        var recorder = new FakePredictionOutcomeRecorder { Pending = new TaskCompletionSource() };
+        var service = CreateService(new FakePredictionHistoryRepository(new PredictionHistory(new DateOnly(2025, 11, 1), RegularTummyTime())), recorder: recorder, options: new PredictionOptions { AccuracyTrackingEnabled = true });
+
+        var response = await service.GetAsync(BabyId, Now);
+
+        Assert.NotNull(response);
+        Assert.Single(response.Predictions);
+        Assert.False(recorder.Pending.Task.IsCompleted);
+        recorder.Pending.SetResult();
+    }
+
+    private static ObservedEvent[] RegularTummyTime() =>
+        Enumerable.Range(1, 12)
+            .Select(index => Now.AddHours(-3 * index))
+            .Select(start => new ObservedEvent(TummyTime, start, start.AddMinutes(20)))
+            .ToArray();
+
+    private static PredictionService CreateService(
+        IPredictionHistoryRepository repository,
+        BabyMember? caller = null,
+        IPredictionOutcomeRecorder? recorder = null,
+        PredictionOptions? options = null)
+    {
+        options ??= PredictionOptions.Default;
         var fakeRepo = new FakePredictionOutcomeRepository();
-        var resolutionService = new PredictionOutcomeResolutionService(
-            fakeRepo, options, NullLogger<PredictionOutcomeResolutionService>.Instance);
         var accuracyService = new PredictionAccuracyAdjustmentService(
             fakeRepo, options, NullLogger<PredictionAccuracyAdjustmentService>.Instance);
         return new PredictionService(
@@ -192,10 +239,24 @@ public sealed class PredictionServiceTests
             new FakeBabyAccessService(BabyAccessDecision.Granted, caller ?? OwnerOf()),
             new FakeAgeNormsProvider(),
             Array.Empty<IPriorProvider>(),
-            resolutionService,
+            recorder ?? new FakePredictionOutcomeRecorder(),
             accuracyService,
             options,
             NullLogger<PredictionService>.Instance);
+    }
+
+    private sealed class FakePredictionOutcomeRecorder : IPredictionOutcomeRecorder
+    {
+        public List<(Guid BabyId, IReadOnlyList<Prediction> Predictions, string EngineVersion)> Calls { get; } = [];
+
+        /// <summary>The background work, still running until the test completes it; already done when null.</summary>
+        public TaskCompletionSource? Pending { get; init; }
+
+        public Task RecordAfterResponseAsync(Guid babyId, IReadOnlyList<Prediction> predictions, string engineVersion)
+        {
+            Calls.Add((babyId, predictions, engineVersion));
+            return Pending?.Task ?? Task.CompletedTask;
+        }
     }
 
     private sealed class FakeAgeNormsProvider : IAgeNormsProvider
