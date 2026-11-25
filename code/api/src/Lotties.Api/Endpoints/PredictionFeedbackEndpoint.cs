@@ -5,7 +5,8 @@ namespace Lotties.Api.Endpoints;
 
 /// <summary>
 /// Records user feedback on a prediction's accuracy. Needs <see cref="Authorization.BabyPolicies.Read"/> (from the baby
-/// group): any member of the baby may report whether a prediction was accurate.
+/// group): any member of the baby may report whether a prediction was accurate; a Doctor, like for the predictions themselves,
+/// only with the daily log scope (<see cref="Authorization.BabyPolicies.ScopeDailyLog"/>).
 /// </summary>
 internal static class PredictionFeedbackEndpoint
 {
@@ -16,7 +17,7 @@ internal static class PredictionFeedbackEndpoint
     {
         ArgumentNullException.ThrowIfNull(baby);
         baby.MapPost(FeedbackPath, PostAsync)
-            .RequireAuthorization(Authorization.BabyPolicies.Read)
+            .RequireAuthorization(Authorization.BabyPolicies.ScopeDailyLog)
             .WithName("PostPredictionFeedback");
         return baby;
     }

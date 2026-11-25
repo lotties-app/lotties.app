@@ -85,6 +85,8 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
         ["note_reads.baby_id"] = Rule.Erase,
         ["notification_actions.baby_id"] = Rule.Erase,
         ["notification_deliveries.baby_id"] = Rule.Erase,
+        // The accuracy of the predictions made for the baby (scored against her logged events) goes with an erased baby.
+        ["prediction_outcomes.baby_id"] = Rule.Erase,
         ["prescription_proposals.baby_id"] = Rule.Erase,
         ["prescriptions.baby_id"] = Rule.Erase,
         ["user_assistant_settings.default_baby_id"] = Rule.Clear,
@@ -519,6 +521,17 @@ public sealed class AccountErasureTests(ApiFactory factory) : IClassFixture<ApiF
             context.BabyNotificationPreferences.Add(BabyNotificationPreferences.Create(babyId, userId, ReminderPreferences.Default, Start));
             context.DataStores.Add(DataStore.Create(Guid.NewGuid(), userId, Start));
             context.DataStoreMoves.Add(DataStoreMove.Start(babyId, DataStoreMoveDirection.In, Guid.NewGuid(), "erasure-test", Start, TimeSpan.FromMinutes(2)));
+            context.PredictionOutcomes.Add(new Infrastructure.Persistence.Entities.PredictionOutcomeEntity
+            {
+                Id = Guid.NewGuid(),
+                BabyId = babyId,
+                TypeKey = "feeding",
+                PredictedAt = Start,
+                AnchorAt = Start,
+                ExpectedNextStart = Start.AddHours(3),
+                EngineVersion = "erasure-test",
+                SampleCount = 5,
+            });
             return Task.CompletedTask;
         });
     }

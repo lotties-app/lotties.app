@@ -13,6 +13,7 @@
   "intervalRange": "Usually between {{lower}}–{{upper}} min",
   "cryCause": {
     "title": "Likely cause of crying",
+    "line": "{{percent}} — {{cause}}",
     "hunger": "Hungry — near predicted feeding time",
     "overtired": "Overtired — awake longer than usual",
     "gasPostFeed": "Gas or discomfort after feeding",
@@ -30,5 +31,30 @@
     "title": "Next diaper change",
     "wetNext": "Wet diaper expected around {{time}} ({{confidence}} confidence)",
     "dirtyNext": "Dirty diaper expected around {{time}} ({{confidence}} confidence)"
+  },
+  "predictionDebug": {
+    "open": "🔍 Prediction diagnostics",
+    "title": "Prediction diagnostics",
+    "queryStatus": "React Query status",
+    "queryLine": "status: {{status}} | fetchStatus: {{fetchStatus}} | isFetching: {{isFetching}} | isError: {{isError}} | isEnabled: {{isEnabled}} | dataUpdatedAt: {{dataUpdatedAt}}",
+    "error": "error: {{message}}",
+    "notLoaded": "No predictions loaded (undefined)",
+    "babyId": "babyId: {{value}}",
+    "generatedAt": "generatedAt: {{value}}",
+    "engineVersion": "engineVersion: {{value}}",
+    "predictions": "Predictions ({{n}})",
+    "noPredictions": "No predictions returned",
+    "insufficientData": "Insufficient data ({{n}})",
+    "noInsufficientData": "No type with insufficient data",
+    "bedTime": "Bed time",
+    "diaper": "Diaper",
+    "feedingVolumes": "Feeding volumes",
+    "feedingDuration": "Feeding duration",
+    "cryCause": "Cry cause",
+    "wakeWindow": "Wake window",
+    "patterns": "Patterns",
+    "notAvailable": "N/A",
+    "none": "(null)",
+    "empty": "(empty)"
   }
 }

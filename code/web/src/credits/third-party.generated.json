@@ -568,6 +568,19 @@
     },
     {
       "ecosystem": "npm",
+      "name": "@mui/icons-material",
+      "version": "9.5.0",
+      "license": "MIT",
+      "homepage": "https://mui.com/material-ui/material-icons/",
+      "repository": "https://github.com/mui/material-ui",
+      "direct": true,
+      "sources": [
+        "web"
+      ],
+      "licenseId": "8988cb3634a0"
+    },
+    {
+      "ecosystem": "npm",
       "name": "@mui/material",
       "version": "9.5.0",
       "license": "MIT",

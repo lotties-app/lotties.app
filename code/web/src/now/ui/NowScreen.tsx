@@ -133,9 +133,8 @@ function useRefreshPredictions(babyId: string, model: NowScreenModel) {
   const state = model.state;
   const stateSignature = state.kind === 'unknown' ? 'unknown' : `${state.kind}:${state.since}`;
   // Track the newest event timestamp to detect new arrivals regardless of type.
-  const eventsSignature = model.events.length > 0
-    ? model.events[0]?.updatedAt ?? model.events[0]?.startedAt ?? ''
-    : '';
+  const eventsSignature =
+    model.events.length > 0 ? (model.events[0]?.updatedAt ?? model.events[0]?.startedAt ?? '') : '';
   const signature = `${stateSignature}|${eventsSignature}`;
   const previous = useRef(signature);
   useEffect(() => {
@@ -159,7 +158,8 @@ function NowContent({
   const action = useNowAction();
   const actions = usePresetActions(baby.id, model.types);
   const snooze = useSnooze(model.now);
-  const predictions = usePredictions(baby.id).query.data;
+  const predictionsQuery = usePredictions(baby.id).query;
+  const predictions = predictionsQuery.data;
   const ageNorms = useAgeNorms();
   const [tray, setTray] = useState<TrayName | null>(null);
   const [solid, setSolid] = useState<SheetPrefill | null>(null);
@@ -382,7 +382,7 @@ function NowContent({
             birthDate={baby.birthDate}
             ageNorms={ageNorms ?? null}
           />
-          <PredictionDebugButton predictions={predictions} query={usePredictions(baby.id).query} />
+          <PredictionDebugButton predictions={predictions} query={predictionsQuery} />
           <DoctorInbox baby={baby} />
           <OvertiredSuggestionCard
             babyId={baby.id}
