@@ -30,6 +30,7 @@ const HubImportPage = hubSubPage('HubImportPage');
 const HubExportPage = hubSubPage('HubExportPage');
 const HubBackupImportPage = hubSubPage('HubBackupImportPage');
 const HubUpdatesPage = hubSubPage('HubUpdatesPage');
+const HubLogsPage = hubSubPage('HubLogsPage');
 const HubAboutPage = hubSubPage('HubAboutPage');
 const HubCreditsPage = hubSubPage('HubCreditsPage');
 const HubVoiceCommandsPage = hubSubPage('HubVoiceCommandsPage');
@@ -444,6 +445,7 @@ export function AppRoutes() {
               <Route path="hub/backup" element={<HubBackupImportPage />} />
               <Route path="hub/cry-monitor" element={<HubCryMonitorPage />} />
               <Route path="hub/updates" element={<HubUpdatesPage />} />
+              <Route path="hub/logs" element={<HubLogsPage />} />
               <Route path="hub/about" element={<HubAboutPage />} />
               <Route path="hub/credits" element={<HubCreditsPage />} />
               <Route path="hub/install" element={<HubInstallPage />} />

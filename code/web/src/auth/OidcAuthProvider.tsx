@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthProvider as OidcProvider, useAuth as useOidc } from 'react-oidc-context';
+import { appLog } from '../logs/appLog';
 import { UserManager, WebStorageStateStore, type INavigator, type User } from 'oidc-client-ts';
 import type { AppConfig } from '../config/appConfig';
 import { isNativeApp } from '../platform/nativeApp';
@@ -195,6 +196,18 @@ function OidcBridge({
     status !== 'ended' &&
     !!user &&
     Boolean(user.profile?.sub || user.refresh_token || oidc.isAuthenticated);
+  // Log auth state for in-app diagnostics (only when state actually changes, not every render).
+  const prevAuthRef = useRef<boolean | undefined>(undefined);
+  if (prevAuthRef.current !== isAuthenticated) {
+    appLog('auth', `Auth state changed: isAuthenticated=${isAuthenticated}`, {
+      status,
+      hasUser: !!user,
+      hasSub: !!user?.profile?.sub,
+      hasRefreshToken: !!user?.refresh_token,
+      oidcIsAuthenticated: oidc.isAuthenticated,
+    });
+    prevAuthRef.current = isAuthenticated;
+  }
   const accountId =
     isAuthenticated && profile?.sub ? accountIdOf(profile.iss || authority, profile.sub) : null;
 

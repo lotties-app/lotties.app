@@ -140,6 +140,11 @@
         "hint": "Receba a versão mais recente",
         "keywords": "atualizar versão recarregar nova"
       },
+      "logs": {
+        "title": "Logs do Aplicativo",
+        "hint": "Ver diagnósticos de sync, previsões e autenticação",
+        "keywords": "logs debug diagnóstico sync previsão auth erro solucionar"
+      },
       "about": {
         "title": "Sobre",
         "hint": "Versão e licença",

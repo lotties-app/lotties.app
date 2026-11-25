@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiClient } from '../api/ApiClientContext';
 import { useAuth } from '../auth/useAuth';
+import { appLog } from '../logs/appLog';
 import { apiPaths, type PredictionsDto } from '../sync/contract';
 import { useOnline } from '../sync/useOnline';
 import { readCachedPredictions, writeCachedPredictions } from './predictionsCache';
@@ -51,9 +52,20 @@ export function usePredictions(babyId: string) {
     queryKey: ['predictions', babyId],
     queryFn: async ({ signal }) => {
       const path = apiPaths.predictions(babyId, utcOffsetMinutes(), deviceTimeZone());
-      const data = normalize(await api.request<Partial<PredictionsDto>>(path, { signal }), babyId);
-      writeCachedPredictions(babyId, { data, fetchedAt: Date.now() });
-      return data;
+      appLog('prediction', `Fetching predictions for ${babyId}`, { path });
+      try {
+        const data = normalize(await api.request<Partial<PredictionsDto>>(path, { signal }), babyId);
+        writeCachedPredictions(babyId, { data, fetchedAt: Date.now() });
+        appLog('prediction', `Predictions fetched successfully`, {
+          predictionCount: data.predictions.length,
+          insufficientCount: data.insufficientData.length,
+          generatedAt: data.generatedAt,
+        });
+        return data;
+      } catch (error) {
+        appLog('prediction', `Predictions fetch failed`, { error: error instanceof Error ? error.message : String(error) }, 'error');
+        throw error;
+      }
     },
     // Always enable when authenticated; let React Query handle network failures via error/retry
     // instead of gating on navigator.onLine which is unreliable in mobile WebViews.

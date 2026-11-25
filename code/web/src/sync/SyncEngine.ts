@@ -3,6 +3,7 @@ import type { ApiClient } from '../api/apiClient';
 import type { BabyRoutineDb } from '../db/database';
 import { countAttentionNeeded, countDeadLetters, countPendingMutations } from '../db/outbox';
 import { t } from '../i18n/i18n';
+import { appLog } from '../logs/appLog';
 import { backoffDelay, DEFAULT_BACKOFF, type BackoffOptions } from './backoff';
 import { discardDeadLetter } from './deadLetters';
 import { classifyFailure, describeFailure } from './failures';
@@ -231,6 +232,7 @@ export class SyncEngine {
 
   private async handlePullFailure(error: unknown): Promise<void> {
     const kind = classifyFailure(error);
+    appLog('sync', `Pull failure: kind=${kind}`, { error: describeFailure(error) }, 'warn');
     if (kind === 'unauthorized') return this.pauseForAuth();
     if (kind === 'waitingForToken') return this.waitForToken();
     await this.finish(kind === 'network' ? 'offline' : 'error', describeFailure(error));
@@ -239,6 +241,7 @@ export class SyncEngine {
   private async finish(state: SyncState, lastError: string | null): Promise<void> {
     const counts = await this.readCounts();
     this.tokenWaits = 0;
+    appLog('sync', `Sync finished: state=${state}`, { lastError, pending: counts.pending, dead: counts.dead, attention: counts.attention }, lastError ? 'error' : 'info');
     this.status.update({
       state,
       lastError,

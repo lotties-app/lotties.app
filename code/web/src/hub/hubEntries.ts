@@ -41,6 +41,7 @@ export const HUB_ENTRY_IDS = [
   'cryMonitor',
   'install',
   'updates',
+  'logs',
   'welcome',
   'about',
   'credits',
@@ -79,6 +80,7 @@ export const HUB_ENTRIES: readonly HubEntry[] = [
   { id: 'cryMonitor', section: 'app', icon: 'microphone', to: '/hub/cry-monitor' },
   { id: 'install', section: 'app', icon: 'download', to: '/hub/install' },
   { id: 'updates', section: 'app', icon: 'refresh', to: '/hub/updates' },
+  { id: 'logs', section: 'app', icon: 'info', to: '/hub/logs' },
   { id: 'welcome', section: 'app', icon: 'home', to: '/welcome' },
   { id: 'about', section: 'app', icon: 'info', to: '/hub/about' },
   { id: 'credits', section: 'app', icon: 'heart', to: '/hub/credits' },
@@ -109,6 +111,7 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
   const { baby } = ctx;
   switch (id) {
     case 'settings':
+    case 'logs':
     case 'about':
     case 'credits':
     case 'privacy':

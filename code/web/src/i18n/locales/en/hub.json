@@ -140,6 +140,11 @@
         "hint": "Get the latest version",
         "keywords": "update version reload refresh new"
       },
+      "logs": {
+        "title": "Application Logs",
+        "hint": "View sync, prediction and auth diagnostics",
+        "keywords": "logs debug diagnostics sync prediction auth error troubleshoot"
+      },
       "about": {
         "title": "About",
         "hint": "Version and licence",

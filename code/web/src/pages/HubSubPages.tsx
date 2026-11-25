@@ -7,6 +7,7 @@ import type { Baby } from '../db/models';
 import { CreditsContent } from '../credits/CreditsContent';
 import { InstallContent } from '../install/InstallContent';
 import { AboutScreen } from '../hub/AboutScreen';
+import { LogsScreen } from '../hub/LogsScreen';
 import { UpdatesScreen } from '../hub/UpdatesScreen';
 import { canManageDataStore, canSeeFamilyRecords, canWrite } from '../baby/permissions';
 import { ProvidersScreen } from '../providers/ProvidersScreen';
@@ -170,6 +171,15 @@ export function HubBackupImportPage() {
       ) : (
         <CircularProgress aria-label={t('common.loading')} />
       )}
+    </HubSubPage>
+  );
+}
+
+export function HubLogsPage() {
+  const { t } = useTranslation();
+  return (
+    <HubSubPage title={t('hub.logs.title', 'Application Logs')}>
+      <LogsScreen />
     </HubSubPage>
   );
 }
