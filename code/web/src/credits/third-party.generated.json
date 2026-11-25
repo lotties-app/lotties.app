@@ -1913,7 +1913,7 @@
       "license": "MIT",
       "homepage": "https://dot.net/",
       "repository": "https://github.com/dotnet/dotnet",
-      "direct": false,
+      "direct": true,
       "sources": [
         "api"
       ],
