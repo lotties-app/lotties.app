@@ -13,7 +13,7 @@ internal sealed class PredictionService : IPredictionService
     private readonly IBabyAccessService _access;
     private readonly IAgeNormsProvider _ageNorms;
     private readonly IEnumerable<IPriorProvider> _priorProviders;
-    private readonly PredictionOutcomeResolutionService _outcomeRecorder;
+    private readonly IPredictionOutcomeResolutionService _outcomeRecorder;
     private readonly PredictionAccuracyAdjustmentService _accuracyAdjustment;
     private readonly PredictionOptions _options;
     private readonly ILogger<PredictionService> _logger;
@@ -23,7 +23,7 @@ internal sealed class PredictionService : IPredictionService
         IBabyAccessService access,
         IAgeNormsProvider ageNorms,
         IEnumerable<IPriorProvider> priorProviders,
-        PredictionOutcomeResolutionService outcomeRecorder,
+        IPredictionOutcomeResolutionService outcomeRecorder,
         PredictionAccuracyAdjustmentService accuracyAdjustment,
         PredictionOptions options,
         ILogger<PredictionService> logger)

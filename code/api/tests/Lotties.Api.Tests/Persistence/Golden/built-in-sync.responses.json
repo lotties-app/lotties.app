@@ -2391,7 +2391,8 @@
           "maximumLagSpreadMinutes": 40,
           "leadMinutes": 20,
           "graceMinutes": 40
-        }
+        },
+        "patterns": null
       }
     }
   },

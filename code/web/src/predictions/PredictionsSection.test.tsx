@@ -109,16 +109,19 @@ describe('PredictionsSection', () => {
     expect(within(card).getByText('Overdue')).toBeTruthy();
   });
 
-  it('shows the cached result offline with a last-updated label, without fetching', async () => {
+  it('shows the cached result offline with its real last-updated time when the refetch fails', async () => {
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
     const fetchedAt = Date.now() - 10 * 60_000;
     writeCachedPredictions(BABY_ID, { data: response(), fetchedAt });
-    const { calls } = renderSection(() => response());
+    // navigator.onLine is unreliable in mobile WebViews, so a stale cache is refetched anyway.
+    const { calls } = renderSection((call) => {
+      if (call.path.includes('/predictions')) throw new TypeError('Failed to fetch');
+    });
 
     expect(await screen.findByRole('article', { name: 'Next Feeding' })).toBeTruthy();
     const when = clockWithDay(new Date(fetchedAt).toISOString(), new Date());
-    expect(screen.getByText(`Offline · Last updated ${when}`)).toBeTruthy();
-    expect(predictionCalls(calls)).toHaveLength(0);
+    expect(await screen.findByText(`Offline · Last updated ${when}`)).toBeTruthy();
+    await waitFor(() => expect(predictionCalls(calls).length).toBeGreaterThan(0));
   });
 
   it('explains when offline without a cached result', async () => {

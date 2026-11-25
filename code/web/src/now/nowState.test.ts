@@ -290,15 +290,22 @@ describe('deriveNowState: nap window', () => {
     );
   });
 
-  it('is stale when the window ended more than 2 h ago', () => {
+  it('keeps showing a window that ended more than 2 h ago while no newer sleep superseded it', () => {
     const data = response([sleepPrediction()]);
-    expect(deriveNowState([nap], BUILT_IN_TYPES, data, at(16, 35))).toHaveProperty('window');
-    expect(deriveNowState([nap], BUILT_IN_TYPES, data, at(16, 36))).toMatchObject({
+    expect(deriveNowState([nap], BUILT_IN_TYPES, data, at(16, 36))).toHaveProperty('window');
+    expect(deriveNowState([nap], BUILT_IN_TYPES, data, at(20))).toHaveProperty('window');
+  });
+
+  it('is stale when the window ended more than 2 h ago and a newer sleep superseded it', () => {
+    const data = response([sleepPrediction()]);
+    const later = sleep('nap', iso(14, 10), iso(14, 50));
+    expect(deriveNowState([nap, later], BUILT_IN_TYPES, data, at(16, 35))).toHaveProperty('window');
+    expect(deriveNowState([nap, later], BUILT_IN_TYPES, data, at(16, 36))).toMatchObject({
       learning: { reason: 'stale' },
     });
   });
 
-  it('is stale when the last sleep event is older than 24 h', () => {
+  it('keeps showing the window when the last sleep event is older than 24 h', () => {
     const old = sleep('nap', iso(11, 0, 19), iso(12, 0, 19));
     const prediction = sleepPrediction({
       nextStart: { earliest: iso(13, 0, 20), expected: iso(13, 30, 20), latest: iso(14, 0, 20) },
@@ -306,8 +313,8 @@ describe('deriveNowState: nap window', () => {
     expect(napPrediction(response([prediction]), old.endedAt!, at(12, 0, 20))).toHaveProperty(
       'window',
     );
-    expect(napPrediction(response([prediction]), old.endedAt!, at(12, 1, 20))).toEqual({
-      learning: { reason: 'stale', sampleCount: null, requiredSamples: null },
-    });
+    expect(napPrediction(response([prediction]), old.endedAt!, at(12, 1, 20))).toHaveProperty(
+      'window',
+    );
   });
 });

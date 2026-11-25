@@ -3,9 +3,11 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Box, Button, ButtonBase, Card, Chip, LinearProgress, Typography } from '@mui/material';
 import type { AgeNormSet } from '../../ageNorms/ageNorms';
-import { formatDuration, formatTime } from '../../i18n/format';
+import { formatDuration, formatNumber, formatTime } from '../../i18n/format';
+import { getOwn } from '../../util/ownProperty';
 import type {
   BedTimeDto,
+  CryCauseProbabilityDto,
   PredictionConfidence,
   PredictionDto,
   PredictionsDto,
@@ -43,6 +45,16 @@ import { BedtimeLine } from './BedtimeLine';
 import { WhySheet } from './WhySheet';
 
 const MINUTE_MS = 60_000;
+
+/** The label of each cry cause the server ranks (an unknown value reads as "Unclear cause"). */
+const CRY_CAUSE_KEYS = {
+  Hunger: 'cryCause.hunger',
+  Overtired: 'cryCause.overtired',
+  GasPostFeed: 'cryCause.gasPostFeed',
+  PrePoopDiscomfort: 'cryCause.prePoopDiscomfort',
+  Overstimulation: 'cryCause.overstimulation',
+  Unknown: 'cryCause.unknown',
+} as const satisfies Record<CryCauseProbabilityDto['cause'], string>;
 
 const ACTION_ICON: Record<SleepActionKind, IconName> = {
   fell_asleep: 'moon',
@@ -741,7 +753,13 @@ export function StateCard({
           </Typography>
           {predictions.cryCause.causes.slice(0, 3).map((cause) => (
             <Typography key={cause.cause} variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-              {Math.round(cause.probability * 100)}% — {t(`cryCause.${cause.cause.charAt(0).toLowerCase() + cause.cause.slice(1)}` as any)}
+              {t('cryCause.line', {
+                percent: formatNumber(cause.probability, {
+                  style: 'percent',
+                  maximumFractionDigits: 0,
+                }),
+                cause: t(getOwn(CRY_CAUSE_KEYS, cause.cause) ?? 'cryCause.unknown'),
+              })}
             </Typography>
           ))}
         </Box>
@@ -801,7 +819,10 @@ export function StateCard({
           {predictions.diaper.wet && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
               {t('diaperPrediction.wetNext', {
-                time: new Date(predictions.diaper.wet.nextStart.expected).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                time: new Date(predictions.diaper.wet.nextStart.expected).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }),
                 confidence: predictions.diaper.wet.confidence,
               })}
             </Typography>
@@ -809,7 +830,10 @@ export function StateCard({
           {predictions.diaper.dirty?.gap && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
               {t('diaperPrediction.dirtyNext', {
-                time: new Date(predictions.diaper.dirty.gap.nextStart.expected).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                time: new Date(predictions.diaper.dirty.gap.nextStart.expected).toLocaleTimeString(
+                  [],
+                  { hour: '2-digit', minute: '2-digit' },
+                ),
                 confidence: predictions.diaper.dirty.gap.confidence,
               })}
             </Typography>

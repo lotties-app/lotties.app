@@ -31,6 +31,7 @@ describe('who sees which entry', () => {
       'backupImport',
       'install',
       'updates',
+      'logs',
       'welcome',
       'about',
       'credits',

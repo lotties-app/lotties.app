@@ -34,7 +34,7 @@ export interface NapWindow {
 
 /**
  * Why no window is shown: no sleep prediction in the response, the server needs more data, or
- * the prediction is stale (window more than 2 h past, or no sleep event in the last 24 h).
+ * the prediction is stale (window more than 2 h past and a newer sleep event already superseded it).
  */
 export interface LearningState {
   reason: 'no_prediction' | 'insufficient_data' | 'stale';

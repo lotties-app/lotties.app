@@ -13,6 +13,7 @@
   "intervalRange": "Geralmente entre {{lower}}–{{upper}} min",
   "cryCause": {
     "title": "Causa provável do choro",
+    "line": "{{percent}} — {{cause}}",
     "hunger": "Fome — próximo ao horário previsto de mamada",
     "overtired": "Cansado demais — acordado há mais tempo que o habitual",
     "gasPostFeed": "Gases ou desconforto após a mamada",
@@ -30,5 +31,30 @@
     "title": "Próxima troca de fralda",
     "wetNext": "Fralda molhada prevista por volta das {{time}} (confiança {{confidence}})",
     "dirtyNext": "Fralda suja prevista por volta das {{time}} (confiança {{confidence}})"
+  },
+  "predictionDebug": {
+    "open": "🔍 Diagnóstico de Previsões",
+    "title": "Diagnóstico de Previsões",
+    "queryStatus": "Status do React Query",
+    "queryLine": "status: {{status}} | fetchStatus: {{fetchStatus}} | isFetching: {{isFetching}} | isError: {{isError}} | isEnabled: {{isEnabled}} | dataUpdatedAt: {{dataUpdatedAt}}",
+    "error": "erro: {{message}}",
+    "notLoaded": "Nenhuma previsão carregada (undefined)",
+    "babyId": "babyId: {{value}}",
+    "generatedAt": "generatedAt: {{value}}",
+    "engineVersion": "engineVersion: {{value}}",
+    "predictions": "Previsões ({{n}})",
+    "noPredictions": "Nenhuma previsão retornada",
+    "insufficientData": "Dados Insuficientes ({{n}})",
+    "noInsufficientData": "Nenhum tipo com dados insuficientes",
+    "bedTime": "Hora de dormir",
+    "diaper": "Fralda",
+    "feedingVolumes": "Volumes de mamada",
+    "feedingDuration": "Duração da mamada",
+    "cryCause": "Causa do choro",
+    "wakeWindow": "Janela de vigília",
+    "patterns": "Padrões",
+    "notAvailable": "N/D",
+    "none": "(nulo)",
+    "empty": "(vazio)"
   }
 }

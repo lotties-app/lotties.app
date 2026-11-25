@@ -388,7 +388,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### @mui/core-downloads-tracker 9.5.0, @mui/material 9.5.0, @mui/private-theming 9.5.0, @mui/styled-engine 9.5.0, @mui/system 9.5.0, @mui/types 9.5.0, @mui/utils 9.5.0
+### @mui/core-downloads-tracker 9.5.0, @mui/icons-material 9.5.0, @mui/material 9.5.0, @mui/private-theming 9.5.0, @mui/styled-engine 9.5.0, @mui/system 9.5.0, @mui/types 9.5.0, @mui/utils 9.5.0
 
 License: MIT
 

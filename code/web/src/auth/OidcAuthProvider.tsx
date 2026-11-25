@@ -198,7 +198,9 @@ function OidcBridge({
     Boolean(user.profile?.sub || user.refresh_token || oidc.isAuthenticated);
   // Log auth state for in-app diagnostics (only when state actually changes, not every render).
   const prevAuthRef = useRef<boolean | undefined>(undefined);
-  if (prevAuthRef.current !== isAuthenticated) {
+  useEffect(() => {
+    if (prevAuthRef.current === isAuthenticated) return;
+    prevAuthRef.current = isAuthenticated;
     appLog('auth', `Auth state changed: isAuthenticated=${isAuthenticated}`, {
       status,
       hasUser: !!user,
@@ -206,8 +208,7 @@ function OidcBridge({
       hasRefreshToken: !!user?.refresh_token,
       oidcIsAuthenticated: oidc.isAuthenticated,
     });
-    prevAuthRef.current = isAuthenticated;
-  }
+  }, [isAuthenticated, status, user, oidc.isAuthenticated]);
   const accountId =
     isAuthenticated && profile?.sub ? accountIdOf(profile.iss || authority, profile.sub) : null;
 

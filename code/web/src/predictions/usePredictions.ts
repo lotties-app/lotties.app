@@ -54,7 +54,10 @@ export function usePredictions(babyId: string) {
       const path = apiPaths.predictions(babyId, utcOffsetMinutes(), deviceTimeZone());
       appLog('prediction', `Fetching predictions for ${babyId}`, { path });
       try {
-        const data = normalize(await api.request<Partial<PredictionsDto>>(path, { signal }), babyId);
+        const data = normalize(
+          await api.request<Partial<PredictionsDto>>(path, { signal }),
+          babyId,
+        );
         writeCachedPredictions(babyId, { data, fetchedAt: Date.now() });
         appLog('prediction', `Predictions fetched successfully`, {
           predictionCount: data.predictions.length,
@@ -63,7 +66,12 @@ export function usePredictions(babyId: string) {
         });
         return data;
       } catch (error) {
-        appLog('prediction', `Predictions fetch failed`, { error: error instanceof Error ? error.message : String(error) }, 'error');
+        appLog(
+          'prediction',
+          `Predictions fetch failed`,
+          { error: error instanceof Error ? error.message : String(error) },
+          'error',
+        );
         throw error;
       }
     },
@@ -74,15 +82,10 @@ export function usePredictions(babyId: string) {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     initialData: () => readCachedPredictions(babyId)?.data,
-    // Cap initialDataUpdatedAt so stale localStorage cache doesn't trick React Query into
-    // thinking data is fresh. If cached data is older than staleTime, treat it as stale so
-    // React Query triggers a refetch immediately instead of serving days-old predictions.
-    initialDataUpdatedAt: () => {
-      const cached = readCachedPredictions(babyId);
-      if (!cached) return undefined;
-      const maxAge = Date.now() - PREDICTIONS_STALE_MS;
-      return cached.fetchedAt > maxAge ? cached.fetchedAt : maxAge;
-    },
+    // The cache's real fetch time: a cache older than staleTime is stale, so React Query refetches
+    // it immediately instead of serving days-old predictions, and the offline "Last updated" label
+    // shows when it was really fetched.
+    initialDataUpdatedAt: () => readCachedPredictions(babyId)?.fetchedAt,
   });
   return { query, online };
 }
