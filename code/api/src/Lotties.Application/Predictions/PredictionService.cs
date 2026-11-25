@@ -108,7 +108,23 @@ internal sealed class PredictionService : IPredictionService
         }
 
         var clock = LocalClock.ForZoneOrOffset(timeZone, now.Offset);
-        return PredictionsResponse.Create(babyId, now, predictions, Patterns(history, now, clock), WakeWindowOf(history, now, clock), DiapersOf(history, now, predictions.DiaperPatterns));
+
+        // Defensive wrapper: if diaper pattern analysis or serialization throws (e.g. due to a
+        // schema mismatch between PredictionSet.DiaperPatterns and DiaperPatternAnalysisResponse),
+        // log the error and return null patterns instead of crashing the entire predictions endpoint
+        // with a 500. This restores sleep/feeding predictions while preserving diagnostic data.
+        DiaperPredictionsResponse? diaperResponse;
+        try
+        {
+            diaperResponse = DiapersOf(history, now, predictions.DiaperPatterns);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Diaper predictions failed for baby {BabyId}; returning null to avoid 500", babyId);
+            diaperResponse = null;
+        }
+
+        return PredictionsResponse.Create(babyId, now, predictions, Patterns(history, now, clock), WakeWindowOf(history, now, clock), diaperResponse);
     }
 
     /// <summary>The history of the event types the caller's view shows (a Doctor without medications predicts no medication dose).</summary>
