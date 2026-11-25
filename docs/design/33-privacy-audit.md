@@ -587,12 +587,19 @@ writes outcomes today. Facts from the code (`legal/dataFlows.ts` `DERIVED_FLOWS`
 
 - **What is written** (inventory row 26): on every `GET /babies/{id}/predictions` by a member who may read the daily log
   (Owner, Parent, Caregiver, Viewer, a Doctor with the daily log scope), one pending row per prediction of the answer
-  (any event type with enough history: sleep, feeds, diapers, medication doses, custom types). The work runs after the
+  (any event type with enough history: sleep, feeds, diapers, medication doses, custom types), once per baby, type and
+  anchor (a later answer for the same history adds nothing). The work runs after the
   response in its own DI scope (`PredictionOutcomeRecorder`, which enters the baby's store); at most
-  `MaxPendingOutcomes` (50) pending rows per baby and type are kept: older ones are closed with their own expected time
-  (error 0). Creating or editing an event of that type resolves the oldest pending row (`EventService`, own scope); an
-  edited start time first deletes resolved rows anchored at the old time. `POST /predictions/feedback` can resolve a row
-  from a "was it right" answer (error 0 or a 24 h sentinel), but the web never reaches it (section 20.2). The backfill
+  `MaxPendingOutcomes` (50) pending rows per baby and type are kept: older ones are expired (closed with no actual time
+  and no error, never counted in an average). Creating or editing an event of that type resolves every row anchored
+  before it that is pending or holds a later event (`EventService`, own scope; the first event after the anchor by event
+  time wins, whatever the order of arrival); an
+  edited start time first deletes resolved rows anchored at the old time. `POST /predictions/feedback` (Owner, Parent,
+  Caregiver; `predictionId` = type key and the expected start as ISO 8601 UTC, older tick ids still accepted) can resolve a
+  row from a "was it right" answer (error 0 or a 24 h sentinel), but the web never reaches it (section 20.2).
+  `PredictionOptions:OutcomeRetentionDays` (default 0 = kept with the baby, as the policy says) would delete a baby's
+  closed rows older than that many days each time a new row is recorded for her; turning it on needs the policy's
+  retention line changed first. The backfill
   tool (`code/api/tools/Lotties.PredictionBackfill`, run by the operator against the Lotties database) can write
   resolved rows for past events.
 - **What is read**: only `GetMaeAsync`, per baby and type, when `PredictionOptions:BlendingEnabled` is on (default
@@ -644,15 +651,19 @@ writes outcomes today. Facts from the code (`legal/dataFlows.ts` `DERIVED_FLOWS`
 
 ### 20.2 Other findings (not fixed here)
 
-- The web's `PredictionFeedbackButton` sends `predictionId` as `typeKey:<ISO time>` while the server parses
-  `typeKey:<ticks>`, so every answer is dropped (logged as an invalid id); the button is in `PredictionCard`, which only
-  `PredictionsSection` uses, and that component is mounted nowhere outside its test. The policy says the app does not
-  ask for an answer today. If it is wired, the server stores the answer as an error of 0 or 24 hours.
-- The feedback route needs only the daily log read policy, so a Viewer or a Doctor can write into the baby's accuracy
-  records; the project rules limit a Doctor's writes to her notes and consultation measurements.
-- Pending rows over the limit are closed with error 0 and then count as accurate results in `GetMaeAsync` and in the
-  aggregator (they skew both).
-- Rows grow with every predictions request (a pending row per type per request, the oldest closed past 50); there is
-  no retention other than the baby's erasure.
-- The resolution after an event write runs in the background and resolves the oldest pending row with whichever event
-  arrives: writes close together (an offline outbox flushing) can resolve rows out of order or against an earlier event.
+- Fixed: the web's `PredictionFeedbackButton` sent `predictionId` as `typeKey:<ISO time>` while the server parsed only
+  `typeKey:<ticks>`. The web now sends `predictionFeedbackId` (the expected start as ISO 8601 UTC) and the server accepts
+  both forms. Still true: the button is in `PredictionCard`, which only `PredictionsSection` uses, and that component is
+  mounted nowhere outside its test, so the app does not ask for an answer, as the policy says. If it is wired, the
+  server stores the answer as an error of 0 or 24 hours, and those values would count in `GetMaeAsync`.
+- Fixed: the feedback route needed only the daily log read policy (a Viewer or a Doctor could write into the accuracy
+  records); it now needs `BabyLog` (Owner, Parent, Caregiver).
+- Fixed: pending rows over the limit were closed with error 0 and counted as accurate results in `GetMaeAsync` and the
+  aggregator. They are now expired (no error), which both leave out. Rows closed that way before the fix (actual time
+  equal to the expected one, error 0) are still stored and still counted.
+- Fixed in part: rows grew with every predictions request. They are now recorded once per baby, type and anchor (two
+  concurrent requests can still both record one, as there is no unique index), and `OutcomeRetentionDays` exists but is
+  off. With it off, there is no retention other than the baby's erasure.
+- Fixed: the resolution after an event write resolved the oldest pending row with whichever event arrived. It now gives
+  each row the first event after its anchor by event time, with a conditional write, so out-of-order or concurrent
+  writes end the same way.

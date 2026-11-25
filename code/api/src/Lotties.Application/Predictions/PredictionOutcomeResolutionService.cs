@@ -1,4 +1,6 @@
+using System.Globalization;
 using Lotties.Domain.EventTypes;
+using Lotties.Domain.Exceptions;
 using Lotties.Domain.Predictions;
 using Microsoft.Extensions.Logging;
 
@@ -11,11 +13,18 @@ namespace Lotties.Application.Predictions;
 internal sealed class PredictionOutcomeResolutionService(
     IPredictionOutcomeRepository repository,
     PredictionOptions options,
+    TimeProvider time,
     ILogger<PredictionOutcomeResolutionService> logger) : IPredictionOutcomeResolutionService
 {
+    /// <summary>How far the instant of an ISO 8601 feedback id may be from a stored expected next start and still name it.</summary>
+    internal static readonly TimeSpan FeedbackMatchTolerance = TimeSpan.FromSeconds(1);
+
     /// <summary>
-    /// Records a prediction as a pending outcome for later resolution against the actual next event.
-    /// Enforces <see cref="PredictionOptions.MaxPendingOutcomes"/> by dropping the oldest pending outcome if exceeded.
+    /// Records a prediction as a pending outcome for later resolution against the actual next event, once per baby, type and
+    /// anchor (a predictions answer for the same history records nothing new). Enforces
+    /// <see cref="PredictionOptions.MaxPendingOutcomes"/> by expiring the oldest pending outcomes (closed without a measurement,
+    /// never scored) and, when <see cref="PredictionOptions.OutcomeRetentionDays"/> is positive, deletes this baby's and type's
+    /// closed outcomes older than that.
     /// When <paramref name="createdAt"/> is provided, flags the outcome as retrospective if the event was logged
     /// significantly after its own start time (see <see cref="FeedingPatternAnalyzer.IsRetrospectiveEntry"/>).
     /// </summary>
@@ -29,6 +38,11 @@ internal sealed class PredictionOutcomeResolutionService(
 
         try
         {
+            if (await repository.ExistsForAnchorAsync(babyId, prediction.TypeKey, prediction.AnchorAt, cancellationToken))
+            {
+                return;
+            }
+
             var isRetrospective = createdAt.HasValue
                 ? FeedingPatternAnalyzer.IsRetrospectiveEntry(createdAt.Value, prediction.AnchorAt)
                 : (bool?)null;
@@ -49,27 +63,8 @@ internal sealed class PredictionOutcomeResolutionService(
                 IsRetrospective: isRetrospective);
 
             await repository.SaveAsync(outcome, cancellationToken);
-
-            // Enforce max pending outcomes per baby per type.
-            var pending = await repository.GetPendingAsync(babyId, prediction.TypeKey, cancellationToken);
-            if (pending.Count > options.MaxPendingOutcomes)
-            {
-                var excess = pending.Take(pending.Count - options.MaxPendingOutcomes).ToArray();
-                foreach (var old in excess)
-                {
-                    // Resolve with the expected time itself so it no longer counts as pending;
-                    // this is a cleanup, not a real measurement.
-                    var resolved = old.Resolve(old.ExpectedNextStart);
-                    await repository.SaveAsync(resolved, cancellationToken);
-                }
-
-                logger.LogDebug(
-                    "Dropped {DroppedCount} oldest pending prediction outcomes for baby {BabyId} type {TypeKey} (limit {Limit})",
-                    excess.Length,
-                    babyId,
-                    prediction.TypeKey.Value,
-                    options.MaxPendingOutcomes);
-            }
+            await ExpireOverLimitAsync(babyId, prediction.TypeKey, cancellationToken);
+            await ApplyRetentionAsync(babyId, prediction.TypeKey, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -79,8 +74,9 @@ internal sealed class PredictionOutcomeResolutionService(
     }
 
     /// <summary>
-    /// Records manual user feedback on whether a prediction was accurate.
-    /// Creates or updates a resolved outcome based on the feedback.
+    /// Records manual user feedback on whether a prediction was accurate. The id is <c>typeKey:instant</c>: an ISO 8601 instant
+    /// (what the web sends) names the pending outcome whose expected next start it is (within <see cref="FeedbackMatchTolerance"/>);
+    /// a number (the older form) is UTC ticks of the outcome's predicted-at instant.
     /// </summary>
     public async Task RecordFeedbackAsync(Guid babyId, string predictionId, bool accurate, CancellationToken cancellationToken = default)
     {
@@ -91,23 +87,22 @@ internal sealed class PredictionOutcomeResolutionService(
 
         try
         {
-            // Parse predictionId as "typeKey:timestampTicks" format from PredictionFeedbackButton
-            var parts = predictionId.Split(':', 2);
-            if (parts.Length != 2 || !long.TryParse(parts[1], out var ticks))
+            if (!TryParsePredictionId(predictionId, out var typeKey, out var instant, out var isTicks))
             {
-                logger.LogWarning("Invalid predictionId format '{PredictionId}' for feedback from baby {BabyId}", predictionId, babyId);
+                logger.LogWarning("Invalid predictionId format for feedback from baby {BabyId}", babyId);
                 return;
             }
 
-            var typeKey = EventTypeKey.From(parts[0]);
-            var predictedAt = new DateTimeOffset(ticks, TimeSpan.Zero);
-
-            // Find the matching pending outcome and resolve it
             var pending = await repository.GetPendingAsync(babyId, typeKey, cancellationToken);
-            var match = pending.FirstOrDefault(p => p.PredictedAt == predictedAt);
+            var match = isTicks
+                ? pending.FirstOrDefault(p => p.PredictedAt == instant)
+                : pending
+                    .Where(p => (p.ExpectedNextStart - instant).Duration() <= FeedbackMatchTolerance)
+                    .OrderBy(p => (p.ExpectedNextStart - instant).Duration())
+                    .FirstOrDefault();
             if (match is null)
             {
-                logger.LogDebug("No pending outcome found for predictionId '{PredictionId}' on baby {BabyId}", predictionId, babyId);
+                logger.LogDebug("No pending outcome found for feedback on baby {BabyId} type {TypeKey}", babyId, typeKey.Value);
                 return;
             }
 
@@ -116,17 +111,19 @@ internal sealed class PredictionOutcomeResolutionService(
             var resolved = match.Resolve(actualTime);
             await repository.SaveAsync(resolved, cancellationToken);
 
-            logger.LogDebug("Recorded manual feedback for baby {BabyId} predictionId '{PredictionId}': accurate={Accurate}", babyId, predictionId, accurate);
+            logger.LogDebug("Recorded manual feedback for baby {BabyId} type {TypeKey}: accurate={Accurate}", babyId, typeKey.Value, accurate);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to record feedback for baby {BabyId} predictionId '{PredictionId}'", babyId, predictionId);
+            logger.LogError(ex, "Failed to record feedback for baby {BabyId}", babyId);
         }
     }
 
     /// <summary>
-    /// Resolves the oldest pending outcome for a baby and event type with the actual next start time.
-    /// Called when a new event of the predicted type arrives.
+    /// Resolves, with an event of the type starting at <paramref name="actualNextStart"/>, every outcome that event is the actual
+    /// next start of: outcomes anchored before it that are pending or were resolved by a later event. Each outcome thus ends
+    /// with the first event after its anchor by event time, whatever order the events were written in (an outbox flushing
+    /// several entries), and each write is conditional, so concurrent resolutions converge on the same result.
     /// </summary>
     public async Task ResolvePendingAsync(
         Guid babyId, EventTypeKey typeKey, DateTimeOffset actualNextStart, CancellationToken cancellationToken = default)
@@ -138,22 +135,20 @@ internal sealed class PredictionOutcomeResolutionService(
 
         try
         {
-            var pending = await repository.GetPendingAsync(babyId, typeKey, cancellationToken);
-            if (pending.Count == 0)
+            var candidates = await repository.GetResolvableByAsync(babyId, typeKey, actualNextStart, cancellationToken);
+            var written = 0;
+            foreach (var candidate in candidates.Where(c => c.IsResolvableBy(actualNextStart)))
             {
-                return;
+                if (await repository.TryResolveAsync(candidate.Resolve(actualNextStart), cancellationToken))
+                {
+                    written++;
+                }
             }
 
-            // Resolve the oldest pending outcome (first in chronological order).
-            var oldest = pending[0];
-            var resolved = oldest.Resolve(actualNextStart);
-            await repository.SaveAsync(resolved, cancellationToken);
-
-            logger.LogDebug(
-                "Resolved prediction outcome for baby {BabyId} type {TypeKey}: error {ErrorMinutes:F1} min",
-                babyId,
-                typeKey.Value,
-                resolved.ErrorMinutes);
+            if (written > 0)
+            {
+                logger.LogDebug("Resolved {Count} prediction outcomes for baby {BabyId} type {TypeKey}", written, babyId, typeKey.Value);
+            }
         }
         catch (Exception ex)
         {
@@ -186,6 +181,102 @@ internal sealed class PredictionOutcomeResolutionService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to invalidate stale prediction outcomes for baby {BabyId} type {TypeKey}", babyId, typeKey.Value);
+        }
+    }
+
+    /// <summary>
+    /// Parses <c>typeKey:instant</c>: <paramref name="isTicks"/> for the older form (UTC ticks of the predicted-at instant),
+    /// otherwise an ISO 8601 date and time (an offset or <c>Z</c>; without one it is read as UTC).
+    /// </summary>
+    internal static bool TryParsePredictionId(string? predictionId, out EventTypeKey typeKey, out DateTimeOffset instant, out bool isTicks)
+    {
+        typeKey = default;
+        instant = default;
+        isTicks = false;
+        var parts = predictionId?.Split(':', 2);
+        if (parts is not { Length: 2 } || parts[1].Length == 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            typeKey = EventTypeKey.From(parts[0]);
+        }
+        catch (DomainValidationException)
+        {
+            return false;
+        }
+
+        var value = parts[1];
+        if (value.All(char.IsAsciiDigit))
+        {
+            if (!long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var ticks)
+                || ticks > DateTimeOffset.MaxValue.UtcTicks)
+            {
+                return false;
+            }
+
+            instant = new DateTimeOffset(ticks, TimeSpan.Zero);
+            isTicks = true;
+            return true;
+        }
+
+        // An ISO 8601 date and time only: a bare time of day would otherwise parse as today.
+        if (value.Length < 11 || value[4] != '-' || value[7] != '-' || (value[10] != 'T' && value[10] != 't'))
+        {
+            return false;
+        }
+
+        if (!DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed))
+        {
+            return false;
+        }
+
+        instant = parsed;
+        return true;
+    }
+
+    private async Task ExpireOverLimitAsync(Guid babyId, EventTypeKey typeKey, CancellationToken cancellationToken)
+    {
+        var pending = await repository.GetPendingAsync(babyId, typeKey, cancellationToken);
+        if (pending.Count <= options.MaxPendingOutcomes)
+        {
+            return;
+        }
+
+        var excess = pending.Take(pending.Count - options.MaxPendingOutcomes).ToArray();
+        foreach (var old in excess)
+        {
+            // Closed without a measurement: no longer pending, and never counted in an accuracy average.
+            await repository.SaveAsync(old.Expire(), cancellationToken);
+        }
+
+        logger.LogDebug(
+            "Expired {ExpiredCount} oldest pending prediction outcomes for baby {BabyId} type {TypeKey} (limit {Limit})",
+            excess.Length,
+            babyId,
+            typeKey.Value,
+            options.MaxPendingOutcomes);
+    }
+
+    private async Task ApplyRetentionAsync(Guid babyId, EventTypeKey typeKey, CancellationToken cancellationToken)
+    {
+        if (options.OutcomeRetentionDays <= 0)
+        {
+            return;
+        }
+
+        var cutoff = time.GetUtcNow() - TimeSpan.FromDays(options.OutcomeRetentionDays);
+        var deleted = await repository.DeleteClosedBeforeAsync(babyId, typeKey, cutoff, cancellationToken);
+        if (deleted > 0)
+        {
+            logger.LogDebug(
+                "Deleted {DeletedCount} prediction outcomes older than {RetentionDays} days for baby {BabyId} type {TypeKey}",
+                deleted,
+                options.OutcomeRetentionDays,
+                babyId,
+                typeKey.Value);
         }
     }
 }

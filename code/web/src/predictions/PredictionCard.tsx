@@ -6,7 +6,13 @@ import { EventTypeIcon } from '../events/eventIcons';
 import { safeColor } from '../events/safeColor';
 import type { PredictionConfidence, PredictionDto } from '../sync/contract';
 import { getOwn } from '../util/ownProperty';
-import { describeDuration, describeReason, describeWindow, isOverdue } from './predictionModel';
+import {
+  describeDuration,
+  describeReason,
+  describeWindow,
+  isOverdue,
+  predictionFeedbackId,
+} from './predictionModel';
 import { OriginBadge } from './OriginBadge';
 import { PredictionFeedbackButton } from './PredictionFeedbackButton';
 
@@ -59,7 +65,7 @@ export function PredictionCard({ prediction, type, name, babyId, now }: Props) {
         <OriginBadge origin={prediction.origin} />
         {prediction.nextStart?.expected && (
           <PredictionFeedbackButton
-            predictionId={`${prediction.typeKey}:${prediction.nextStart.expected}`}
+            predictionId={predictionFeedbackId(prediction)}
             babyId={babyId}
           />
         )}

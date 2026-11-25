@@ -370,6 +370,53 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
         Assert.Equal(Math.Abs((next - pending.ExpectedNextStart).TotalMinutes), resolved.ErrorMinutes!.Value, 3);
     }
 
+    [Fact]
+    public async Task Put_EventsWrittenOutOfOrder_ResolveTheOutcomeWithTheEarliestEventAfterItsAnchor()
+    {
+        var seeded = await SeedHistoryAsync();
+        using var host = factory.WithWebHostBuilder(builder => builder.UseSetting("PredictionOptions:AccuracyTrackingEnabled", "true"));
+        var owner = ClientFor(host, seeded.Baby.OwnerSubject);
+        Assert.Equal(HttpStatusCode.OK, (await owner.GetAsync(PathFor(seeded.Baby.BabyId))).StatusCode);
+        var pending = Assert.Single(await WaitForOutcomesAsync(seeded.Baby.BabyId, rows => rows.Count > 0));
+        var earlier = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.AddMinutes(-60).ToUnixTimeSeconds());
+        var later = earlier.AddMinutes(50);
+
+        // The later entry reaches the server first (an outbox flushing), each write resolving in the background.
+        foreach (var start in new[] { later, earlier })
+        {
+            var put = await owner.PutAsJsonAsync($"/api/v1/babies/{seeded.Baby.BabyId}/events/{Guid.NewGuid()}", new { typeId = BuiltInEventTypes.TummyTimeId, startedAt = start, endedAt = start.AddMinutes(20), payload = new { } });
+            Assert.Equal(HttpStatusCode.Created, put.StatusCode);
+        }
+
+        var resolved = Assert.Single(await WaitForOutcomesAsync(seeded.Baby.BabyId, rows => rows.All(row => row.ActualNextStart == earlier)));
+        Assert.Equal((pending.Id, earlier), (resolved.Id, resolved.ActualNextStart!.Value));
+        Assert.Equal(Math.Abs((earlier - pending.ExpectedNextStart).TotalMinutes), resolved.ErrorMinutes!.Value, 3);
+    }
+
+    [Fact]
+    public async Task PostFeedback_IsoIdBuiltFromTheAnswer_ResolvesThatOutcome_AndAViewerMayNotWrite()
+    {
+        var seeded = await SeedHistoryAsync();
+        using var host = factory.WithWebHostBuilder(builder => builder.UseSetting("PredictionOptions:AccuracyTrackingEnabled", "true"));
+        var owner = ClientFor(host, seeded.Baby.OwnerSubject);
+        var viewer = ClientFor(host, seeded.Baby.SubjectOf(BabyRole.Viewer));
+        var answer = await owner.GetAsync(PathFor(seeded.Baby.BabyId));
+        using var body = JsonDocument.Parse(await answer.Content.ReadAsStringAsync());
+        var expected = Assert.Single(body.RootElement.GetProperty("predictions").EnumerateArray()).GetProperty("nextStart").GetProperty("expected").GetDateTimeOffset();
+        var pending = Assert.Single(await WaitForOutcomesAsync(seeded.Baby.BabyId, rows => rows.Count > 0));
+        // What the web's predictionFeedbackId sends: the type key and JavaScript's toISOString of the expected next start.
+        var predictionId = $"tummy_time:{expected.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture)}";
+        var path = $"/api/v1/babies/{seeded.Baby.BabyId}/predictions/feedback";
+
+        var byViewer = await viewer.PostAsJsonAsync(path, new { predictionId, accurate = true });
+        var byOwner = await owner.PostAsJsonAsync(path, new { predictionId, accurate = true });
+
+        Assert.Equal(HttpStatusCode.Forbidden, byViewer.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, byOwner.StatusCode);
+        var resolved = Assert.Single(await WaitForOutcomesAsync(seeded.Baby.BabyId, rows => rows.All(row => row.Resolved)));
+        Assert.Equal((pending.Id, true, (double?)0), (resolved.Id, resolved.Resolved, resolved.ErrorMinutes));
+    }
+
     /// <summary>The baby's outcomes once <paramref name="done"/> holds for them (the recording runs after the response).</summary>
     private async Task<List<Infrastructure.Persistence.Entities.PredictionOutcomeEntity>> WaitForOutcomesAsync(
         Guid babyId, Func<List<Infrastructure.Persistence.Entities.PredictionOutcomeEntity>, bool> done)

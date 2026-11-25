@@ -43,6 +43,14 @@ export function describeWindow(prediction: PredictionDto, now: Date): string {
   });
 }
 
+/**
+ * The `predictionId` of `POST /predictions/feedback`: the type key and the expected next start as an ISO 8601 UTC
+ * instant (`feeding:2026-10-20T17:20:00.000Z`), the form the server matches against the stored estimate.
+ */
+export function predictionFeedbackId(prediction: PredictionDto): string {
+  return `${prediction.typeKey}:${new Date(prediction.nextStart.expected).toISOString()}`;
+}
+
 /** The expected start has passed without a new event replacing the prediction. */
 export function isOverdue(prediction: PredictionDto, now: Date): boolean {
   return Date.parse(prediction.nextStart.expected) < now.getTime();
