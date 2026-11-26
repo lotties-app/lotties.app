@@ -1,136 +1,64 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Lotties.Domain.CommunityInsights;
 
-/// <summary>One baby's contribution to a cell, pre-clipped and capped by the caller.</summary>
-public sealed record BabyContribution(Guid BabyId, Guid FamilyId, decimal Value);
-
-/// <summary>One cell of the aggregation output: the band key, dimension value (if any), and the noisy statistics.</summary>
-public sealed record AggregatedCell(
-    string StatisticKey,
-    string BandKey,
-    string? DimensionValue,
-    int DistinctBabies,
-    int DistinctFamilies,
-    decimal Mean,
-    decimal? P3,
-    decimal? P97,
-    bool Suppressed,
-    string? SuppressionReason);
+/// <summary>What one run produced: the release to serve, and the run log facts (no id, no exact count of a cell).</summary>
+public sealed record CommunityAggregationResult(CommunityRelease Release, CommunityRunSummary Summary);
 
 /// <summary>
-/// Pure aggregation of community statistics (docs/design/34-community-insights.md sections 4 and 5): clipping, per-baby capping,
-/// family dominance suppression, k-suppression (at least k distinct babies from at least k distinct families), and tier-A Laplace
-/// noise. No I/O; the job feeds it data and writes the result. Tier-B exponential mechanism for percentiles is gated (TODO: implement
-/// when tier-B is activated).
+/// The run log line of one run (design 34 section 5 "Run log"): cells published (fine and coarse), fine cells with data that were
+/// not published, and the babies included, rounded to 10. Epsilon per statistic is in <see cref="CommunityRelease.Statistics"/>.
+/// </summary>
+public sealed record CommunityRunSummary(int CellsPublished, int CoarseCellsPublished, int FineCellsSuppressed, int BabiesIncludedRoundedToTen);
+
+/// <summary>
+/// The pure core of the community statistics run (docs/design/34-community-insights.md sections 5 and 5.1; no I/O). For each
+/// statistic with an output in v1 it: reads the observations of the run's population, clipped to the catalog ranges; places each
+/// in its fixed fine cell (age band and dimension value); keeps per baby and fine band the observations of at most
+/// <see cref="CommunityStatistic.CapPerBaby"/> days, picked by a keyed hash of baby id and day (<see cref="CommunityDailyCap"/>);
+/// weighs each baby's observations of an output to add up to 1 (one summary per baby); adds Laplace noise to the share sums of
+/// every cell of the fixed grid (<see cref="CommunityShareMechanism"/>), spending the statistic's epsilon split evenly over its v1
+/// outputs, so one baby spends at most <see cref="CommunityStatistic.Epsilon"/> on a statistic per release whatever cells she is
+/// in; and publishes only the cells that pass k, hysteresis, dominance and complementary suppression, with the coarse fallback
+/// (<see cref="CommunityPublication"/>). Percentile outputs have no mechanism and are never computed.
 /// </summary>
 /// <remarks>
-/// Hysteresis: <c>previousDistinctBabiesForHysteresis</c> is the distinct-baby count of the cell in the previous release. Today it
-/// only changes the suppression reason: a cell below k babies is suppressed whatever it had before, so no cell is ever kept between
-/// <see cref="CommunityStatistic.KHysteresis"/> and k. The family count has no previous value and needs k every run.
+/// The publication decisions use exact counts and are not themselves differentially private (as in the synthetic study); the
+/// counts never leave the core except as the group-size bucket. A family of several babies spends the budget once per baby.
 /// </remarks>
 public static class CommunityStatisticsAggregator
 {
-    /// <summary>Family dominance threshold: a cell is suppressed when one family contributes more than this fraction.</summary>
+    /// <summary>Family dominance threshold: a cell is suppressed when one family has more than this fraction of it.</summary>
     public const decimal FamilyDominanceThreshold = 0.25m;
 
+    private static readonly IReadOnlyList<ICommunityStatisticSampler> Samplers = [new TummyTimeSampler(), new CryOutcomeSampler()];
+
+    private static readonly IReadOnlyList<ICommunityOutputMechanism> Mechanisms = [CommunityShareMechanism.Instance];
+
     /// <summary>
-    /// Aggregates one statistic's contributions across all its cells. The caller must clip values to
-    /// <see cref="CommunityClip"/> ranges and cap per-baby contributions to <see cref="CommunityStatistic.CapPerBaby"/> days
-    /// before calling this method.
+    /// One run over <paramref name="input"/>. <paramref name="noise"/> must be <see cref="SnappedLaplaceNoise.Cryptographic"/> for a
+    /// release that is served; tests inject a seeded or noise-free one.
     /// </summary>
-    public static IReadOnlyList<AggregatedCell> Aggregate(
-        CommunityStatistic statistic,
-        IReadOnlyDictionary<string, IReadOnlyList<BabyContribution>> cellsByBand,
-        int previousDistinctBabiesForHysteresis)
+    public static CommunityAggregationResult Aggregate(CommunityAggregationInput input, ICommunityNoise noise)
     {
-        ArgumentNullException.ThrowIfNull(statistic);
-        ArgumentNullException.ThrowIfNull(cellsByBand);
-
-        var results = new List<AggregatedCell>();
-        foreach (var (bandKey, contributions) in cellsByBand)
-        {
-            results.Add(AggregateCell(statistic, bandKey, null, contributions, previousDistinctBabiesForHysteresis));
-        }
-
-        return results;
+        ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(noise);
+        var catalog = CommunityStatisticsValidator.EnsureValid(input.Catalog);
+        var runs = catalog.InV1.Select(statistic => AggregateStatistic(input, statistic, noise)).ToArray();
+        var release = new CommunityRelease(
+            input.GeneratedAt.ToUniversalTime(),
+            catalog.Version,
+            IsPlaceholder: false,
+            [.. runs.Select(run => run.Parameters)],
+            [.. runs.SelectMany(run => run.Cells)]);
+        return new CommunityAggregationResult(release, SummaryOf(runs));
     }
 
-    /// <summary>Aggregates a single cell with all privacy protections applied.</summary>
-    public static AggregatedCell AggregateCell(
-        CommunityStatistic statistic,
-        string bandKey,
-        string? dimensionValue,
-        IReadOnlyList<BabyContribution> contributions,
-        int previousDistinctBabiesForHysteresis)
-    {
-        ArgumentNullException.ThrowIfNull(statistic);
-        ArgumentNullException.ThrowIfNull(contributions);
-
-        if (contributions.Count == 0)
-        {
-            return EmptyCell(statistic.Key, bandKey, dimensionValue, "no_contributions");
-        }
-
-        var distinctBabies = contributions.Select(c => c.BabyId).Distinct().Count();
-        var distinctFamilies = contributions.Select(c => c.FamilyId).Distinct().Count();
-
-        // K-suppression with hysteresis: publish at k>=K, withdraw at k<KHysteresis
-        if (distinctBabies < statistic.K && previousDistinctBabiesForHysteresis < statistic.KHysteresis)
-        {
-            return EmptyCell(statistic.Key, bandKey, dimensionValue, $"below_k_{statistic.K}_hysteresis_{statistic.KHysteresis}");
-        }
-
-        if (distinctBabies < statistic.K)
-        {
-            return EmptyCell(statistic.Key, bandKey, dimensionValue, $"below_k_{statistic.K}");
-        }
-
-        // K families (a family is the babies sharing an Owner, so twins count once): always k, with no hysteresis, because the
-        // caller passes no previous family count; never fewer families than a first publication needs.
-        if (distinctFamilies < statistic.K)
-        {
-            return EmptyCell(statistic.Key, bandKey, dimensionValue, $"below_k_families_{statistic.K}");
-        }
-
-        // Family dominance suppression
-        if (IsDominatedByOneFamily(contributions.Select(c => c.FamilyId).ToList()))
-        {
-            return EmptyCell(statistic.Key, bandKey, dimensionValue, "family_dominance");
-        }
-
-        var values = contributions.Select(c => c.Value).OrderBy(v => v).ToList();
-        var mean = values.Average();
-        var noisyMean = AddLaplaceNoise(mean, statistic.Epsilon, sensitivity: 1.0m / distinctBabies);
-
-        decimal? p3 = null;
-        decimal? p97 = null;
-        if (statistic.KTails.HasValue && distinctBabies >= statistic.KTails.Value)
-        {
-            // TODO: Tier-B exponential mechanism for percentiles (gated; Phase 1 uses Laplace only).
-            // For Phase 1, use empirical percentiles without noise on tails (they are not published until KTails is met).
-            p3 = Percentile(values, 0.03);
-            p97 = Percentile(values, 0.97);
-        }
-
-        return new AggregatedCell(
-            statistic.Key,
-            bandKey,
-            dimensionValue,
-            distinctBabies,
-            distinctFamilies,
-            noisyMean,
-            p3,
-            p97,
-            Suppressed: false,
-            SuppressionReason: null);
-    }
+    /// <summary>Whether the core reads observations for <paramref name="statistic"/> (only such a statistic may be in v1).</summary>
+    public static bool CanRead(CommunityStatistic statistic) => Samplers.Any(sampler => sampler.CanHandle(statistic));
 
     /// <summary>
-    /// The dominance rule (design 34 section 5): whether one family gave more than <see cref="FamilyDominanceThreshold"/> of a cell's
-    /// values. <paramref name="familyOfEachValue"/> holds the family of every value of the cell (one entry per value, after capping).
-    /// An empty cell is not dominated (it is suppressed by k).
+    /// The dominance rule on raw values (design 34 section 5), kept for the community prediction aggregator: whether one family gave
+    /// more than <see cref="FamilyDominanceThreshold"/> of the values. <paramref name="familyOfEachValue"/> holds the family of
+    /// every value (one entry per value, after capping). An empty cell is not dominated (it is suppressed by k).
     /// </summary>
     public static bool IsDominatedByOneFamily(IReadOnlyCollection<Guid> familyOfEachValue)
     {
@@ -144,39 +72,86 @@ public static class CommunityStatisticsAggregator
         return (decimal)maxFamilyCount / familyOfEachValue.Count > FamilyDominanceThreshold;
     }
 
-    /// <summary>Laplace noise for tier-A statistics (shares, means). Sensitivity = 1/n for bounded [0,1] or clipped ranges.</summary>
-    public static decimal AddLaplaceNoise(decimal value, decimal epsilon, decimal sensitivity)
+    private static StatisticRun AggregateStatistic(CommunityAggregationInput input, CommunityStatistic statistic, ICommunityNoise noise)
     {
-        if (epsilon <= 0)
-        {
-            return value;
-        }
-
-        var scale = (double)(sensitivity / epsilon);
-        var uniform = RandomNumberGenerator.GetInt32(int.MaxValue) / (double)int.MaxValue;
-        var sign = uniform < 0.5 ? -1.0 : 1.0;
-        var noise = sign * scale * Math.Log(1.0 - 2.0 * Math.Abs(uniform - 0.5));
-        return value + (decimal)noise;
+        var grid = CommunityCellGrid.For(input.Catalog.BandGrids, statistic);
+        var located = Locate(grid, SamplerFor(statistic).SamplesOf(statistic, input));
+        var capped = CommunityDailyCap.Apply(located, statistic.CapPerBaby, input.CapKey);
+        var epsilonPerOutput = (double)EpsilonOf(statistic) / statistic.V1Outputs.Count;
+        var published = statistic.V1Outputs
+            .SelectMany(output => ReleaseOutput(statistic, output.Name, grid, capped, epsilonPerOutput, input.Previous, noise))
+            .ToArray();
+        return StatisticRun.Of(statistic, grid, capped, published);
     }
 
-    /// <summary>Deterministic keyed hash for per-baby-per-day capping (keyed hash of baby id + day string).</summary>
-    public static byte[] CapHash(Guid babyId, string dayKey)
+    private static IReadOnlyList<CommunityOutputCell> ReleaseOutput(
+        CommunityStatistic statistic,
+        string output,
+        CommunityCellGrid grid,
+        IReadOnlyList<CommunityCellSample> capped,
+        double epsilon,
+        CommunityPreviousRelease previous,
+        ICommunityNoise noise)
     {
-        var input = Encoding.UTF8.GetBytes($"{babyId:N}:{dayKey}");
-        return SHA256.HashData(input);
+        var weighted = CommunityWeightedSample.Of(capped.Where(sample => sample.Output == output));
+        var populations = CommunityCellPopulation.PerFineCell(grid, weighted);
+        var values = MechanismFor(output).Release(output, grid, weighted, epsilon, noise);
+        return CommunityPublication.Decide(statistic, output, grid, populations, values, previous);
     }
 
-    private static AggregatedCell EmptyCell(string statisticKey, string bandKey, string? dimensionValue, string reason) =>
-        new(statisticKey, bandKey, dimensionValue, 0, 0, 0m, null, null, Suppressed: true, SuppressionReason: reason);
+    private static IEnumerable<CommunityCellSample> Locate(CommunityCellGrid grid, IEnumerable<CommunitySample> samples) =>
+        samples
+            .Select(sample => new { Sample = sample, Cell = grid.FineCellOf(sample.AgeWeeks, sample.Dimension) })
+            .Where(located => located.Cell is not null)
+            .Select(located => new CommunityCellSample(located.Sample.BabyId, located.Sample.FamilyId, located.Sample.Day, located.Cell!.Value, located.Sample.Output, located.Sample.Component));
 
-    private static decimal Percentile(IReadOnlyList<decimal> sortedValues, double percentile)
+    private static ICommunityStatisticSampler SamplerFor(CommunityStatistic statistic) =>
+        Samplers.FirstOrDefault(sampler => sampler.CanHandle(statistic))
+            ?? throw new InvalidOperationException($"No sampler reads statistic '{statistic.Key}'.");
+
+    private static ICommunityOutputMechanism MechanismFor(string output) =>
+        Mechanisms.FirstOrDefault(mechanism => mechanism.CanHandle(output))
+            ?? throw new InvalidOperationException($"No mechanism computes output '{output}'.");
+
+    private static decimal EpsilonOf(CommunityStatistic statistic) =>
+        statistic.Epsilon ?? throw new InvalidOperationException($"Statistic '{statistic.Key}' is in v1 without an epsilon.");
+
+    private static CommunityRunSummary SummaryOf(IReadOnlyList<StatisticRun> runs)
     {
-        if (sortedValues.Count == 0)
+        var babies = runs.SelectMany(run => run.Babies).Distinct().Count();
+        return new CommunityRunSummary(
+            runs.Sum(run => run.Cells.Count),
+            runs.Sum(run => run.CoarseCellsPublished),
+            runs.Sum(run => run.FineCellsSuppressed),
+            (int)Math.Round(babies / 10.0, MidpointRounding.AwayFromZero) * 10);
+    }
+
+    /// <summary>One statistic's part of the release and of the run summary.</summary>
+    private sealed record StatisticRun(
+        CommunityReleaseStatistic Parameters,
+        IReadOnlyList<CommunityReleaseCell> Cells,
+        int CoarseCellsPublished,
+        int FineCellsSuppressed,
+        IReadOnlySet<Guid> Babies)
+    {
+        public static StatisticRun Of(CommunityStatistic statistic, CommunityCellGrid grid, IReadOnlyList<CommunityCellSample> capped, IReadOnlyList<CommunityOutputCell> published)
         {
-            return 0m;
+            var cells = published.GroupBy(cell => cell.Key).Select(group => CellOf(statistic, group)).ToArray();
+            var publishedKeys = published.Select(cell => cell.Key).ToHashSet();
+            var withData = capped.Select(sample => sample.Cell).ToHashSet();
+            return new StatisticRun(
+                new CommunityReleaseStatistic(statistic.Key, statistic.K, statistic.KHysteresis, EpsilonOf(statistic)),
+                cells,
+                grid.CoarseCells.Count(coarse => publishedKeys.Contains(coarse.Key)),
+                grid.FineCells.Count(cell => withData.Contains(cell) && !publishedKeys.Contains(cell)),
+                capped.Select(sample => sample.BabyId).ToHashSet());
         }
 
-        var index = (int)Math.Floor(percentile * (sortedValues.Count - 1));
-        return sortedValues[Math.Clamp(index, 0, sortedValues.Count - 1)];
+        private static CommunityReleaseCell CellOf(CommunityStatistic statistic, IGrouping<CommunityCellKey, CommunityOutputCell> outputs)
+        {
+            var values = outputs.SelectMany(output => output.Values).ToDictionary(StringComparer.Ordinal);
+            var babies = CommunityCellPopulation.Union(outputs.Select(output => output.Population)).Babies.Count;
+            return new CommunityReleaseCell(statistic.Key, outputs.Key.Band, outputs.Key.Dimension, values, CommunityGroupSizes.Of(babies));
+        }
     }
 }

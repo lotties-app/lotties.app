@@ -11,6 +11,7 @@ public sealed class CommunityStatisticsValidatorTests
     private const string Bottle = "bottle_ml_per_feed";
     private const string Growth = "growth_vs_age";
     private const string Naps = "naps_per_day";
+    private const string Tummy = "tummy_minutes_per_day";
     private const string Cry = "cry_outcome_by_cause";
 
     private static CommunityStatisticsCatalog Valid => ShippedCommunityStatistics.Catalog;
@@ -20,6 +21,9 @@ public sealed class CommunityStatisticsValidatorTests
 
     private static CommunityStatisticsCatalog WithGrids(Func<CommunityBandGrids, CommunityBandGrids> change) =>
         Valid with { BandGrids = change(Valid.BandGrids) };
+
+    private static CommunityStatistic WithTier(CommunityStatistic statistic, string output, CommunityOutputTier tier) =>
+        statistic with { Outputs = [.. statistic.Outputs.Select(entry => entry.Name == output ? entry with { Tier = tier } : entry)] };
 
     private static void AssertReports(CommunityStatisticsCatalog catalog, string expected)
     {
@@ -46,7 +50,7 @@ public sealed class CommunityStatisticsValidatorTests
     [Fact]
     public void Validate_Header_ChecksSchemaVersionGeneratedForAndRelease()
     {
-        AssertReports(Valid with { Schema = 2 }, "schema must be 1.");
+        AssertReports(Valid with { Schema = 1 }, "schema must be 2.");
         AssertReports(Valid with { Version = 0 }, "version must be 1 or more.");
         AssertReports(Valid with { GeneratedFor = "collected" }, "generatedFor must be 'catalog only, not collected'.");
         AssertReports(Valid with { Release = "nightly" }, "release 'nightly' must be one of");
@@ -60,7 +64,9 @@ public sealed class CommunityStatisticsValidatorTests
         AssertReports(WithGrids(grids => grids with { AgeWeeksCoarse = [new(0, 52, 4)] }), "ageWeeksCoarse must end at week 104.");
         AssertReports(WithGrids(grids => grids with { AgeWeeksCoarse = [new(0, 104, 5)] }), "ageWeeksCoarse segments must have a positive step that divides them.");
         AssertReports(WithGrids(grids => grids with { AgeWeeksCoarse = [new(0, 2, 2), new(2, 104, 6)] }), "every ageWeeksCoarse edge must be an ageWeeksFine edge.");
-        AssertReports(WithGrids(grids => grids with { CryAgeBands = ["newborn"] }), "cryAgeBands must be [");
+        AssertReports(WithGrids(grids => grids with { CryAgeBands = [new("newborn", 0, 104)] }), "cryAgeBands must be [");
+        AssertReports(WithGrids(grids => grids with { CryAgeBands = [new("newborn", 0, 6), new("weeks6to3m", 6, 13), new("months3to6", 14, 26), new("months6plus", 26, 104)] }), "cryAgeBands must be non-empty and contiguous.");
+        AssertReports(WithGrids(grids => grids with { CryAgeBands = [new("newborn", 0, 6), new("weeks6to3m", 6, 13), new("months3to6", 13, 26), new("months6plus", 26, 52)] }), "cryAgeBands must run from week 0 to week 104.");
     }
 
     [Fact]
@@ -99,7 +105,7 @@ public sealed class CommunityStatisticsValidatorTests
     public void Validate_TailsWithoutKTails50_AreRejected()
     {
         AssertReports(WithStatistic(Growth, statistic => statistic with { KTails = 30 }), "needs kTails of at least 50 exactly when it publishes p3/p97.");
-        AssertReports(WithStatistic(Naps, statistic => statistic with { Outputs = [.. statistic.Outputs, "p97"] }), "needs kTails of at least 50");
+        AssertReports(WithStatistic(Naps, statistic => statistic with { Outputs = [.. statistic.Outputs, new("p97", CommunityOutputTier.NotInV1)] }), "needs kTails of at least 50");
         AssertReports(WithStatistic(Naps, statistic => statistic with { KTails = 50 }), "needs kTails of at least 50");
     }
 
@@ -133,10 +139,61 @@ public sealed class CommunityStatisticsValidatorTests
     }
 
     [Fact]
-    public void Validate_EpsilonOutOfRange_IsRejected()
+    public void Validate_EpsilonOutOfItsTierRange_IsRejected()
     {
-        AssertReports(WithStatistic(Naps, statistic => statistic with { Epsilon = 0m }), "epsilon 0 is out of range");
-        AssertReports(WithStatistic(Naps, statistic => statistic with { Epsilon = 1.5m }), $"epsilon {1.5m} is out of range");
+        AssertReports(WithStatistic(Cry, statistic => statistic with { Epsilon = 0m }), "is out of the tier A range (0, 1]");
+        AssertReports(WithStatistic(Cry, statistic => statistic with { Epsilon = 5m }), "is out of the tier A range (0, 1]");
+        AssertReports(WithStatistic(Tummy, statistic => statistic with { Epsilon = 0.2m }), "is out of the tier B range (1, 5]");
+        AssertReports(WithStatistic(Tummy, statistic => statistic with { Epsilon = 6m }), "is out of the tier B range (1, 5]");
+    }
+
+    [Fact]
+    public void Validate_EpsilonNullExactlyWhenNothingIsInV1()
+    {
+        AssertReports(WithStatistic(Naps, statistic => statistic with { Epsilon = 0.2m }), $"statistic '{Naps}' epsilon must be null exactly when no output is in v1.");
+        AssertReports(WithStatistic(Cry, statistic => statistic with { Epsilon = null }), $"statistic '{Cry}' epsilon must be null exactly when no output is in v1.");
+    }
+
+    [Fact]
+    public void Validate_PercentileInV1_IsRejected()
+    {
+        AssertReports(WithStatistic(Tummy, statistic => WithTier(statistic, "p50", CommunityOutputTier.B)), $"statistic '{Tummy}' output 'p50' is a percentile and must be notInV1 (O2, section 5.1).");
+        AssertReports(WithStatistic(Naps, statistic => WithTier(statistic, "p90", CommunityOutputTier.A)), $"statistic '{Naps}' output 'p90' is a percentile and must be notInV1 (O2, section 5.1).");
+    }
+
+    [Fact]
+    public void Validate_OutputOutsideItsDecidedTier_IsRejected()
+    {
+        AssertReports(WithStatistic(Tummy, statistic => WithTier(statistic, CommunityOutputs.ShareOfDaysWithAny, CommunityOutputTier.A)), $"output '{CommunityOutputs.ShareOfDaysWithAny}' must be tier B (section 5.1).");
+        AssertReports(WithStatistic(Cry, statistic => WithTier(statistic, CommunityOutputs.ShareHelpedByCause, CommunityOutputTier.B)), $"output '{CommunityOutputs.ShareHelpedByCause}' must be tier A (section 5.1).");
+        AssertReports(WithStatistic(Cry, statistic => WithTier(statistic, CommunityOutputs.ShareHelpedByCause, CommunityOutputTier.B)), $"statistic '{Cry}' mixes noise tiers in v1.");
+        AssertReports(WithStatistic(Tummy, statistic => WithTier(statistic, CommunityOutputs.ShareOfDaysWithAny, CommunityOutputTier.NotInV1)), $"output '{CommunityOutputs.ShareOfDaysWithAny}' must be tier B (section 5.1).");
+    }
+
+    [Fact]
+    public void Validate_UndecidedShareInV1_IsRejected()
+    {
+        var withShare = WithStatistic(Naps, statistic => statistic with { Outputs = [.. statistic.Outputs, new(CommunityOutputs.ShareOfDaysWithAny, CommunityOutputTier.B)], Epsilon = 5m, NotInV1 = false });
+
+        AssertReports(withShare, $"statistic '{Naps}' output '{CommunityOutputs.ShareOfDaysWithAny}' must be tier NotInV1 (section 5.1).");
+        AssertReports(withShare, $"statistic '{Naps}' is in v1 but the aggregation core does not read it.");
+    }
+
+    [Fact]
+    public void Validate_GrowthInV1_IsRejected()
+    {
+        var growth = WithStatistic(Growth, statistic => statistic with { Outputs = [new("p50", CommunityOutputTier.A)], NotInV1 = false, Epsilon = 0.2m });
+
+        AssertReports(growth, $"statistic '{Growth}' must be marked notInV1 (O6).");
+    }
+
+    [Fact]
+    public void Validate_NotInV1FlagAndReason_FollowTheOutputs()
+    {
+        AssertReports(WithStatistic(Naps, statistic => statistic with { NotInV1 = false }), $"statistic '{Naps}' must be marked notInV1 (no output is in v1).");
+        AssertReports(WithStatistic(Cry, statistic => statistic with { NotInV1 = true }), $"statistic '{Cry}' must not be marked notInV1 (an output is in v1).");
+        AssertReports(WithStatistic(Tummy, statistic => statistic with { NotInV1Reason = null }), $"statistic '{Tummy}' needs a notInV1Reason exactly when an output is notInV1.");
+        AssertReports(WithStatistic(Cry, statistic => statistic with { NotInV1Reason = "x" }), $"statistic '{Cry}' needs a notInV1Reason exactly when an output is notInV1.");
     }
 
     [Fact]
@@ -161,19 +218,12 @@ public sealed class CommunityStatisticsValidatorTests
     }
 
     [Fact]
-    public void Validate_GrowthInV1_IsRejected()
-    {
-        AssertReports(WithStatistic(Growth, statistic => statistic with { NotInV1 = false, NotInV1Reason = null }), $"statistic '{Growth}' must be marked notInV1 (O6).");
-        AssertReports(WithStatistic(Cry, statistic => statistic with { NotInV1 = true, NotInV1Reason = "x" }), $"statistic '{Cry}' must not be marked notInV1.");
-        AssertReports(WithStatistic(Growth, statistic => statistic with { NotInV1Reason = null }), "needs a notInV1Reason exactly when notInV1 is true.");
-    }
-
-    [Fact]
     public void Validate_BandAndOutputs_MustBeKnownAndFedByInputs()
     {
         AssertReports(WithStatistic(Naps, statistic => statistic with { Band = new("postcode", null) }), "band grid 'postcode' is unknown or its input is not read.");
         AssertReports(WithStatistic(Naps, statistic => statistic with { Band = new("age_weeks", "bottle_feeding_type") }), "band dimension 'bottle_feeding_type' is unknown or its inputs are not read.");
-        AssertReports(WithStatistic(Naps, statistic => statistic with { Outputs = ["mean"] }), "output 'mean' is unknown.");
+        AssertReports(WithStatistic(Naps, statistic => statistic with { Outputs = [new("mean", CommunityOutputTier.NotInV1)] }), "output 'mean' is unknown.");
+        AssertReports(WithStatistic(Naps, statistic => statistic with { Outputs = [.. statistic.Outputs, statistic.Outputs[0]] }), "lists an output twice.");
     }
 
     [Fact]

@@ -8,10 +8,10 @@ using Microsoft.Extensions.Options;
 namespace Lotties.Application.CommunityInsights;
 
 /// <summary>
-/// Weekly batch process that aggregates community statistics for opted-in babies (docs/design/34-community-insights.md section 5):
-/// snapshots consent at run start, loads events for opted-in babies (excluding BYO stores), applies clipping/capping/suppression/noise
-/// per catalog, writes to a staging release, swaps it to active, and prunes old releases. Off by default
-/// (<see cref="CommunityAggregationOptions.Enabled"/>); turning it on in production is task T9.
+/// Weekly batch process for community statistics (docs/design/34-community-insights.md section 5): snapshots consent at run start,
+/// writes a staging release, swaps it to active, and prunes old releases. It reads no events yet: the release it writes is a
+/// placeholder with no cells (see <see cref="CommunityAggregationRunner"/>). Behind <see cref="CommunityAggregationOptions.Enabled"/>
+/// and <c>CommunityInsights:Enabled</c>.
 /// </summary>
 public sealed class CommunityAggregationJob(
     IOptionsMonitor<CommunityAggregationOptions> options,
@@ -85,8 +85,8 @@ public sealed class CommunityAggregationJob(
 
 /// <summary>
 /// The actual aggregation pipeline, scoped per run so it gets fresh repositories and can be tested independently of the timer.
-/// Phase 1: full pipeline structure with simplified Laplace-only noise; tier-B exponential mechanism for percentiles is gated
-/// (TODO: implement when tier-B is activated in a future phase).
+/// Today a placeholder: it takes the population snapshot and writes a placeholder release (<see cref="CommunityRelease.Placeholder"/>);
+/// it reads no events. The computation itself is the pure Domain core <see cref="CommunityStatisticsAggregator"/>, not wired yet.
 /// </summary>
 internal sealed class CommunityAggregationRunner(
     ICommunityConsentRepository consents,
@@ -131,15 +131,15 @@ internal sealed class CommunityAggregationRunner(
         logger.LogInformation("Run {RunId}: {BabyCount} eligible babies, {StatisticCount} statistics in catalog",
             runId, eligibleBabies.Count, catalog.Statistics.Count);
 
-        // TODO: Load events of the eligible babies from the Lotties database (the snapshot already left out every baby not on the built-in store).
-        // TODO: Apply clipping per catalog Clip ranges, per-baby cap of 14 days per cell (keyed hash of baby id + day).
-        // TODO: Build cellsByBand per statistic and call CommunityStatisticsAggregator.Aggregate.
-        // TODO: Serialize aggregated cells to JSON blob.
+        // TODO (event loading, a later task): derive the CommunityAggregationInput observations of the eligible babies from the Lotties
+        // database (the snapshot already left out every baby not on the built-in store) and serialise
+        // CommunityStatisticsAggregator.Aggregate(input, SnappedLaplaceNoise.Cryptographic()).Release instead of the placeholder.
 
-        // Phase 1 placeholder: write an empty-but-valid release to exercise the staging/swap/prune pipeline.
+        // Placeholder: a release with no statistics and no cells (read like an empty release: every caller falls back to the norms),
+        // written to exercise the staging/swap/prune pipeline.
         var sequence = await releases.GetMaxSequenceAsync(cancellationToken) + 1;
         var releaseId = IsoWeekLabel.Of(now);
-        var statisticsJson = """{"schema":1,"cells":[],"generatedBy":"phase-1-placeholder"}""";
+        var statisticsJson = CommunityReleaseJson.Serialize(CommunityRelease.Placeholder(now, catalog.Version));
 
         var release = CommunityStatisticsRelease.CreatePending(releaseId, sequence, statisticsJson, now);
         await releases.SaveAsync(release, cancellationToken);

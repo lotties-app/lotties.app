@@ -35,6 +35,25 @@ public sealed class CommunityAggregationRunnerTests(ApiFactory factory) : IClass
         Assert.Equal(expectedReleaseId, active.ReleaseId);
     }
 
+    [Fact]
+    public async Task Run_WritesAPlaceholderReleaseWithNoCell()
+    {
+        await SeedEligibleBabyAsync();
+        var now = DateTimeOffset.Parse("2026-11-29T03:30:00Z", System.Globalization.CultureInfo.InvariantCulture);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<CommunityAggregationRunner>().RunAsync(Guid.NewGuid(), now, CancellationToken.None);
+        }
+
+        var active = await factory.QueryAsync(context => context.CommunityStatisticsReleases.AsNoTracking()
+            .SingleAsync(release => release.Status == CommunityStatisticsReleaseStatus.Active));
+        var content = CommunityReleaseJson.Parse(active.StatisticsJson);
+        Assert.True(content.IsPlaceholder);
+        Assert.Empty(content.Cells);
+        Assert.Empty(content.Statistics);
+    }
+
     private Task SeedEligibleBabyAsync() =>
         factory.SeedAsync(context =>
         {

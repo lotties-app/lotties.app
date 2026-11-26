@@ -3,14 +3,17 @@ using System.Text.RegularExpressions;
 namespace Lotties.Domain.CommunityInsights;
 
 /// <summary>
-/// The rules the community statistics catalog must follow (checked at startup and in tests; docs/design/34-community-insights.md
-/// sections 4, 5 and 13): schema 1, a positive version, <c>generatedFor</c> saying nothing is collected, a known release
-/// cadence; contiguous band grids from week 0 whose coarse edges are fine edges and the four cry age bands; exactly the
-/// use cases of section 4, each once; per statistic a description, inputs only from <see cref="AllowedInputs"/> and never
-/// one of <see cref="ForbiddenCategories"/>, the band's grid and dimension fed by its inputs, known outputs, k at least
-/// <see cref="MinimumK"/>, a hysteresis at most k, a tail size of at least <see cref="MinimumKTails"/> exactly when p3/p97
-/// are published, epsilon in (0, <see cref="MaximumEpsilon"/>], a per-baby cap, clipping ranges on its own inputs,
-/// status <c>planned</c>, values marked proposed, and <c>notInV1</c> (with a reason) exactly for pooled growth (O6).
+/// The rules the community statistics catalog must follow (checked at startup, by the aggregation core and in tests;
+/// docs/design/34-community-insights.md sections 4, 5, 5.1 and 13): schema 2, a positive version, <c>generatedFor</c> saying nothing
+/// is collected, a known release cadence; contiguous band grids from week 0 whose coarse edges are fine edges, and the four cry age
+/// bands on contiguous week edges; exactly the use cases of section 4, each once; per statistic a description, inputs only from
+/// <see cref="AllowedInputs"/> and never one of <see cref="ForbiddenCategories"/>, the band's grid and dimension fed by its inputs,
+/// known outputs, k at least <see cref="MinimumK"/>, a hysteresis at most k, a tail size of at least <see cref="MinimumKTails"/>
+/// exactly when p3/p97 are listed, a per-baby cap, clipping ranges on its own inputs, status <c>planned</c>, values marked proposed;
+/// and the noise tiers of section 5.1: every percentile output <c>notInV1</c> (O2), pooled growth <c>notInV1</c> (O6), every other
+/// output in exactly the tier the owner decided (<see cref="DecidedTiers"/>) and only when the core computes it, one tier per
+/// statistic, epsilon null exactly when nothing is in v1 and otherwise in the tier's range, <c>notInV1</c> exactly when no output is
+/// in v1, and a <c>notInV1Reason</c> exactly when an output is not.
 /// </summary>
 public static partial class CommunityStatisticsValidator
 {
@@ -20,10 +23,13 @@ public static partial class CommunityStatisticsValidator
     /// <summary>Proposal O1: percentiles outside p10-p90 only at 50 babies or more.</summary>
     public const int MinimumKTails = 50;
 
-    /// <summary>The largest epsilon per statistic per release (O2 proposes 0.2 weekly or 0.5 monthly).</summary>
-    public const decimal MaximumEpsilon = 1m;
+    /// <summary>The largest epsilon per statistic per release of tier A, strict (decided: 0.2).</summary>
+    public const decimal MaximumStrictEpsilon = 1m;
 
-    /// <summary>The largest number of values one baby may add per statistic and band.</summary>
+    /// <summary>The largest epsilon per statistic per release of tier B, relaxed (decided: about 5).</summary>
+    public const decimal MaximumRelaxedEpsilon = 5m;
+
+    /// <summary>The largest number of days one baby may add per statistic and band.</summary>
     public const int MaximumCapPerBaby = 31;
 
     public const string PlannedStatus = "planned";
@@ -35,28 +41,25 @@ public static partial class CommunityStatisticsValidator
     /// <summary>The last week (exclusive) the age grids cover: two years.</summary>
     public const int AgeWeeksEnd = 104;
 
+    public const string GrowthKey = "growth_vs_age";
+
     /// <summary>The use cases of section 4, one entry each, nothing else.</summary>
     public static readonly IReadOnlyList<string> KnownKeys =
     [
-        "bottle_ml_per_feed", "growth_vs_age", "tummy_minutes_per_day", "naps_per_day", "day_sleep_minutes",
+        "bottle_ml_per_feed", GrowthKey, "tummy_minutes_per_day", "naps_per_day", "day_sleep_minutes",
         "night_sleep_minutes", "feeds_per_day", "diapers_per_day", "routine_shift_scale", "cry_outcome_by_cause",
     ];
 
     /// <summary>
-    /// The statistics that stay out of v1. O6 excludes pooled growth (WHO curves first); O2 excludes every statistic
-    /// whose outputs are percentiles (tier-B epsilon approval required; Phase 0 uses only tier-A shares).
+    /// The tier the owner decided for each output that is not a percentile (section 5.1, O2 of 2026-11-11): the crying shares in
+    /// tier A, the tummy-time share of days in tier B. An output not listed here (and every percentile) is <c>notInV1</c>.
     /// </summary>
-    public static readonly IReadOnlyList<string> NotInV1Keys =
-    [
-        "growth_vs_age",
-        "bottle_ml_per_feed",
-        "naps_per_day",
-        "day_sleep_minutes",
-        "night_sleep_minutes",
-        "feeds_per_day",
-        "diapers_per_day",
-        "routine_shift_scale",
-    ];
+    public static readonly IReadOnlyDictionary<string, CommunityOutputTier> DecidedTiers = new Dictionary<string, CommunityOutputTier>(StringComparer.Ordinal)
+    {
+        [$"cry_outcome_by_cause.{CommunityOutputs.ShareHelpedByCause}"] = CommunityOutputTier.A,
+        [$"cry_outcome_by_cause.{CommunityOutputs.ShareSuggestedEqualsHelped}"] = CommunityOutputTier.A,
+        [$"tummy_minutes_per_day.{CommunityOutputs.ShareOfDaysWithAny}"] = CommunityOutputTier.B,
+    };
 
     public static readonly IReadOnlyList<string> Releases = ["weekly", "monthly"];
 
@@ -102,23 +105,12 @@ public static partial class CommunityStatisticsValidator
         ["account"] = ["account", "user", "email", "issuer", "sub", "password", "consent"],
     };
 
-    public static readonly IReadOnlyList<string> Outputs =
-    [
-        "p3", "p10", "p15", "p25", "p50", "p75", "p85", "p90", "p97",
-        "bottles_per_day_p50", "share_of_days_with_any",
-        "shift_ratio_p90", "shift_ratio_p97",
-        "share_helped_by_cause", "share_suggested_equals_helped",
-    ];
-
-    /// <summary>Outputs outside p10-p90, published only at <see cref="MinimumKTails"/> babies.</summary>
-    public static readonly IReadOnlyList<string> TailOutputs = ["p3", "p97", "shift_ratio_p97"];
-
     /// <summary>Each band dimension and the inputs it is read from.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Dimensions = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
-        ["bottle_feeding_type"] = ["bottle_feeding_type"],
-        ["part_of_day"] = ["part_of_day"],
-        ["routine_metric"] = ["naps_per_day", "day_sleep_minutes", "night_sleep_minutes", "feeds_per_day", "diapers_per_day"],
+        [CommunityDimensions.BottleFeedingType] = ["bottle_feeding_type"],
+        [CommunityDimensions.PartOfDay] = ["part_of_day"],
+        [CommunityDimensions.RoutineMetric] = ["naps_per_day", "day_sleep_minutes", "night_sleep_minutes", "feeds_per_day", "diapers_per_day"],
     };
 
     /// <summary>Each grid and the input it is read from.</summary>
@@ -174,7 +166,14 @@ public static partial class CommunityStatisticsValidator
         var fine = EdgesOf(grids.AgeWeeksFine, "ageWeeksFine", errors);
         var coarse = EdgesOf(grids.AgeWeeksCoarse, "ageWeeksCoarse", errors);
         Check(coarse.All(fine.Contains), "every ageWeeksCoarse edge must be an ageWeeksFine edge.", errors);
-        Check(grids.CryAgeBands.SequenceEqual(CryAgeBands), $"cryAgeBands must be [{string.Join(", ", CryAgeBands)}].", errors);
+        CheckCryBands(grids.CryAgeBands, errors);
+    }
+
+    private static void CheckCryBands(IReadOnlyList<CommunityNamedBand> bands, List<string> errors)
+    {
+        Check(bands.Select(band => band.Name).SequenceEqual(CryAgeBands), $"cryAgeBands must be [{string.Join(", ", CryAgeBands)}].", errors);
+        Check(bands.Count > 0 && bands[0].FromWeeks == 0 && bands[^1].ToWeeks == AgeWeeksEnd, $"cryAgeBands must run from week 0 to week {AgeWeeksEnd}.", errors);
+        Check(bands.All(band => band.ToWeeks > band.FromWeeks) && bands.Zip(bands.Skip(1)).All(pair => pair.First.ToWeeks == pair.Second.FromWeeks), "cryAgeBands must be non-empty and contiguous.", errors);
     }
 
     private static IReadOnlySet<int> EdgesOf(IReadOnlyList<CommunityBandSegment> segments, string name, List<string> errors)
@@ -208,6 +207,8 @@ public static partial class CommunityStatisticsValidator
         CheckInputs(statistic, where, errors);
         CheckBand(statistic, where, errors);
         CheckOutputs(statistic, where, errors);
+        CheckTiers(statistic, where, errors);
+        CheckEpsilon(statistic, where, errors);
         CheckPrivacy(statistic, where, errors);
         CheckClip(statistic, where, errors);
         CheckStatus(statistic, where, errors);
@@ -230,18 +231,36 @@ public static partial class CommunityStatisticsValidator
 
     private static void CheckOutputs(CommunityStatistic statistic, string where, List<string> errors)
     {
-        Check(statistic.Outputs.Count > 0, $"{where} has no outputs.", errors);
-        Check(statistic.Outputs.Distinct(StringComparer.Ordinal).Count() == statistic.Outputs.Count, $"{where} lists an output twice.", errors);
-        errors.AddRange(statistic.Outputs.Where(output => !Outputs.Contains(output)).Select(output => $"{where} output '{output}' is unknown."));
+        var names = statistic.Outputs.Select(output => output.Name).ToArray();
+        Check(names.Length > 0, $"{where} has no outputs.", errors);
+        Check(names.Distinct(StringComparer.Ordinal).Count() == names.Length, $"{where} lists an output twice.", errors);
+        errors.AddRange(names.Where(name => !CommunityOutputs.All.Contains(name)).Select(name => $"{where} output '{name}' is unknown."));
+    }
+
+    private static void CheckTiers(CommunityStatistic statistic, string where, List<string> errors)
+    {
+        errors.AddRange(statistic.V1Outputs.Where(output => CommunityOutputs.Percentiles.Contains(output.Name)).Select(output => $"{where} output '{output.Name}' is a percentile and must be notInV1 (O2, section 5.1)."));
+        Check(statistic.Key != GrowthKey || !statistic.IsInV1, $"{where} must be marked notInV1 (O6).", errors);
+        errors.AddRange(statistic.Outputs.Where(output => !CommunityOutputs.Percentiles.Contains(output.Name) && output.Tier != DecidedTierOf(statistic, output)).Select(output => $"{where} output '{output.Name}' must be tier {DecidedTierOf(statistic, output)} (section 5.1)."));
+        errors.AddRange(statistic.V1Outputs.Where(output => !CommunityOutputs.IsBuilt(output.Name)).Select(output => $"{where} output '{output.Name}' has no mechanism built and must be notInV1."));
+        Check(!statistic.IsInV1 || CommunityStatisticsAggregator.CanRead(statistic), $"{where} is in v1 but the aggregation core does not read it.", errors);
+        Check(statistic.V1Outputs.Select(output => output.Tier).Distinct().Count() <= 1, $"{where} mixes noise tiers in v1.", errors);
+    }
+
+    private static void CheckEpsilon(CommunityStatistic statistic, string where, List<string> errors)
+    {
+        var tier = statistic.V1Outputs.Select(output => (CommunityOutputTier?)output.Tier).FirstOrDefault();
+        Check((statistic.Epsilon is null) == (tier is null), $"{where} epsilon must be null exactly when no output is in v1.", errors);
+        Check(tier != CommunityOutputTier.A || statistic.Epsilon is > 0m and <= MaximumStrictEpsilon, $"{where} epsilon {statistic.Epsilon} is out of the tier A range (0, {MaximumStrictEpsilon}].", errors);
+        Check(tier != CommunityOutputTier.B || statistic.Epsilon is > MaximumStrictEpsilon and <= MaximumRelaxedEpsilon, $"{where} epsilon {statistic.Epsilon} is out of the tier B range ({MaximumStrictEpsilon}, {MaximumRelaxedEpsilon}].", errors);
     }
 
     private static void CheckPrivacy(CommunityStatistic statistic, string where, List<string> errors)
     {
-        var hasTails = statistic.Outputs.Any(TailOutputs.Contains);
+        var hasTails = statistic.Outputs.Any(output => CommunityOutputs.Tails.Contains(output.Name));
         Check(statistic.K >= MinimumK, $"{where} k {statistic.K} is below {MinimumK}.", errors);
         Check(statistic.KHysteresis >= 1 && statistic.KHysteresis <= statistic.K, $"{where} kHysteresis {statistic.KHysteresis} must be between 1 and k.", errors);
         Check(hasTails ? statistic.KTails >= MinimumKTails : statistic.KTails is null, $"{where} needs kTails of at least {MinimumKTails} exactly when it publishes p3/p97.", errors);
-        Check(statistic.Epsilon > 0m && statistic.Epsilon <= MaximumEpsilon, $"{where} epsilon {statistic.Epsilon} is out of range (0, {MaximumEpsilon}].", errors);
         Check(statistic.CapPerBaby >= 1 && statistic.CapPerBaby <= MaximumCapPerBaby, $"{where} capPerBaby {statistic.CapPerBaby} must be between 1 and {MaximumCapPerBaby}.", errors);
     }
 
@@ -254,12 +273,15 @@ public static partial class CommunityStatisticsValidator
 
     private static void CheckStatus(CommunityStatistic statistic, string where, List<string> errors)
     {
-        var notInV1 = NotInV1Keys.Contains(statistic.Key);
+        var anyDeferred = statistic.Outputs.Any(output => !output.IsInV1);
         Check(statistic.Status == PlannedStatus, $"{where} status '{statistic.Status}' must be '{PlannedStatus}'.", errors);
-        Check(statistic.Proposed, $"{where} must be marked proposed until the owner decides O1 and O2.", errors);
-        Check(statistic.NotInV1 == notInV1, notInV1 ? $"{where} must be marked notInV1 (O6)." : $"{where} must not be marked notInV1.", errors);
-        Check(statistic.NotInV1 == !string.IsNullOrWhiteSpace(statistic.NotInV1Reason), $"{where} needs a notInV1Reason exactly when notInV1 is true.", errors);
+        Check(statistic.Proposed, $"{where} must be marked proposed until the owner decides O1.", errors);
+        Check(statistic.NotInV1 == !statistic.IsInV1, statistic.IsInV1 ? $"{where} must not be marked notInV1 (an output is in v1)." : $"{where} must be marked notInV1 (no output is in v1).", errors);
+        Check(anyDeferred == !string.IsNullOrWhiteSpace(statistic.NotInV1Reason), $"{where} needs a notInV1Reason exactly when an output is notInV1.", errors);
     }
+
+    private static CommunityOutputTier DecidedTierOf(CommunityStatistic statistic, CommunityStatisticOutput output) =>
+        DecidedTiers.GetValueOrDefault($"{statistic.Key}.{output.Name}", CommunityOutputTier.NotInV1);
 
     private static void Check(bool condition, string error, List<string> errors)
     {

@@ -22,7 +22,7 @@ public sealed class CommunityStatisticsDataTests
         var catalog = ShippedCommunityStatistics.Catalog;
 
         Assert.EndsWith("}\n", ShippedCommunityStatistics.Text.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
-        Assert.Equal((1, 1, "catalog only, not collected"), (catalog.Schema, catalog.Version, catalog.GeneratedFor));
+        Assert.Equal((2, 2, "catalog only, not collected"), (catalog.Schema, catalog.Version, catalog.GeneratedFor));
     }
 
     [Fact]
@@ -55,13 +55,42 @@ public sealed class CommunityStatisticsDataTests
         var statistics = ShippedCommunityStatistics.Catalog.Statistics;
 
         Assert.Equal("weekly", ShippedCommunityStatistics.Catalog.Release);
-        Assert.All(statistics, statistic => Assert.Equal((20, 18, 0.2m, "planned", true), (statistic.K, statistic.KHysteresis, statistic.Epsilon, statistic.Status, statistic.Proposed)));
+        Assert.All(statistics, statistic => Assert.Equal((20, 18, "planned", true), (statistic.K, statistic.KHysteresis, statistic.Status, statistic.Proposed)));
         Assert.All(statistics.Where(statistic => statistic.KTails is not null), statistic => Assert.Equal(50, statistic.KTails));
-        // O6 keeps pooled growth out; O2 (design 34 section 5) defers every percentile statistic: only the crying shares and the
+        // O6 keeps pooled growth out; O2 (design 34 section 5.1) defers every percentile output: only the crying shares and the
         // tummy-time statistic (its share of days) stay candidates for v1.
         Assert.Equal(
             ["bottle_ml_per_feed", "growth_vs_age", "naps_per_day", "day_sleep_minutes", "night_sleep_minutes", "feeds_per_day", "diapers_per_day", "routine_shift_scale"],
             statistics.Where(statistic => statistic.NotInV1).Select(statistic => statistic.Key));
+    }
+
+    [Fact]
+    public void File_CarriesTheNoiseTiersOfSection51()
+    {
+        var statistics = ShippedCommunityStatistics.Catalog.Statistics;
+
+        // Tier A (strict, 0.2): the crying shares; tier B (relaxed, about 5): the tummy-time share of days; nothing else in v1.
+        Assert.Equal(
+            ["tummy_minutes_per_day.share_of_days_with_any:B", "cry_outcome_by_cause.share_helped_by_cause:A", "cry_outcome_by_cause.share_suggested_equals_helped:A"],
+            statistics.SelectMany(statistic => statistic.V1Outputs.Select(output => $"{statistic.Key}.{output.Name}:{output.Tier}")));
+        Assert.Equal([("tummy_minutes_per_day", 5m), ("cry_outcome_by_cause", 0.2m)], statistics.Where(statistic => statistic.Epsilon is not null).Select(statistic => (statistic.Key, statistic.Epsilon!.Value)));
+        Assert.All(statistics.SelectMany(statistic => statistic.Outputs).Where(output => CommunityOutputs.Percentiles.Contains(output.Name)), output => Assert.Equal(CommunityOutputTier.NotInV1, output.Tier));
+    }
+
+    [Fact]
+    public void File_CryBandsAreTheFourCryAgeBandsOnWeekEdges()
+    {
+        Assert.Equal(
+            [new("newborn", 0, 6), new("weeks6to3m", 6, 13), new("months3to6", 13, 26), new CommunityNamedBand("months6plus", 26, 104)],
+            ShippedCommunityStatistics.Catalog.BandGrids.CryAgeBands);
+    }
+
+    [Fact]
+    public void Parse_UnknownTier_IsAFormatException()
+    {
+        var unknownTier = ShippedCommunityStatistics.Text.Replace("\"tier\": \"B\"", "\"tier\": \"C\"", StringComparison.Ordinal);
+
+        Assert.Throws<FormatException>(() => CommunityStatisticsJson.Parse(unknownTier));
     }
 
     [Fact]
