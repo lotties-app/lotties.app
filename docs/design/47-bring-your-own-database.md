@@ -302,7 +302,7 @@ API does not read (section 11), and BYO is not one.
 ## 6. Moving data in and out (reuse design 24)
 
 *As built (task T7, see its status in section 12): writes during a move answer a retriable `503 store_moving` (not `409 baby_moving`,
-which the web outbox would drop), and the copy is a row-for-row copy of the 12 data tables between the two stores, not the backup
+which the web outbox would drop), and the copy is a row-for-row copy of the 13 data tables between the two stores, not the backup
 file's export and import (which re-authors and re-identifies records); the verification, the switch last, the undo window and the
 failure rules below are as designed.*
 
@@ -407,7 +407,7 @@ CA input in the MVP unless a target provider needs it (decided in T0).
 - *As built (T10, see its status in section 12; the owner decided **opt-in, default off**, because it is her database and the
   delete cannot be undone):* the delete dialog shows, only when a baby erased with the account has records in her own
   database, an unticked box "also delete these babies' records in my own database" (`DELETE /me?wipeOwnDatabase=true`).
-  Ticked: before Lotties' side goes, Lotties deletes, in her database, the rows of the 12 data tables of each such baby (the
+  Ticked: before Lotties' side goes, Lotties deletes, in her database, the rows of the 13 data tables of each such baby (the
   store it points at, an old copy kept for a move's undo window, a failed move's leftovers), with the copier's wipe through
   the routing (flag, breaker, migrator, the app role), and drops nothing else (no schema, no role). Not ticked: her database
   is not touched. In both cases Lotties' side is erased in full (baby rows, descriptors, move rows) and the stores' pools and
@@ -491,7 +491,7 @@ CA input in the MVP unless a target provider needs it (decided in T0).
 **Status (2026-11-07): T1 is built** (branch `feat/byo-t1-model-split`, not deployed). The control context kept its name
 `LottiesDbContext` (renaming it would rewrite every migration's `[DbContext]` attribute and the snapshot) and still maps the
 data tables with their physical keys (`BuiltInDatabaseLinks`), so it keeps owning every migration until T5; the data context
-`LottiesDataDbContext` maps the 12 data tables without keys to control tables and runs on the control context's connection.
+`LottiesDataDbContext` maps the 13 data tables without keys to control tables and runs on the control context's connection.
 Cross-plane writes found: the member change that cancels a doctor's proposals and the backup restore (both share one transaction
 through `BuiltInUnitOfWork`). Two cross-plane places stay on `LottiesDbContext`, valid for the built-in database only: the
 reminder candidates query (one statement with `EXISTS` on data tables; T11) and account erasure (both planes in one
@@ -523,8 +523,8 @@ of work refuses an external store (T7 moves data through the backup file instead
 `DataStoreSchemaVersion` adds `data_stores.schema_version`, additive, empty table). A **separate data migration chain**
 (`Persistence/DataMigrations`, `--context LottiesDataDbContext`, history `lotties.__ef_data_migrations`) is generated from the
 data context in its external-store shape (`ExternalStoreSchema`: default schema `lotties` plus `lotties.store_meta`, a model of
-its own in EF's cache). Its baseline creates the 12 data tables and `store_meta` with no key to a control table and seeds the
-built-in event types from the current model. It never runs on the Lotties database, which keeps its own chain and its tables
+its own in EF's cache). Its baseline creates the first 12 data tables and `store_meta` with no key to a control table and seeds the
+built-in event types from the current model (`AddPredictionOutcomes`, 2026-11-25, adds the 13th; see the 2026-11-25 status below). It never runs on the Lotties database, which keeps its own chain and its tables
 in `public` (section 4's first bullet is therefore not followed: no rename, no second chain on the built-in database): the
 design-time factory points at a `.invalid` host, the baseline's first statement raises on a database that holds the control
 tables, and the migrator refuses one too (`SchemaConflict`). `IStoreMigrator` (one per process) migrates a store lazily when
@@ -621,7 +621,7 @@ through `IBackupExportService` and `BackupApplier`. That path is a merge-with-re
 record to the importer, creates custom event types with new ids, drops a doctor's provenance and the measurements' doctor marks, restamps
 `created_at`/`updated_at` (so the brief's own "ids and `updated_at` equal" verification could never pass), leaves out two of the 12
 tables (proposals, note reads), and would refuse old records that today's validators reject, leaving the owner stuck. A store move is
-the same baby in another database, so `StoreRecordCopier` copies the 12 tables (`DataPlaneTables`, in reference order; a test fails
+the same baby in another database, so `StoreRecordCopier` copies the 13 tables (`DataPlaneTables`, in reference order; a test fails
 for a data table it does not list) row for row through the data contexts of the two stores, opened by name through
 `StoreScope.OpenStoreAsync` (flag, circuit breaker, migrator) and never resolved for the baby. What it keeps from design 24: the record
 set of a baby, references first, ids kept (the merge-into-its-own-baby rule), the change tracker emptied per page, and the file rule
@@ -665,7 +665,7 @@ her store now expect Lotties' side erased and the store left (flag on, no wipe) 
 store byte for byte, an unreachable store is reported with no store, baby or address in the answer or Lotties' log lines, the undo-window
 copy and a failed move's leftovers are wiped, another person's babies, database and a forged move naming her store are untouched, a member
 of a kept baby on an external store fails closed, a running move is 409, the preview names the right babies; `OwnStoreTables` lists the
-12 tables and fails for a new one), `AccountDeletionPlanTests` and `DataStoreMoveTests` (domain), and two container tests in
+13 tables and fails for a new one), `AccountDeletionPlanTests` and `DataStoreMoveTests` (domain), and two container tests in
 `Lotties.Postgres.Tests/Stores/StoreMovePostgresTests.cs` (CI only: a moved-in baby wiped in a real store with another baby's row kept,
 and the opt-out leaving it), plus the block: a late write refused with `store_account_deleting` while reads go on, a move start refused
 while deleting and allowed once the block is lifted, a deletion refused while a move runs and setting no block, a second deletion refused,

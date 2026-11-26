@@ -487,7 +487,7 @@ export const privacyPtBR: PolicyDocument = {
           items: [
             'Seus registros: até você apagá-los, o bebê ser excluído ou você excluir sua conta.',
             'Registros apagados: ficam ocultos até o bebê ou a sua conta serem excluídos (veja [Seus direitos](#privacy-rights)).',
-            'Precisão das estimativas: fica com o bebê até ele ser excluído. Apagar um registro do dia a dia não apaga esses dados.',
+            'Precisão das estimativas: cada um desses dados é apagado quando o horário a partir do qual a estimativa contou fica mais de 180 dias no passado, mas só na próxima vez que nosso servidor guardar um novo dado de precisão para esse bebê (o que acontece quando alguém abre as estimativas do bebê, normalmente depois de um novo registro). Não há limpeza automática nesse intervalo: se nenhum dado novo for guardado para o bebê, eles ficam até o bebê ser excluído. Apagar um registro do dia a dia não apaga esses dados.',
             'O que você adicionou a um bebê que outras pessoas mantêm: continua com esse bebê depois que você sai ou exclui sua conta, sem o seu nome.',
             'Sua conta de login: até você excluir sua conta.',
             'Sua escolha de unidades de medida: até você mudá-la ou excluir sua conta.',

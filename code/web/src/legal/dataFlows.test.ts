@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { CURATED_CREDITS } from '../credits/curatedCredits';
 import type { Locale } from '../i18n/config';
@@ -240,7 +242,10 @@ describe('the data flows behind the privacy policy', () => {
       answer: /answer to whether the estimate was right, although the app does not ask for one today/,
       notShown: /not shown in the app and are not part of the export file or the backup/,
       notCombined: /not combined with other families' records/,
-      retention: /Accuracy of the estimates: kept with the baby until it is erased/,
+      retention:
+        /Accuracy of the estimates: each record is deleted once the time its estimate counted from is more than 180 days in the past, but only the next time our server saves a new accuracy record for that baby/,
+      noJob:
+        /no automatic clean-up in between: if no new record is saved for the baby, they stay until the baby is erased/,
       legal: /accuracy of the estimates[^']*art\. 7, V[^']*art\. 11, I/,
     },
     'pt-BR': {
@@ -250,7 +255,10 @@ describe('the data flows behind the privacy policy', () => {
       answer: /resposta sobre se a estimativa acertou, embora o app não peça essa resposta hoje/,
       notShown: /não aparecem no app e não fazem parte do arquivo exportado nem do backup/,
       notCombined: /não são combinados com registros de outras famílias/,
-      retention: /Precisão das estimativas: fica com o bebê até ele ser excluído/,
+      retention:
+        /Precisão das estimativas: cada um desses dados é apagado quando o horário a partir do qual a estimativa contou fica mais de 180 dias no passado, mas só na próxima vez que nosso servidor guardar um novo dado de precisão para esse bebê/,
+      noJob:
+        /Não há limpeza automática nesse intervalo: se nenhum dado novo for guardado para o bebê, eles ficam até o bebê ser excluído/,
       legal: /precisão das estimativas[^']*art\. 7º, V[^']*art\. 11, I/,
     },
   };
@@ -266,7 +274,22 @@ describe('the data flows behind the privacy policy', () => {
         expect(flow.combinedAcrossFamilies).toBe(false);
         expect(flow.shownInApp).toBe(false);
         expect(flow.inExport).toBe(false);
-        expect(flow.retention).toBe('untilBabyErased');
+        expect(flow.retention).toBe('deletedOnNextRecord');
+        expect(flow.retentionDays).toBe(180);
+      });
+
+      it('has the retention lotties.app runs with (deploy/homelab/values/api.yaml)', () => {
+        const values = readFileSync(
+          resolve(import.meta.dirname, '..', '..', '..', '..', 'deploy/homelab/values/api.yaml'),
+          'utf8',
+        );
+        expect(values).toMatch(/^\s*PredictionOptions__AccuracyTrackingEnabled: "true"\r?$/m);
+        expect(values).toMatch(
+          new RegExp(
+            `^\\s*PredictionOptions__OutcomeRetentionDays: "${flow.retentionDays}"\\r?$`,
+            'm',
+          ),
+        );
       });
 
       it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
@@ -278,11 +301,17 @@ describe('the data flows behind the privacy policy', () => {
             expect(row, key).toMatch(words[key]);
           }
           expect(JSON.stringify(sectionOf(locale, 'retention'))).toMatch(words.retention);
+          expect(JSON.stringify(sectionOf(locale, 'retention'))).toMatch(words.noJob);
           expect(JSON.stringify(sectionOf(locale, 'legal-bases'))).toMatch(words.legal);
         },
       );
     },
   );
+
+  it('raised the policy version with the retention of the accuracy records (version 17 of 2026-11-26 or later)', () => {
+    expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(17);
+    expect(PRIVACY_POLICY_LAST_UPDATED >= '2026-11-26').toBe(true);
+  });
 
   it('raised the policy version with the accuracy of the estimates (version 16 of 2026-11-25 or later)', () => {
     expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(16);

@@ -483,7 +483,7 @@ export const privacyEn: PolicyDocument = {
           items: [
             'Your records: until you delete them, the baby is erased or you delete your account.',
             'Deleted entries: kept hidden until the baby or your account is deleted (see [Your rights](#privacy-rights)).',
-            'Accuracy of the estimates: kept with the baby until it is erased. Deleting an entry does not delete these records.',
+            "Accuracy of the estimates: each record is deleted once the time its estimate counted from is more than 180 days in the past, but only the next time our server saves a new accuracy record for that baby (which happens when someone opens the baby's estimates, usually after a new entry). There is no automatic clean-up in between: if no new record is saved for the baby, they stay until the baby is erased. Deleting an entry does not delete these records.",
             'What you added to a baby other people keep: stays with that baby after you leave or delete your account, without your name.',
             'Your sign-in account: until you delete your account.',
             'Your measurement unit choice: until you change it or delete your account.',

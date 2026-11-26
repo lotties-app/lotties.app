@@ -51,6 +51,11 @@ env:
   # so the system learns from every sleep/feed/diaper event without manual feedback. Off by default in code;
   # enabled here for production learning. Set to "false" to disable without a code change.
   PredictionOptions__AccuracyTrackingEnabled: "true"
+  # Retention of those accuracy records (privacy policy 17, docs/design/33-privacy-audit.md section 20): each time a new
+  # record is saved for a baby, every record of that baby anchored more than 180 days ago is deleted (pending ones too).
+  # There is no job: a baby with no new record keeps hers until she is erased. The code default is 0 (kept until the baby
+  # is erased); change this value only together with the policy's retention line.
+  PredictionOptions__OutcomeRetentionDays: "180"
   # Prediction intervals: show P10–P90 ranges instead of single point estimates so parents see
   # "expected between X and Y minutes" rather than a misleading exact time. Off by default in code;
   # enabled here now that historical backfill data validates interval quality on the dashboard.
