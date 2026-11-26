@@ -1,5 +1,6 @@
 using Lotties.Api.Tests.Support;
 using Lotties.Domain.Babies;
+using Lotties.Domain.Common;
 using Lotties.Domain.CommunityInsights;
 using Lotties.Domain.Predictions;
 using Lotties.Domain.Stores;
@@ -52,7 +53,7 @@ public sealed class CommunityPredictionAggregatorTests(ApiFactory factory) : ICl
         await RunAsync();
 
         var row = Assert.Single(await RowsAsync(typeKey));
-        Assert.Equal((bandLabel, phaseLabel, K, CommunityPredictionAggregator.TemporalBucketOf(Now)), (row.AgeBandLabel, row.Phase, row.Count, row.TemporalBucket));
+        Assert.Equal((bandLabel, phaseLabel, K, IsoWeekLabel.Of(Now)), (row.AgeBandLabel, row.Phase, row.Count, row.TemporalBucket));
         var read = await ReadAsync(band, typeKey, phase);
         Assert.NotNull(read);
         Assert.Equal((band, phase, K, EngineVersion), (read.AgeBand, read.Phase, read.Count, read.EngineVersion));

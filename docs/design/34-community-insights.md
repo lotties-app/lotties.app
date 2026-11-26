@@ -176,7 +176,10 @@ corrected age for preterm babies; using it is a new input and needs the policy r
   events through the same repositories, computes in memory, and writes only the published file and one run row.
   **No staging table of per-baby values** (no copy; withdrawal and deletion are effective by construction).
 - **Population**: babies whose latest consent row is `granted` with the current text version, not soft-deleted, with
-  at least one Owner/Parent still a member; events live (not soft-deleted), complete days only.
+  at least one Owner/Parent still a member; events live (not soft-deleted), complete days only. Babies whose records are
+  on the family's own database are excluded (docs/design/47-bring-your-own-database.md), fail closed: a baby counts only
+  when she points at the built-in store and no move between stores is copying, verifying or in its undo window
+  (`CommunityPopulation.SnapshotAsync`, shared by every community run).
 - **Bands**: age in completed weeks; weekly bands for weeks 0-12, then 2-week bands to week 26, then 4-week bands to
   week 104. The catalog fixes, per statistic, this fine grid and one coarser fallback grid (4-week bands, then
   12-week bands): a fine cell below k is published only as part of its fixed coarse cell when that one reaches k.

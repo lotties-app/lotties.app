@@ -1,3 +1,4 @@
+using Lotties.Domain.Common;
 using Lotties.Domain.CommunityInsights;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -104,7 +105,9 @@ internal sealed class CommunityAggregationRunner(
         }
 
         // Snapshot consent at run start to prevent race conditions during the run. Babies whose owner is a demo or deleted
-        // account are excluded: only babies owned by real users contribute to community statistics.
+        // account are excluded, and so is every baby not settled on the built-in store (her own database, a move between stores
+        // in progress or in its undo window; design 47): only babies owned by real users, whose records are in the Lotties
+        // database, contribute to community statistics.
         var (optedInBabies, eligibleBabies) = await CommunityPopulation.SnapshotAsync(consents, cancellationToken);
         if (optedInBabies.Count == 0)
         {
@@ -114,28 +117,28 @@ internal sealed class CommunityAggregationRunner(
 
         if (eligibleBabies.Count == 0)
         {
-            logger.LogInformation("Run {RunId}: all {Total} opted-in babies excluded (demo/test/inactive); graceful no-op",
+            logger.LogInformation("Run {RunId}: all {Total} opted-in babies excluded (demo/deleted owner or not on the built-in store); graceful no-op",
                 runId, optedInBabies.Count);
             return;
         }
 
         if (eligibleBabies.Count < optedInBabies.Count)
         {
-            logger.LogInformation("Run {RunId}: excluded {Excluded} of {Total} opted-in babies (demo/test/inactive), {Eligible} eligible",
+            logger.LogInformation("Run {RunId}: excluded {Excluded} of {Total} opted-in babies (demo/deleted owner or not on the built-in store), {Eligible} eligible",
                 runId, optedInBabies.Count - eligibleBabies.Count, optedInBabies.Count, eligibleBabies.Count);
         }
 
         logger.LogInformation("Run {RunId}: {BabyCount} eligible babies, {StatisticCount} statistics in catalog",
             runId, eligibleBabies.Count, catalog.Statistics.Count);
 
-        // TODO: Load events for opted-in babies (excluding BYO stores via IStoreScope fail-closed contract).
+        // TODO: Load events of the eligible babies from the Lotties database (the snapshot already left out every baby not on the built-in store).
         // TODO: Apply clipping per catalog Clip ranges, per-baby cap of 14 days per cell (keyed hash of baby id + day).
         // TODO: Build cellsByBand per statistic and call CommunityStatisticsAggregator.Aggregate.
         // TODO: Serialize aggregated cells to JSON blob.
 
         // Phase 1 placeholder: write an empty-but-valid release to exercise the staging/swap/prune pipeline.
         var sequence = await releases.GetMaxSequenceAsync(cancellationToken) + 1;
-        var releaseId = $"{now:yyyy-'W'ww}";
+        var releaseId = IsoWeekLabel.Of(now);
         var statisticsJson = """{"schema":1,"cells":[],"generatedBy":"phase-1-placeholder"}""";
 
         var release = CommunityStatisticsRelease.CreatePending(releaseId, sequence, statisticsJson, now);

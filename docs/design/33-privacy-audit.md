@@ -659,8 +659,10 @@ writes outcomes today. Facts from the code (`legal/dataFlows.ts` `DERIVED_FLOWS`
   4. Labels: written and read through `CommunityPredictionAggregateLabels` (`AgeBands.Label`, `DayPhases.Label`), so
      the reader finds what the aggregator writes. The reader (not registered either) is unchanged while the table is
      empty.
-  5. BYO babies are left out: only babies on the built-in store with no move between stores in progress are read, from
-     the Lotties database; another store is never read (design 47 section 2.2, as `CommunityAggregationJob`).
+  5. BYO babies are left out: only babies on the built-in store with no move between stores in progress or in its undo
+     window are read, from the Lotties database; another store is never read (design 47 section 2.2). The rule is part of
+     the shared snapshot `CommunityPopulation.SnapshotAsync` (`EfCommunityConsentRepository.FilterEligibleBabiesAsync`), so
+     `CommunityAggregationJob` applies the same one.
 - **Before it may be turned on**: register it and a weekly caller behind a flag, describe it in the policy's community
   section and the community consent text (a policy change of its own), and decide whether to add a per-baby cap and
   noise like section 19.

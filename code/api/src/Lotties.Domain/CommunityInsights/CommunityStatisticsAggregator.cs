@@ -21,9 +21,15 @@ public sealed record AggregatedCell(
 
 /// <summary>
 /// Pure aggregation of community statistics (docs/design/34-community-insights.md sections 4 and 5): clipping, per-baby capping,
-/// family dominance suppression, k-suppression with hysteresis, and tier-A Laplace noise. No I/O; the job feeds it data and
-/// writes the result. Tier-B exponential mechanism for percentiles is gated (TODO: implement when tier-B is activated).
+/// family dominance suppression, k-suppression (at least k distinct babies from at least k distinct families), and tier-A Laplace
+/// noise. No I/O; the job feeds it data and writes the result. Tier-B exponential mechanism for percentiles is gated (TODO: implement
+/// when tier-B is activated).
 /// </summary>
+/// <remarks>
+/// Hysteresis: <c>previousDistinctBabiesForHysteresis</c> is the distinct-baby count of the cell in the previous release. Today it
+/// only changes the suppression reason: a cell below k babies is suppressed whatever it had before, so no cell is ever kept between
+/// <see cref="CommunityStatistic.KHysteresis"/> and k. The family count has no previous value and needs k every run.
+/// </remarks>
 public static class CommunityStatisticsAggregator
 {
     /// <summary>Family dominance threshold: a cell is suppressed when one family contributes more than this fraction.</summary>
@@ -79,6 +85,13 @@ public static class CommunityStatisticsAggregator
         if (distinctBabies < statistic.K)
         {
             return EmptyCell(statistic.Key, bandKey, dimensionValue, $"below_k_{statistic.K}");
+        }
+
+        // K families (a family is the babies sharing an Owner, so twins count once): always k, with no hysteresis, because the
+        // caller passes no previous family count; never fewer families than a first publication needs.
+        if (distinctFamilies < statistic.K)
+        {
+            return EmptyCell(statistic.Key, bandKey, dimensionValue, $"below_k_families_{statistic.K}");
         }
 
         // Family dominance suppression
