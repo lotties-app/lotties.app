@@ -117,9 +117,11 @@ public sealed record PredictionOptions
     public int MaxPendingOutcomes { get; init; } = 50;
 
     /// <summary>
-    /// Days a resolved or expired prediction outcome is kept (counted from when it was predicted), applied for a baby and type
-    /// each time a new outcome is recorded for them. <c>0</c> (the default) keeps them until the baby is erased, as the
-    /// privacy policy says; a positive value is a retention the policy must state before it is turned on.
+    /// Days a prediction outcome (pending, resolved or expired) is kept, counted from its anchor (the start of the entry the
+    /// estimate counted from), applied to all of a baby's outcomes each time a new outcome is recorded for her (there is no
+    /// job: a baby with no new outcome keeps hers until she is erased). <c>0</c> (the default, for self-hosted copies) keeps
+    /// them until the baby is erased. lotties.app sets 180 (deploy/homelab/values/api.yaml), as its privacy policy states;
+    /// changing that value there needs the policy's retention line changed first.
     /// </summary>
     public int OutcomeRetentionDays { get; init; } = 0;
 

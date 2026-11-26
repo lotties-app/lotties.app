@@ -23,8 +23,8 @@ internal sealed class PredictionOutcomeResolutionService(
     /// Records a prediction as a pending outcome for later resolution against the actual next event, once per baby, type and
     /// anchor (a predictions answer for the same history records nothing new). Enforces
     /// <see cref="PredictionOptions.MaxPendingOutcomes"/> by expiring the oldest pending outcomes (closed without a measurement,
-    /// never scored) and, when <see cref="PredictionOptions.OutcomeRetentionDays"/> is positive, deletes this baby's and type's
-    /// closed outcomes older than that.
+    /// never scored) and, when <see cref="PredictionOptions.OutcomeRetentionDays"/> is positive, deletes every outcome of this
+    /// baby (all types and states) anchored more than that many days ago.
     /// When <paramref name="createdAt"/> is provided, flags the outcome as retrospective if the event was logged
     /// significantly after its own start time (see <see cref="FeedingPatternAnalyzer.IsRetrospectiveEntry"/>).
     /// </summary>
@@ -64,7 +64,7 @@ internal sealed class PredictionOutcomeResolutionService(
 
             await repository.SaveAsync(outcome, cancellationToken);
             await ExpireOverLimitAsync(babyId, prediction.TypeKey, cancellationToken);
-            await ApplyRetentionAsync(babyId, prediction.TypeKey, cancellationToken);
+            await ApplyRetentionAsync(babyId, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -260,7 +260,12 @@ internal sealed class PredictionOutcomeResolutionService(
             options.MaxPendingOutcomes);
     }
 
-    private async Task ApplyRetentionAsync(Guid babyId, EventTypeKey typeKey, CancellationToken cancellationToken)
+    /// <summary>
+    /// Retention: deletes every outcome of the baby (all types, pending included, so a row that never resolves does not stay)
+    /// anchored more than <see cref="PredictionOptions.OutcomeRetentionDays"/> ago. It runs only here, when a new outcome is
+    /// recorded for the baby; there is no job, so a baby with no new outcome keeps hers until she is erased.
+    /// </summary>
+    private async Task ApplyRetentionAsync(Guid babyId, CancellationToken cancellationToken)
     {
         if (options.OutcomeRetentionDays <= 0)
         {
@@ -268,15 +273,14 @@ internal sealed class PredictionOutcomeResolutionService(
         }
 
         var cutoff = time.GetUtcNow() - TimeSpan.FromDays(options.OutcomeRetentionDays);
-        var deleted = await repository.DeleteClosedBeforeAsync(babyId, typeKey, cutoff, cancellationToken);
+        var deleted = await repository.DeleteAnchoredBeforeAsync(babyId, cutoff, cancellationToken);
         if (deleted > 0)
         {
             logger.LogDebug(
-                "Deleted {DeletedCount} prediction outcomes older than {RetentionDays} days for baby {BabyId} type {TypeKey}",
+                "Deleted {DeletedCount} prediction outcomes anchored more than {RetentionDays} days ago for baby {BabyId}",
                 deleted,
                 options.OutcomeRetentionDays,
-                babyId,
-                typeKey.Value);
+                babyId);
         }
     }
 }

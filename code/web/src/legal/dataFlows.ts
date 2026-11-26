@@ -97,8 +97,14 @@ export interface DerivedFlow {
   /** Shown in the app, in the export file or in the backup file. */
   shownInApp: false;
   inExport: false;
-  /** Kept until the baby is erased (account deletion, demo cleanup); deleting an entry does not delete it. */
-  retention: 'untilBabyErased';
+  /**
+   * `deletedOnNextRecord`: each time a new accuracy record is saved for a baby, every record of that baby anchored more
+   * than `retentionDays` days ago is deleted (`PredictionOptions:OutcomeRetentionDays`, set in
+   * deploy/homelab/values/api.yaml). There is no job: a baby with no new record keeps hers until she is erased (account
+   * deletion, demo cleanup). Deleting an entry does not delete them.
+   */
+  retention: 'deletedOnNextRecord';
+  retentionDays: 180;
 }
 
 export const DERIVED_FLOWS: readonly DerivedFlow[] = [
@@ -111,7 +117,8 @@ export const DERIVED_FLOWS: readonly DerivedFlow[] = [
     combinedAcrossFamilies: false,
     shownInApp: false,
     inExport: false,
-    retention: 'untilBabyErased',
+    retention: 'deletedOnNextRecord',
+    retentionDays: 180,
   },
 ];
 

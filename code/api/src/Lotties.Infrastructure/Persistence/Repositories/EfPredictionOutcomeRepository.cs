@@ -178,9 +178,9 @@ internal sealed class EfPredictionOutcomeRepository(StoreScope stores) : IPredic
         return written > 0;
     }
 
-    public Task<int> DeleteClosedBeforeAsync(
-        Guid babyId, EventTypeKey typeKey, DateTimeOffset cutoff, CancellationToken cancellationToken = default) =>
+    public Task<int> DeleteAnchoredBeforeAsync(
+        Guid babyId, DateTimeOffset cutoff, CancellationToken cancellationToken = default) =>
         stores.ContextFor(babyId).PredictionOutcomes
-            .Where(e => e.BabyId == babyId && e.TypeKey == typeKey.Value && e.Resolved && e.PredictedAt < cutoff)
+            .Where(e => e.BabyId == babyId && e.AnchorAt < cutoff)
             .ExecuteDeleteAsync(cancellationToken);
 }

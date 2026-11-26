@@ -312,7 +312,7 @@ public sealed class PredictionServiceTests
 
         public Task<bool> TryResolveAsync(PredictionOutcome resolved, CancellationToken cancellationToken = default) => Task.FromResult(false);
 
-        public Task<int> DeleteClosedBeforeAsync(Guid babyId, EventTypeKey typeKey, DateTimeOffset cutoff, CancellationToken cancellationToken = default)
+        public Task<int> DeleteAnchoredBeforeAsync(Guid babyId, DateTimeOffset cutoff, CancellationToken cancellationToken = default)
             => Task.FromResult(0);
     }
 }

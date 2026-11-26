@@ -47,8 +47,8 @@ internal interface IPredictionOutcomeRepository
     Task<bool> TryResolveAsync(PredictionOutcome resolved, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Deletes the resolved and expired outcomes of a baby and event type predicted before <paramref name="cutoff"/> (retention,
-    /// <see cref="PredictionOptions.OutcomeRetentionDays"/>); pending ones are kept. Returns how many were deleted.
+    /// Deletes every outcome of a baby (all event types; pending, resolved or expired) anchored before <paramref name="cutoff"/>
+    /// (retention, <see cref="PredictionOptions.OutcomeRetentionDays"/>). Returns how many were deleted.
     /// </summary>
-    Task<int> DeleteClosedBeforeAsync(Guid babyId, EventTypeKey typeKey, DateTimeOffset cutoff, CancellationToken cancellationToken = default);
+    Task<int> DeleteAnchoredBeforeAsync(Guid babyId, DateTimeOffset cutoff, CancellationToken cancellationToken = default);
 }

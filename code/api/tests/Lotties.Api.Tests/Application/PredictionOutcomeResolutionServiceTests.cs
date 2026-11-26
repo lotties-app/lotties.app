@@ -229,19 +229,25 @@ public sealed class PredictionOutcomeResolutionServiceTests(ApiFactory factory) 
     }
 
     [Fact]
-    public async Task RecordPredictionAsync_RetentionOn_DeletesClosedOutcomesOlderThanIt_KeepsPendingAndRecentOnes()
+    public async Task RecordPredictionAsync_RetentionOn_DeletesEveryOutcomeOfTheBabyAnchoredBeforeIt_KeepsRecentOnes()
     {
         var babyId = await SeedBabyAsync();
+        var otherBabyId = await SeedBabyAsync();
         var now = Anchor.AddHours(1);
         var options = Tracking with { OutcomeRetentionDays = 30 };
         var oldResolved = Pending(babyId, now.AddDays(-40), now.AddDays(-40).AddHours(3)).Resolve(now.AddDays(-40).AddHours(4));
         var oldExpired = Pending(babyId, now.AddDays(-39), now.AddDays(-39).AddHours(3)).Expire();
+        // Pending rows that never resolve and rows of another event type go too.
         var oldPending = Pending(babyId, now.AddDays(-38), now.AddDays(-38).AddHours(3));
+        var oldOtherType = Pending(babyId, now.AddDays(-35), now.AddDays(-35).AddHours(2)) with { TypeKey = EventTypeKey.From("sleep") };
         var recentResolved = Pending(babyId, now.AddDays(-2), now.AddDays(-2).AddHours(3)).Resolve(now.AddDays(-2).AddHours(4));
+        var recentPending = Pending(babyId, now.AddDays(-29), now.AddDays(-29).AddHours(3));
+        var otherBabyOld = Pending(otherBabyId, now.AddDays(-40), now.AddDays(-40).AddHours(3));
 
+        await WithServiceAsync(otherBabyId, options, (_, repository) => repository.SaveAsync(otherBabyOld), now);
         await WithServiceAsync(babyId, options, async (service, repository) =>
         {
-            foreach (var outcome in new[] { oldResolved, oldExpired, oldPending, recentResolved })
+            foreach (var outcome in new[] { oldResolved, oldExpired, oldPending, oldOtherType, recentResolved, recentPending })
             {
                 await repository.SaveAsync(outcome);
             }
@@ -252,9 +258,33 @@ public sealed class PredictionOutcomeResolutionServiceTests(ApiFactory factory) 
         var ids = (await RowsAsync(babyId)).Select(row => row.Id).ToHashSet();
         Assert.DoesNotContain(oldResolved.Id, ids);
         Assert.DoesNotContain(oldExpired.Id, ids);
-        Assert.Contains(oldPending.Id, ids);
+        Assert.DoesNotContain(oldPending.Id, ids);
+        Assert.DoesNotContain(oldOtherType.Id, ids);
         Assert.Contains(recentResolved.Id, ids);
+        Assert.Contains(recentPending.Id, ids);
         Assert.Equal(3, ids.Count);
+        // Another baby's rows wait for a new outcome of her own.
+        Assert.Contains(otherBabyOld.Id, (await RowsAsync(otherBabyId)).Select(row => row.Id));
+    }
+
+    [Fact]
+    public async Task RecordPredictionAsync_RetentionOn_AnchorAlreadyRecorded_DeletesNothing()
+    {
+        var babyId = await SeedBabyAsync();
+        var now = Anchor.AddHours(1);
+        var options = Tracking with { OutcomeRetentionDays = 30 };
+        var old = Pending(babyId, now.AddDays(-40), now.AddDays(-40).AddHours(3)).Resolve(now.AddDays(-40).AddHours(4));
+        var current = Pending(babyId, Anchor, Anchor.AddHours(3));
+
+        await WithServiceAsync(babyId, options, async (service, repository) =>
+        {
+            await repository.SaveAsync(old);
+            await repository.SaveAsync(current);
+            // Same history as the stored outcome: nothing new is recorded, so retention does not run.
+            await service.RecordPredictionAsync(CreatePrediction(), babyId, "1.1");
+        }, now);
+
+        Assert.Equal(new[] { old.Id, current.Id }.Order(), (await RowsAsync(babyId)).Select(row => row.Id).Order());
     }
 
     [Fact]
