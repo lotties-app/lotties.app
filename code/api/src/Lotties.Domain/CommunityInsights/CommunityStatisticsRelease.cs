@@ -16,7 +16,7 @@ public enum CommunityStatisticsReleaseStatus
 }
 
 /// <summary>
-/// One weekly snapshot of aggregated community statistics (docs/design/34-community-insights.md section 5): the idempotency key
+/// One weekly snapshot of aggregated community statistics (docs/design/34-community-insights.md section 5): the ISO week label
 /// (<see cref="ReleaseId"/>), the monotonic sequence number, the generation time, the computed cells as a JSON blob, and the
 /// lifecycle status. Exactly two releases are retained at any time (current + previous); older ones are deleted on swap.
 /// </summary>
@@ -30,7 +30,11 @@ public sealed class CommunityStatisticsRelease
 
     public Guid Id { get; private set; }
 
-    /// <summary>Idempotency key for the run that produced this release (e.g. <c>2026-W47</c>); unique across all releases.</summary>
+    /// <summary>
+    /// The ISO week of the run that produced this release (<see cref="Lotties.Domain.Common.IsoWeekLabel"/>, e.g. <c>2026-W47</c>). Not
+    /// unique: the table has no unique index on it and nothing checks it, so a second run in the same week (for example after a restart
+    /// within the run hour) writes another release with the same id. <see cref="ReleaseSequence"/> orders releases.
+    /// </summary>
     public string ReleaseId { get; private set; }
 
     /// <summary>Monotonically increasing sequence; used to order releases and to retain exactly two.</summary>

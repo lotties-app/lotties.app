@@ -1,9 +1,8 @@
-using System.Globalization;
 using Lotties.Application.CommunityInsights;
 using Lotties.Domain.Babies;
+using Lotties.Domain.Common;
 using Lotties.Domain.CommunityInsights;
 using Lotties.Domain.Predictions;
-using Lotties.Domain.Stores;
 using Lotties.Domain.Users;
 using Lotties.Infrastructure.Persistence;
 using Lotties.Infrastructure.Persistence.Configurations;
@@ -21,9 +20,10 @@ namespace Lotties.Infrastructure.Predictions;
 /// <remarks>
 /// <para>
 /// Population: the consent snapshot of <see cref="CommunityAggregationJob"/> (<see cref="CommunityPopulation.SnapshotAsync"/>: a current
-/// community consent and a real Owner), taken once at run start, so a withdrawal takes effect on the next run. Babies with any demo
-/// member are left out too. Only babies on the built-in store are read, through the Lotties database: a baby on the family's own
-/// database (or with a move between stores in progress) is left out, never read in her store (design 47 section 2.2).
+/// community consent, a real Owner, and settled on the built-in store), taken once at run start, so a withdrawal takes effect on the
+/// next run. Babies with any demo member are left out too. Only the Lotties database is read: a baby on the family's own database (or
+/// with a move between stores in progress or in its undo window) is not in the snapshot, so she is never read in her store (design 47
+/// section 2.2).
 /// </para>
 /// <para>
 /// A cell is (age band, type, phase, engine version). It is stored only with at least <see cref="CommunityStatisticsValidator.MinimumK"/>
@@ -49,11 +49,10 @@ internal sealed class CommunityPredictionAggregator(
     public async Task<int> AggregateAsync(CancellationToken cancellationToken = default)
     {
         var now = time.GetUtcNow();
-        var temporalBucket = TemporalBucketOf(now);
+        var temporalBucket = IsoWeekLabel.Of(now);
 
         var population = await CommunityPopulation.SnapshotAsync(consents, cancellationToken);
-        var builtIn = await OnBuiltInStoreAsync(population.Eligible, cancellationToken);
-        var families = await FamiliesAsync(builtIn, cancellationToken);
+        var families = await FamiliesAsync(population.Eligible, cancellationToken);
         var outcomes = await LoadOutcomesAsync(families, cancellationToken);
         var cells = Qualifying(outcomes, out var suppressed);
 
@@ -67,13 +66,6 @@ internal sealed class CommunityPredictionAggregator(
         var written = await ReplaceAsync(cells, temporalBucket, now, cancellationToken);
         logger.LogInformation("Wrote {Count} community prediction aggregates for bucket {Bucket}", written, temporalBucket);
         return written;
-    }
-
-    /// <summary>The ISO week of <paramref name="now"/> (UTC), e.g. <c>2026-W48</c>.</summary>
-    internal static string TemporalBucketOf(DateTimeOffset now)
-    {
-        var date = now.UtcDateTime;
-        return string.Create(CultureInfo.InvariantCulture, $"{ISOWeek.GetYear(date)}-W{ISOWeek.GetWeekOfYear(date):00}");
     }
 
     /// <summary>The cells of at least k babies from k families that no family dominates; counts the others in <paramref name="suppressed"/>.</summary>
@@ -106,23 +98,6 @@ internal sealed class CommunityPredictionAggregator(
         }
 
         return cells;
-    }
-
-    /// <summary>The babies whose records are on the built-in store and not moving between stores.</summary>
-    private async Task<IReadOnlyList<Guid>> OnBuiltInStoreAsync(IReadOnlyList<Guid> babyIds, CancellationToken cancellationToken)
-    {
-        if (babyIds.Count == 0)
-        {
-            return [];
-        }
-
-        return await context.BabyStoreAssignments.AsNoTracking()
-            .Where(assignment => babyIds.Contains(assignment.BabyId)
-                                 && assignment.DataStoreId == null
-                                 && !context.DataStoreMoves.Any(move => move.BabyId == assignment.BabyId
-                                                                   && (move.State == DataStoreMoveState.Copying || move.State == DataStoreMoveState.Verifying)))
-            .Select(assignment => assignment.BabyId)
-            .ToListAsync(cancellationToken);
     }
 
     /// <summary>
