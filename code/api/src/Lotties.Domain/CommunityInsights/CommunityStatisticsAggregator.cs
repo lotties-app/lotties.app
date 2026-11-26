@@ -82,9 +82,7 @@ public static class CommunityStatisticsAggregator
         }
 
         // Family dominance suppression
-        var familyCounts = contributions.GroupBy(c => c.FamilyId).ToDictionary(g => g.Key, g => g.Count());
-        var maxFamilyCount = familyCounts.Values.Max();
-        if ((decimal)maxFamilyCount / contributions.Count > FamilyDominanceThreshold)
+        if (IsDominatedByOneFamily(contributions.Select(c => c.FamilyId).ToList()))
         {
             return EmptyCell(statistic.Key, bandKey, dimensionValue, "family_dominance");
         }
@@ -114,6 +112,23 @@ public static class CommunityStatisticsAggregator
             p97,
             Suppressed: false,
             SuppressionReason: null);
+    }
+
+    /// <summary>
+    /// The dominance rule (design 34 section 5): whether one family gave more than <see cref="FamilyDominanceThreshold"/> of a cell's
+    /// values. <paramref name="familyOfEachValue"/> holds the family of every value of the cell (one entry per value, after capping).
+    /// An empty cell is not dominated (it is suppressed by k).
+    /// </summary>
+    public static bool IsDominatedByOneFamily(IReadOnlyCollection<Guid> familyOfEachValue)
+    {
+        ArgumentNullException.ThrowIfNull(familyOfEachValue);
+        if (familyOfEachValue.Count == 0)
+        {
+            return false;
+        }
+
+        var maxFamilyCount = familyOfEachValue.GroupBy(family => family).Max(family => family.Count());
+        return (decimal)maxFamilyCount / familyOfEachValue.Count > FamilyDominanceThreshold;
     }
 
     /// <summary>Laplace noise for tier-A statistics (shares, means). Sensitivity = 1/n for bounded [0,1] or clipped ranges.</summary>

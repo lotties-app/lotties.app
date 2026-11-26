@@ -6,12 +6,17 @@ namespace Lotties.Infrastructure.Persistence.Configurations;
 
 /// <remarks>
 /// <c>community_prediction_aggregates</c>: anonymized prediction accuracy aggregates with no baby_id or PII.
-/// Written by the weekly aggregation job after applying the suppression threshold (minimum 10 resolved outcomes per cell).
+/// Written by <c>CommunityPredictionAggregator</c> (not wired yet) only for cells of at least 20 consenting babies from 20 families
+/// that pass the dominance rule; each run replaces the whole table.
 /// Unique constraint on (age_band_label, type_key, phase, temporal_bucket, engine_version) ensures one aggregate per
 /// dimension combination per engine version; re-runs upsert rather than duplicate.
 /// </remarks>
 internal sealed class CommunityPredictionAggregateConfiguration : IEntityTypeConfiguration<CommunityPredictionAggregateEntity>
 {
+    public const int TypeKeyMaxLength = 64;
+
+    public const int EngineVersionMaxLength = 32;
+
     public void Configure(EntityTypeBuilder<CommunityPredictionAggregateEntity> builder)
     {
         builder.ToTable("community_prediction_aggregates");
@@ -19,10 +24,10 @@ internal sealed class CommunityPredictionAggregateConfiguration : IEntityTypeCon
         builder.Property(e => e.Id).ValueGeneratedNever();
 
         builder.Property(e => e.AgeBandLabel).HasMaxLength(16).IsRequired();
-        builder.Property(e => e.TypeKey).HasMaxLength(64).IsRequired();
+        builder.Property(e => e.TypeKey).HasMaxLength(TypeKeyMaxLength).IsRequired();
         builder.Property(e => e.Phase).HasMaxLength(16);
         builder.Property(e => e.TemporalBucket).HasMaxLength(16).IsRequired();
-        builder.Property(e => e.EngineVersion).HasMaxLength(32).IsRequired();
+        builder.Property(e => e.EngineVersion).HasMaxLength(EngineVersionMaxLength).IsRequired();
         builder.Property(e => e.Count).IsRequired();
         builder.Property(e => e.SumErrorMinutes).IsRequired();
         builder.Property(e => e.SumSquaredError).IsRequired();

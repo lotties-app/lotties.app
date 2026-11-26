@@ -642,23 +642,28 @@ writes outcomes today. Facts from the code (`legal/dataFlows.ts` `DERIVED_FLOWS`
   called by any job or route; the table created by `AddCommunityPredictionAggregates` stays empty. The policy says the
   accuracy records "are not combined with other families' records", which is true only while this stays so. The table is
   global (no baby id) and stays in the Lotties database.
-- **What the aggregator would do if wired** (findings, not fixed here):
-  1. It reads every resolved row of `prediction_outcomes` in the Lotties database with no community consent filter
-     (`community_consents`), no demo exclusion (`users.issuer <> 'urn:lotties:demo'`) and no check of the Owner's
-     choice; section 19 and design 34 require explicit consent per baby (art. 11, I) for any pooled statistic.
-  2. Cells below `CommunityPredictionAggregate.MinimumCount` (10) are not stored, but the count is of **outcomes**, not
-     of babies or families: one baby with 10 resolved predictions of a type in an age band fills a cell alone, so the
-     cell's error distribution (median, p10, p90, sums) is that one baby's. Section 19 publishes only cells of at least
-     20 babies from 20 families, with a dominance rule and noise.
-  3. No baby or family id is stored and the cell has no time finer than an ISO week, so a row does not name a baby, but
-     by (2) a single-baby cell is that baby's data.
-  4. It labels rows with the enum name of the age band (`UnderThreeMonths`) while the reader looks them up by
-     `AgeBands.Label` (`0-3m`), and the phase with `Day`/`Night` while the reader asks for `day`/`night`: the reader
-     would never find a row.
-  5. BYO babies would be left out (it reads only the Lotties database), which matches design 47 section 2.2.
-- **Recommendation**: before registering it, feed it only from babies with a current community consent (the snapshot of
-  `CommunityAggregationJob`), exclude demo accounts, apply k = 20 distinct babies from 20 families and the dominance
-  rule of section 19, fix the labels, and describe it in the policy's community section (a policy change of its own).
+- **What the aggregator would do if wired** (fixed 2026-11-26, still unwired; tests
+  `CommunityPredictionAggregatorTests`):
+  1. Population: the consent snapshot of `CommunityAggregationJob` (`CommunityPopulation.SnapshotAsync`, shared by both:
+     latest `community_consents` line a yes under the current text, and a real Owner, so no demo or deleted account),
+     taken at run start; a withdrawal takes effect on the next run. A baby with any demo member
+     (`users.issuer = 'urn:lotties:demo'`) is also left out.
+  2. A cell (age band, type, phase, engine version) is stored only with at least 20 distinct babies from 20 distinct
+     families (`CommunityStatisticsValidator.MinimumK`; a family is the babies sharing an Owner, so twins count once)
+     and when no family gave more than 25 % of its outcomes (`CommunityStatisticsAggregator.IsDominatedByOneFamily`,
+     the rule of section 19). Each run replaces the whole table in one save: a cell that no longer qualifies and the
+     rows of earlier runs are removed. There is no per-baby cap and no noise: the values of the cell are outcomes, so a
+     family may give up to 25 % of them, and median, p10, p90 and sums are exact.
+  3. No baby or family id is stored and the cell has no time finer than an ISO week (now a real ISO week label such as
+     `2026-W48`).
+  4. Labels: written and read through `CommunityPredictionAggregateLabels` (`AgeBands.Label`, `DayPhases.Label`), so
+     the reader finds what the aggregator writes. The reader (not registered either) is unchanged while the table is
+     empty.
+  5. BYO babies are left out: only babies on the built-in store with no move between stores in progress are read, from
+     the Lotties database; another store is never read (design 47 section 2.2, as `CommunityAggregationJob`).
+- **Before it may be turned on**: register it and a weekly caller behind a flag, describe it in the policy's community
+  section and the community consent text (a policy change of its own), and decide whether to add a per-baby cap and
+  noise like section 19.
 
 ### 20.2 Other findings (not fixed here)
 

@@ -103,17 +103,15 @@ internal sealed class CommunityAggregationRunner(
             return;
         }
 
-        // Snapshot consent at run start to prevent race conditions during the run
-        var optedInBabies = await consents.BabiesInForceAsync(CommunityConsentTexts.CurrentTextVersion, cancellationToken);
+        // Snapshot consent at run start to prevent race conditions during the run. Babies whose owner is a demo or deleted
+        // account are excluded: only babies owned by real users contribute to community statistics.
+        var (optedInBabies, eligibleBabies) = await CommunityPopulation.SnapshotAsync(consents, cancellationToken);
         if (optedInBabies.Count == 0)
         {
             logger.LogInformation("Run {RunId}: no babies opted in; graceful no-op", runId);
             return;
         }
 
-        // Exclude babies whose owner is a demo or deleted account.
-        // Only babies owned by real users should contribute to community statistics.
-        var eligibleBabies = await consents.FilterEligibleBabiesAsync(optedInBabies, cancellationToken);
         if (eligibleBabies.Count == 0)
         {
             logger.LogInformation("Run {RunId}: all {Total} opted-in babies excluded (demo/test/inactive); graceful no-op",

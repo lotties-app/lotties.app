@@ -2,20 +2,21 @@ namespace Lotties.Infrastructure.Persistence.Entities;
 
 /// <summary>
 /// Persistence entity for anonymized community prediction aggregates. Maps to <c>community_prediction_aggregates</c>.
-/// Contains NO baby_id or personally identifiable information. Rows are written by the weekly aggregation job after
-/// applying the suppression threshold; readers never see cells below <see cref="Domain.Predictions.CommunityPredictionAggregate.MinimumCount"/>.
+/// Contains NO baby_id or personally identifiable information. Rows are written by <c>CommunityPredictionAggregator</c> (not wired)
+/// only for cells of at least 20 consenting babies from 20 families that no family dominates; readers never see cells below
+/// <see cref="Domain.Predictions.CommunityPredictionAggregate.MinimumCount"/>.
 /// </summary>
 public sealed class CommunityPredictionAggregateEntity
 {
     public Guid Id { get; set; }
 
-    /// <summary>Age band label (e.g. "0-3m", "3-6m"); matches <see cref="Domain.Predictions.AgeBands.Label"/>.</summary>
+    /// <summary>Age band label (e.g. "0-3m", "3-6m"); written and read through <see cref="Domain.Predictions.CommunityPredictionAggregateLabels"/>.</summary>
     public string AgeBandLabel { get; set; } = string.Empty;
 
     /// <summary>Event type key (e.g. "sleep", "feed").</summary>
     public string TypeKey { get; set; } = string.Empty;
 
-    /// <summary>Day phase ("day" or "night"), or null when not narrowed by phase.</summary>
+    /// <summary>Day phase ("day" or "night", <see cref="Domain.Predictions.CommunityPredictionAggregateLabels"/>), or null when not narrowed by phase.</summary>
     public string? Phase { get; set; }
 
     /// <summary>Temporal bucket identifier (ISO week, e.g. "2026-W47").</summary>
