@@ -89,7 +89,7 @@ public sealed class ConsentEndpointTests : IClassFixture<ApiFactory>
     [Theory]
     [InlineData("1999-01-01.1")]
     [InlineData("2099-01-01.9")]
-    public async Task PutCore_NotTheCurrentVersion_Is409WithTheCurrentOne_AndRecordsNothing(string version)
+    public async Task PutCore_AnUnknownVersion_Is409WithTheCurrentOne_AndRecordsNothing(string version)
     {
         var client = NewClient(out _);
 
@@ -99,6 +99,88 @@ public sealed class ConsentEndpointTests : IClassFixture<ApiFactory>
         Assert.Equal(Current, problem.GetProperty("currentVersion").GetString());
         Assert.True(read.GetProperty("requiresAcceptance").GetBoolean());
         Assert.Equal(JsonValueKind.Null, read.GetProperty("core").ValueKind);
+    }
+
+    [Fact]
+    public async Task Get_NamesTheMinimumVersion_TheNewestMaterialEntry()
+    {
+        var json = await (await NewClient(out _).GetAsync(Path)).ReadAsync<JsonElement>();
+
+        Assert.Equal(ConsentVersions.Entries.Last(entry => entry.Material).Version, json.GetProperty("minimumVersion").GetString());
+    }
+
+    /// <summary>An older known version: the newest material entry when only minor ones followed it (vacuous while the current entry is material).</summary>
+    private static string? OlderAcceptableVersion() =>
+        ConsentVersions.MinimumAccepted.Version is var minimum && minimum != Current ? minimum : null;
+
+    [Fact]
+    public async Task PutCore_AnOlderVersionFollowedOnlyByMinorEntries_IsRecordedAsTheVersionSent()
+    {
+        if (OlderAcceptableVersion() is not { } older)
+        {
+            return;
+        }
+
+        var client = NewClient(out var subject);
+
+        var saved = await (await client.PutAsJsonAsync($"{Path}/core", new { version = older, capacity = "guardian" })).ReadAsync<JsonElement>();
+        var read = await (await client.GetAsync(Path)).ReadAsync<JsonElement>();
+
+        foreach (var json in new[] { saved, read })
+        {
+            Assert.False(json.GetProperty("requiresAcceptance").GetBoolean());
+            Assert.Equal(older, json.GetProperty("core").GetProperty("version").GetString());
+            Assert.Equal(Current, json.GetProperty("minorChangeSince").GetString());
+            Assert.Equal(Current, json.GetProperty("currentVersion").GetString());
+        }
+
+        var userId = await _factory.UserIdAsync(subject);
+        var line = Assert.Single(await _factory.QueryAsync(context => context.UserConsentHistory.Where(row => row.UserId == userId).ToListAsync()));
+        Assert.Equal((ConsentAction.Granted, older), (line.Action, line.Version));
+    }
+
+    [Fact]
+    public async Task PutCore_AVersionAMaterialEntryFollowed_Is409_AndRecordsNothing()
+    {
+        var minimum = ConsentVersions.IndexOf(ConsentVersions.MinimumAccepted.Version);
+        if (minimum == 0)
+        {
+            return;
+        }
+
+        var replaced = ConsentVersions.Entries[minimum - 1].Version;
+        var client = NewClient(out _);
+
+        var problem = await (await client.PutAsJsonAsync($"{Path}/core", new { version = replaced, capacity = "guardian" })).AssertProblemAsync(HttpStatusCode.Conflict, "consent_version_outdated");
+        var read = await (await client.GetAsync(Path)).ReadAsync<JsonElement>();
+
+        Assert.Equal(Current, problem.GetProperty("currentVersion").GetString());
+        Assert.True(read.GetProperty("requiresAcceptance").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, read.GetProperty("core").ValueKind);
+    }
+
+    [Fact]
+    public async Task PutCore_AnOlderVersionAfterTheCurrentOne_KeepsTheCurrentOne_UnlessTheCapacityChanged()
+    {
+        if (OlderAcceptableVersion() is not { } older)
+        {
+            return;
+        }
+
+        var client = NewClient(out var subject);
+        await client.PutAsJsonAsync($"{Path}/core", new { version = Current, capacity = "guardian" }).Ok();
+
+        var kept = await (await client.PutAsJsonAsync($"{Path}/core", new { version = older, capacity = "guardian" })).ReadAsync<JsonElement>();
+        var userId = await _factory.UserIdAsync(subject);
+        var afterOlder = await _factory.QueryAsync(context => context.UserConsentHistory.CountAsync(row => row.UserId == userId));
+        var changed = await (await client.PutAsJsonAsync($"{Path}/core", new { version = older, capacity = "authorised" })).ReadAsync<JsonElement>();
+
+        Assert.Equal(Current, kept.GetProperty("core").GetProperty("version").GetString());
+        Assert.Equal(JsonValueKind.Null, kept.GetProperty("minorChangeSince").ValueKind);
+        Assert.Equal(1, afterOlder);
+        // A new declaration is recorded as she made it: on the older text she saw.
+        Assert.Equal((older, "authorised"), (changed.GetProperty("core").GetProperty("version").GetString(), changed.GetProperty("core").GetProperty("capacity").GetString()));
+        Assert.False(changed.GetProperty("requiresAcceptance").GetBoolean());
     }
 
     [Theory]

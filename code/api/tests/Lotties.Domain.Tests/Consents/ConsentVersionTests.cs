@@ -65,6 +65,18 @@ public sealed class ConsentVersionTests
         Assert.True(ConsentVersions.HasMinorChangeSince(entries.Take(3).ToArray(), "v1"));
         Assert.False(ConsentVersions.HasMinorChangeSince(entries.Take(3).ToArray(), "v3"));
         Assert.False(ConsentVersions.HasMinorChangeSince(entries, "v1"));
+        Assert.Equal("v4", ConsentVersions.MinimumAcceptedOf(entries).Version);
+        Assert.Equal("v1", ConsentVersions.MinimumAcceptedOf(entries.Take(3).ToArray()).Version);
+    }
+
+    [Fact]
+    public void MinimumAccepted_IsTheOldestVersionThatNeedsNoNewAcceptance()
+    {
+        var minimum = ConsentVersions.IndexOf(ConsentVersions.MinimumAccepted.Version);
+
+        Assert.True(ConsentVersions.MinimumAccepted.Material);
+        Assert.All(ConsentVersions.Entries.Take(minimum), entry => Assert.True(ConsentVersions.RequiresAcceptance(entry.Version)));
+        Assert.All(ConsentVersions.Entries.Skip(minimum), entry => Assert.False(ConsentVersions.RequiresAcceptance(entry.Version)));
     }
 
     [Fact]

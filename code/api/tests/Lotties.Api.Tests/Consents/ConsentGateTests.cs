@@ -156,6 +156,19 @@ public sealed class ConsentGateTests : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task AnOlderVersionFollowedOnlyByMinorEntries_OpensTheGate()
+    {
+        var older = ConsentVersions.MinimumAccepted.Version;
+        var baby = await _factory.SeedBabyAsync();
+        var client = _factory.CreateClientFor(baby.OwnerSubject);
+        await (await client.GetAsync($"/api/v1/babies/{baby.BabyId}")).AssertProblemAsync(HttpStatusCode.Forbidden, "consent_required");
+
+        await client.PutAsJsonAsync("/api/v1/me/consents/core", new { version = older, capacity = "guardian" }).Ok();
+
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/v1/babies/{baby.BabyId}")).StatusCode);
+    }
+
+    [Fact]
     public async Task OnePersonsConsent_DoesNotOpenAnotherPersonsGate()
     {
         var baby = await _factory.SeedBabyAsync(BabyRole.Parent);

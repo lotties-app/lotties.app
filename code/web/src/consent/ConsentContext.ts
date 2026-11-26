@@ -22,8 +22,9 @@ export interface ConsentApi {
   /** The version a "policy updated" notice is shown for (a minor change not dismissed yet), else `null`. */
   noticeVersion: string | null;
   /**
-   * The server asks for a consent version this build does not carry (`consentClientStanding` = `stale`): this app is older than
-   * the server, so it cannot show the text to accept. The consent screen asks for an update instead of offering Accept.
+   * This build is older than the oldest version the server accepts (`consentClientStanding` = `stale`), so it cannot show a text
+   * the server accepts. The consent screen asks for an update instead of offering Accept. A build only minor entries behind the
+   * server is not stale: it accepts its own version.
    */
   stale: boolean;
   /** Records the core consent for the current version; rejects when the server cannot be reached or refuses. */

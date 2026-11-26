@@ -41,24 +41,31 @@ export function requiresAcceptance(accepted: string | null | undefined): boolean
 }
 
 /**
- * Where this build stands against the version the server asks for (`GET /me/consents` `currentVersion`), by position in the
- * list (docs/design/38-consent-and-terms.md section 10):
+ * Where this build stands against the server (`GET /me/consents` `currentVersion` and `minimumVersion`), by position in the list
+ * (docs/design/38-consent-and-terms.md sections 10 and 11):
  * - `current`: the same version, or the server did not say;
- * - `stale`: the server's version is later in the list, or unknown to this build: this app is older than the server and cannot
- *   show the text the server asks her to accept (an installed native build, or a browser held on an old bundle);
+ * - `stale`: this app is older than the server and cannot show a text the server accepts (an installed native build, or a browser
+ *   held on an old bundle). With `minimumVersion` (the newest material entry): this build does not know it, or is before it.
+ *   Without it (an API older than that field): the server's version is later in the list, or unknown to this build;
+ * - `behind`: the server's version is later or unknown to this build, but only minor entries separate them (this build is at or
+ *   after `minimumVersion`): not stale, Accept posts the bundled version and the server records it as the version she saw;
  * - `ahead`: this build is later than the server (the web deployed before the API): not stale, the server decides as usual.
  */
-export type ConsentClientStanding = 'current' | 'stale' | 'ahead';
+export type ConsentClientStanding = 'current' | 'stale' | 'behind' | 'ahead';
 
 export function consentClientStanding(
   serverVersion: string | null | undefined,
   bundled: string = CONSENT_VERSION,
   versions: readonly ConsentVersionEntry[] = CONSENT_VERSIONS,
+  minimumVersion?: string | null,
 ): ConsentClientStanding {
   if (!serverVersion || serverVersion === bundled) return 'current';
   const server = versions.findIndex((entry) => entry.version === serverVersion);
   const own = versions.findIndex((entry) => entry.version === bundled);
-  return server < 0 || server > own ? 'stale' : 'ahead';
+  if (server >= 0 && server < own) return 'ahead';
+  if (!minimumVersion) return 'stale';
+  const minimum = versions.findIndex((entry) => entry.version === minimumVersion);
+  return minimum < 0 || own < minimum ? 'stale' : 'behind';
 }
 
 /** She accepted an older version and only minor entries came since: a notice, not a new consent. */
