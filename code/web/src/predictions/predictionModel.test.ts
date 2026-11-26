@@ -6,6 +6,7 @@ import {
   describeDuration,
   describeWindow,
   isOverdue,
+  predictionFeedbackId,
   typeForKey,
   typeNameForKey,
 } from './predictionModel';
@@ -45,6 +46,21 @@ describe('predictionModel', () => {
   it('is overdue once the expected start has passed', () => {
     expect(isOverdue(prediction(), NOW)).toBe(false);
     expect(isOverdue(prediction(), new Date(2026, 9, 20, 14, 21))).toBe(true);
+  });
+
+  it('names a prediction for feedback by its type and expected start as an ISO 8601 UTC instant', () => {
+    const offset = prediction({
+      typeKey: 'tummy_time',
+      nextStart: {
+        earliest: '2026-10-20T14:05:00-03:00',
+        expected: '2026-10-20T14:20:00.1234567-03:00',
+        latest: '2026-10-20T14:40:00-03:00',
+      },
+    });
+    expect(predictionFeedbackId(offset)).toBe('tummy_time:2026-10-20T17:20:00.123Z');
+    expect(predictionFeedbackId(prediction())).toBe(
+      `feeding:${new Date(local(20, 14, 20)).toISOString()}`,
+    );
   });
 
   it('describes the typical duration when known', () => {

@@ -74,7 +74,9 @@ internal sealed class EfPredictionOutcomeRepository(StoreScope stores) : IPredic
         SampleCount = outcome.SampleCount,
         AgeBand = outcome.AgeBand?.ToString(),
         Phase = outcome.Phase?.ToString(),
-        Resolved = outcome.ActualNextStart is not null,
+        // An expired outcome is stored as resolved with no actual time and no error: it is no longer pending and every
+        // accuracy query (which needs an error) leaves it out.
+        Resolved = outcome.ActualNextStart is not null || outcome.Expired,
         IsRetrospective = outcome.IsRetrospective,
         IsTopUp = outcome.IsTopUp,
     };
@@ -134,5 +136,51 @@ internal sealed class EfPredictionOutcomeRepository(StoreScope stores) : IPredic
         entity.AgeBand is not null ? Enum.Parse<AgeBand>(entity.AgeBand, true) : null,
         entity.Phase is not null ? Enum.Parse<DayPhase>(entity.Phase, true) : null,
         entity.IsRetrospective,
-        entity.IsTopUp);
+        entity.IsTopUp,
+        Expired: entity.Resolved && entity.ActualNextStart is null);
+
+    public Task<bool> ExistsForAnchorAsync(
+        Guid babyId, EventTypeKey typeKey, DateTimeOffset anchorAt, CancellationToken cancellationToken = default) =>
+        stores.ContextFor(babyId).PredictionOutcomes.AsNoTracking()
+            .AnyAsync(e => e.BabyId == babyId && e.TypeKey == typeKey.Value && e.AnchorAt == anchorAt, cancellationToken);
+
+    public async Task<IReadOnlyList<PredictionOutcome>> GetResolvableByAsync(
+        Guid babyId, EventTypeKey typeKey, DateTimeOffset eventStart, CancellationToken cancellationToken = default)
+    {
+        var rows = await stores.ContextFor(babyId).PredictionOutcomes
+            .AsNoTracking()
+            .Where(e => e.BabyId == babyId && e.TypeKey == typeKey.Value && e.AnchorAt < eventStart
+                        && (!e.Resolved || (e.ActualNextStart != null && e.ActualNextStart > eventStart)))
+            .OrderBy(e => e.AnchorAt)
+            .ToListAsync(cancellationToken);
+
+        return rows.Select(MapToDomain).ToArray();
+    }
+
+    public async Task<bool> TryResolveAsync(PredictionOutcome resolved, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(resolved);
+        if (resolved.ActualNextStart is not { } actual)
+        {
+            throw new ArgumentException("A resolved outcome needs its actual next start.", nameof(resolved));
+        }
+
+        var error = resolved.ErrorMinutes;
+        var written = await stores.ContextFor(resolved.BabyId).PredictionOutcomes
+            .Where(e => e.Id == resolved.Id && e.BabyId == resolved.BabyId
+                        && (!e.Resolved || (e.ActualNextStart != null && e.ActualNextStart > actual)))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(e => e.ActualNextStart, actual)
+                    .SetProperty(e => e.ErrorMinutes, error)
+                    .SetProperty(e => e.Resolved, true),
+                cancellationToken);
+        return written > 0;
+    }
+
+    public Task<int> DeleteClosedBeforeAsync(
+        Guid babyId, EventTypeKey typeKey, DateTimeOffset cutoff, CancellationToken cancellationToken = default) =>
+        stores.ContextFor(babyId).PredictionOutcomes
+            .Where(e => e.BabyId == babyId && e.TypeKey == typeKey.Value && e.Resolved && e.PredictedAt < cutoff)
+            .ExecuteDeleteAsync(cancellationToken);
 }

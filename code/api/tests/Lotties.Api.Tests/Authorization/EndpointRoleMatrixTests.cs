@@ -215,7 +215,8 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         ["DELETE /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = Access.Log,
 
         ["GET /api/v1/babies/{babyId:guid}/predictions"] = Access.Read,
-        ["POST /api/v1/babies/{babyId:guid}/predictions/feedback"] = Access.Read,
+        // A "was it right" answer writes into the baby's accuracy records: the roles that log events, never a Viewer or a Doctor.
+        ["POST /api/v1/babies/{babyId:guid}/predictions/feedback"] = Access.Log,
         // Her rhythm (docs/design/48-baby-rhythm.md): computed from the log like the predictions, same roles (Viewer reads).
         ["GET /api/v1/babies/{babyId:guid}/rhythm"] = Access.Read,
 
@@ -374,7 +375,6 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         ["GET /api/v1/babies/{babyId:guid}/events"] = DoctorScope.DailyLog,
         ["GET /api/v1/babies/{babyId:guid}/events/{eventId:guid}"] = DoctorScope.DailyLog,
         ["GET /api/v1/babies/{babyId:guid}/predictions"] = DoctorScope.DailyLog,
-        ["POST /api/v1/babies/{babyId:guid}/predictions/feedback"] = DoctorScope.DailyLog,
         ["GET /api/v1/babies/{babyId:guid}/rhythm"] = DoctorScope.DailyLog,
         ["GET /api/v1/babies/{babyId:guid}/timeline"] = DoctorScope.DailyLog,
 

@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Http.HttpResults;
 namespace Lotties.Api.Endpoints;
 
 /// <summary>
-/// Records user feedback on a prediction's accuracy. Needs <see cref="Authorization.BabyPolicies.Read"/> (from the baby
-/// group): any member of the baby may report whether a prediction was accurate; a Doctor, like for the predictions themselves,
-/// only with the daily log scope (<see cref="Authorization.BabyPolicies.ScopeDailyLog"/>).
+/// Records user feedback on a prediction's accuracy, a write into the baby's accuracy records. Needs
+/// <see cref="Authorization.BabyPolicies.Log"/>, like an event write: an Owner, a Parent or a Caregiver; never a Viewer, and
+/// never a Doctor (her writes are only her notes and consultation measurements).
 /// </summary>
 internal static class PredictionFeedbackEndpoint
 {
@@ -17,7 +17,7 @@ internal static class PredictionFeedbackEndpoint
     {
         ArgumentNullException.ThrowIfNull(baby);
         baby.MapPost(FeedbackPath, PostAsync)
-            .RequireAuthorization(Authorization.BabyPolicies.ScopeDailyLog)
+            .RequireAuthorization(Authorization.BabyPolicies.Log)
             .WithName("PostPredictionFeedback");
         return baby;
     }
@@ -44,7 +44,11 @@ internal static class PredictionFeedbackEndpoint
 /// <summary>The body of <c>POST /api/v1/babies/{babyId}/predictions/feedback</c>.</summary>
 public sealed class PredictionFeedbackRequest
 {
-    /// <summary>Stable identifier of the prediction being rated (type key + anchor timestamp).</summary>
+    /// <summary>
+    /// The prediction being rated, <c>typeKey:instant</c>: the instant is the prediction's expected next start as an ISO 8601
+    /// UTC date and time (what the web sends, e.g. <c>feeding:2026-11-25T13:00:00.000Z</c>) or, the older form, UTC ticks of
+    /// when it was predicted. Both are accepted.
+    /// </summary>
     public string PredictionId { get; set; } = string.Empty;
 
     /// <summary><c>true</c> when the prediction matched what happened, <c>false</c> otherwise.</summary>

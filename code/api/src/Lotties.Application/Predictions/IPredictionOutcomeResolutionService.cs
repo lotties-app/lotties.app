@@ -13,13 +13,17 @@ public interface IPredictionOutcomeResolutionService
     /// </summary>
     Task RecordPredictionAsync(Prediction prediction, Guid babyId, string engineVersion, DateTimeOffset? createdAt = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Records user feedback on whether a prediction was accurate.</summary>
+    /// <summary>
+    /// Records user feedback on whether a prediction was accurate. <paramref name="predictionId"/> is <c>typeKey:instant</c>,
+    /// the instant an ISO 8601 UTC date and time (the expected next start the web shows) or, the older form, UTC ticks.
+    /// </summary>
     Task RecordFeedbackAsync(Guid babyId, string predictionId, bool accurate, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Automatically resolves the oldest pending prediction outcome for a baby and event type when a new event of that
-    /// type arrives. Computes the error between predicted and actual start times. Called from the event ingestion path
-    /// so predictions learn from real logged events without manual feedback.
+    /// Resolves, when an event of a type is written, every outcome of that baby and type the event is the actual next start
+    /// of: anchored before the event, and pending or resolved by a later event (the first event after the anchor by event
+    /// time wins, whatever the order of arrival). Computes the error between predicted and actual start times. Called from
+    /// the event ingestion path so predictions learn from real logged events without manual feedback.
     /// </summary>
     Task ResolvePendingAsync(Guid babyId, EventTypeKey typeKey, DateTimeOffset actualNextStart, CancellationToken cancellationToken = default);
 

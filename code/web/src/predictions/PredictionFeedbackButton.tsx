@@ -6,6 +6,7 @@ import { useApiClient } from '../api/ApiClientContext';
 import { apiPaths } from '../sync/contract';
 
 interface Props {
+  /** `predictionFeedbackId` of the prediction (type key and expected start as an ISO 8601 UTC instant). */
   predictionId: string;
   babyId: string;
   onFeedbackSubmitted?: () => void;

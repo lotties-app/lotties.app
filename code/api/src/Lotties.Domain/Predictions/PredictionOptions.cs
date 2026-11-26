@@ -110,8 +110,18 @@ public sealed record PredictionOptions
     /// <summary>Kill switch for prediction accuracy tracking. When false, outcomes are not recorded.</summary>
     public bool AccuracyTrackingEnabled { get; init; } = false;
 
-    /// <summary>Maximum number of unresolved prediction outcomes kept per baby per event type.</summary>
+    /// <summary>
+    /// Maximum number of unresolved prediction outcomes kept per baby per event type; older ones are expired (closed without a
+    /// measurement, never counted in an accuracy average).
+    /// </summary>
     public int MaxPendingOutcomes { get; init; } = 50;
+
+    /// <summary>
+    /// Days a resolved or expired prediction outcome is kept (counted from when it was predicted), applied for a baby and type
+    /// each time a new outcome is recorded for them. <c>0</c> (the default) keeps them until the baby is erased, as the
+    /// privacy policy says; a positive value is a retention the policy must state before it is turned on.
+    /// </summary>
+    public int OutcomeRetentionDays { get; init; } = 0;
 
     /// <summary>Kill switch for prediction intervals. When true, TypePredictor computes P10-P90 intervals alongside point estimates.</summary>
     public bool UsePredictionIntervals { get; init; } = false;
