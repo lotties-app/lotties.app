@@ -48,6 +48,11 @@ export interface ConsentsView {
   requiresAcceptance: boolean;
   /** The current version when only minor changes came since the accepted one (a notice), else `null`. */
   minorChangeSince: string | null;
+  /**
+   * The oldest version the server still accepts (its newest material entry; docs/design/38-consent-and-terms.md section 11). Absent
+   * from an API older than that field.
+   */
+  minimumVersion?: string | null;
 }
 
 /** The TanStack Query key of the person's consent records (Settings > Privacy and data). */

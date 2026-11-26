@@ -123,4 +123,41 @@ describe('consentClientStanding', () => {
       CONSENT_VERSIONS.length > 1 ? 'ahead' : 'current',
     );
   });
+
+  describe('with the server minimum version (section 11)', () => {
+    const MIN = '2026-02-01.1';
+
+    it('is behind, not stale, when this build is at or after the minimum and the server is later or unknown', () => {
+      expect(consentClientStanding('2026-03-01.1', '2026-02-01.1', LIST, MIN)).toBe('behind');
+      expect(consentClientStanding('2027-01-01.1', '2026-02-01.1', LIST, MIN)).toBe('behind');
+      expect(consentClientStanding('2027-01-01.1', '2026-03-01.1', LIST, MIN)).toBe('behind');
+    });
+
+    it('is stale when this build is before the minimum, or does not know it', () => {
+      expect(consentClientStanding('2026-03-01.1', '2026-01-01.1', LIST, MIN)).toBe('stale');
+      expect(consentClientStanding('2027-01-01.1', '2026-03-01.1', LIST, '2027-01-01.1')).toBe(
+        'stale',
+      );
+    });
+
+    it('keeps current and ahead as without it', () => {
+      expect(consentClientStanding('2026-02-01.1', '2026-02-01.1', LIST, MIN)).toBe('current');
+      expect(consentClientStanding('2026-01-01.1', '2026-03-01.1', LIST, '2026-01-01.1')).toBe(
+        'ahead',
+      );
+    });
+
+    it('falls back to the position rule when the server sends no minimum (an older API)', () => {
+      expect(consentClientStanding('2026-03-01.1', '2026-02-01.1', LIST, null)).toBe('stale');
+      expect(consentClientStanding('2026-03-01.1', '2026-02-01.1', LIST, '')).toBe('stale');
+      expect(consentClientStanding('2027-01-01.1', '2026-03-01.1', LIST)).toBe('stale');
+    });
+
+    it('the real list: this build is never stale against its own minimum', () => {
+      const minimum = [...CONSENT_VERSIONS].reverse().find((entry) => entry.material)!.version;
+      expect(
+        consentClientStanding('2099-12-31.1', CONSENT_VERSION, CONSENT_VERSIONS, minimum),
+      ).toBe('behind');
+    });
+  });
 });

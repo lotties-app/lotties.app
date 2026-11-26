@@ -36,6 +36,12 @@ public static class ConsentVersions
     /// <summary>The newest version.</summary>
     public static ConsentVersionEntry Current => Entries[^1];
 
+    /// <summary>
+    /// The oldest version a person may still accept: the newest material entry. A client built with it or a later one shows a text the
+    /// server accepts (only minor entries came since); an older client must be updated (docs/design/38-consent-and-terms.md section 11).
+    /// </summary>
+    public static ConsentVersionEntry MinimumAccepted => MinimumAcceptedOf(Entries);
+
     /// <summary>The position of <paramref name="version"/> in <see cref="Entries"/>, or -1 for a version the code does not know.</summary>
     public static int IndexOf(string? version) => IndexOf(Entries, version);
 
@@ -68,6 +74,13 @@ public static class ConsentVersions
     {
         var accepted = IndexOf(entries, acceptedVersion);
         return accepted < 0 || entries.Skip(accepted + 1).Any(entry => entry.Material);
+    }
+
+    /// <summary><see cref="MinimumAccepted"/> over an explicit list (the first entry is always material).</summary>
+    public static ConsentVersionEntry MinimumAcceptedOf(IReadOnlyList<ConsentVersionEntry> entries)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        return entries.Last(entry => entry.Material);
     }
 
     /// <summary><see cref="HasMinorChangeSince(string?)"/> over an explicit list.</summary>

@@ -209,3 +209,46 @@ No API, text or version change: the strings are under `consent.stale` in `locale
 keys the text digest covers. Tests: `legal/consentVersions.test.ts` (the comparison), `consent/staleClient.test.ts` (the
 attempt), `consent/ConsentStaleClient.test.tsx` (native, web, not stale, build ahead, the 409 race, both languages, axe).
 Not seen on a real device or a real stale service worker.
+
+## 11. An older app after a minor change (2026-11-26)
+
+**Why.** Section 10 still left the API accepting only its own current version. Every minor entry (a policy change that asks
+nobody to accept again) therefore turned every installed iOS/Android build, and every browser held on an old bundle, into a
+stale client that could not accept at all: a person signing up on such a build was locked out until she updated the app, for a
+change the rules call minor. The owner approved the rule below (2026-11-26). It was not reviewed by a lawyer; it applies the
+material/minor rule of section 2, decision 3, and nothing here claims legal approval.
+
+**The rule.** Only a material change requires an app update. `PUT /me/consents/core` accepts a **known** version that only
+minor entries followed (`!ConsentVersions.RequiresAcceptance(version)`, that is the newest material entry or a later one) and
+**records the version sent**, the text she actually saw, never the server's current one. An unknown version, or one a material
+entry followed, is still 409 `consent_version_outdated` with `currentVersion`, and nothing is recorded.
+
+- **Gate, reminders, assistants.** They already read the stored version through `RequiresAcceptance`, so an older accepted
+  version opens them like the current one (`HasCurrentCoreAsync`, `WithCurrentCoreAsync`).
+- **The notice.** `GET /me/consents` answers `minorChangeSince` = the current version for such a record, so a build that carries
+  the newer text shows the "policy updated" notice for it. After accepting, the web stores the version it posted (the bundled
+  one) as the version seen, not the server's current one, so the notice still shows once she updates the app.
+- **No downgrade.** Accepting an older version while a later one is in force with the same capacity records nothing (the later
+  record stays). With a different capacity it is a new declaration and is recorded as made: at the older version she saw.
+- **What else did not change.** Optional consents (`PUT /me/consents/optional/{kind}`) send no version: the server records
+  its current one, as before. The community insights consent keeps its own text version rule (`CommunityConsentTexts`,
+  docs/design/34-community-insights.md) and records the server's current privacy policy version: not changed here. The demo
+  grants the current version. A backup file never carries consents.
+
+**Telling the client.** `GET /me/consents` adds `minimumVersion` = `ConsentVersions.MinimumAccepted` (the newest material
+entry). `consentClientStanding(currentVersion, bundled, versions, minimumVersion)` (consentVersions.ts) now answers:
+`stale` when this build does not know `minimumVersion` or is before it; `behind` when the server's version is later or unknown
+but this build is at or after the minimum (not stale: the usual consent screen, Accept posts the bundled version); `current`
+and `ahead` as before. Without `minimumVersion` (an API older than this change) the section 10 position rule applies unchanged.
+
+**What a person on an older build sees.** The usual consent screen with the text her build carries; Accept records that
+version and the app opens (no update panel, no reload, no notice: the build cannot show the newer text, and its own list ends
+at the version she accepted). When she later installs a build that carries the newer entry, that build shows the "policy
+updated" notice for it. Not seen on a real device.
+
+**Tests.** API: `ConsentEndpointTests` (an older minor-only version is recorded as sent, a version a material entry followed is
+409, no downgrade, `minimumVersion`), `ConsentGateTests` (an older minor-only version opens the gate), `ConsentVersionTests`
+(`MinimumAccepted`; the existing `Entries_MirrorTheWebFile_InOrder` keeps the C# list and the web file identical, version,
+terms, policy, material and date, in order). Web: `legal/consentVersions.test.ts` (the standing with and without the minimum),
+`consent/ConsentOlderBuild.test.tsx` (an older build accepts its own version, the app opens with no notice, panel or reload; a
+build below the minimum sees the update panel).

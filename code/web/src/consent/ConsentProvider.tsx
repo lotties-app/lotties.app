@@ -8,6 +8,7 @@ import { claimDeviceState } from '../session/deviceState';
 import { useLocale } from '../i18n/useLocale';
 import {
   CONSENT_VERSION,
+  CONSENT_VERSIONS,
   consentClientStanding,
   hasMinorChangeSince,
   requiresAcceptance,
@@ -149,8 +150,10 @@ function AccountConsent({ accountId, children }: { accountId: string; children: 
         if (error instanceof ApiError && error.code === 'consent_version_outdated') await refresh();
         throw error;
       }
-      storeSeenConsentVersion(view.currentVersion);
-      setSeen(view.currentVersion);
+      // She saw the text this build carries. On a build a few minor entries behind the server that is older than the server's
+      // current version, so a later build still shows her the "policy updated" notice for what she has not read.
+      storeSeenConsentVersion(CONSENT_VERSION);
+      setSeen(CONSENT_VERSION);
       adopt(view);
     },
     [adopt, refresh],
@@ -200,7 +203,13 @@ function AccountConsent({ accountId, children }: { accountId: string; children: 
       ? CONSENT_VERSION
       : null;
 
-  const stale = consentClientStanding(standing.view?.currentVersion) === 'stale';
+  const stale =
+    consentClientStanding(
+      standing.view?.currentVersion,
+      CONSENT_VERSION,
+      CONSENT_VERSIONS,
+      standing.view?.minimumVersion,
+    ) === 'stale';
 
   const value = useMemo<ConsentApi>(
     () => ({

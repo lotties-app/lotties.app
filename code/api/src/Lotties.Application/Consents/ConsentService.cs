@@ -13,7 +13,9 @@ public sealed record OptionalConsentsResponse(ConsentStateResponse? Push, Consen
 
 /// <summary>
 /// <c>GET /me/consents</c>: the version in force, the core consent (<c>null</c> before the first), the optional ones,
-/// whether she must accept (never accepted, or a material change since) and, for a minor change only, the version to mark as seen.
+/// whether she must accept (never accepted, or a material change since), for a minor change only the version to mark as seen, and
+/// the oldest version a client may still accept (<see cref="ConsentVersions.MinimumAccepted"/>: a client built with an older one must
+/// be updated; docs/design/38-consent-and-terms.md section 11).
 /// </summary>
 public sealed record ConsentsResponse(
     string CurrentVersion,
@@ -22,7 +24,8 @@ public sealed record ConsentsResponse(
     ConsentStateResponse? Core,
     OptionalConsentsResponse Optional,
     bool RequiresAcceptance,
-    string? MinorChangeSince);
+    string? MinorChangeSince,
+    string MinimumVersion);
 
 /// <summary>Body of <c>PUT /me/consents/core</c>.</summary>
 public sealed record AcceptCoreConsentRequest
@@ -50,8 +53,11 @@ public interface IConsentService
     Task<ConsentsResponse> GetMineAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Records the core consent for the current version. 400 <c>validation_failed</c> (field <c>version</c> or <c>capacity</c>) when one is
-    /// missing or unknown, 409 <c>consent_version_outdated</c> when the version is not the current one. Accepting again is a new grant.
+    /// Records the core consent for the version she read: the current one, or an older known one that only minor entries followed
+    /// (an app built before a minor change), recorded as that version, never as the current one. 400 <c>validation_failed</c> (field
+    /// <c>version</c> or <c>capacity</c>) when one is missing or unknown, 409 <c>consent_version_outdated</c> when the version is
+    /// unknown or a material entry came after it. Accepting again is a new grant, except that an older version never replaces a
+    /// later one in force with the same capacity (nothing is recorded then).
     /// </summary>
     Task<ConsentsResponse> AcceptCoreAsync(AcceptCoreConsentRequest request, CancellationToken cancellationToken = default);
 
@@ -109,14 +115,15 @@ internal sealed class ConsentService(
             throw new DomainValidationException(CapacityField, "capacity must be one of: guardian, authorised.");
         }
 
-        if (!string.Equals(request.Version, ConsentVersions.Current.Version, StringComparison.Ordinal))
+        // Known, and no material entry since: only minor changes separate the text she read from the current one.
+        if (ConsentVersions.RequiresAcceptance(request.Version))
         {
             throw new ConsentVersionOutdatedException(request.Version.Length > 40 ? request.Version[..40] : request.Version);
         }
 
         var user = await currentUser.GetUserAsync(cancellationToken);
-        await GrantAsync(user.Id, ConsentKind.Core, capacity, request.Locale, cancellationToken);
-        logger.LogInformation("Recorded the core consent version {Version} of user {UserId}", ConsentVersions.Current.Version, user.Id);
+        await GrantAsync(user.Id, ConsentKind.Core, request.Version, capacity, request.Locale, cancellationToken);
+        logger.LogInformation("Recorded the core consent version {Version} of user {UserId}", request.Version, user.Id);
         return await ViewAsync(user.Id, cancellationToken);
     }
 
@@ -136,7 +143,7 @@ internal sealed class ConsentService(
         var user = await currentUser.GetUserAsync(cancellationToken);
         if (granted)
         {
-            await GrantAsync(user.Id, parsed, capacity: null, request.Locale, cancellationToken);
+            await GrantAsync(user.Id, parsed, ConsentVersions.Current.Version, capacity: null, request.Locale, cancellationToken);
         }
         else
         {
@@ -148,13 +155,13 @@ internal sealed class ConsentService(
     }
 
     /// <summary>
-    /// Gives the consent: the first one adds the row with its history line in one save (a concurrent first request that won is
-    /// then regranted over); a repeated one while it is in force at the same version records nothing (a retry is harmless).
+    /// Gives the consent at <paramref name="version"/> (a known version): the first one adds the row with its history line in one
+    /// save (a concurrent first request that won is then regranted over); a repeated one while it is in force at the same or a later
+    /// version, with the same capacity, records nothing (a retry is harmless, and an older app never downgrades a newer acceptance).
     /// </summary>
-    private async Task GrantAsync(Guid userId, ConsentKind kind, ConsentCapacity? capacity, string? locale, CancellationToken cancellationToken)
+    private async Task GrantAsync(Guid userId, ConsentKind kind, string version, ConsentCapacity? capacity, string? locale, CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
-        var version = ConsentVersions.Current.Version;
         var stored = await consents.FindAsync(userId, kind, cancellationToken);
         if (stored is null)
         {
@@ -168,7 +175,9 @@ internal sealed class ConsentService(
                 ?? throw new InvalidOperationException($"The {kind} consent of user {userId} was saved concurrently but could not be loaded.");
         }
 
-        if (stored.IsGranted && string.Equals(stored.Version, version, StringComparison.Ordinal) && (kind != ConsentKind.Core || stored.Capacity == capacity))
+        var sameOrLater = string.Equals(stored.Version, version, StringComparison.Ordinal)
+            || ConsentVersions.IndexOf(stored.Version) > ConsentVersions.IndexOf(version);
+        if (stored.IsGranted && sameOrLater && (kind != ConsentKind.Core || stored.Capacity == capacity))
         {
             return;
         }
@@ -209,7 +218,8 @@ internal sealed class ConsentService(
             core,
             new OptionalConsentsResponse(OptionalOf(rows, ConsentKind.Push), OptionalOf(rows, ConsentKind.Alexa), OptionalOf(rows, ConsentKind.Mcp), OptionalOf(rows, ConsentKind.ByoDatabase)),
             requires,
-            !requires && ConsentVersions.HasMinorChangeSince(core!.Version) ? current.Version : null);
+            !requires && ConsentVersions.HasMinorChangeSince(core!.Version) ? current.Version : null,
+            ConsentVersions.MinimumAccepted.Version);
     }
 
     private static ConsentStateResponse? OptionalOf(Dictionary<ConsentKind, UserConsent> rows, ConsentKind kind) =>
