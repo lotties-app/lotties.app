@@ -30,7 +30,7 @@ namespace Lotties.Api.Tests.Stores;
 
 /// <summary>
 /// Account deletion and the family's own database (docs/design/47-bring-your-own-database.md section 9, task T10), on SQLite stores:
-/// with <c>?wipeOwnDatabase=true</c> (opt-in) the erased babies' rows in the 12 data tables of her store are deleted before Lotties'
+/// with <c>?wipeOwnDatabase=true</c> (opt-in) the erased babies' rows in the 13 data tables of her store are deleted before Lotties'
 /// side goes (the store a baby points at, an old copy kept for a move's undo window and a failed move's leftovers); without it her
 /// database is left as it is; in both cases Lotties' side is erased (baby, descriptor, move rows) and the store is forgotten. A store
 /// that cannot be reached never blocks the erasure: the baby is reported as not wiped, and no log line or answer names the store, the
@@ -61,7 +61,7 @@ public sealed class AccountErasureOwnStoreTests : IClassFixture<StoresApiFactory
     public static readonly IReadOnlySet<string> OwnStoreTables = new HashSet<string>(StringComparer.Ordinal)
     {
         "appointments", "baby_notes", "care_providers", "event_types", "events", "formulas", "measurements", "medications",
-        "note_reads", "prescription_proposals", "prescriptions", "vaccinations",
+        "note_reads", "prediction_outcomes", "prescription_proposals", "prescriptions", "vaccinations",
     };
 
     [Fact]
@@ -472,7 +472,7 @@ public sealed class AccountErasureOwnStoreTests : IClassFixture<StoresApiFactory
     private Task<SortedDictionary<string, List<string>>> StoreSnapshotAsync(Guid storeId, Guid babyId) =>
         _factory.Stores.QueryAsync(storeId, context => DataPlaneSnapshot.TakeAsync(context, babyId));
 
-    /// <summary>A row of the baby in each of the 12 data tables of the store (a former doctor's note, read mark and proposal included).</summary>
+    /// <summary>A row of the baby in each of the 13 data tables of the store (a former doctor's note, read mark and proposal included).</summary>
     private Task PutRecordsInStoreAsync(Guid storeId, Guid babyId, Guid ownerId) =>
         _factory.Stores.QueryAsync(storeId, async context =>
         {
@@ -501,6 +501,20 @@ public sealed class AccountErasureOwnStoreTests : IClassFixture<StoresApiFactory
         context.NoteReads.Add(NoteRead.Of(shared, ownerId, Now));
         var proposalTerms = ProposalTerms.Create(MedicationReference.Create(null, null, "Paracetamol drops"), dose, schedule, null, new DateOnly(2026, 10, 22), new DateOnly(2026, 10, 29), "Give after the morning feed.", null);
         context.PrescriptionProposals.Add(PrescriptionProposal.Create(Guid.NewGuid(), babyId, proposalTerms, doctorId, Now));
+        context.PredictionOutcomes.Add(new Infrastructure.Persistence.Entities.PredictionOutcomeEntity
+        {
+            Id = Guid.NewGuid(),
+            BabyId = babyId,
+            TypeKey = "sleep",
+            PredictedAt = Now,
+            AnchorAt = Now,
+            ExpectedNextStart = Now.AddHours(2),
+            ActualNextStart = Now.AddHours(2.5),
+            ErrorMinutes = 30,
+            EngineVersion = "heuristic-1.1",
+            SampleCount = 12,
+            Resolved = true,
+        });
     }
 
     private sealed record Owner(string Subject, Guid UserId, Guid StoreId);

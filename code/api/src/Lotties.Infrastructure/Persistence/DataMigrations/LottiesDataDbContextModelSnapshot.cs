@@ -1134,6 +1134,83 @@ namespace Lotties.Infrastructure.Persistence.DataMigrations
                     b.ToTable("vaccinations", "lotties");
                 });
 
+            modelBuilder.Entity("Lotties.Infrastructure.Persistence.Entities.PredictionOutcomeEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ActualNextStart")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("actual_next_start");
+
+                    b.Property<string>("AgeBand")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("age_band");
+
+                    b.Property<DateTimeOffset>("AnchorAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("anchor_at");
+
+                    b.Property<Guid>("BabyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("baby_id");
+
+                    b.Property<string>("EngineVersion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("engine_version");
+
+                    b.Property<double?>("ErrorMinutes")
+                        .HasColumnType("double precision")
+                        .HasColumnName("error_minutes");
+
+                    b.Property<DateTimeOffset>("ExpectedNextStart")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expected_next_start");
+
+                    b.Property<bool?>("IsRetrospective")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_retrospective");
+
+                    b.Property<bool?>("IsTopUp")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_top_up");
+
+                    b.Property<string>("Phase")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("phase");
+
+                    b.Property<DateTimeOffset>("PredictedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("predicted_at");
+
+                    b.Property<bool>("Resolved")
+                        .HasColumnType("boolean")
+                        .HasColumnName("resolved");
+
+                    b.Property<int>("SampleCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("sample_count");
+
+                    b.Property<string>("TypeKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("type_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_prediction_outcomes");
+
+                    b.HasIndex("BabyId", "TypeKey", "Resolved")
+                        .HasDatabaseName("ix_prediction_outcomes_baby_type_resolved");
+
+                    b.ToTable("prediction_outcomes", "lotties");
+                });
+
             modelBuilder.Entity("Lotties.Infrastructure.Persistence.StoreMetaRow", b =>
                 {
                     b.Property<short>("Id")

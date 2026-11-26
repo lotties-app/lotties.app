@@ -1,15 +1,22 @@
 using Lotties.Domain.EventTypes;
 using Lotties.Domain.Predictions;
 using Lotties.Infrastructure.Persistence.Entities;
+using Lotties.Infrastructure.Stores;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Infrastructure.Persistence.Repositories;
 
-/// <summary>EF Core implementation of <see cref="IPredictionOutcomeRepository"/> using the control-plane context.</summary>
-internal sealed class EfPredictionOutcomeRepository(LottiesDbContext context) : IPredictionOutcomeRepository
+/// <summary>
+/// EF Core implementation of <see cref="IPredictionOutcomeRepository"/> on the data plane: <c>prediction_outcomes</c> is a data table
+/// (docs/design/47-bring-your-own-database.md), so every call goes to the store bound for the baby in <see cref="StoreScope"/> (the
+/// baby must have been entered; <c>store_scope_missing</c> otherwise, never a fallback to the built-in store).
+/// </summary>
+internal sealed class EfPredictionOutcomeRepository(StoreScope stores) : IPredictionOutcomeRepository
 {
     public async Task SaveAsync(PredictionOutcome outcome, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(outcome);
+        var context = stores.ContextFor(outcome.BabyId);
         var entity = MapToEntity(outcome);
         var existing = await context.PredictionOutcomes
             .FirstOrDefaultAsync(e => e.Id == entity.Id, cancellationToken);
@@ -31,7 +38,7 @@ internal sealed class EfPredictionOutcomeRepository(LottiesDbContext context) : 
     public async Task<IReadOnlyList<PredictionOutcome>> GetPendingAsync(
         Guid babyId, EventTypeKey typeKey, CancellationToken cancellationToken = default)
     {
-        var rows = await context.PredictionOutcomes
+        var rows = await stores.ContextFor(babyId).PredictionOutcomes
             .AsNoTracking()
             .Where(e => e.BabyId == babyId && e.TypeKey == typeKey.Value && !e.Resolved)
             .OrderBy(e => e.PredictedAt)
@@ -43,7 +50,7 @@ internal sealed class EfPredictionOutcomeRepository(LottiesDbContext context) : 
     public async Task<IReadOnlyList<PredictionOutcome>> GetResolvedAsync(
         Guid babyId, EventTypeKey typeKey, int limit, CancellationToken cancellationToken = default)
     {
-        var rows = await context.PredictionOutcomes
+        var rows = await stores.ContextFor(babyId).PredictionOutcomes
             .AsNoTracking()
             .Where(e => e.BabyId == babyId && e.TypeKey == typeKey.Value && e.Resolved)
             .OrderByDescending(e => e.PredictedAt)
@@ -75,7 +82,7 @@ internal sealed class EfPredictionOutcomeRepository(LottiesDbContext context) : 
     public async Task<double?> GetMaeAsync(
         Guid babyId, EventTypeKey typeKey, AgeBand? ageBand, DayPhase? phase, int minSamples, CancellationToken cancellationToken = default)
     {
-        var query = context.PredictionOutcomes.AsNoTracking()
+        var query = stores.ContextFor(babyId).PredictionOutcomes.AsNoTracking()
             .Where(e => e.BabyId == babyId && e.TypeKey == typeKey.Value && e.Resolved && e.ErrorMinutes != null);
 
         if (ageBand.HasValue)
@@ -101,6 +108,7 @@ internal sealed class EfPredictionOutcomeRepository(LottiesDbContext context) : 
     public async Task InvalidateByAnchorAsync(
         Guid babyId, EventTypeKey typeKey, DateTimeOffset oldAnchorAt, CancellationToken cancellationToken = default)
     {
+        var context = stores.ContextFor(babyId);
         var stale = await context.PredictionOutcomes
             .Where(e => e.BabyId == babyId && e.TypeKey == typeKey.Value && e.AnchorAt == oldAnchorAt && e.Resolved)
             .ToListAsync(cancellationToken);

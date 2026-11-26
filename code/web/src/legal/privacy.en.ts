@@ -117,6 +117,14 @@ export const privacyEn: PolicyDocument = {
               ],
             },
             {
+              id: 'predictionAccuracy',
+              cells: [
+                'Accuracy of the estimates',
+                "When someone who can see a baby opens its estimates in the app (such as when the next sleep, feed or diaper may come), our server saves, for each estimate: the baby's internal id, the kind of entry, when the estimate was made and the time it counted from, the expected time, how many past entries it used, the version of the method, the baby's age band (such as 0 to 3 months) and the part of the day. When the next entry of that kind is logged, or its time is corrected, the real time and the difference in minutes are added. The record can also hold an answer to whether the estimate was right, although the app does not ask for one today. Such records can also be worked out later from entries already logged. They hold no name, note or account id, are not shown in the app and are not part of the export file or the backup; you can ask us for them (see [Your rights](#privacy-rights)). They are not combined with other families' records.",
+                'To check how close the estimates come to what really happened, so that the estimates shown to you stay accurate. They are worked out from the records above (daily records and, for an estimate about a medicine dose, health information).',
+              ],
+            },
+            {
               id: 'careProviders',
               cells: [
                 'Doctors and clinics you save',
@@ -256,6 +264,7 @@ export const privacyEn: PolicyDocument = {
             'Optional features you turn on (reminders, the Alexa skill, the address search): your consent (art. 7, I, and art. 11, I when a reminder is about a medicine or a vaccine). You withdraw it by turning the feature off or unlinking the skill.',
             'The rest estimate: your consent, given when you turn it on for yourself in Insights, as it can reveal when you work and rest (art. 7, I, and art. 11, I as it may be read as health information). Nobody can turn it on for you. You withdraw it by turning it off, and you can delete its settings and answers there.',
             "The Cry monitor: your specific consent, asked on each device before it starts, from a member who may log for the baby (art. 11, I, and art. 14, §1). You withdraw it on the monitor's page; the spells already logged stay as ordinary records until you delete them.",
+            'The accuracy of the estimates: worked out from your records to provide the estimates you see (art. 7, V) and, when an estimate is about a health entry such as a medicine dose, under your consent for health information (art. 11, I).',
             'Technical logs and protecting the service: our legitimate interest in keeping it running and safe (art. 7, IX), limited to what that needs and never using health information.',
             'When the law or an authority requires us to keep or hand over data: compliance with a legal obligation (art. 7, II, and art. 11, II, a).',
           ],
@@ -474,6 +483,7 @@ export const privacyEn: PolicyDocument = {
           items: [
             'Your records: until you delete them, the baby is erased or you delete your account.',
             'Deleted entries: kept hidden until the baby or your account is deleted (see [Your rights](#privacy-rights)).',
+            'Accuracy of the estimates: kept with the baby until it is erased. Deleting an entry does not delete these records.',
             'What you added to a baby other people keep: stays with that baby after you leave or delete your account, without your name.',
             'Your sign-in account: until you delete your account.',
             'Your measurement unit choice: until you change it or delete your account.',

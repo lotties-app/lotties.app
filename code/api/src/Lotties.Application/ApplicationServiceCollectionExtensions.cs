@@ -58,6 +58,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Lotties.Domain.Predictions.IPriorProvider, Predictions.CommunityLivePriorProvider>();
         services.AddScoped<Lotties.Domain.Predictions.IPriorProvider, Predictions.CommunityStaticPriorProvider>();
         services.AddScoped<Predictions.IPredictionOutcomeResolutionService, Predictions.PredictionOutcomeResolutionService>();
+        services.TryAddSingleton<Predictions.IPredictionOutcomeRecorder, Predictions.PredictionOutcomeRecorder>();
         services.AddScoped<Predictions.PredictionAccuracyAdjustmentService>();
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
         services.AddScoped<Rhythm.IRhythmService, Rhythm.RhythmService>();

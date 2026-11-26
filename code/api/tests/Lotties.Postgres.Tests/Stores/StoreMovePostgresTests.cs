@@ -254,10 +254,10 @@ public sealed class StoreMovePostgresTests(PostgresFixture postgres)
         public async Task EnsureStoreReadyAsync() => await provider.GetRequiredService<IStoreMigrator>().EnsureReadyAsync(storeId);
 
         /// <summary>
-        /// An owner (and the owner's store row, once), a former doctor and a baby with a row in each of the 12 data tables: a custom type
+        /// An owner (and the owner's store row, once), a former doctor and a baby with a row in each of the 13 data tables: a custom type
         /// and its event, <paramref name="events"/> diaper events (one soft-deleted), a medication with a default dosage, a prescription,
         /// a formula, a care provider and its appointment, a vaccination, a measurement, the doctor's shared recommendation the owner
-        /// read and her private note, and her proposal.
+        /// read and her private note, her proposal, and a resolved prediction outcome.
         /// </summary>
         public async Task<Family> SeedFamilyAsync(int events, Guid? ownerId = null)
         {
@@ -400,7 +400,7 @@ public sealed class StoreMovePostgresTests(PostgresFixture postgres)
                 return true;
             });
 
-        /// <summary>Every row of the baby in the 12 data tables of <paramref name="store"/>, each as its stored values in name order.</summary>
+        /// <summary>Every row of the baby in the 13 data tables of <paramref name="store"/>, each as its stored values in name order.</summary>
         public async Task<SortedDictionary<string, List<string>>> SnapshotAsync(DataStoreKey store, Guid babyId)
         {
             await using var scope = provider.CreateAsyncScope();
@@ -461,6 +461,22 @@ public sealed class StoreMovePostgresTests(PostgresFixture postgres)
             context.NoteReads.Add(NoteRead.Of(shared, ownerId, Now));
             var proposalTerms = ProposalTerms.Create(MedicationReference.Create(null, null, "Paracetamol drops"), dose, schedule, null, new DateOnly(2026, 10, 22), new DateOnly(2026, 10, 29), "Give after the morning feed.", null);
             context.PrescriptionProposals.Add(PrescriptionProposal.Create(Guid.NewGuid(), babyId, proposalTerms, doctorId, Now));
+            context.PredictionOutcomes.Add(new Infrastructure.Persistence.Entities.PredictionOutcomeEntity
+            {
+                Id = Guid.NewGuid(),
+                BabyId = babyId,
+                TypeKey = "diaper",
+                PredictedAt = Now,
+                AnchorAt = Now,
+                ExpectedNextStart = Now.AddHours(3),
+                ActualNextStart = Now.AddHours(3.5),
+                ErrorMinutes = 30,
+                EngineVersion = "heuristic-1.1",
+                SampleCount = 12,
+                AgeBand = "ThreeToSixMonths",
+                Phase = "Day",
+                Resolved = true,
+            });
             return foreign.Id;
         }
 

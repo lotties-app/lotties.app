@@ -15,7 +15,7 @@ public sealed class PlaneModelTests
     private static readonly string[] DataTables =
     [
         "appointments", "baby_notes", "care_providers", "event_types", "events", "formulas", "measurements", "medications",
-        "note_reads", "prescription_proposals", "prescriptions", "vaccinations",
+        "note_reads", "prediction_outcomes", "prescription_proposals", "prescriptions", "vaccinations",
     ];
 
     /// <summary>The physical keys of the built-in database that leave the data plane: table.column -> principal table (on delete).</summary>

@@ -13,7 +13,7 @@ internal sealed class PredictionService : IPredictionService
     private readonly IBabyAccessService _access;
     private readonly IAgeNormsProvider _ageNorms;
     private readonly IEnumerable<IPriorProvider> _priorProviders;
-    private readonly IPredictionOutcomeResolutionService _outcomeRecorder;
+    private readonly IPredictionOutcomeRecorder _outcomeRecorder;
     private readonly PredictionAccuracyAdjustmentService _accuracyAdjustment;
     private readonly PredictionOptions _options;
     private readonly ILogger<PredictionService> _logger;
@@ -23,7 +23,7 @@ internal sealed class PredictionService : IPredictionService
         IBabyAccessService access,
         IAgeNormsProvider ageNorms,
         IEnumerable<IPriorProvider> priorProviders,
-        IPredictionOutcomeResolutionService outcomeRecorder,
+        IPredictionOutcomeRecorder outcomeRecorder,
         PredictionAccuracyAdjustmentService accuracyAdjustment,
         PredictionOptions options,
         ILogger<PredictionService> logger)
@@ -88,23 +88,11 @@ internal sealed class PredictionService : IPredictionService
             history.Events.Count,
             predictions.InsufficientData.Count);
 
-        // Fire-and-forget: record outcomes for accuracy tracking without blocking the response.
+        // Record outcomes for accuracy tracking without blocking the response: the recorder works in its own DI scope (this
+        // request's database context is disposed with the request) and only logs a failure.
         if (_options.AccuracyTrackingEnabled)
         {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    foreach (var prediction in predictions.Predictions)
-                    {
-                        await _outcomeRecorder.RecordPredictionAsync(prediction, babyId, PredictionEngine.Version, cancellationToken: CancellationToken.None);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Fire-and-forget prediction outcome recording failed for baby {BabyId}", babyId);
-                }
-            });
+            _ = _outcomeRecorder.RecordAfterResponseAsync(babyId, predictions.Predictions, PredictionEngine.Version);
         }
 
         var clock = LocalClock.ForZoneOrOffset(timeZone, now.Offset);

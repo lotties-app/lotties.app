@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 namespace Lotties.Api.Tests.Support;
 
 /// <summary>
-/// Every row one baby has in the 12 data tables of a store (<see cref="DataPlane.EntityTypes"/>), as text: each row is every mapped
+/// Every row one baby has in the 13 data tables of a store (<see cref="DataPlane.EntityTypes"/>), as text: each row is every mapped
 /// column of the entity and of its owned parts (dose, schedule, dosage), as the database stores it, joined in name order; rows are
 /// sorted, tables are keyed by name. Two snapshots are equal when the two stores hold the same records, value for value: what a store
 /// move must leave behind (task T7).

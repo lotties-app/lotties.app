@@ -11,6 +11,7 @@ using Lotties.Domain.Prescriptions;
 using Lotties.Domain.Proposals;
 using Lotties.Domain.Vaccinations;
 using Lotties.Infrastructure.Persistence;
+using Lotties.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lotties.Infrastructure.Stores.Moves;
@@ -40,7 +41,7 @@ internal sealed class RowStamp
     public DateTimeOffset? DeletedAt { get; init; }
 }
 
-/// <summary>One of the 12 data tables as a move sees it (<see cref="DataPlaneTables"/>).</summary>
+/// <summary>One of the 13 data tables as a move sees it (<see cref="DataPlaneTables"/>).</summary>
 internal interface IDataPlaneTable
 {
     /// <summary>The table name (counts in the digest and in tests; never logged with values).</summary>
@@ -84,7 +85,7 @@ internal sealed class DataPlaneTable<TEntity>(
 }
 
 /// <summary>
-/// The 12 tables of the data plane (<see cref="DataPlane.EntityTypes"/>) in copy order: what other rows point at comes first
+/// The 13 tables of the data plane (<see cref="DataPlane.EntityTypes"/>) in copy order: what other rows point at comes first
 /// (<c>event_types</c> before <c>events</c>, <c>baby_notes</c> before <c>note_reads</c>, medications before prescriptions, providers
 /// before appointments); deletes run in the reverse order. Built-in event types (no baby) are never copied: every store has them. Soft-
 /// deleted rows are copied like the others (clients learn deletions from them). A new data table fails <c>DataPlaneTablesTests</c>
@@ -154,6 +155,12 @@ internal static class DataPlaneTables
             (context, filter) => context.Events.IgnoreQueryFilters().Where(row => row.BabyId == filter.BabyId),
             query => query.OrderBy(row => row.Id),
             row => new RowStamp { Key = row.Id, ChangedAt = row.UpdatedAt, DeletedAt = row.DeletedAt }),
+        // Scored predictions (derived from the baby's events): no key to another table; resolving one fills its actual start.
+        new DataPlaneTable<PredictionOutcomeEntity>(
+            "prediction_outcomes",
+            (context, filter) => context.PredictionOutcomes.Where(row => row.BabyId == filter.BabyId),
+            query => query.OrderBy(row => row.Id),
+            row => new RowStamp { Key = row.Id, ChangedAt = row.ActualNextStart }),
     ];
 
     /// <summary>The read marks of the notes the filter lets through.</summary>

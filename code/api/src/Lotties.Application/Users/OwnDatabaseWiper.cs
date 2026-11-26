@@ -14,7 +14,7 @@ public sealed record OwnDatabaseWipeResult(IReadOnlyList<Guid> Wiped, IReadOnlyL
 
 /// <summary>
 /// The data-plane half of account deletion for a family's own database (docs/design/47-bring-your-own-database.md section 9, task T10):
-/// deletes each erased baby's rows from the 12 data tables of the user's store with <see cref="IStoreRecordCopier.WipeAsync"/>, which
+/// deletes each erased baby's rows from the 13 data tables of the user's store with <see cref="IStoreRecordCopier.WipeAsync"/>, which
 /// opens the store through the routing (feature flag, circuit breaker, migrator) like every other access. Each store gets at most
 /// <see cref="StoreTimeout"/>; a store that fails, is slow or whose breaker is open stops there, and the babies not reached yet are
 /// reported as not wiped so the deletion of Lotties' side goes on and the app can tell the user. Nothing is logged but counts and

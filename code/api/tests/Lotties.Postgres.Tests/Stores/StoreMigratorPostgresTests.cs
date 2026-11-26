@@ -217,7 +217,7 @@ public sealed class StoreMigratorPostgresTests(PostgresFixture postgres)
     private static readonly string[] DataTablesAndMeta =
     [
         "__ef_data_migrations", "appointments", "baby_notes", "care_providers", "event_types", "events", "formulas", "measurements",
-        "medications", "note_reads", "prescription_proposals", "prescriptions", "store_meta", "vaccinations",
+        "medications", "note_reads", "prediction_outcomes", "prescription_proposals", "prescriptions", "store_meta", "vaccinations",
     ];
 
     private static string[] KnownMigrations

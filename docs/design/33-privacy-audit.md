@@ -63,6 +63,8 @@ I; **LI** = art. 7, IX (legitimate interest, never for sensitive data); **Legal*
 | 23 | Consent records (`user_consents`, `user_consent_history`, 2026-10-27, policy 9, docs/design/38-consent-and-terms.md) | per person and kind (`core`, `push`, `alexa`, `mcp`): internal user id, the consent version (the pair terms version + policy version), when it was given or withdrawn, the language of the text she read and, for the core consent, the capacity she declared (the child's parent or legal guardian, or an adult they authorised); an append-only history line for each grant or withdrawal. **No IP address, no device data**; not baby data | to show that a person consented to the terms and the policy before any baby data was reached, to ask again after a material change, to keep the optional choices (reminders, Alexa, AI assistants) | Legal / Contract (proof of the consent that is the basis of the health data: art. 11, I, art. 14, §1; `OWNER TO CONFIRM`) | the person herself (`GET /me/consents`, Settings > Privacy and data); the server uses the core record to gate every baby route | until the account is deleted (a minimal proof kept after deletion is a question for the lawyer, docs/PRIVACY-LAWYER-BRIEF.md) | erased by account deletion (`EfAccountDataEraser`, rules in `AccountErasureTests`) | shown in Settings > Privacy and data; a request to the contact |
 | 24 | Caregiver rest estimate (`user_rest_settings`, `user_rest_mornings`, 2026-10-30, policy 10, docs/design/41-caregiver-rest.md; **off by default for everyone**) | per person: on/off, time zone, work windows, night window, two minute values; optionally one "I am up" time per night. The **estimate is not data held**: the server computes it on request from the baby's log (rows of categories 4 and 5), returns it only to the caller and stores it nowhere. It can say when an adult works and rested, so it may be read as health-adjacent | show the person, and only her, a rough range of when she may have rested | Consent (art. 7, I; art. 11, I if read as health data) given by the person's own toggle, `OWNER TO CONFIRM` with the lawyer whether a separate explicit consent is needed (doc 41 sections 6 and 10 item 5) | the person herself only; never another member, the Owner, a Doctor, an assistant (Alexa, MCP), the backup file, the sync or a log line; no third party, nothing leaves our infrastructure | until changed, deleted by the person, or account deletion | `DELETE /me/rest-settings` (settings and every morning answer); account deletion (`EfAccountDataEraser`, rules and fixture rows in `AccountErasureTests`); never in the baby backup | no |
 | 25 | Own database connection (`data_stores`, `babies.data_store_id`, `babies.store_epoch`, 2026-11-07, policy 13, docs/design/47-bring-your-own-database.md; **off by default, behind `Stores:Enabled` and `Stores:Allowlist`**) | per Owner account: the provider label she types, the sealed descriptor (host, port, database, the app and migrator user names and passwords, an optional CA certificate; AES-256-GCM envelope, data key wrapped by a key from a Secret, `ConfiguredKeyWrapper`/`StoreCredentials`), state, schema version, last check time and coarse result; per baby: the store pointer and a sync epoch. No baby record. The baby's care records (design 47 D2) then live in **her** database, schema `lotties` | read and write that baby's records in the database she chose; tell her when it is unreachable | Consent (art. 7, I; art. 11, I) given by the Owner with the optional consent `byo_database` before a descriptor is saved (`403 byo_consent_required` otherwise); `OWNER TO CONFIRM` with the lawyer (brief item 19) | the Owner sees the label, state and check result (`GET /babies/{id}/data-store`), never the host, user, database, password or CA; the API opens the descriptor to connect; **the operator holds the key and can open it** | until the store is removed or account deletion | `DELETE /babies/{id}/data-store`; account deletion (`AccountErasureTests.Rules` for `data_stores`); never in the baby backup file | no (the Owner removes it) |
+| 26 | Prediction accuracy outcomes (`prediction_outcomes`, control migration `AddPredictionOutcomes` 2026-11-18, data chain migration `AddPredictionOutcomes` 2026-11-25, policy 16, section 20) | per estimate: id, baby id (no key, no account id), entry type key, when it was made, the anchor time it counted from, the expected next start, engine version, sample count, age band and day phase (enum names), and once resolved the actual next start, the absolute error in minutes and `resolved`; two nullable flags (`is_retrospective`, `is_top_up`) that only the backfill tool may fill | measure how close the estimates come to the real next entry (and, behind `PredictionOptions:BlendingEnabled`, off, weigh the baby's own estimates) | Contract; Consent-H for an estimate about a health entry (a medicine dose type) | nobody in the app (no route returns them); the operator through the database | until the baby is erased (account deletion, demo cleanup); deleting an event does not delete them; an edited start time removes resolved rows anchored at the old time | `EfAccountDataEraser` (built-in), `IStoreRecordCopier.WipeAsync` (own database, opt-in) | not in the backup file or the device export (derived data; on request, section 20) |
+| 27 | Community prediction aggregates (`community_prediction_aggregates`, control migration `AddCommunityPredictionAggregates` 2026-11-19, section 20) | per (age band label, type key, phase, ISO week, engine version): count, sums and percentiles of the absolute error; no baby, family or account id | community prior accuracy (planned) | none yet: **not filled** (the aggregator is not registered or called) | nobody | n/a (empty) | n/a | n/a |
 
 ## 3. Third parties and requests that leave our servers
 
@@ -575,3 +577,82 @@ statistics are computed entirely on the server; no device sensor is involved.
 - **Web client:** Dexie table `communityStatistics` (one row, like `ageNorms`), `useCommunityStatistics()` hook; each
   caller uses a pooled cell when it exists and passes its gate, else `priorFor` of the age norms, else its built-in
   default. Offline: the last downloaded copy.
+
+## 20. Prediction accuracy outcomes and community prediction aggregates (2026-11-25, policy 16)
+
+Added by the prediction commits of 2026-11-18/19 (`PredictionOutcomeResolutionService`, `PredictionService`,
+`CommunityPredictionAggregator`, `Lotties.PredictionBackfill`) without a policy change; policy 16 describes them.
+`PredictionOptions:AccuracyTrackingEnabled` (default `false`) is `true` in `deploy/homelab/values/api.yaml`, so production
+writes outcomes today. Facts from the code (`legal/dataFlows.ts` `DERIVED_FLOWS`, held by `dataFlows.test.ts`):
+
+- **What is written** (inventory row 26): on every `GET /babies/{id}/predictions` by a member who may read the daily log
+  (Owner, Parent, Caregiver, Viewer, a Doctor with the daily log scope), one pending row per prediction of the answer
+  (any event type with enough history: sleep, feeds, diapers, medication doses, custom types). The work runs after the
+  response in its own DI scope (`PredictionOutcomeRecorder`, which enters the baby's store); at most
+  `MaxPendingOutcomes` (50) pending rows per baby and type are kept: older ones are closed with their own expected time
+  (error 0). Creating or editing an event of that type resolves the oldest pending row (`EventService`, own scope); an
+  edited start time first deletes resolved rows anchored at the old time. `POST /predictions/feedback` can resolve a row
+  from a "was it right" answer (error 0 or a 24 h sentinel), but the web never reaches it (section 20.2). The backfill
+  tool (`code/api/tools/Lotties.PredictionBackfill`, run by the operator against the Lotties database) can write
+  resolved rows for past events.
+- **What is read**: only `GetMaeAsync`, per baby and type, when `PredictionOptions:BlendingEnabled` is on (default
+  `false`, not set in production): today nothing in the API reads the rows back. No route returns them; they are not in
+  the backup file (`BackupFile`), the device export or the sync.
+- **Who sees**: nobody in the app; the operator through the database and its `pg_dump` copies.
+- **Plane** (docs/design/47-bring-your-own-database.md section 2.1): a data table since 2026-11-25 (13th entry of
+  `DataPlane.EntityTypes` and `DataPlaneTables`, data chain migration `AddPredictionOutcomes`): for a baby on the family's
+  own database the rows are written there and moved, copied and wiped with her other records; the Lotties database never
+  holds them for such a baby.
+- **Erasure**: `AccountErasureTests.Rules` `prediction_outcomes.baby_id` = Erase (`EfAccountDataEraser`, built-in), and
+  the own database wipe (`AccountErasureOwnStoreTests.OwnStoreTables`).
+- **Third parties**: none. **Legal basis**: contract (art. 7, V) for estimates from daily records; the health consent
+  (art. 11, I) for an estimate about a health entry. **Retention**: with the baby.
+- **Policy 16** (2026-11-25): a data row `predictionAccuracy` (what is saved, not shown, not exported, not combined across
+  families, the unused answer field), a legal-basis line and a retention line, in both languages.
+- **Consent version**: a `minor` entry (`2026-11-25.1`, policy 16). Reasoning: under the material rule of
+  `Lotties.Domain.Consents.ConsentVersions` (new data collected, a new recipient or purpose, a change in rights or in who
+  is responsible) nothing new is collected from the person (the rows are derived from records she already keeps), there
+  is no recipient, and the purpose is the one the policy already states for records ("calculate summaries and estimates
+  for you"), written as keeping the estimates accurate. A stricter reading (a new kind of stored derived health data, on
+  for everyone) would make it material; the owner may promote it (a later entry, never an edit). Native builds were just
+  released with consent `2026-11-15.1`, and a material entry would ask every person to accept again.
+
+### 20.1 `community_prediction_aggregates`
+
+- **Not filled today.** `CommunityPredictionAggregator` (`ICommunityPredictionAggregator`) and
+  `EfCommunityPredictionAggregateRepository` (`ICommunityPredictionAggregateRepository`) are not registered in DI and not
+  called by any job or route; the table created by `AddCommunityPredictionAggregates` stays empty. The policy says the
+  accuracy records "are not combined with other families' records", which is true only while this stays so. The table is
+  global (no baby id) and stays in the Lotties database.
+- **What the aggregator would do if wired** (findings, not fixed here):
+  1. It reads every resolved row of `prediction_outcomes` in the Lotties database with no community consent filter
+     (`community_consents`), no demo exclusion (`users.issuer <> 'urn:lotties:demo'`) and no check of the Owner's
+     choice; section 19 and design 34 require explicit consent per baby (art. 11, I) for any pooled statistic.
+  2. Cells below `CommunityPredictionAggregate.MinimumCount` (10) are not stored, but the count is of **outcomes**, not
+     of babies or families: one baby with 10 resolved predictions of a type in an age band fills a cell alone, so the
+     cell's error distribution (median, p10, p90, sums) is that one baby's. Section 19 publishes only cells of at least
+     20 babies from 20 families, with a dominance rule and noise.
+  3. No baby or family id is stored and the cell has no time finer than an ISO week, so a row does not name a baby, but
+     by (2) a single-baby cell is that baby's data.
+  4. It labels rows with the enum name of the age band (`UnderThreeMonths`) while the reader looks them up by
+     `AgeBands.Label` (`0-3m`), and the phase with `Day`/`Night` while the reader asks for `day`/`night`: the reader
+     would never find a row.
+  5. BYO babies would be left out (it reads only the Lotties database), which matches design 47 section 2.2.
+- **Recommendation**: before registering it, feed it only from babies with a current community consent (the snapshot of
+  `CommunityAggregationJob`), exclude demo accounts, apply k = 20 distinct babies from 20 families and the dominance
+  rule of section 19, fix the labels, and describe it in the policy's community section (a policy change of its own).
+
+### 20.2 Other findings (not fixed here)
+
+- The web's `PredictionFeedbackButton` sends `predictionId` as `typeKey:<ISO time>` while the server parses
+  `typeKey:<ticks>`, so every answer is dropped (logged as an invalid id); the button is in `PredictionCard`, which only
+  `PredictionsSection` uses, and that component is mounted nowhere outside its test. The policy says the app does not
+  ask for an answer today. If it is wired, the server stores the answer as an error of 0 or 24 hours.
+- The feedback route needs only the daily log read policy, so a Viewer or a Doctor can write into the baby's accuracy
+  records; the project rules limit a Doctor's writes to her notes and consultation measurements.
+- Pending rows over the limit are closed with error 0 and then count as accurate results in `GetMaeAsync` and in the
+  aggregator (they skew both).
+- Rows grow with every predictions request (a pending row per type per request, the oldest closed past 50); there is
+  no retention other than the baby's erasure.
+- The resolution after an event write runs in the background and resolves the oldest pending row with whichever event
+  arrives: writes close together (an offline outbox flushing) can resolve rows out of order or against an earlier event.

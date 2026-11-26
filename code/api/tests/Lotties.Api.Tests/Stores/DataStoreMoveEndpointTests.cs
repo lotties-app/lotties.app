@@ -19,7 +19,7 @@ namespace Lotties.Api.Tests.Stores;
 
 /// <summary>
 /// Moving a baby's records between Lotties' database and the Owner's own database (docs/design/47-bring-your-own-database.md section 6,
-/// task T7) through the routes, the background worker and two SQLite stores (the built-in one and the owner's): every one of the 12
+/// task T7) through the routes, the background worker and two SQLite stores (the built-in one and the owner's): every one of the 13
 /// data tables copied as stored (ids, authors, times, soft deletions, a former doctor's notes and proposals) except a private note of
 /// another person, which never reaches the owner's database; the pointer and epoch switch after the copy; the old copy kept for the
 /// undo window and then deleted by the sweep; writes refused with <c>503 store_moving</c> while a move runs; a failed copy leaves the baby
@@ -325,6 +325,7 @@ public sealed class DataStoreMoveEndpointTests(StoresApiFactory factory) : IClas
         }
 
         await SeedFamilyRecordsAsync(family);
+        await SeedPredictionOutcomesAsync(family);
         if (withDoctorHistory)
         {
             await SeedDoctorHistoryAsync(family, removeDoctor: !memberRoles.Contains(BabyRole.Doctor));
@@ -369,6 +370,25 @@ public sealed class DataStoreMoveEndpointTests(StoresApiFactory factory) : IClas
         await client.DeleteAsync($"{path}/events/{deleted}").Ok();
         await client.PutAsJsonAsync($"{path}/events/{Guid.NewGuid()}", new { typeId = customType.GetProperty("id").GetGuid(), startedAt = Start.AddHours(2), payload = new { amount_ml = 80 } }).Ok();
     }
+
+    /// <summary>A resolved and a pending prediction outcome (accuracy tracking writes them in the background; seeded directly here).</summary>
+    private Task SeedPredictionOutcomesAsync(Family family) =>
+        factory.SeedAsync(context =>
+        {
+            context.PredictionOutcomes.AddRange(
+                new Infrastructure.Persistence.Entities.PredictionOutcomeEntity
+                {
+                    Id = Guid.NewGuid(), BabyId = family.BabyId, TypeKey = "feeding", PredictedAt = Start, AnchorAt = Start,
+                    ExpectedNextStart = Start.AddHours(3), ActualNextStart = Start.AddHours(3.25), ErrorMinutes = 15,
+                    EngineVersion = "heuristic-1.1", SampleCount = 9, AgeBand = "UnderThreeMonths", Phase = "Day", Resolved = true,
+                },
+                new Infrastructure.Persistence.Entities.PredictionOutcomeEntity
+                {
+                    Id = Guid.NewGuid(), BabyId = family.BabyId, TypeKey = "sleep", PredictedAt = Start.AddHours(1), AnchorAt = Start,
+                    ExpectedNextStart = Start.AddHours(2), EngineVersion = "heuristic-1.1", SampleCount = 4,
+                });
+            return Task.CompletedTask;
+        });
 
     /// <summary>A doctor who worked with the baby: a shared recommendation the Owner read, a private note, proposals, a measurement.</summary>
     private async Task SeedDoctorHistoryAsync(Family family, bool removeDoctor)

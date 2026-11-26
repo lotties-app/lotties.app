@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Lotties.Api.Tests.Support;
 using Lotties.Domain.Babies;
@@ -344,6 +345,46 @@ public sealed class PredictionEndpointTests(ApiFactory factory) : IClassFixture<
     public async Task HistoryRepository_UnknownBaby_ReturnsNull()
     {
         Assert.Null(await LoadHistoryAsync(Guid.NewGuid(), DateTimeOffset.UtcNow));
+    }
+
+    [Fact]
+    public async Task Get_AccuracyTrackingOn_RecordsTheOutcomeAfterTheResponse_AndTheNextEventResolvesIt()
+    {
+        var seeded = await SeedHistoryAsync();
+        using var host = factory.WithWebHostBuilder(builder => builder.UseSetting("PredictionOptions:AccuracyTrackingEnabled", "true"));
+        var owner = ClientFor(host, seeded.Baby.OwnerSubject);
+
+        var response = await owner.GetAsync(PathFor(seeded.Baby.BabyId));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var pending = Assert.Single(await WaitForOutcomesAsync(seeded.Baby.BabyId, rows => rows.Count > 0));
+        Assert.Equal(("tummy_time", false, "heuristic-1.1"), (pending.TypeKey, pending.Resolved, pending.EngineVersion));
+        Assert.Equal(seeded.LastSessionStart + SessionInterval, pending.ExpectedNextStart);
+
+        var next = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.AddMinutes(-2).ToUnixTimeSeconds());
+        var put = await owner.PutAsJsonAsync($"/api/v1/babies/{seeded.Baby.BabyId}/events/{Guid.NewGuid()}", new { typeId = BuiltInEventTypes.TummyTimeId, startedAt = next, endedAt = next.AddMinutes(20), payload = new { } });
+
+        Assert.Equal(HttpStatusCode.Created, put.StatusCode);
+        var resolved = Assert.Single(await WaitForOutcomesAsync(seeded.Baby.BabyId, rows => rows.All(row => row.Resolved)));
+        Assert.Equal((pending.Id, next), (resolved.Id, resolved.ActualNextStart!.Value));
+        Assert.Equal(Math.Abs((next - pending.ExpectedNextStart).TotalMinutes), resolved.ErrorMinutes!.Value, 3);
+    }
+
+    /// <summary>The baby's outcomes once <paramref name="done"/> holds for them (the recording runs after the response).</summary>
+    private async Task<List<Infrastructure.Persistence.Entities.PredictionOutcomeEntity>> WaitForOutcomesAsync(
+        Guid babyId, Func<List<Infrastructure.Persistence.Entities.PredictionOutcomeEntity>, bool> done)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(15);
+        while (true)
+        {
+            var rows = await factory.QueryAsync(context => context.PredictionOutcomes.AsNoTracking().Where(row => row.BabyId == babyId).ToListAsync());
+            if (done(rows) || DateTimeOffset.UtcNow > deadline)
+            {
+                return rows;
+            }
+
+            await Task.Delay(50);
+        }
     }
 
     private static string PathFor(Guid babyId) => $"/api/v1/babies/{babyId}/predictions";

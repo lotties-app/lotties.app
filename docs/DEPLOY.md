@@ -693,9 +693,10 @@ docs/legal-held/byo-database/ until the next material policy version (docs/desig
 A family that brings its own database (docs/design/47-bring-your-own-database.md; off unless `Stores:Enabled=true`, and only
 for accounts on `Stores:Allowlist`) gets the data tables in schema `lotties` of that database, from a **separate migration chain**:
 `code/api/src/Lotties.Infrastructure/Persistence/DataMigrations/` (context `LottiesDataDbContext` in its external-store
-shape, history table `lotties.__ef_data_migrations`). Its baseline `DataBaseline` creates the 12 data tables and
+shape, history table `lotties.__ef_data_migrations`). Its baseline `DataBaseline` creates the first 12 data tables and
 `lotties.store_meta` (the store's own row: store id, epoch, schema version, state) without any foreign key to a control
-table, and seeds the built-in event types as they are today. The Lotties database is never migrated with this chain: it
+table, and seeds the built-in event types as they are today; `AddPredictionOutcomes` (2026-11-25) adds the 13th,
+`prediction_outcomes`. The Lotties database is never migrated with this chain: it
 keeps its own (above), the data chain's design-time connection never resolves, and the baseline's first statement stops on
 a database that holds the Lotties control tables.
 
@@ -762,7 +763,7 @@ Values out of range fail startup (only while `Stores:Enabled` is on).
 Deleting an account (`DELETE /me`, design 47 section 9, task T10) always erases the Lotties side, her store descriptors included,
 and drops their pools and breakers in the instance that served the request (another instance closes its pool once it sees the row
 gone, or after the idle time). Her own database is touched only when she ticks "also delete these babies' records in my own
-database" (`?wipeOwnDatabase=true`, off by default): the API then deletes those babies' rows in the 12 data tables there (the store
+database" (`?wipeOwnDatabase=true`, off by default): the API then deletes those babies' rows in the 13 data tables there (the store
 a baby points at, an old copy in its undo window, a failed move's leftovers), through the app role, and drops no schema or role.
 Each store gets at most 30 s; a store that is down, slow or behind an open breaker does not hold the deletion up: Lotties' side is
 erased and the app tells her which babies' records are still in her database. A deletion is refused with `409 store_move_in_progress`

@@ -15,6 +15,7 @@ export const DATA_CATEGORY_IDS = [
   'babyProfile',
   'records',
   'health',
+  'predictionAccuracy',
   'careProviders',
   'doctorProfile',
   'sharing',
@@ -72,6 +73,45 @@ export const ON_DEVICE_FLOWS: readonly OnDeviceFlow[] = [
     modelFrom: 'ownServer',
     recipients: ['pushServices'],
     platforms: ['web'],
+  },
+];
+
+/*
+ * Data our server derives from a baby's records and keeps (docs/design/33-privacy-audit.md section 20):
+ * what the policy must say about each, held by dataFlows.test.ts. A new derived record, or using one for
+ * anything else (combining it across families, showing it, exporting it), is a policy change: update it
+ * here, in both privacy.<lang>.ts files, the audit and the policy version.
+ */
+export interface DerivedFlow {
+  id: 'predictionAccuracy';
+  /** `active`: built and on in production (`PredictionOptions:AccuracyTrackingEnabled`). */
+  status: 'active';
+  /** Worked out by our server when someone opens the estimates, with no switch of the person's own. */
+  trigger: 'automatic';
+  /** The row of "What we collect" that describes it. */
+  dataCategory: DataCategoryId;
+  /** Companies that receive it: none. */
+  recipients: readonly ThirdPartyId[];
+  /** Combined with other families' records (community statistics): no; `community_prediction_aggregates` is not filled. */
+  combinedAcrossFamilies: false;
+  /** Shown in the app, in the export file or in the backup file. */
+  shownInApp: false;
+  inExport: false;
+  /** Kept until the baby is erased (account deletion, demo cleanup); deleting an entry does not delete it. */
+  retention: 'untilBabyErased';
+}
+
+export const DERIVED_FLOWS: readonly DerivedFlow[] = [
+  {
+    id: 'predictionAccuracy',
+    status: 'active',
+    trigger: 'automatic',
+    dataCategory: 'predictionAccuracy',
+    recipients: [],
+    combinedAcrossFamilies: false,
+    shownInApp: false,
+    inExport: false,
+    retention: 'untilBabyErased',
   },
 ];
 

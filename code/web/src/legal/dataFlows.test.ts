@@ -4,6 +4,7 @@ import type { Locale } from '../i18n/config';
 import {
   CURATED_CREDIT_PRIVACY,
   DATA_CATEGORY_IDS,
+  DERIVED_FLOWS,
   ON_DEVICE_FLOWS,
   PLANNED_FLOWS,
   THIRD_PARTIES,
@@ -229,6 +230,64 @@ describe('the data flows behind the privacy policy', () => {
       );
     },
   );
+
+  /* The words the policy must use for the accuracy of the estimates (docs/design/33-privacy-audit.md section 20). */
+  const DERIVED_WORDS: Readonly<Record<Locale, Record<string, RegExp>>> = {
+    en: {
+      title: /Accuracy of the estimates/,
+      ageBand: /age band/,
+      realTime: /real time and the difference in minutes/,
+      answer: /answer to whether the estimate was right, although the app does not ask for one today/,
+      notShown: /not shown in the app and are not part of the export file or the backup/,
+      notCombined: /not combined with other families' records/,
+      retention: /Accuracy of the estimates: kept with the baby until it is erased/,
+      legal: /accuracy of the estimates[^']*art\. 7, V[^']*art\. 11, I/,
+    },
+    'pt-BR': {
+      title: /Precisão das estimativas/,
+      ageBand: /faixa de idade/,
+      realTime: /horário real e a diferença em minutos/,
+      answer: /resposta sobre se a estimativa acertou, embora o app não peça essa resposta hoje/,
+      notShown: /não aparecem no app e não fazem parte do arquivo exportado nem do backup/,
+      notCombined: /não são combinados com registros de outras famílias/,
+      retention: /Precisão das estimativas: fica com o bebê até ele ser excluído/,
+      legal: /precisão das estimativas[^']*art\. 7º, V[^']*art\. 11, I/,
+    },
+  };
+
+  describe.each(DERIVED_FLOWS.map((flow) => [flow.id, flow] as const))(
+    'the derived flow %s (docs/design/33 section 20)',
+    (_, flow) => {
+      it('is kept on our servers only, with no recipient, never combined across families or exported', () => {
+        expect(flow.status).toBe('active');
+        expect(flow.trigger).toBe('automatic');
+        expect(DATA_CATEGORY_IDS as readonly string[]).toContain(flow.dataCategory);
+        expect(flow.recipients).toEqual([]);
+        expect(flow.combinedAcrossFamilies).toBe(false);
+        expect(flow.shownInApp).toBe(false);
+        expect(flow.inExport).toBe(false);
+        expect(flow.retention).toBe('untilBabyErased');
+      });
+
+      it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
+        'is described in the %s policy: what is saved, that it stays out of the app and the export, its basis and retention',
+        (locale) => {
+          const words = DERIVED_WORDS[locale];
+          const row = JSON.stringify(dataRow(locale, flow.dataCategory));
+          for (const key of ['title', 'ageBand', 'realTime', 'answer', 'notShown', 'notCombined'] as const) {
+            expect(row, key).toMatch(words[key]);
+          }
+          expect(JSON.stringify(sectionOf(locale, 'retention'))).toMatch(words.retention);
+          expect(JSON.stringify(sectionOf(locale, 'legal-bases'))).toMatch(words.legal);
+        },
+      );
+    },
+  );
+
+  it('raised the policy version with the accuracy of the estimates (version 16 of 2026-11-25 or later)', () => {
+    expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(16);
+    expect(PRIVACY_POLICY_LAST_UPDATED >= '2026-11-25').toBe(true);
+  });
 
   it('raised the policy version with the cry monitor (version 3 of 2026-10-24 or later)', () => {
     expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(3);

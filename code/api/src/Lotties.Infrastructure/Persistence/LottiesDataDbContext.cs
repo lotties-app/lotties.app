@@ -70,6 +70,9 @@ public sealed class LottiesDataDbContext(DbContextOptions<LottiesDataDbContext> 
     /// <summary>Which member opened which note (the recommendations inbox).</summary>
     public DbSet<NoteRead> NoteReads => Set<NoteRead>();
 
+    /// <summary>The scored predictions of the babies (prediction accuracy tracking, derived from their events).</summary>
+    public DbSet<Entities.PredictionOutcomeEntity> PredictionOutcomes => Set<Entities.PredictionOutcomeEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(LottiesDataDbContext).Assembly, DataPlane.IsDataConfiguration);

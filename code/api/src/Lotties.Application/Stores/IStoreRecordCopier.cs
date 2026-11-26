@@ -23,7 +23,7 @@ public enum StoreCopySide
 public sealed record StoreCopyProgress(int Copied, int Total);
 
 /// <summary>
-/// The copy engine of a move between two data stores (docs/design/47-bring-your-own-database.md section 6, task T7): the 12 data
+/// The copy engine of a move between two data stores (docs/design/47-bring-your-own-database.md section 6, task T7): the 13 data
 /// tables of one baby, read from the source and written to the target in batches with their ids, authors and times unchanged (a
 /// store move is the same baby in another database, not an import). Stores are opened through the routing (feature flag, circuit
 /// breaker and, for an external store, the migrator's ready check); store failures surface as their <c>store_*</c> exceptions, a
@@ -41,7 +41,7 @@ public interface IStoreRecordCopier
     Task<StoreDigest> DigestAsync(StoreCopyPlan plan, StoreCopySide side, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Deletes every row of the baby's 12 data tables in <paramref name="store"/>: an old copy after the undo window, a failed move's
+    /// Deletes every row of the baby's 13 data tables in <paramref name="store"/>: an old copy after the undo window, a failed move's
     /// leftovers, and (task T10) the data-plane half of erasing a baby in any store. The caller makes sure the baby does not point at
     /// <paramref name="store"/>.
     /// </summary>
