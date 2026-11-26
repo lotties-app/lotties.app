@@ -1,5 +1,12 @@
+using System.Globalization;
+using Lotties.Application.CommunityInsights;
+using Lotties.Domain.Babies;
+using Lotties.Domain.CommunityInsights;
 using Lotties.Domain.Predictions;
+using Lotties.Domain.Stores;
+using Lotties.Domain.Users;
 using Lotties.Infrastructure.Persistence;
+using Lotties.Infrastructure.Persistence.Configurations;
 using Lotties.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -7,149 +14,269 @@ using Microsoft.Extensions.Logging;
 namespace Lotties.Infrastructure.Predictions;
 
 /// <summary>
-/// Aggregates resolved prediction outcomes into anonymized community aggregates (docs/design/34-community-insights.md).
-/// Reads from <c>prediction_outcomes</c> (which ARE linked to babies), groups by (age_band, type_key, phase, temporal_bucket),
-/// applies the suppression threshold (<see cref="CommunityPredictionAggregate.MinimumCount"/>), and writes to
-/// <c>community_prediction_aggregates</c>. The output table contains NO baby_id or PII.
+/// Aggregates resolved prediction outcomes into anonymized community aggregates (docs/design/34-community-insights.md section 5,
+/// docs/design/33-privacy-audit.md section 20.1). <b>Not registered in DI and called by nothing</b>: wiring it is an activation of its
+/// own (a policy change first).
 /// </summary>
 /// <remarks>
-/// Lives in Infrastructure because it needs direct DbContext access for bulk reads and upserts.
-/// Callable from <see cref="Application.CommunityInsights.CommunityAggregationJob"/> or as a standalone step.
-/// Re-runs for the same temporal bucket upsert (the unique constraint on dimensions prevents duplicates).
+/// <para>
+/// Population: the consent snapshot of <see cref="CommunityAggregationJob"/> (<see cref="CommunityPopulation.SnapshotAsync"/>: a current
+/// community consent and a real Owner), taken once at run start, so a withdrawal takes effect on the next run. Babies with any demo
+/// member are left out too. Only babies on the built-in store are read, through the Lotties database: a baby on the family's own
+/// database (or with a move between stores in progress) is left out, never read in her store (design 47 section 2.2).
+/// </para>
+/// <para>
+/// A cell is (age band, type, phase, engine version). It is stored only with at least <see cref="CommunityStatisticsValidator.MinimumK"/>
+/// distinct babies from as many distinct families (a family is the set of babies sharing an Owner) and when no family gave more than
+/// <see cref="CommunityStatisticsAggregator.FamilyDominanceThreshold"/> of its outcomes
+/// (<see cref="CommunityStatisticsAggregator.IsDominatedByOneFamily"/>). Each run replaces the whole table in one save: cells that no
+/// longer qualify and rows of earlier runs are removed. Labels come from <see cref="CommunityPredictionAggregateLabels"/>, the source the
+/// reader looks them up with. The output has no baby id or PII.
+/// </para>
 /// </remarks>
 internal sealed class CommunityPredictionAggregator(
     LottiesDbContext context,
+    ICommunityConsentRepository consents,
     TimeProvider time,
     ILogger<CommunityPredictionAggregator> logger) : ICommunityPredictionAggregator
 {
+    /// <summary>Minimum distinct babies, and distinct families, per stored cell (shared with the community statistics).</summary>
+    public const int MinimumBabiesAndFamilies = CommunityStatisticsValidator.MinimumK;
+
     /// <summary>
-    /// Runs the aggregation pipeline: loads resolved outcomes, groups by dimensions, computes metrics,
-    /// applies suppression, and upserts to the aggregates table. Returns the number of aggregates written.
+    /// Runs the aggregation pipeline and replaces the table with the cells that qualify. Returns the number of aggregates written.
     /// </summary>
     public async Task<int> AggregateAsync(CancellationToken cancellationToken = default)
     {
         var now = time.GetUtcNow();
-        var temporalBucket = $"{now:yyyy-'W'ww}";
+        var temporalBucket = TemporalBucketOf(now);
 
-        // Load resolved outcomes with non-null error and age band.
-        // Outcomes without an age band or error cannot contribute to community priors.
-        var resolvedOutcomes = await context.PredictionOutcomes
-            .Where(o => o.Resolved
-                        && o.ErrorMinutes != null
-                        && o.AgeBand != null)
-            .Select(o => new
-            {
-                o.TypeKey,
-                o.Phase,
-                o.AgeBand,
-                o.EngineVersion,
-                ErrorMinutes = o.ErrorMinutes!.Value,
-            })
-            .ToListAsync(cancellationToken);
+        var population = await CommunityPopulation.SnapshotAsync(consents, cancellationToken);
+        var builtIn = await OnBuiltInStoreAsync(population.Eligible, cancellationToken);
+        var families = await FamiliesAsync(builtIn, cancellationToken);
+        var outcomes = await LoadOutcomesAsync(families, cancellationToken);
+        var cells = Qualifying(outcomes, out var suppressed);
 
-        if (resolvedOutcomes.Count == 0)
-        {
-            logger.LogInformation("No resolved prediction outcomes available for community aggregation");
-            return 0;
-        }
-
-        // Group by dimensions and compute aggregate metrics.
-        var grouped = resolvedOutcomes
-            .GroupBy(o => new { o.AgeBand, o.TypeKey, o.Phase, o.EngineVersion })
-            .Select(g =>
-            {
-                var errors = g.Select(x => Math.Abs(x.ErrorMinutes)).OrderBy(e => e).ToList();
-                var count = errors.Count;
-                var sumError = errors.Sum();
-                var sumSquared = errors.Sum(e => e * e);
-                var median = Percentile(errors, 50);
-                var p10 = Percentile(errors, 10);
-                var p90 = Percentile(errors, 90);
-
-                return new
-                {
-                    g.Key.AgeBand,
-                    g.Key.TypeKey,
-                    g.Key.Phase,
-                    g.Key.EngineVersion,
-                    Count = count,
-                    SumError = sumError,
-                    SumSquared = sumSquared,
-                    Median = median,
-                    P10 = p10,
-                    P90 = p90,
-                };
-            })
-            .ToList();
-
-        // Apply suppression threshold: only store aggregates with enough contributions.
-        var eligible = grouped
-            .Where(g => g.Count >= CommunityPredictionAggregate.MinimumCount)
-            .ToList();
-
-        var suppressed = grouped.Count - eligible.Count;
         if (suppressed > 0)
         {
             logger.LogInformation(
-                "Suppressed {Suppressed} community prediction aggregate cells below minimum count {Threshold}",
-                suppressed, CommunityPredictionAggregate.MinimumCount);
+                "Suppressed {Suppressed} community prediction aggregate cells below {Minimum} babies and families or dominated by one family",
+                suppressed, MinimumBabiesAndFamilies);
         }
 
-        if (eligible.Count == 0)
-        {
-            logger.LogInformation("No community prediction aggregates met the suppression threshold");
-            return 0;
-        }
-
-        // Upsert each aggregate: match on dimensions, insert or update.
-        var written = 0;
-        foreach (var agg in eligible)
-        {
-            var existing = await context.CommunityPredictionAggregates
-                .FirstOrDefaultAsync(e =>
-                    e.AgeBandLabel == agg.AgeBand
-                    && e.TypeKey == agg.TypeKey
-                    && e.Phase == agg.Phase
-                    && e.TemporalBucket == temporalBucket
-                    && e.EngineVersion == agg.EngineVersion,
-                    cancellationToken);
-
-            if (existing is not null)
-            {
-                existing.Count = agg.Count;
-                existing.SumErrorMinutes = agg.SumError;
-                existing.SumSquaredError = agg.SumSquared;
-                existing.MedianErrorMinutes = agg.Median;
-                existing.P10ErrorMinutes = agg.P10;
-                existing.P90ErrorMinutes = agg.P90;
-                existing.GeneratedAtUtc = now;
-            }
-            else
-            {
-                context.CommunityPredictionAggregates.Add(new CommunityPredictionAggregateEntity
-                {
-                    Id = Guid.NewGuid(),
-                    AgeBandLabel = agg.AgeBand!,
-                    TypeKey = agg.TypeKey,
-                    Phase = agg.Phase,
-                    TemporalBucket = temporalBucket,
-                    EngineVersion = agg.EngineVersion,
-                    Count = agg.Count,
-                    SumErrorMinutes = agg.SumError,
-                    SumSquaredError = agg.SumSquared,
-                    MedianErrorMinutes = agg.Median,
-                    P10ErrorMinutes = agg.P10,
-                    P90ErrorMinutes = agg.P90,
-                    GeneratedAtUtc = now,
-                });
-            }
-
-            written++;
-        }
-
-        await context.SaveChangesAsync(cancellationToken);
+        var written = await ReplaceAsync(cells, temporalBucket, now, cancellationToken);
         logger.LogInformation("Wrote {Count} community prediction aggregates for bucket {Bucket}", written, temporalBucket);
         return written;
+    }
+
+    /// <summary>The ISO week of <paramref name="now"/> (UTC), e.g. <c>2026-W48</c>.</summary>
+    internal static string TemporalBucketOf(DateTimeOffset now)
+    {
+        var date = now.UtcDateTime;
+        return string.Create(CultureInfo.InvariantCulture, $"{ISOWeek.GetYear(date)}-W{ISOWeek.GetWeekOfYear(date):00}");
+    }
+
+    /// <summary>The cells of at least k babies from k families that no family dominates; counts the others in <paramref name="suppressed"/>.</summary>
+    internal static IReadOnlyList<Cell> Qualifying(IReadOnlyList<Outcome> outcomes, out int suppressed)
+    {
+        var cells = new List<Cell>();
+        suppressed = 0;
+        foreach (var group in outcomes.GroupBy(outcome => outcome.Key))
+        {
+            var values = group.ToList();
+            var families = values.Select(value => value.FamilyId).ToList();
+            if (values.Select(value => value.BabyId).Distinct().Count() < MinimumBabiesAndFamilies
+                || families.Distinct().Count() < MinimumBabiesAndFamilies
+                || values.Count < CommunityPredictionAggregate.MinimumCount
+                || CommunityStatisticsAggregator.IsDominatedByOneFamily(families))
+            {
+                suppressed++;
+                continue;
+            }
+
+            var errors = values.Select(value => value.ErrorMinutes).Order().ToList();
+            cells.Add(new Cell(
+                group.Key,
+                errors.Count,
+                errors.Sum(),
+                errors.Sum(error => error * error),
+                Percentile(errors, 50),
+                Percentile(errors, 10),
+                Percentile(errors, 90)));
+        }
+
+        return cells;
+    }
+
+    /// <summary>The babies whose records are on the built-in store and not moving between stores.</summary>
+    private async Task<IReadOnlyList<Guid>> OnBuiltInStoreAsync(IReadOnlyList<Guid> babyIds, CancellationToken cancellationToken)
+    {
+        if (babyIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await context.BabyStoreAssignments.AsNoTracking()
+            .Where(assignment => babyIds.Contains(assignment.BabyId)
+                                 && assignment.DataStoreId == null
+                                 && !context.DataStoreMoves.Any(move => move.BabyId == assignment.BabyId
+                                                                   && (move.State == DataStoreMoveState.Copying || move.State == DataStoreMoveState.Verifying)))
+            .Select(assignment => assignment.BabyId)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The family of each baby (babies sharing an Owner are one family; its id is the smallest baby id in it), leaving out every baby
+    /// with a demo member.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<Guid, Guid>> FamiliesAsync(IReadOnlyList<Guid> babyIds, CancellationToken cancellationToken)
+    {
+        if (babyIds.Count == 0)
+        {
+            return new Dictionary<Guid, Guid>();
+        }
+
+        var members = await context.BabyMembers.AsNoTracking()
+            .Where(member => babyIds.Contains(member.BabyId))
+            .Join(context.Users.AsNoTracking(), member => member.UserId, user => user.Id, (member, user) => new { member.BabyId, member.UserId, member.Role, user.Issuer })
+            .ToListAsync(cancellationToken);
+
+        var withDemoMember = members.Where(member => member.Issuer == User.DemoIssuer).Select(member => member.BabyId).ToHashSet();
+        var babies = babyIds.Where(baby => !withDemoMember.Contains(baby)).ToHashSet();
+        var owners = members
+            .Where(member => member.Role == BabyRole.Owner && babies.Contains(member.BabyId))
+            .Select(member => (member.UserId, member.BabyId))
+            .ToList();
+        return FamiliesOf(babies, owners);
+    }
+
+    /// <summary>Groups <paramref name="babies"/> into families: two babies with a common Owner (directly or through other babies) are one.</summary>
+    internal static IReadOnlyDictionary<Guid, Guid> FamiliesOf(IReadOnlyCollection<Guid> babies, IEnumerable<(Guid OwnerId, Guid BabyId)> owners)
+    {
+        var root = babies.ToDictionary(baby => baby, baby => baby);
+        Guid Find(Guid baby)
+        {
+            while (root[baby] != baby)
+            {
+                root[baby] = root[root[baby]];
+                baby = root[baby];
+            }
+
+            return baby;
+        }
+
+        foreach (var owner in owners.Where(owner => root.ContainsKey(owner.BabyId)).GroupBy(owner => owner.OwnerId))
+        {
+            var first = owner.First().BabyId;
+            foreach (var (_, baby) in owner.Skip(1))
+            {
+                var (a, b) = (Find(first), Find(baby));
+                if (a != b)
+                {
+                    root[b] = a;
+                }
+            }
+        }
+
+        var familyOf = new Dictionary<Guid, Guid>();
+        foreach (var family in babies.GroupBy(Find))
+        {
+            var familyId = family.Min();
+            foreach (var baby in family)
+            {
+                familyOf[baby] = familyId;
+            }
+        }
+
+        return familyOf;
+    }
+
+    private async Task<IReadOnlyList<Outcome>> LoadOutcomesAsync(IReadOnlyDictionary<Guid, Guid> familyOf, CancellationToken cancellationToken)
+    {
+        if (familyOf.Count == 0)
+        {
+            return [];
+        }
+
+        var babyIds = familyOf.Keys.ToList();
+
+        // Resolved outcomes with an error and an age band, of the population's babies only (built-in store: the Lotties database).
+        var rows = await context.PredictionOutcomes.AsNoTracking()
+            .Where(o => babyIds.Contains(o.BabyId) && o.Resolved && o.ErrorMinutes != null && o.AgeBand != null)
+            .Select(o => new { o.BabyId, o.TypeKey, o.Phase, o.AgeBand, o.EngineVersion, ErrorMinutes = o.ErrorMinutes!.Value })
+            .ToListAsync(cancellationToken);
+
+        var outcomes = new List<Outcome>(rows.Count);
+        foreach (var row in rows)
+        {
+            // prediction_outcomes stores the enum names (EfPredictionOutcomeRepository); a row with any other value is left out.
+            var band = StoredEnum<AgeBand>(row.AgeBand);
+            var phase = StoredEnum<DayPhase>(row.Phase);
+            if (band is null
+                || (row.Phase is not null && phase is null)
+                || row.TypeKey.Length > CommunityPredictionAggregateConfiguration.TypeKeyMaxLength
+                || row.EngineVersion.Length > CommunityPredictionAggregateConfiguration.EngineVersionMaxLength)
+            {
+                continue;
+            }
+
+            outcomes.Add(new Outcome(row.BabyId, familyOf[row.BabyId], new CellKey(band.Value, row.TypeKey, phase, row.EngineVersion), Math.Abs(row.ErrorMinutes)));
+        }
+
+        return outcomes;
+    }
+
+    /// <summary>The member named <paramref name="stored"/> (case-insensitive name only, never a number), else <c>null</c>.</summary>
+    private static TEnum? StoredEnum<TEnum>(string? stored)
+        where TEnum : struct, Enum =>
+        Enum.GetNames<TEnum>().FirstOrDefault(name => string.Equals(name, stored, StringComparison.OrdinalIgnoreCase)) is { } name
+            ? Enum.Parse<TEnum>(name)
+            : null;
+
+    /// <summary>Replaces every stored row with <paramref name="cells"/> in one save (rows of the same dimensions are updated in place).</summary>
+    private async Task<int> ReplaceAsync(IReadOnlyList<Cell> cells, string temporalBucket, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var existing = await context.CommunityPredictionAggregates.ToListAsync(cancellationToken);
+        var byDimensions = existing.ToDictionary(row => (row.AgeBandLabel, row.TypeKey, row.Phase, row.TemporalBucket, row.EngineVersion));
+        var kept = new HashSet<CommunityPredictionAggregateEntity>(ReferenceEqualityComparer.Instance);
+
+        foreach (var cell in cells)
+        {
+            var ageBandLabel = CommunityPredictionAggregateLabels.OfAgeBand(cell.Key.AgeBand);
+            var phaseLabel = CommunityPredictionAggregateLabels.OfPhase(cell.Key.Phase);
+            if (!byDimensions.TryGetValue((ageBandLabel, cell.Key.TypeKey, phaseLabel, temporalBucket, cell.Key.EngineVersion), out var row))
+            {
+                row = new CommunityPredictionAggregateEntity
+                {
+                    Id = Guid.NewGuid(),
+                    AgeBandLabel = ageBandLabel,
+                    TypeKey = cell.Key.TypeKey,
+                    Phase = phaseLabel,
+                    TemporalBucket = temporalBucket,
+                    EngineVersion = cell.Key.EngineVersion,
+                };
+                context.CommunityPredictionAggregates.Add(row);
+            }
+
+            row.Count = cell.Count;
+            row.SumErrorMinutes = cell.SumErrorMinutes;
+            row.SumSquaredError = cell.SumSquaredError;
+            row.MedianErrorMinutes = cell.Median;
+            row.P10ErrorMinutes = cell.P10;
+            row.P90ErrorMinutes = cell.P90;
+            row.GeneratedAtUtc = now;
+            kept.Add(row);
+        }
+
+        var removed = existing.Where(row => !kept.Contains(row)).ToList();
+        context.CommunityPredictionAggregates.RemoveRange(removed);
+        await context.SaveChangesAsync(cancellationToken);
+        if (removed.Count > 0)
+        {
+            logger.LogInformation("Removed {Count} community prediction aggregates that no longer qualify or belong to an earlier run", removed.Count);
+        }
+
+        return cells.Count;
     }
 
     /// <summary>Computes the p-th percentile of a sorted list using linear interpolation.</summary>
@@ -172,4 +299,13 @@ internal sealed class CommunityPredictionAggregator(
 
         return sortedValues[lower] + fraction * (sortedValues[upper] - sortedValues[lower]);
     }
+
+    /// <summary>The dimensions of one cell.</summary>
+    internal sealed record CellKey(AgeBand AgeBand, string TypeKey, DayPhase? Phase, string EngineVersion);
+
+    /// <summary>One resolved outcome of a baby of the population (absolute error in minutes).</summary>
+    internal sealed record Outcome(Guid BabyId, Guid FamilyId, CellKey Key, double ErrorMinutes);
+
+    /// <summary>One qualifying cell's metrics.</summary>
+    internal sealed record Cell(CellKey Key, int Count, double SumErrorMinutes, double SumSquaredError, double? Median, double? P10, double? P90);
 }

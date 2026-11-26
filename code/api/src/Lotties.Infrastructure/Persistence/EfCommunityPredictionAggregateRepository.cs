@@ -6,7 +6,9 @@ namespace Lotties.Infrastructure.Persistence;
 
 /// <summary>
 /// EF Core implementation of <see cref="ICommunityPredictionAggregateRepository"/>.
-/// Reads from <c>community_prediction_aggregates</c>; returns only non-suppressed aggregates (count >= MinimumCount).
+/// Reads from <c>community_prediction_aggregates</c>; returns only non-suppressed aggregates (count >= MinimumCount). The labels it
+/// looks up and maps back are those the aggregator writes (<see cref="CommunityPredictionAggregateLabels"/>).
+/// Not registered in DI (docs/design/33-privacy-audit.md section 20.1).
 /// </summary>
 internal sealed class EfCommunityPredictionAggregateRepository(LottiesDbContext context) : ICommunityPredictionAggregateRepository
 {
@@ -16,8 +18,8 @@ internal sealed class EfCommunityPredictionAggregateRepository(LottiesDbContext 
         DayPhase? phase,
         CancellationToken cancellationToken = default)
     {
-        var ageBandLabel = AgeBands.Label(ageBand);
-        var phaseValue = phase?.ToString().ToLowerInvariant();
+        var ageBandLabel = CommunityPredictionAggregateLabels.OfAgeBand(ageBand);
+        var phaseValue = CommunityPredictionAggregateLabels.OfPhase(phase);
 
         // Take the most recent non-suppressed aggregate for these dimensions.
         var entity = await context.CommunityPredictionAggregates
@@ -33,16 +35,8 @@ internal sealed class EfCommunityPredictionAggregateRepository(LottiesDbContext 
 
     private static CommunityPredictionAggregate MapToDomain(CommunityPredictionAggregateEntity entity)
     {
-        var ageBand = entity.AgeBandLabel switch
-        {
-            "0-3m" => AgeBand.UnderThreeMonths,
-            "3-6m" => AgeBand.ThreeToSixMonths,
-            "6-12m" => AgeBand.SixToTwelveMonths,
-            "12m+" => AgeBand.TwelveMonthsPlus,
-            _ => throw new InvalidOperationException($"Unknown age band label: {entity.AgeBandLabel}"),
-        };
-
-        DayPhase? phase = entity.Phase is null ? null : Enum.Parse<DayPhase>(entity.Phase, ignoreCase: true);
+        var ageBand = CommunityPredictionAggregateLabels.AgeBandOf(entity.AgeBandLabel);
+        var phase = CommunityPredictionAggregateLabels.PhaseOf(entity.Phase);
 
         return new CommunityPredictionAggregate(
             AgeBand: ageBand,

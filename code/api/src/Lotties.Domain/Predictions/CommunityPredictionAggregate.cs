@@ -2,8 +2,8 @@ namespace Lotties.Domain.Predictions;
 
 /// <summary>
 /// An anonymized aggregate of prediction accuracy for a specific (age band, event type, day phase, temporal bucket) combination.
-/// Contains no baby_id or personally identifiable information. Only aggregates meeting the minimum suppression threshold
-/// (<see cref="MinimumCount"/>) are stored to prevent re-identification through small-cell attacks.
+/// Contains no baby_id or personally identifiable information. Only cells of at least 20 consenting babies from 20 families that no
+/// family dominates are stored, to prevent re-identification through small-cell attacks.
 /// </summary>
 /// <remarks>
 /// This is a pure domain value object with no I/O. The persistence entity lives in Infrastructure.
@@ -24,10 +24,9 @@ public sealed record CommunityPredictionAggregate(
     DateTimeOffset GeneratedAtUtc)
 {
     /// <summary>
-    /// Minimum number of resolved outcomes required to store an aggregate. Cells below this threshold are suppressed
-    /// to prevent re-identification: with fewer than 10 contributions, an individual baby's data could dominate the cell
-    /// and be reverse-engineered from successive releases. This constant is the single source of truth for the privacy gate;
-    /// the aggregation service and any query-time filter must both enforce it.
+    /// Minimum number of resolved outcomes in a stored cell: a floor the reader also checks. It is not the privacy gate on its own
+    /// (one baby can have many outcomes): the aggregator stores a cell only with at least 20 distinct babies from 20 distinct families
+    /// and no family over the dominance threshold of the community statistics (docs/design/33-privacy-audit.md section 20.1).
     /// </summary>
     public const int MinimumCount = 10;
 
