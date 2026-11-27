@@ -257,6 +257,7 @@
       "lastNight": "Última noite",
       "naps": "Sonecas",
       "feeds": "Mamadas",
+      "bottleTotal": "{{volume}} tomados na mamadeira",
       "diapers": "Fraldas"
     },
     "firstRun": {

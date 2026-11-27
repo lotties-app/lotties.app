@@ -1,5 +1,5 @@
 import type { BabyEvent, EventType } from '../db/models';
-import { drunkMl } from '../events/bottleAmounts';
+import { bottleAmount } from '../events/bottleAmounts';
 import { payloadString, typeIdsForKey } from '../now/eventFacts';
 import { effectiveDurationMs } from '../timers/pauseMath';
 import { completedDaysWithData, dayKeyOf, mean, type LocalDay } from './days';
@@ -49,16 +49,6 @@ function feedsIn(
       (e) => e.deletedAt === null && ids.has(e.typeId) && e.startedAt >= from && e.startedAt <= to,
     )
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
-}
-
-/**
- * The amount of a bottle feed the baby drank (ml; a bottle without a drunk amount was fully
- * drunk), or `undefined` (no amount, or not a bottle).
- */
-export function bottleAmount(feed: BabyEvent): number | undefined {
-  if (payloadString(feed, 'method') !== 'bottle') return undefined;
-  const ml = drunkMl(feed.payload);
-  return ml !== undefined && ml > 0 ? ml : undefined;
 }
 
 export function feedsByDay(

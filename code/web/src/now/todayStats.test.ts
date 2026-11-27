@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BabyEvent } from '../db/models';
 import { event } from '../presets/presetFixtures';
-import { DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
+import { BREAST_PUMP_TYPE, DIAPER_TYPE, FEEDING_TYPE, SLEEP_TYPE } from '../test/builtInTypes';
 import { hasTodayData, todayStats } from './todayStats';
 
 const TYPES = [FEEDING_TYPE, SLEEP_TYPE, DIAPER_TYPE];
@@ -37,6 +37,7 @@ describe('todayStats', () => {
       lastNightMinutes: 9 * 60 + 50,
       naps: { count: 2, minutes: 75 + 40 },
       feeds: 2,
+      bottleMl: null,
       diapers: 2,
     });
   });
@@ -51,6 +52,7 @@ describe('todayStats', () => {
       lastNightMinutes: null,
       naps: { count: 1, minutes: 30 },
       feeds: 0,
+      bottleMl: null,
       diapers: 0,
     });
   });
@@ -66,10 +68,70 @@ describe('todayStats', () => {
       lastNightMinutes: null,
       naps: { count: 0, minutes: 0 },
       feeds: 0,
+      bottleMl: null,
       diapers: 0,
     });
     expect(hasTodayData(stats)).toBe(false);
     expect(hasTodayData({ ...stats, feeds: 1 })).toBe(true);
     expect(hasTodayData({ ...stats, lastNightMinutes: 600 })).toBe(true);
+  });
+});
+
+describe('todayStats bottle total', () => {
+  const bottle = (
+    start: string,
+    end: string | null,
+    payload: Record<string, unknown>,
+    extra: Partial<BabyEvent> = {},
+  ) => logged(FEEDING_TYPE.id, start, end, { method: 'bottle', ...payload }, extra);
+
+  it('sums what was drunk: the drunk amount when logged, else the prepared one', () => {
+    const events = [
+      bottle(at(6), at(6), { amount_ml: 120 }),
+      bottle(at(9), at(9, 20), { amount_ml: 150, amount_drunk_ml: 100 }),
+      bottle(at(12), at(12), { amount_ml: 90, amount_drunk_ml: 200 }),
+    ];
+    const stats = todayStats(events, TYPES, NOW);
+    expect(stats.bottleMl).toBe(120 + 100 + 90);
+    expect(stats.feeds).toBe(3);
+  });
+
+  it('counts every bottle content but not nursing, solids or pumping', () => {
+    const events = [
+      bottle(at(6), at(6), { amount_ml: 100, bottle_feeding_type: 'formula' }),
+      bottle(at(7), at(7), { amount_ml: 60, bottle_feeding_type: 'breast_milk' }),
+      bottle(at(8), at(8), { amount_ml: 30, bottle_feeding_type: 'other' }),
+      logged(FEEDING_TYPE.id, at(9), at(9, 15), { method: 'breast', amount_ml: 80 }),
+      logged(FEEDING_TYPE.id, at(10), at(10), { method: 'solid', amount_ml: 50 }),
+      logged(BREAST_PUMP_TYPE.id, at(11), at(11, 10), { amount_left_ml: 60, amount_ml: 120 }),
+    ];
+    const stats = todayStats(events, [...TYPES, BREAST_PUMP_TYPE], NOW);
+    expect(stats.bottleMl).toBe(190);
+    expect(stats.feeds).toBe(5);
+  });
+
+  it('leaves out a running bottle but still counts it as a feed', () => {
+    const events = [
+      bottle(at(10), at(10), { amount_ml: 120 }),
+      bottle(at(14), null, { amount_ml: 150 }),
+    ];
+    const stats = todayStats(events, TYPES, NOW);
+    expect(stats.bottleMl).toBe(120);
+    expect(stats.feeds).toBe(2);
+  });
+
+  it('is null when no finished bottle of today has an amount', () => {
+    const events = [
+      bottle(at(7), at(7), {}),
+      bottle(at(8), at(8), { amount_ml: 0 }),
+      bottle(at(14), null, { amount_ml: 150 }),
+      bottle(at(20, 0, 20), at(20, 0, 20), { amount_ml: 180 }),
+      bottle(at(9), at(9), { amount_ml: 120 }, { deletedAt: at(9, 5) }),
+      bottle(at(15), at(15), { amount_ml: 120 }),
+      logged(FEEDING_TYPE.id, at(11), at(11, 15), { method: 'breast' }),
+    ];
+    const stats = todayStats(events, TYPES, NOW);
+    expect(stats.bottleMl).toBeNull();
+    expect(stats.feeds).toBe(4);
   });
 });

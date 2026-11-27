@@ -37,6 +37,16 @@ export function drunkMl(payload: EventPayload): number | undefined {
   return prepared === undefined ? drunk : Math.min(drunk, prepared);
 }
 
+/**
+ * The amount of a bottle feed the baby drank (ml; a bottle without a drunk amount was fully
+ * drunk), or `undefined` (no amount, or not a bottle: nursing and solids have no volume).
+ */
+export function bottleAmount(feed: { payload: EventPayload }): number | undefined {
+  if (getOwn(feed.payload, 'method') !== 'bottle') return undefined;
+  const ml = drunkMl(feed.payload);
+  return ml !== undefined && ml > 0 ? ml : undefined;
+}
+
 /** How much of the prepared amount was not drunk (ml; 0 when all was, or an amount is missing). */
 export function leftOverMl(payload: EventPayload): number {
   const prepared = preparedMl(payload);
