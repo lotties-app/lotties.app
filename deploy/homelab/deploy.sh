@@ -36,7 +36,7 @@
 #                   temporary directory) and checks them with kubectl apply --dry-run=client.
 #
 # App settings (see .env.example): AUTH_AUTHORITY, AUTH_AUDIENCE, VITE_OIDC_*, VITE_REPO_URL, VITE_ISSUES_URL,
-# VITE_SUPPORT_URL and VITE_PRIVACY_* (public, baked into the web image), DB_*, PUSH_VAPID_*, DEMO_SIGNING_KEY, AUTH_ADMIN_CLIENT_*, PUSH_APNS_* and PUSH_FCM_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
+# VITE_SUPPORT_URL and VITE_PRIVACY_* (public, baked into the web image), DB_*, PUSH_VAPID_*, DEMO_SIGNING_KEY, COMMUNITY_CAP_KEY, AUTH_ADMIN_CLIENT_*, PUSH_APNS_* and PUSH_FCM_* (the Secret lotties-secrets), DB_AUTO_MIGRATE,
 # SILENT_PUSH_ENABLED (default false), CORS_ALLOWED_ORIGINS.
 #
 # Bring your own database (docs/DEPLOY.md "Bring your own database: turning it on"; off by default). Every one of these
@@ -157,6 +157,11 @@ is_placeholder() { local pattern='<[a-z][a-z0-9@._/-]*>'; [[ "$1" =~ $pattern ]]
 # Bring your own database: a key id as the API accepts it, and a key-encryption key (padded base64 of exactly 32 bytes).
 is_store_key_id() { [[ "$1" =~ ^[a-z0-9][a-z0-9-]{0,31}$ ]]; }
 is_store_kek() { [[ "$1" =~ ^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=$ ]]; }
+# Community statistics: the cap key, padded base64 of at least 32 bytes (what the API accepts). The value only goes through a pipe.
+is_cap_key() {
+  [[ "$1" =~ ^[A-Za-z0-9+/]+={0,2}$ ]] && [ $(( ${#1} % 4 )) -eq 0 ] || return 1
+  [ "$(printf '%s' "$1" | base64 -d 2>/dev/null | wc -c)" -ge 32 ]
+}
 
 # The entries of a comma-separated list, one per line, without the spaces around them; empty entries are dropped.
 split_list() { # list
@@ -364,7 +369,7 @@ collect_store_secrets() {
 }
 
 collect_secrets() {
-  local key value demo_key push_count=0 admin_count=0 apns_count=0 fcm_count=0 missing=()
+  local key value demo_key cap_key push_count=0 admin_count=0 apns_count=0 fcm_count=0 missing=()
   step "Secret $APP_SECRET (values are not shown)"
   SECRET_DIR="$WORK/secret"
   mkdir -m 700 "$SECRET_DIR"
@@ -383,6 +388,12 @@ collect_secrets() {
   demo_key=$(setting_or_secret DEMO_SIGNING_KEY)
   [ -z "$demo_key" ] || [ "${#demo_key}" -ge 32 ] || die "DEMO_SIGNING_KEY is shorter than 32 characters (the minimum the API accepts)"
   put_secret DEMO_SIGNING_KEY "$demo_key"
+  # Community statistics (docs/design/34-community-insights.md section 5.3): the cap key of the per-baby caps. Optional; the API
+  # uses it only while CommunityAggregation__ReadEvents is true, which nothing here sets. Kept from the Secret when not set here:
+  # never change it once releases use it (docs/DEPLOY.md "Community statistics").
+  cap_key=$(setting_or_secret COMMUNITY_CAP_KEY)
+  [ -z "$cap_key" ] || is_cap_key "$cap_key" || die "COMMUNITY_CAP_KEY must be base64 of at least 32 bytes (openssl rand -base64 32)"
+  put_secret COMMUNITY_CAP_KEY "$cap_key"
   # The Keycloak service account that deletes the sign-in account with the Lotties account (docs/KEYCLOAK-ACCOUNT-DELETION.md).
   for key in AUTH_ADMIN_CLIENT_ID AUTH_ADMIN_CLIENT_SECRET; do
     value=$(setting_or_secret "$key")
@@ -420,6 +431,8 @@ collect_secrets() {
   echo "keys: $(secret_keys)"
   [ "$push_count" = 3 ] && echo "push notifications: on" || echo "push notifications: off (no PUSH_VAPID_* values)"
   [ -n "$demo_key" ] && echo "try-it demo: on" || echo "try-it demo: off (no DEMO_SIGNING_KEY)"
+  [ -n "$cap_key" ] && echo "community statistics cap key: in the Secret (used only with CommunityAggregation__ReadEvents=true)" \
+    || echo "community statistics cap key: none (COMMUNITY_CAP_KEY; reading events stays off without it)"
   [ "$admin_count" = 2 ] && echo "account deletion: also deletes the Keycloak user" \
     || echo "account deletion: keeps the Keycloak user (no AUTH_ADMIN_CLIENT_* values; see docs/KEYCLOAK-ACCOUNT-DELETION.md)"
   if [ "$SILENT_PUSH_ENABLED" = true ]; then

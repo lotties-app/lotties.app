@@ -531,6 +531,23 @@ privacy policy describes the feature as "not active yet" (`PLANNED_FLOWS` status
 This section documents the data flows for when the feature is activated. **ON_DEVICE_FLOWS is NOT affected**: community
 statistics are computed entirely on the server; no device sensor is involved.
 
+**Event loading (2026-11-27): code exists, switch off, no data read yet.** The code that reads opted-in babies' events for the
+job is built (docs/design/34-community-insights.md section 5.3) behind its own switch `CommunityAggregation:ReadEvents`, default
+`false`, which no settings file, chart or deploy value in the repository sets. In production `CommunityInsights:Enabled` and
+`CommunityAggregation:Enabled` are already on, so the job runs, but with the switch off it reads no event or other data-plane
+table (a test fails on any such query) and only writes the placeholder release with no cells: **no baby's data has been read for
+community statistics**. The switch is to be turned on only in the same deploy as the policy rewrite (task T9). With it on, the job
+reads, per opted-in baby on the built-in store only, the start and end of her feeding, sleep, tummy time and fussy events from the
+first full day after her consent in force, the payload members listed in design 34 section 5.3 (bottle kind and drunk amount, sleep
+kind and pauses, tummy time pauses, what helped a crying spell and the false-alarm flag), her stored birth date (for the age in weeks,
+then dropped) and the family grouping; never notes, names, other members, time zones or other event kinds. A kind of sleep a family does not log is treated as missing, never as zero, and a baby who never logs tummy
+time is not counted for it, so a statistic is computed only over the babies whose records actually hold its value (design 34
+section 5.3). The cap key is a new
+operator secret (`COMMUNITY_CAP_KEY`), not personal data. Not built yet, although 19.1 describes them: the read-only role
+`lotties_insights_ro` (the job uses the API's connection) and the run log table `community_runs`. The differences between what is
+read and the consent text and policy wording are listed in design 34 section 5.3 for the T9 rewrite; this change does not edit the
+published texts, `legal/dataFlows.ts` or the policy version.
+
 ### 19.1 Aggregation (what goes in, what comes out)
 
 - **Inputs:** opted-in babies' live events read through the normal repositories by a weekly background job

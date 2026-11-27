@@ -106,6 +106,9 @@ is not rebuilt keeps the release that built it (docs/DEPLOY.md "Versions").
 - `lotties-secrets` holds `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD`, and when set
   `PUSH_VAPID_PUBLIC_KEY`/`PRIVATE_KEY`/`SUBJECT` (all three or none: none turns push off),
   `DEMO_SIGNING_KEY` (32+ characters; without it the try-it demo is off; shorter is refused),
+  `COMMUNITY_CAP_KEY` (base64 of 32+ random bytes, `openssl rand -base64 32`; the community statistics cap key, used
+  only when `CommunityAggregation__ReadEvents=true`, which nothing here sets; kept when not set; never change it once used,
+  docs/DEPLOY.md "Community statistics"),
   `AUTH_ADMIN_CLIENT_ID`/`AUTH_ADMIN_CLIENT_SECRET` (both or none: with none, deleting an account in the app keeps the
   Keycloak user; setup and rotation in docs/KEYCLOAK-ACCOUNT-DELETION.md), the widget silent-push keys
   `PUSH_APNS_KEY_ID`/`PUSH_APNS_TEAM_ID`/`PUSH_APNS_KEY_P8` (all three or none; `PUSH_APNS_BUNDLE_ID` optional) and

@@ -63,6 +63,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<Predictions.IPredictionService, Predictions.PredictionService>();
         services.AddScoped<Rhythm.IRhythmService, Rhythm.RhythmService>();
         services.AddScoped<CommunityInsights.ICommunityConsentService, CommunityInsights.CommunityConsentService>();
+        services.AddScoped<CommunityInsights.CommunityObservationLoader>();
         services.AddScoped<CommunityInsights.CommunityAggregationRunner>();
         services.AddScoped<Clinical.DailyObservationReader>();
         services.AddScoped<Clinical.VaccineOverviewReader>();

@@ -96,6 +96,13 @@ secretEnv:
     secretName: lotties-secrets
     key: DEMO_SIGNING_KEY
     optional: true
+  # Community statistics (docs/design/34-community-insights.md section 5.3, docs/DEPLOY.md "Community statistics"): the cap key,
+  # base64 of 32+ random bytes, made once and never changed. It does nothing while CommunityAggregation__ReadEvents is off, and
+  # nothing in this repository turns that on (the owner does, in the same deploy as the privacy policy that announces it).
+  CommunityAggregation__CapKey:
+    secretName: lotties-secrets
+    key: COMMUNITY_CAP_KEY
+    optional: true
   # Keycloak service account for account deletion: both or none (none = the Keycloak user stays when a user deletes
   # her account, and the app says so). Setup: docs/KEYCLOAK-ACCOUNT-DELETION.md.
   AUTH_ADMIN_CLIENT_ID:

@@ -10,7 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lotties.Api.Tests.CommunityInsights;
 
 /// <summary>
-/// <see cref="CommunityAggregationRunner"/> (the community statistics job, which still reads no events and writes placeholders): the
+/// <see cref="CommunityAggregationRunner"/> (the community statistics job with event reading off, the default: it reads no events and
+/// writes placeholders; reading on is CommunityEventLoadingTests): the
 /// release is named after the ISO week of the run (docs/design/34-community-insights.md section 5), and the quarterly cadence
 /// (owner decision of 2026-11-27) holds against reruns, stored releases with statistics, unreadable rows, a clock behind and a
 /// second instance. Each test starts with no stored release and a free job lease.
@@ -31,6 +32,17 @@ public sealed class CommunityAggregationRunnerTests(ApiFactory factory) : IClass
         await RunAsync(runAt);
 
         Assert.Equal(expectedReleaseId, (await ActiveAsync()).ReleaseId);
+    }
+
+    /// <summary>The shipped settings (appsettings.json) leave event reading off and set no cap key (docs/design/34 section 5.3).</summary>
+    [Fact]
+    public void ShippedSettings_LeaveEventReadingOff()
+    {
+        using var scope = factory.Services.CreateScope();
+        var options = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptionsSnapshot<CommunityAggregationOptions>>().Value;
+
+        Assert.False(options.ReadEvents);
+        Assert.Null(options.CapKey);
     }
 
     [Fact]
