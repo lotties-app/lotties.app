@@ -75,15 +75,12 @@ internal static class CommunityFixtures
         [.. babies.SelectMany((baby, index) => Enumerable.Range(0, days).Select(day =>
             new CommunityTummyTimeDay(baby.Baby, baby.Family, ageWeeks, FirstDay.AddDays(day), index < withTummy ? 20m : 0m)))];
 
-    /// <summary>One spell per baby, at <paramref name="ageWeeks"/> in <paramref name="partOfDay"/>, helped by <paramref name="cause"/>.</summary>
-    public static IReadOnlyList<CommunityCrySpell> Spells(IReadOnlyList<TestBaby> babies, int ageWeeks, string partOfDay, string cause, string? suggested = null) =>
-        [.. babies.Select(baby => new CommunityCrySpell(baby.Baby, baby.Family, ageWeeks, FirstDay, partOfDay, cause, suggested))];
+    /// <summary>One spell per baby on <paramref name="day"/> (default the first day), at <paramref name="ageWeeks"/>, helped by <paramref name="cause"/>.</summary>
+    public static IReadOnlyList<CommunityCrySpell> Spells(IReadOnlyList<TestBaby> babies, int ageWeeks, string cause, int day = 0) =>
+        [.. babies.Select(baby => new CommunityCrySpell(baby.Baby, baby.Family, ageWeeks, FirstDay.AddDays(day), cause))];
 
-    public static CommunityAggregationInput Input(
-        IReadOnlyList<CommunityTummyTimeDay>? tummy = null,
-        IReadOnlyList<CommunityCrySpell>? spells = null,
-        CommunityPreviousRelease? previous = null) =>
-        new(Catalog, new DateTimeOffset(2026, 11, 29, 3, 30, 0, TimeSpan.Zero), CapKey, previous ?? CommunityPreviousRelease.None, tummy ?? [], spells ?? []);
+    public static CommunityAggregationInput Input(IReadOnlyList<CommunityTummyTimeDay>? tummy = null, IReadOnlyList<CommunityCrySpell>? spells = null) =>
+        new(Catalog, new DateTimeOffset(2026, 11, 29, 3, 30, 0, TimeSpan.Zero), CapKey, tummy ?? [], spells ?? []);
 
     public static CommunityRelease Run(CommunityAggregationInput input, ICommunityNoise? noise = null) =>
         CommunityStatisticsAggregator.Aggregate(input, noise ?? new ExactNoise()).Release;

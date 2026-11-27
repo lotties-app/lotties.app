@@ -17,8 +17,9 @@ public sealed record CommunityRunSummary(int CellsPublished, int CoarseCellsPubl
 /// weighs each baby's observations of an output to add up to 1 (one summary per baby); adds Laplace noise to the share sums of
 /// every cell of the fixed grid (<see cref="CommunityShareMechanism"/>), spending the statistic's epsilon split evenly over its v1
 /// outputs, so one baby spends at most <see cref="CommunityStatistic.Epsilon"/> on a statistic per release whatever cells she is
-/// in; and publishes only the cells that pass k, hysteresis, dominance and complementary suppression, with the coarse fallback
-/// (<see cref="CommunityPublication"/>). Percentile outputs have no mechanism and are never computed.
+/// in; and publishes only the cells that pass k (20 babies from 20 families, in every release), dominance and complementary
+/// suppression, with the coarse fallback (<see cref="CommunityPublication"/>). Percentile outputs have no mechanism and are never
+/// computed.
 /// </summary>
 /// <remarks>
 /// The publication decisions use exact counts and are not themselves differentially private (as in the synthetic study); the
@@ -55,6 +56,10 @@ public static class CommunityStatisticsAggregator
     /// <summary>Whether the core reads observations for <paramref name="statistic"/> (only such a statistic may be in v1).</summary>
     public static bool CanRead(CommunityStatistic statistic) => Samplers.Any(sampler => sampler.CanHandle(statistic));
 
+    /// <summary>The catalog inputs the core reads for <paramref name="statistic"/>, or null when it reads none.</summary>
+    public static IReadOnlyList<string>? InputsReadFor(CommunityStatistic statistic) =>
+        Samplers.FirstOrDefault(sampler => sampler.CanHandle(statistic))?.Reads;
+
     /// <summary>
     /// The dominance rule on raw values (design 34 section 5), kept for the community prediction aggregator: whether one family gave
     /// more than <see cref="FamilyDominanceThreshold"/> of the values. <paramref name="familyOfEachValue"/> holds the family of
@@ -79,7 +84,7 @@ public static class CommunityStatisticsAggregator
         var capped = CommunityDailyCap.Apply(located, statistic.CapPerBaby, input.CapKey);
         var epsilonPerOutput = (double)EpsilonOf(statistic) / statistic.V1Outputs.Count;
         var published = statistic.V1Outputs
-            .SelectMany(output => ReleaseOutput(statistic, output.Name, grid, capped, epsilonPerOutput, input.Previous, noise))
+            .SelectMany(output => ReleaseOutput(statistic, output.Name, grid, capped, epsilonPerOutput, noise))
             .ToArray();
         return StatisticRun.Of(statistic, grid, capped, published);
     }
@@ -90,13 +95,12 @@ public static class CommunityStatisticsAggregator
         CommunityCellGrid grid,
         IReadOnlyList<CommunityCellSample> capped,
         double epsilon,
-        CommunityPreviousRelease previous,
         ICommunityNoise noise)
     {
         var weighted = CommunityWeightedSample.Of(capped.Where(sample => sample.Output == output));
         var populations = CommunityCellPopulation.PerFineCell(grid, weighted);
         var values = MechanismFor(output).Release(output, grid, weighted, epsilon, noise);
-        return CommunityPublication.Decide(statistic, output, grid, populations, values, previous);
+        return CommunityPublication.Decide(statistic, grid, populations, values);
     }
 
     private static IEnumerable<CommunityCellSample> Locate(CommunityCellGrid grid, IEnumerable<CommunitySample> samples) =>
@@ -140,7 +144,7 @@ public static class CommunityStatisticsAggregator
             var publishedKeys = published.Select(cell => cell.Key).ToHashSet();
             var withData = capped.Select(sample => sample.Cell).ToHashSet();
             return new StatisticRun(
-                new CommunityReleaseStatistic(statistic.Key, statistic.K, statistic.KHysteresis, EpsilonOf(statistic)),
+                new CommunityReleaseStatistic(statistic.Key, statistic.K, EpsilonOf(statistic)),
                 cells,
                 grid.CoarseCells.Count(coarse => publishedKeys.Contains(coarse.Key)),
                 grid.FineCells.Count(cell => withData.Contains(cell) && !publishedKeys.Contains(cell)),

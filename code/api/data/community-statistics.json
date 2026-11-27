@@ -2,7 +2,7 @@
   "schema": 2,
   "version": 2,
   "generatedFor": "catalog only, not collected",
-  "release": "weekly",
+  "release": "quarterly",
   "bandGrids": {
     "ageWeeksFine": [
       { "fromWeeks": 0, "toWeeks": 12, "stepWeeks": 1 },
@@ -36,7 +36,6 @@
         { "name": "bottles_per_day_p50", "tier": "notInV1" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
       "epsilon": null,
       "capPerBaby": 14,
@@ -62,7 +61,6 @@
         { "name": "p97", "tier": "notInV1" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": 50,
       "epsilon": null,
       "capPerBaby": 4,
@@ -88,7 +86,6 @@
         { "name": "share_of_days_with_any", "tier": "B" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
       "epsilon": 5,
       "capPerBaby": 14,
@@ -113,7 +110,6 @@
         { "name": "p90", "tier": "notInV1" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
       "epsilon": null,
       "capPerBaby": 14,
@@ -138,7 +134,6 @@
         { "name": "p90", "tier": "notInV1" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
       "epsilon": null,
       "capPerBaby": 14,
@@ -163,7 +158,6 @@
         { "name": "p90", "tier": "notInV1" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
       "epsilon": null,
       "capPerBaby": 14,
@@ -188,7 +182,6 @@
         { "name": "p90", "tier": "notInV1" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
       "epsilon": null,
       "capPerBaby": 14,
@@ -213,7 +206,6 @@
         { "name": "p90", "tier": "notInV1" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
       "epsilon": null,
       "capPerBaby": 14,
@@ -235,7 +227,6 @@
         { "name": "shift_ratio_p97", "tier": "notInV1" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": 50,
       "epsilon": null,
       "capPerBaby": 4,
@@ -253,15 +244,14 @@
     },
     {
       "key": "cry_outcome_by_cause",
-      "description": "Per answered fussy spell, by cry age band and part of day: the share of spells each cause helped, and the share where the suggested cause was the one that helped.",
-      "inputs": ["cry_age_band", "part_of_day", "what_helped_cause", "suggested_cause", "cry_duration_bucket"],
-      "band": { "grid": "cry_age_band", "dimension": "part_of_day" },
+      "description": "Per answered fussy spell, by cry age band: the share of spells each cause helped.",
+      "inputs": ["age_weeks", "local_day", "what_helped_cause"],
+      "band": { "grid": "cry_age_band", "dimension": null },
       "outputs": [
         { "name": "share_helped_by_cause", "tier": "A" },
-        { "name": "share_suggested_equals_helped", "tier": "A" }
+        { "name": "share_suggested_equals_helped", "tier": "notInV1" }
       ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
       "epsilon": 0.2,
       "capPerBaby": 14,
@@ -269,7 +259,7 @@
       "status": "planned",
       "proposed": true,
       "notInV1": false,
-      "notInV1Reason": null
+      "notInV1Reason": "share_suggested_equals_helped: dropped from v1 by the owner on 2026-11-27 (one crying output, no part of day); it would need suggested_cause, which is not read."
     }
   ]
 }

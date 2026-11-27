@@ -5,15 +5,15 @@ namespace Lotties.Domain.CommunityInsights;
 /// <summary>
 /// The rules the community statistics catalog must follow (checked at startup, by the aggregation core and in tests;
 /// docs/design/34-community-insights.md sections 4, 5, 5.1 and 13): schema 2, a positive version, <c>generatedFor</c> saying nothing
-/// is collected, a known release cadence; contiguous band grids from week 0 whose coarse edges are fine edges, and the four cry age
+/// is collected, the quarterly release cadence; contiguous band grids from week 0 whose coarse edges are fine edges, and the four cry age
 /// bands on contiguous week edges; exactly the use cases of section 4, each once; per statistic a description, inputs only from
 /// <see cref="AllowedInputs"/> and never one of <see cref="ForbiddenCategories"/>, the band's grid and dimension fed by its inputs,
-/// known outputs, k at least <see cref="MinimumK"/>, a hysteresis at most k, a tail size of at least <see cref="MinimumKTails"/>
+/// known outputs, k at least <see cref="MinimumK"/>, a tail size of at least <see cref="MinimumKTails"/>
 /// exactly when p3/p97 are listed, a per-baby cap, clipping ranges on its own inputs, status <c>planned</c>, values marked proposed;
 /// and the noise tiers of section 5.1: every percentile output <c>notInV1</c> (O2), pooled growth <c>notInV1</c> (O6), every other
 /// output in exactly the tier the owner decided (<see cref="DecidedTiers"/>) and only when the core computes it, one tier per
 /// statistic, epsilon null exactly when nothing is in v1 and otherwise in the tier's range, <c>notInV1</c> exactly when no output is
-/// in v1, and a <c>notInV1Reason</c> exactly when an output is not.
+/// in v1, a <c>notInV1Reason</c> exactly when an output is not, and for a statistic in v1 inputs that are exactly what the core reads.
 /// </summary>
 public static partial class CommunityStatisticsValidator
 {
@@ -52,16 +52,17 @@ public static partial class CommunityStatisticsValidator
 
     /// <summary>
     /// The tier the owner decided for each output that is not a percentile (section 5.1, O2 of 2026-11-11): the crying shares in
-    /// tier A, the tummy-time share of days in tier B. An output not listed here (and every percentile) is <c>notInV1</c>.
+    /// tier A (one output, owner decision of 2026-11-27), the tummy-time share of days in tier B. An output not listed here (and every
+    /// percentile) is <c>notInV1</c>.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, CommunityOutputTier> DecidedTiers = new Dictionary<string, CommunityOutputTier>(StringComparer.Ordinal)
     {
         [$"cry_outcome_by_cause.{CommunityOutputs.ShareHelpedByCause}"] = CommunityOutputTier.A,
-        [$"cry_outcome_by_cause.{CommunityOutputs.ShareSuggestedEqualsHelped}"] = CommunityOutputTier.A,
         [$"tummy_minutes_per_day.{CommunityOutputs.ShareOfDaysWithAny}"] = CommunityOutputTier.B,
     };
 
-    public static readonly IReadOnlyList<string> Releases = ["weekly", "monthly"];
+    /// <summary>The release cadence (owner decision of 2026-11-27): one release per calendar quarter, never weekly.</summary>
+    public static readonly IReadOnlyList<string> Releases = ["quarterly"];
 
     /// <summary>The web's <c>cryAgeBand</c> values (docs/design/27), in order.</summary>
     public static readonly IReadOnlyList<string> CryAgeBands = ["newborn", "weeks6to3m", "months3to6", "months6plus"];
@@ -117,7 +118,7 @@ public static partial class CommunityStatisticsValidator
     public static readonly IReadOnlyDictionary<string, string> Grids = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         [AgeWeeksGrid] = "age_weeks",
-        [CryAgeBandGrid] = "cry_age_band",
+        [CryAgeBandGrid] = "age_weeks",
     };
 
     /// <summary>Every rule broken, as readable messages; empty when the catalog is valid.</summary>
@@ -220,6 +221,14 @@ public static partial class CommunityStatisticsValidator
         Check(statistic.Inputs.Distinct(StringComparer.Ordinal).Count() == statistic.Inputs.Count, $"{where} lists an input twice.", errors);
         errors.AddRange(statistic.Inputs.Where(input => !AllowedInputs.Contains(input)).Select(input => $"{where} input '{input}' is not in the allowed inputs."));
         errors.AddRange(statistic.Inputs.SelectMany(input => ForbiddenCategoriesOf(input).Select(category => $"{where} input '{input}' reads a forbidden category ({category}).")));
+        CheckInputsRead(statistic, where, errors);
+    }
+
+    /// <summary>The published list must not over-declare: a statistic in v1 lists exactly the inputs the core reads for it.</summary>
+    private static void CheckInputsRead(CommunityStatistic statistic, string where, List<string> errors)
+    {
+        var read = statistic.IsInV1 ? CommunityStatisticsAggregator.InputsReadFor(statistic) : null;
+        Check(read is null || read.Order(StringComparer.Ordinal).SequenceEqual(statistic.Inputs.Order(StringComparer.Ordinal)), $"{where} inputs must be exactly what the aggregation core reads: [{string.Join(", ", read ?? [])}].", errors);
     }
 
     private static void CheckBand(CommunityStatistic statistic, string where, List<string> errors)
@@ -259,7 +268,6 @@ public static partial class CommunityStatisticsValidator
     {
         var hasTails = statistic.Outputs.Any(output => CommunityOutputs.Tails.Contains(output.Name));
         Check(statistic.K >= MinimumK, $"{where} k {statistic.K} is below {MinimumK}.", errors);
-        Check(statistic.KHysteresis >= 1 && statistic.KHysteresis <= statistic.K, $"{where} kHysteresis {statistic.KHysteresis} must be between 1 and k.", errors);
         Check(hasTails ? statistic.KTails >= MinimumKTails : statistic.KTails is null, $"{where} needs kTails of at least {MinimumKTails} exactly when it publishes p3/p97.", errors);
         Check(statistic.CapPerBaby >= 1 && statistic.CapPerBaby <= MaximumCapPerBaby, $"{where} capPerBaby {statistic.CapPerBaby} must be between 1 and {MaximumCapPerBaby}.", errors);
     }

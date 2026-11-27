@@ -15,6 +15,12 @@ internal sealed class EfCommunityStatisticsReleaseRepository(LottiesDbContext co
             .AsNoTracking()
             .SingleOrDefaultAsync(r => r.Status == CommunityStatisticsReleaseStatus.Active, cancellationToken);
 
+    public async Task<CommunityStatisticsRelease?> GetLatestAsync(CancellationToken cancellationToken = default) =>
+        await context.CommunityStatisticsReleases
+            .AsNoTracking()
+            .OrderByDescending(r => r.ReleaseSequence)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public async Task<int> GetMaxSequenceAsync(CancellationToken cancellationToken = default)
     {
         var max = await context.CommunityStatisticsReleases

@@ -1,5 +1,7 @@
+using Lotties.Application.Notifications;
 using Lotties.Domain.Common;
 using Lotties.Domain.CommunityInsights;
+using Lotties.Domain.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -8,9 +10,10 @@ using Microsoft.Extensions.Options;
 namespace Lotties.Application.CommunityInsights;
 
 /// <summary>
-/// Weekly batch process for community statistics (docs/design/34-community-insights.md section 5): snapshots consent at run start,
-/// writes a staging release, swaps it to active, and prunes old releases. It reads no events yet: the release it writes is a
-/// placeholder with no cells (see <see cref="CommunityAggregationRunner"/>). Behind <see cref="CommunityAggregationOptions.Enabled"/>
+/// The community statistics job (docs/design/34-community-insights.md section 5): wakes every hour and asks
+/// <see cref="CommunityAggregationRunner"/> whether a release is due under the quarterly cadence (owner decision of 2026-11-27:
+/// at most one release with statistics per calendar quarter, decided from the latest stored release, never from configuration).
+/// It reads no events yet: what it writes is a placeholder with no cells. Behind <see cref="CommunityAggregationOptions.Enabled"/>
 /// and <c>CommunityInsights:Enabled</c>.
 /// </summary>
 public sealed class CommunityAggregationJob(
@@ -21,6 +24,9 @@ public sealed class CommunityAggregationJob(
     ILogger<CommunityAggregationJob> logger) : BackgroundService
 {
     public static readonly TimeSpan FirstRunDelay = TimeSpan.FromMinutes(1);
+
+    /// <summary>How often the job checks whether a release is due; the cadence itself is quarterly.</summary>
+    public static readonly TimeSpan CheckInterval = TimeSpan.FromHours(1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -33,13 +39,10 @@ public sealed class CommunityAggregationJob(
         try
         {
             await Task.Delay(FirstRunDelay, time, stoppingToken);
-            using var timer = new PeriodicTimer(TimeSpan.FromHours(1), time);
+            using var timer = new PeriodicTimer(CheckInterval, time);
             do
             {
-                if (IsRunTime())
-                {
-                    await RunOnceAsync(stoppingToken);
-                }
+                await RunOnceAsync(stoppingToken);
             }
             while (await timer.WaitForNextTickAsync(stoppingToken));
         }
@@ -49,7 +52,7 @@ public sealed class CommunityAggregationJob(
         }
     }
 
-    /// <summary>One run in its own scope; exposed for tests.</summary>
+    /// <summary>One check in its own scope; exposed for tests.</summary>
     public async Task RunOnceAsync(CancellationToken cancellationToken)
     {
         if (!ShouldRun())
@@ -58,98 +61,102 @@ public sealed class CommunityAggregationJob(
         }
 
         var runId = Guid.NewGuid();
-        logger.LogInformation("Community aggregation run {RunId} starting", runId);
-
         try
         {
             await using var scope = scopes.CreateAsyncScope();
             var runner = scope.ServiceProvider.GetRequiredService<CommunityAggregationRunner>();
             await runner.RunAsync(runId, time.GetUtcNow(), cancellationToken);
-            logger.LogInformation("Community aggregation run {RunId} completed", runId);
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogError(exception, "Community aggregation run {RunId} failed; next scheduled run retries", runId);
+            logger.LogError(exception, "Community aggregation run {RunId} failed; the next check retries", runId);
         }
     }
 
     private bool ShouldRun() => options.CurrentValue.Enabled && insightsOptions.CurrentValue.Enabled;
-
-    private bool IsRunTime()
-    {
-        var now = time.GetUtcNow().UtcDateTime;
-        var config = options.CurrentValue;
-        return now.DayOfWeek == config.RunDayOfWeek && now.Hour == config.RunHourUtc;
-    }
 }
 
 /// <summary>
-/// The actual aggregation pipeline, scoped per run so it gets fresh repositories and can be tested independently of the timer.
-/// Today a placeholder: it takes the population snapshot and writes a placeholder release (<see cref="CommunityRelease.Placeholder"/>);
-/// it reads no events. The computation itself is the pure Domain core <see cref="CommunityStatisticsAggregator"/>, not wired yet.
+/// One check of the community statistics job, scoped so it gets fresh repositories. Today it only ever writes a placeholder
+/// (<see cref="CommunityRelease.Placeholder"/>) and reads no events; the computation itself is the pure Domain core
+/// <see cref="CommunityStatisticsAggregator"/>, not wired yet. Fail closed at every step: the cadence is checked on the latest stored
+/// release (<see cref="CommunityReleaseCadence"/>), then again under the job lease (<see cref="JobLease.CommunityAggregationName"/>,
+/// one instance at a time across replicas), and the lease is renewed right before the write; any doubt skips the check.
 /// </summary>
 internal sealed class CommunityAggregationRunner(
     ICommunityConsentRepository consents,
     ICommunityStatisticsReleaseRepository releases,
     ICommunityStatisticsCatalogProvider catalogProvider,
+    IJobLeaseRepository leases,
     ILogger<CommunityAggregationRunner> logger)
 {
-    /// <summary>Runs the full aggregation pipeline for one tick.</summary>
+    /// <summary>How long one run holds the job lease; far longer than a run takes.</summary>
+    public static readonly TimeSpan LeaseDuration = TimeSpan.FromHours(2);
+
+    /// <summary>What a run writes while event loading is not built.</summary>
+    private const CommunityReleaseKind Kind = CommunityReleaseKind.Placeholder;
+
+    /// <summary>One check: writes the quarter's release when it is due, else does nothing.</summary>
     public async Task RunAsync(Guid runId, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        var catalog = catalogProvider.Catalog;
-        if (catalog.Statistics.Count == 0)
+        var holder = $"community-{runId:N}";
+        var proceed = await IsDueAsync(runId, now, cancellationToken)
+            && await HoldsLeaseAsync(runId, holder, now, cancellationToken)
+            && await IsDueAsync(runId, now, cancellationToken)
+            && await HasEligibleBabiesAsync(runId, cancellationToken)
+            && await HoldsLeaseAsync(runId, holder, now, cancellationToken);
+        if (!proceed)
         {
-            logger.LogInformation("Run {RunId}: catalog has no statistics; nothing to aggregate", runId);
             return;
         }
 
-        // Snapshot consent at run start to prevent race conditions during the run. Babies whose owner is a demo or deleted
-        // account are excluded, and so is every baby not settled on the built-in store (her own database, a move between stores
-        // in progress or in its undo window; design 47): only babies owned by real users, whose records are in the Lotties
-        // database, contribute to community statistics.
-        var (optedInBabies, eligibleBabies) = await CommunityPopulation.SnapshotAsync(consents, cancellationToken);
-        if (optedInBabies.Count == 0)
+        await PublishPlaceholderAsync(runId, now, cancellationToken);
+    }
+
+    private async Task<bool> IsDueAsync(Guid runId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var latest = await releases.GetLatestAsync(cancellationToken);
+        var stored = latest is null ? null : CommunityStoredRelease.Of(latest.GeneratedAtUtc, latest.StatisticsJson);
+        var due = CommunityReleaseCadence.IsDue(Kind, now, stored);
+        logger.LogDebug("Run {RunId}: {Kind} due for {Quarter}: {Due}", runId, Kind, CommunityQuarter.Of(now), due);
+        return due;
+    }
+
+    private async Task<bool> HoldsLeaseAsync(Guid runId, string holder, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var held = await leases.TryAcquireAsync(JobLease.CommunityAggregationName, holder, now, LeaseDuration, cancellationToken);
+        if (!held)
         {
-            logger.LogInformation("Run {RunId}: no babies opted in; graceful no-op", runId);
-            return;
+            logger.LogInformation("Run {RunId}: another instance holds the community aggregation lease; skipped", runId);
         }
 
-        if (eligibleBabies.Count == 0)
-        {
-            logger.LogInformation("Run {RunId}: all {Total} opted-in babies excluded (demo/deleted owner or not on the built-in store); graceful no-op",
-                runId, optedInBabies.Count);
-            return;
-        }
+        return held;
+    }
 
-        if (eligibleBabies.Count < optedInBabies.Count)
-        {
-            logger.LogInformation("Run {RunId}: excluded {Excluded} of {Total} opted-in babies (demo/deleted owner or not on the built-in store), {Eligible} eligible",
-                runId, optedInBabies.Count - eligibleBabies.Count, optedInBabies.Count, eligibleBabies.Count);
-        }
+    /// <summary>
+    /// The consent snapshot of the run (<see cref="CommunityPopulation"/>): babies with a current consent, a real Owner, settled on
+    /// the built-in store. Nothing is written while no baby is eligible.
+    /// </summary>
+    private async Task<bool> HasEligibleBabiesAsync(Guid runId, CancellationToken cancellationToken)
+    {
+        var (optedIn, eligible) = await CommunityPopulation.SnapshotAsync(consents, cancellationToken);
+        logger.LogInformation("Run {RunId}: {Eligible} of {OptedIn} opted-in babies eligible (demo or deleted owner, or not on the built-in store, excluded)",
+            runId, eligible.Count, optedIn.Count);
+        return eligible.Count > 0;
+    }
 
-        logger.LogInformation("Run {RunId}: {BabyCount} eligible babies, {StatisticCount} statistics in catalog",
-            runId, eligibleBabies.Count, catalog.Statistics.Count);
-
-        // TODO (event loading, a later task): derive the CommunityAggregationInput observations of the eligible babies from the Lotties
-        // database (the snapshot already left out every baby not on the built-in store) and serialise
-        // CommunityStatisticsAggregator.Aggregate(input, SnappedLaplaceNoise.Cryptographic()).Release instead of the placeholder.
-
-        // Placeholder: a release with no statistics and no cells (read like an empty release: every caller falls back to the norms),
-        // written to exercise the staging/swap/prune pipeline.
+    // TODO (event loading, a later task): derive the CommunityAggregationInput observations of the eligible babies from the Lotties
+    // database (the snapshot already left out every baby not on the built-in store), use CommunityReleaseKind.Release for the
+    // cadence, and serialise CommunityStatisticsAggregator.Aggregate(input, SnappedLaplaceNoise.Cryptographic()).Release.
+    private async Task PublishPlaceholderAsync(Guid runId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
         var sequence = await releases.GetMaxSequenceAsync(cancellationToken) + 1;
         var releaseId = IsoWeekLabel.Of(now);
-        var statisticsJson = CommunityReleaseJson.Serialize(CommunityRelease.Placeholder(now, catalog.Version));
-
+        var statisticsJson = CommunityReleaseJson.Serialize(CommunityRelease.Placeholder(now, catalogProvider.Catalog.Version));
         var release = CommunityStatisticsRelease.CreatePending(releaseId, sequence, statisticsJson, now);
         await releases.SaveAsync(release, cancellationToken);
-        logger.LogInformation("Run {RunId}: saved pending release {ReleaseId} sequence {Sequence}", runId, releaseId, sequence);
-
         await releases.ActivateAndSupersedePreviousAsync(release.Id, cancellationToken);
-        logger.LogInformation("Run {RunId}: activated release {ReleaseId}", runId, releaseId);
-
         await releases.PruneOldReleasesAsync(cancellationToken);
-        logger.LogInformation("Run {RunId}: pruned old releases", runId);
+        logger.LogInformation("Run {RunId}: published placeholder release {ReleaseId} sequence {Sequence} for {Quarter}", runId, releaseId, sequence, CommunityQuarter.Of(now));
     }
-
-    }
+}

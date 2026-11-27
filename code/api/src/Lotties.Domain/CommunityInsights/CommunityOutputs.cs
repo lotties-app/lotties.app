@@ -31,12 +31,14 @@ public static class CommunityOutputs
     /// <summary>Outputs outside p10-p90, published only at <see cref="CommunityStatisticsValidator.MinimumKTails"/> babies.</summary>
     public static readonly IReadOnlyList<string> Tails = ["p3", "p97", "shift_ratio_p97"];
 
-    /// <summary>The share outputs and the categories one observation of each falls in.</summary>
+    /// <summary>
+    /// The share outputs the core computes and the categories one observation of each falls in. <see cref="ShareSuggestedEqualsHelped"/>
+    /// has none (dropped from v1 on 2026-11-27; its input, the suggested cause, is not read).
+    /// </summary>
     public static readonly IReadOnlyDictionary<string, CommunityShareOutput> Shares = new Dictionary<string, CommunityShareOutput>(StringComparer.Ordinal)
     {
         [ShareOfDaysWithAny] = new(ShareOfDaysWithAny, ["with", "without"], PublishesFirstComponentOnly: true),
         [ShareHelpedByCause] = new(ShareHelpedByCause, CommunityCryCauses.Helped, PublishesFirstComponentOnly: false),
-        [ShareSuggestedEqualsHelped] = new(ShareSuggestedEqualsHelped, ["match", "mismatch"], PublishesFirstComponentOnly: true),
     };
 
     /// <summary>Whether the core has a mechanism for <paramref name="output"/> (only such an output may be in v1).</summary>

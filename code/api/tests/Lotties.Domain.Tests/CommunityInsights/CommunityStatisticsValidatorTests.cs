@@ -54,6 +54,7 @@ public sealed class CommunityStatisticsValidatorTests
         AssertReports(Valid with { Version = 0 }, "version must be 1 or more.");
         AssertReports(Valid with { GeneratedFor = "collected" }, "generatedFor must be 'catalog only, not collected'.");
         AssertReports(Valid with { Release = "nightly" }, "release 'nightly' must be one of");
+        AssertReports(Valid with { Release = "weekly" }, "release 'weekly' must be one of [quarterly]");
     }
 
     [Fact]
@@ -92,13 +93,7 @@ public sealed class CommunityStatisticsValidatorTests
     [Fact]
     public void Validate_KBelow20_IsRejected()
     {
-        AssertReports(WithStatistic(Naps, statistic => statistic with { K = 19, KHysteresis = 18 }), "k 19 is below 20.");
-    }
-
-    [Fact]
-    public void Validate_HysteresisAboveK_IsRejected()
-    {
-        AssertReports(WithStatistic(Naps, statistic => statistic with { KHysteresis = 21 }), "kHysteresis 21 must be between 1 and k.");
+        AssertReports(WithStatistic(Naps, statistic => statistic with { K = 19 }), "k 19 is below 20.");
     }
 
     [Fact]
@@ -166,7 +161,8 @@ public sealed class CommunityStatisticsValidatorTests
     {
         AssertReports(WithStatistic(Tummy, statistic => WithTier(statistic, CommunityOutputs.ShareOfDaysWithAny, CommunityOutputTier.A)), $"output '{CommunityOutputs.ShareOfDaysWithAny}' must be tier B (section 5.1).");
         AssertReports(WithStatistic(Cry, statistic => WithTier(statistic, CommunityOutputs.ShareHelpedByCause, CommunityOutputTier.B)), $"output '{CommunityOutputs.ShareHelpedByCause}' must be tier A (section 5.1).");
-        AssertReports(WithStatistic(Cry, statistic => WithTier(statistic, CommunityOutputs.ShareHelpedByCause, CommunityOutputTier.B)), $"statistic '{Cry}' mixes noise tiers in v1.");
+        AssertReports(WithStatistic(Cry, statistic => WithTier(statistic, CommunityOutputs.ShareSuggestedEqualsHelped, CommunityOutputTier.B)), $"output '{CommunityOutputs.ShareSuggestedEqualsHelped}' must be tier NotInV1 (section 5.1).");
+        AssertReports(WithStatistic(Cry, statistic => WithTier(statistic, CommunityOutputs.ShareSuggestedEqualsHelped, CommunityOutputTier.B)), $"statistic '{Cry}' mixes noise tiers in v1.");
         AssertReports(WithStatistic(Tummy, statistic => WithTier(statistic, CommunityOutputs.ShareOfDaysWithAny, CommunityOutputTier.NotInV1)), $"output '{CommunityOutputs.ShareOfDaysWithAny}' must be tier B (section 5.1).");
     }
 
@@ -177,6 +173,14 @@ public sealed class CommunityStatisticsValidatorTests
 
         AssertReports(withShare, $"statistic '{Naps}' output '{CommunityOutputs.ShareOfDaysWithAny}' must be tier NotInV1 (section 5.1).");
         AssertReports(withShare, $"statistic '{Naps}' is in v1 but the aggregation core does not read it.");
+    }
+
+    [Fact]
+    public void Validate_V1Inputs_MustBeExactlyWhatTheCoreReads()
+    {
+        AssertReports(WithStatistic(Cry, statistic => statistic with { Inputs = [.. statistic.Inputs, "cry_duration_bucket"] }), $"statistic '{Cry}' inputs must be exactly what the aggregation core reads: [age_weeks, local_day, what_helped_cause].");
+        AssertReports(WithStatistic(Cry, statistic => statistic with { Inputs = [.. statistic.Inputs, "part_of_day"] }), $"statistic '{Cry}' inputs must be exactly what the aggregation core reads");
+        AssertReports(WithStatistic(Tummy, statistic => statistic with { Inputs = ["age_weeks", "tummy_minutes_per_day"] }), $"statistic '{Tummy}' inputs must be exactly what the aggregation core reads: [age_weeks, local_day, tummy_minutes_per_day].");
     }
 
     [Fact]
@@ -193,7 +197,8 @@ public sealed class CommunityStatisticsValidatorTests
         AssertReports(WithStatistic(Naps, statistic => statistic with { NotInV1 = false }), $"statistic '{Naps}' must be marked notInV1 (no output is in v1).");
         AssertReports(WithStatistic(Cry, statistic => statistic with { NotInV1 = true }), $"statistic '{Cry}' must not be marked notInV1 (an output is in v1).");
         AssertReports(WithStatistic(Tummy, statistic => statistic with { NotInV1Reason = null }), $"statistic '{Tummy}' needs a notInV1Reason exactly when an output is notInV1.");
-        AssertReports(WithStatistic(Cry, statistic => statistic with { NotInV1Reason = "x" }), $"statistic '{Cry}' needs a notInV1Reason exactly when an output is notInV1.");
+        AssertReports(WithStatistic(Cry, statistic => statistic with { NotInV1Reason = null }), $"statistic '{Cry}' needs a notInV1Reason exactly when an output is notInV1.");
+        AssertReports(WithStatistic(Cry, statistic => WithTier(statistic, CommunityOutputs.ShareSuggestedEqualsHelped, CommunityOutputTier.A) with { NotInV1Reason = "x" }), $"statistic '{Cry}' needs a notInV1Reason exactly when an output is notInV1.");
     }
 
     [Fact]

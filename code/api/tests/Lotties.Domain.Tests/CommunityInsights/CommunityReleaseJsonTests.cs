@@ -17,7 +17,7 @@ public sealed partial class CommunityReleaseJsonTests
     private static readonly string[] Properties =
     [
         "schemaVersion", "generatedAt", "catalogVersion", "placeholder", "statistics", "cells",
-        "key", "k", "kHysteresis", "epsilon",
+        "key", "k", "epsilon",
         "statistic", "band", "fromWeeks", "toWeeks", "dimension", "outputs", "babies",
     ];
 
@@ -25,7 +25,7 @@ public sealed partial class CommunityReleaseJsonTests
         GeneratedAt,
         2,
         IsPlaceholder: false,
-        [new(Cry, 20, 18, 0.2m), new(Tummy, 20, 18, 5m)],
+        [new(Cry, 20, 0.2m), new(Tummy, 20, 5m)],
         [
             new(Tummy, new CommunityBand(8, 9), null, new Dictionary<string, decimal> { ["share_of_days_with_any"] = 0.62m }, CommunityGroupSize.Babies50To99),
             new(Cry, new CommunityBand(0, 6), "evening", new Dictionary<string, decimal> { ["share_helped_by_cause.gas"] = 0.4m, ["share_helped_by_cause.comfort"] = 0.6m }, CommunityGroupSize.Babies20To49),
@@ -37,7 +37,7 @@ public sealed partial class CommunityReleaseJsonTests
         var json = CommunityReleaseJson.Serialize(Sample());
 
         Assert.Equal(
-            """{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"cry_outcome_by_cause","k":20,"kHysteresis":18,"epsilon":0.2},{"key":"tummy_minutes_per_day","k":20,"kHysteresis":18,"epsilon":5}],"cells":[{"statistic":"cry_outcome_by_cause","band":{"fromWeeks":0,"toWeeks":6},"dimension":"evening","outputs":{"share_helped_by_cause.comfort":0.6,"share_helped_by_cause.gas":0.4},"babies":"20-49"},{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.62},"babies":"50-99"}]}""",
+            """{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"cry_outcome_by_cause","k":20,"epsilon":0.2},{"key":"tummy_minutes_per_day","k":20,"epsilon":5}],"cells":[{"statistic":"cry_outcome_by_cause","band":{"fromWeeks":0,"toWeeks":6},"dimension":"evening","outputs":{"share_helped_by_cause.comfort":0.6,"share_helped_by_cause.gas":0.4},"babies":"20-49"},{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.62},"babies":"50-99"}]}""",
             json);
     }
 
@@ -54,7 +54,7 @@ public sealed partial class CommunityReleaseJsonTests
     }
 
     [Fact]
-    public void Placeholder_HasNoStatisticNorCell_AndIsNoPreviousRelease()
+    public void Placeholder_HasNoStatisticNorCell()
     {
         var json = CommunityReleaseJson.Serialize(CommunityRelease.Placeholder(GeneratedAt, 2));
 
@@ -63,19 +63,6 @@ public sealed partial class CommunityReleaseJsonTests
         Assert.Equal("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":true,"statistics":[],"cells":[]}""", json);
         Assert.True(parsed.IsPlaceholder);
         Assert.Null(parsed.CellFor(Tummy, 8, null));
-        Assert.False(CommunityPreviousRelease.From(parsed).WasPublished(Tummy, new CommunityBand(8, 9), null, "share_of_days_with_any"));
-    }
-
-    [Fact]
-    public void PreviousRelease_KnowsEachPublishedOutputPerBandAndDimension()
-    {
-        var previous = CommunityPreviousRelease.From(Sample());
-
-        Assert.True(previous.WasPublished(Cry, new CommunityBand(0, 6), "evening", CommunityOutputs.ShareHelpedByCause));
-        Assert.False(previous.WasPublished(Cry, new CommunityBand(0, 6), "evening", CommunityOutputs.ShareSuggestedEqualsHelped));
-        Assert.False(previous.WasPublished(Cry, new CommunityBand(0, 6), "night", CommunityOutputs.ShareHelpedByCause));
-        Assert.False(previous.WasPublished(Tummy, new CommunityBand(8, 12), null, CommunityOutputs.ShareOfDaysWithAny));
-        Assert.False(CommunityPreviousRelease.None.WasPublished(Tummy, new CommunityBand(8, 9), null, CommunityOutputs.ShareOfDaysWithAny));
     }
 
     [Theory]
@@ -83,15 +70,16 @@ public sealed partial class CommunityReleaseJsonTests
     [InlineData("""{"schemaVersion":2,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":true,"statistics":[],"cells":[]}""")]
     [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":true,"statistics":[],"cells":[],"count":3}""")]
     [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":true,"statistics":[]}""")]
-    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":true,"statistics":[{"key":"tummy_minutes_per_day","k":20,"kHysteresis":18,"epsilon":5}],"cells":[]}""")]
+    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":true,"statistics":[{"key":"tummy_minutes_per_day","k":20,"epsilon":5}],"cells":[]}""")]
     [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.5},"babies":"20-49"}]}""")]
-    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"kHysteresis":18,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.5},"babies":"23"}]}""")]
-    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"kHysteresis":18,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":1.5},"babies":"20-49"}]}""")]
-    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"kHysteresis":18,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":8},"outputs":{"share_of_days_with_any":0.5},"babies":"20-49"}]}""")]
-    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"kHysteresis":18,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{},"babies":"20-49"}]}""")]
-    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"kHysteresis":18,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.5},"babies":"20-49"},{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.4},"babies":"20-49"}]}""")]
-    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"kHysteresis":18,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.5,"share_of_days_with_any":0.4},"babies":"20-49"}]}""")]
-    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"kHysteresis":21,"epsilon":5}],"cells":[]}""")]
+    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.5},"babies":"23"}]}""")]
+    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":1.5},"babies":"20-49"}]}""")]
+    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":8},"outputs":{"share_of_days_with_any":0.5},"babies":"20-49"}]}""")]
+    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{},"babies":"20-49"}]}""")]
+    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.5},"babies":"20-49"},{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.4},"babies":"20-49"}]}""")]
+    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"epsilon":5}],"cells":[{"statistic":"tummy_minutes_per_day","band":{"fromWeeks":8,"toWeeks":9},"outputs":{"share_of_days_with_any":0.5,"share_of_days_with_any":0.4},"babies":"20-49"}]}""")]
+    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":0,"epsilon":5}],"cells":[]}""")]
+    [InlineData("""{"schemaVersion":1,"generatedAt":"2026-11-29T03:30:00+00:00","catalogVersion":2,"placeholder":false,"statistics":[{"key":"tummy_minutes_per_day","k":20,"kHysteresis":18,"epsilon":5}],"cells":[]}""")]
     [InlineData("not json")]
     public void Parse_AnythingButThisSchema_IsAFormatException(string json)
     {
@@ -114,7 +102,7 @@ public sealed partial class CommunityReleaseJsonTests
         var cryBabies = NewBabies(41, 41);
         var input = Input(
             tummy: TummyDays(tummyBabies, 100, withTummy: 30, days: 3),
-            spells: Spells(cryBabies, 9, CommunityPartsOfDay.Evening, "gas", suggested: "gas"));
+            spells: Spells(cryBabies, 9, "gas"));
 
         var json = CommunityReleaseJson.Serialize(Run(input, new SnappedLaplaceNoise(new SeededRandomSource(9))));
 

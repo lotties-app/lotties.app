@@ -8,9 +8,8 @@ namespace Lotties.Domain.CommunityInsights;
 /// </summary>
 /// <remarks>
 /// A release with no cells means "nothing passed the thresholds": every caller falls back to the published norms or its built-in
-/// default, as for a statistic with no cell. A placeholder (<see cref="IsPlaceholder"/>, written by the weekly job while it reads no
-/// events) never has cells nor statistics and is read the same way; it is also no previous release for hysteresis
-/// (<see cref="CommunityPreviousRelease"/>).
+/// default, as for a statistic with no cell. A placeholder (<see cref="IsPlaceholder"/>, written by the job while it reads no events)
+/// never has cells nor statistics, is read the same way, and does not count against the quarter (<see cref="CommunityReleaseCadence"/>).
 /// </remarks>
 public sealed record CommunityRelease(
     DateTimeOffset GeneratedAt,
@@ -36,8 +35,8 @@ public sealed record CommunityRelease(
             .FirstOrDefault();
 }
 
-/// <summary>The parameters one statistic of a release was computed with: published at <see cref="K"/>, kept down to <see cref="KHysteresis"/>, budget <see cref="Epsilon"/>.</summary>
-public sealed record CommunityReleaseStatistic(string Key, int K, int KHysteresis, decimal Epsilon);
+/// <summary>The parameters one statistic of a release was computed with: published at <see cref="K"/> babies from as many families, budget <see cref="Epsilon"/>.</summary>
+public sealed record CommunityReleaseStatistic(string Key, int K, decimal Epsilon);
 
 /// <summary>
 /// One published cell: the statistic, the age band, the dimension value (null when the statistic has none), the named output values
@@ -76,8 +75,8 @@ public readonly record struct CommunityBand(int FromWeeks, int ToWeeks)
 }
 
 /// <summary>
-/// The coarse number of distinct babies behind a published cell (section 6): never an exact count. The lowest bucket also holds a
-/// cell kept by hysteresis with <see cref="CommunityStatistic.KHysteresis"/> to <see cref="CommunityStatistic.K"/> - 1 babies.
+/// The coarse number of distinct babies behind a published cell (section 6): never an exact count. A published cell always has at
+/// least <see cref="CommunityStatistic.K"/> (20) babies, so the lowest bucket is exact about its lower bound.
 /// </summary>
 public enum CommunityGroupSize
 {
@@ -100,7 +99,7 @@ public static class CommunityGroupSizes
 
     public const string Wire100Plus = "100+";
 
-    /// <summary>The bucket of <paramref name="distinctBabies"/> babies (a published cell has at least the hysteresis minimum).</summary>
+    /// <summary>The bucket of <paramref name="distinctBabies"/> babies (a published cell has at least k).</summary>
     public static CommunityGroupSize Of(int distinctBabies) => distinctBabies switch
     {
         >= 100 => CommunityGroupSize.Babies100Plus,
@@ -124,34 +123,4 @@ public static class CommunityGroupSizes
         Wire100Plus => CommunityGroupSize.Babies100Plus,
         _ => null,
     };
-}
-
-/// <summary>
-/// What the previous release published, as the hysteresis of the next run reads it (design 34 section 5 "k"): per statistic, band,
-/// dimension value and output, whether that output was published. Built from the served release only, so no exact count is ever
-/// stored for it. A placeholder or missing release has published nothing.
-/// </summary>
-public sealed class CommunityPreviousRelease
-{
-    private readonly IReadOnlySet<CommunityPublishedOutput> published;
-
-    private CommunityPreviousRelease(IReadOnlySet<CommunityPublishedOutput> published) => this.published = published;
-
-    /// <summary>No previous release (first run, a placeholder, or a release the reader could not parse): every cell needs k.</summary>
-    public static CommunityPreviousRelease None { get; } = new(new HashSet<CommunityPublishedOutput>());
-
-    /// <summary>The published outputs of <paramref name="release"/>; <see cref="None"/> for null or a placeholder.</summary>
-    public static CommunityPreviousRelease From(CommunityRelease? release) =>
-        release is null || release.IsPlaceholder
-            ? None
-            : new(release.Cells.SelectMany(PublishedOutputsOf).ToHashSet());
-
-    /// <summary>Whether <paramref name="output"/> of <paramref name="statistic"/> was published in this band and dimension value.</summary>
-    public bool WasPublished(string statistic, CommunityBand band, string? dimension, string output) =>
-        published.Contains(new CommunityPublishedOutput(statistic, band, dimension, output));
-
-    private static IEnumerable<CommunityPublishedOutput> PublishedOutputsOf(CommunityReleaseCell cell) =>
-        cell.OutputNames.Select(output => new CommunityPublishedOutput(cell.Statistic, cell.Band, cell.Dimension, output));
-
-    private readonly record struct CommunityPublishedOutput(string Statistic, CommunityBand Band, string? Dimension, string Output);
 }

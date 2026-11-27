@@ -9,8 +9,8 @@ namespace Lotties.Domain.CommunityInsights;
 /// schema <see cref="SchemaVersion"/>:
 /// <code>
 /// { "schemaVersion": 1, "generatedAt": "...", "catalogVersion": 2, "placeholder": false,
-///   "statistics": [ { "key": "cry_outcome_by_cause", "k": 20, "kHysteresis": 18, "epsilon": 0.2 } ],
-///   "cells": [ { "statistic": "cry_outcome_by_cause", "band": { "fromWeeks": 0, "toWeeks": 6 }, "dimension": "evening",
+///   "statistics": [ { "key": "cry_outcome_by_cause", "k": 20, "epsilon": 0.2 } ],
+///   "cells": [ { "statistic": "cry_outcome_by_cause", "band": { "fromWeeks": 0, "toWeeks": 6 },
 ///                "outputs": { "share_helped_by_cause.hunger": 0.312, ... }, "babies": "20-49" } ] }
 /// </code>
 /// <c>dimension</c> is absent when the statistic has none. Reading is strict: an unknown or missing property, a duplicate cell, a
@@ -80,7 +80,7 @@ public static partial class CommunityReleaseJson
 
     private static string? StatisticError(CommunityReleaseStatistic statistic) =>
         !SnakeCase().IsMatch(statistic.Key) ? $"statistic '{statistic.Key}' is not a snake_case key."
-            : statistic.KHysteresis < 1 || statistic.KHysteresis > statistic.K ? $"statistic '{statistic.Key}' needs 1 <= kHysteresis <= k."
+            : statistic.K < 1 ? $"statistic '{statistic.Key}' needs a positive k."
             : statistic.Epsilon <= 0m ? $"statistic '{statistic.Key}' needs a positive epsilon."
             : null;
 
@@ -124,11 +124,11 @@ public static partial class CommunityReleaseJson
                 : throw new FormatException($"The community release schemaVersion {SchemaVersion} is not {CommunityReleaseJson.SchemaVersion}.");
     }
 
-    private sealed record WireStatistic(string Key, int K, int KHysteresis, decimal Epsilon)
+    private sealed record WireStatistic(string Key, int K, decimal Epsilon)
     {
-        public static WireStatistic From(CommunityReleaseStatistic statistic) => new(statistic.Key, statistic.K, statistic.KHysteresis, statistic.Epsilon);
+        public static WireStatistic From(CommunityReleaseStatistic statistic) => new(statistic.Key, statistic.K, statistic.Epsilon);
 
-        public CommunityReleaseStatistic ToStatistic() => new(Key, K, KHysteresis, Epsilon);
+        public CommunityReleaseStatistic ToStatistic() => new(Key, K, Epsilon);
     }
 
     private sealed record WireCell(

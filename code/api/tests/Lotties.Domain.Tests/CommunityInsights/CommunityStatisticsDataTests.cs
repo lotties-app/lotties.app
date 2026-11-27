@@ -54,8 +54,8 @@ public sealed class CommunityStatisticsDataTests
     {
         var statistics = ShippedCommunityStatistics.Catalog.Statistics;
 
-        Assert.Equal("weekly", ShippedCommunityStatistics.Catalog.Release);
-        Assert.All(statistics, statistic => Assert.Equal((20, 18, "planned", true), (statistic.K, statistic.KHysteresis, statistic.Status, statistic.Proposed)));
+        Assert.Equal("quarterly", ShippedCommunityStatistics.Catalog.Release);
+        Assert.All(statistics, statistic => Assert.Equal((20, "planned", true), (statistic.K, statistic.Status, statistic.Proposed)));
         Assert.All(statistics.Where(statistic => statistic.KTails is not null), statistic => Assert.Equal(50, statistic.KTails));
         // O6 keeps pooled growth out; O2 (design 34 section 5.1) defers every percentile output: only the crying shares and the
         // tummy-time statistic (its share of days) stay candidates for v1.
@@ -71,10 +71,21 @@ public sealed class CommunityStatisticsDataTests
 
         // Tier A (strict, 0.2): the crying shares; tier B (relaxed, about 5): the tummy-time share of days; nothing else in v1.
         Assert.Equal(
-            ["tummy_minutes_per_day.share_of_days_with_any:B", "cry_outcome_by_cause.share_helped_by_cause:A", "cry_outcome_by_cause.share_suggested_equals_helped:A"],
+            ["tummy_minutes_per_day.share_of_days_with_any:B", "cry_outcome_by_cause.share_helped_by_cause:A"],
             statistics.SelectMany(statistic => statistic.V1Outputs.Select(output => $"{statistic.Key}.{output.Name}:{output.Tier}")));
         Assert.Equal([("tummy_minutes_per_day", 5m), ("cry_outcome_by_cause", 0.2m)], statistics.Where(statistic => statistic.Epsilon is not null).Select(statistic => (statistic.Key, statistic.Epsilon!.Value)));
         Assert.All(statistics.SelectMany(statistic => statistic.Outputs).Where(output => CommunityOutputs.Percentiles.Contains(output.Name)), output => Assert.Equal(CommunityOutputTier.NotInV1, output.Tier));
+    }
+
+    [Fact]
+    public void File_Crying_IsOneOutputWithNoDimension_ReadingOnlyWhatItUses()
+    {
+        var cry = ShippedCommunityStatistics.Catalog.Statistics.Single(statistic => statistic.Key == "cry_outcome_by_cause");
+
+        // Owner decision of 2026-11-27: the share each cause helped only, no part of day; the published list does not over-declare.
+        Assert.Equal(["age_weeks", "local_day", "what_helped_cause"], cry.Inputs);
+        Assert.Null(cry.Band.Dimension);
+        Assert.Equal([CommunityOutputs.ShareHelpedByCause], cry.V1Outputs.Select(output => output.Name));
     }
 
     [Fact]

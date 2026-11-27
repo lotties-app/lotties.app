@@ -15,7 +15,7 @@ public sealed record CommunityStatisticsCatalog(
     CommunityBandGrids BandGrids,
     IReadOnlyList<CommunityStatistic> Statistics)
 {
-    /// <summary>The schema version this code reads (2: outputs carry a noise tier, epsilon may be null, cry bands carry weeks).</summary>
+    /// <summary>The schema version this code reads (2: outputs carry a noise tier, epsilon may be null, cry bands carry weeks, no hysteresis).</summary>
     public const int SupportedSchema = 2;
 
     /// <summary>What the file says about itself until the job reads data (section 11, T5).</summary>
@@ -27,7 +27,8 @@ public sealed record CommunityStatisticsCatalog(
 
 /// <summary>
 /// The fixed band edges (section 5 "Bands"): a fine grid of age in completed weeks, the coarser fallback grid a fine cell
-/// below k is published in, and the cry age bands of docs/design/27 on fixed week edges. Edges never move with the data.
+/// below k is published in, and the cry age bands of docs/design/27 on fixed week edges (read from age in completed weeks).
+/// Edges never move with the data.
 /// </summary>
 public sealed record CommunityBandGrids(
     IReadOnlyList<CommunityBandSegment> AgeWeeksFine,
@@ -46,10 +47,11 @@ public sealed record CommunityNamedBand(string Name, int FromWeeks, int ToWeeks)
 
 /// <summary>
 /// One statistic of the catalog. <see cref="K"/> is the minimum of distinct babies and of distinct families for a cell to be
-/// published, <see cref="KHysteresis"/> the minimum a cell published in the previous release keeps it at, <see cref="KTails"/>
-/// the size needed for p3/p97 (null when the statistic has no tail output). <see cref="Epsilon"/> is the budget one baby spends
-/// on this statistic per release, over all its cells and v1 outputs (null when nothing of it is in v1). <see cref="Proposed"/>
-/// marks values that still wait for the owner's decision O1 (section 13).
+/// published, in every release (no hysteresis, owner decision of 2026-11-27), <see cref="KTails"/> the size needed for p3/p97
+/// (null when the statistic has no tail output). <see cref="Epsilon"/> is the budget one baby spends on this statistic per
+/// release, over all its cells and v1 outputs (null when nothing of it is in v1). For a statistic with an output in v1,
+/// <see cref="Inputs"/> are exactly what the aggregation core reads. <see cref="Proposed"/> marks values that still wait for the
+/// owner's decision O1 (section 13).
 /// </summary>
 public sealed record CommunityStatistic(
     string Key,
@@ -58,7 +60,6 @@ public sealed record CommunityStatistic(
     CommunityStatisticBand Band,
     IReadOnlyList<CommunityStatisticOutput> Outputs,
     int K,
-    int KHysteresis,
     int? KTails,
     decimal? Epsilon,
     int CapPerBaby,
