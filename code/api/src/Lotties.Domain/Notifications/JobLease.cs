@@ -9,6 +9,9 @@ namespace Lotties.Domain.Notifications;
 public sealed class JobLease
 {
     public const string PushSchedulerName = "push-scheduler";
+
+    /// <summary>The community statistics job: one instance at a time, so two replicas never both publish in a quarter.</summary>
+    public const string CommunityAggregationName = "community-aggregation";
     public const int NameMaxLength = 40;
     public const int HolderMaxLength = 64;
 

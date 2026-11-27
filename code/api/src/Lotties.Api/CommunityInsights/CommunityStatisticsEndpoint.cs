@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Lotties.Application.Babies;
 using Lotties.Application.CommunityInsights;
 using Lotties.Application.Users;
@@ -101,17 +100,15 @@ internal static class CommunityStatisticsEndpoint
         // Compute the caller's baby's age band from birth date.
         var consentedBaby = callerBabies.First(b => b.Id == consentedBabyId.Value);
         var ageWeeks = ComputeAgeWeeks(consentedBaby.BirthDate, timeProvider.GetUtcNow());
-        var bandKey = ResolveBandKey(statistic, catalog.BandGrids, ageWeeks);
-        if (bandKey is null)
+        var band = CommunityBandGrid.BandOf(CommunityBandGrid.FineBands(catalog.BandGrids, statistic.Band.Grid), ageWeeks);
+        if (band is null)
         {
             return Results.NotFound(new { error = "no_band", detail = "No age band matches this baby's age for this statistic." });
         }
 
-        // Parse the release JSON and find the cell for this statistic + band.
-        var cells = ParseCells(release.StatisticsJson);
-        var cell = cells.FirstOrDefault(c =>
-            string.Equals(c.StatisticKey, statisticKey, StringComparison.Ordinal) &&
-            string.Equals(c.BandKey, bandKey, StringComparison.Ordinal));
+        // The cell for this statistic and age: her fine cell, else the coarse fallback holding her age (statistics without a dimension;
+        // a statistic with a dimension and the whole cell are served by the endpoint rewrite, task T6).
+        var cell = ReadRelease(release.StatisticsJson).CellFor(statisticKey, ageWeeks, dimension: null);
 
         var etag = $"\"{release.ReleaseId}:{statisticKey}\"";
         http.Response.Headers.ETag = etag;
@@ -124,7 +121,7 @@ internal static class CommunityStatisticsEndpoint
             return Results.StatusCode(StatusCodes.Status304NotModified);
         }
 
-        var response = BuildResponse(statistic, cell, bandKey, release.GeneratedAtUtc);
+        var response = BuildResponse(statistic, cell, band.Value, release.GeneratedAtUtc);
         return Results.Ok(response);
     }
 
@@ -135,78 +132,31 @@ internal static class CommunityStatisticsEndpoint
         return Math.Max(0, days / 7);
     }
 
-    private static string? ResolveBandKey(CommunityStatistic statistic, CommunityBandGrids grids, int ageWeeks)
-    {
-        // Use fine grid first, fall back to coarse.
-        var gridName = statistic.Band.Grid;
-        var segments = string.Equals(gridName, "age_weeks_coarse", StringComparison.Ordinal)
-            ? grids.AgeWeeksCoarse
-            : grids.AgeWeeksFine;
-
-        foreach (var segment in segments)
-        {
-            if (ageWeeks >= segment.FromWeeks && ageWeeks < segment.ToWeeks)
-            {
-                // Band key is the lower edge in weeks (e.g. "8" for 8-12w).
-                return segment.FromWeeks.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            }
-        }
-
-        return null;
-    }
-
-    private static IReadOnlyList<AggregatedCell> ParseCells(string statisticsJson)
+    /// <summary>The served release; one that cannot be read (a phase-1 placeholder row, a damaged row) has no cells, so nothing is served from it.</summary>
+    private static CommunityRelease ReadRelease(string statisticsJson)
     {
         try
         {
-            using var document = JsonDocument.Parse(statisticsJson);
-            var root = document.RootElement;
-            if (!root.TryGetProperty("cells", out var cellsElement) || cellsElement.ValueKind != JsonValueKind.Array)
-            {
-                return [];
-            }
-
-            var cells = new List<AggregatedCell>();
-            foreach (var cellElement in cellsElement.EnumerateArray())
-            {
-                var key = cellElement.GetProperty("statisticKey").GetString() ?? string.Empty;
-                var bandKey = cellElement.GetProperty("bandKey").GetString() ?? string.Empty;
-                var dimensionValue = cellElement.TryGetProperty("dimensionValue", out var dimProp) && dimProp.ValueKind == JsonValueKind.String
-                    ? dimProp.GetString()
-                    : null;
-                var distinctBabies = cellElement.GetProperty("distinctBabies").GetInt32();
-                var distinctFamilies = cellElement.GetProperty("distinctFamilies").GetInt32();
-                var mean = cellElement.GetProperty("mean").GetDecimal();
-                decimal? p3 = cellElement.TryGetProperty("p3", out var p3Prop) && p3Prop.ValueKind == JsonValueKind.Number
-                    ? p3Prop.GetDecimal()
-                    : null;
-                decimal? p97 = cellElement.TryGetProperty("p97", out var p97Prop) && p97Prop.ValueKind == JsonValueKind.Number
-                    ? p97Prop.GetDecimal()
-                    : null;
-                var suppressed = cellElement.GetProperty("suppressed").GetBoolean();
-                var suppressionReason = cellElement.TryGetProperty("suppressionReason", out var reasonProp) && reasonProp.ValueKind == JsonValueKind.String
-                    ? reasonProp.GetString()
-                    : null;
-
-                cells.Add(new AggregatedCell(key, bandKey, dimensionValue, distinctBabies, distinctFamilies, mean, p3, p97, suppressed, suppressionReason));
-            }
-
-            return cells;
+            return CommunityReleaseJson.Parse(statisticsJson);
         }
-        catch
+        catch (FormatException)
         {
-            return [];
+            return CommunityRelease.Placeholder(DateTimeOffset.UnixEpoch, catalogVersion: 0);
         }
     }
 
-    private static CommunityStatisticsResponse BuildResponse(CommunityStatistic statistic, AggregatedCell? cell, string bandKey, DateTimeOffset releasedAtUtc)
+    /// <summary>
+    /// The single-value response of this endpoint: the cell's value when it has exactly one (a scalar share), else none; the group size
+    /// bucket as published. A cell below the thresholds is absent from the release, so it reads as <c>no_data</c>.
+    /// </summary>
+    private static CommunityStatisticsResponse BuildResponse(CommunityStatistic statistic, CommunityReleaseCell? cell, CommunityBand band, DateTimeOffset releasedAtUtc)
     {
         if (cell is null)
         {
             return new CommunityStatisticsResponse
             {
                 StatisticKey = statistic.Key,
-                AgeBandLabel = FormatBandLabel(bandKey),
+                AgeBandLabel = FormatBandLabel(band),
                 Value = null,
                 SampleSizeRange = string.Empty,
                 Confidence = string.Empty,
@@ -215,57 +165,25 @@ internal static class CommunityStatisticsEndpoint
             };
         }
 
-        if (cell.Suppressed)
-        {
-            return new CommunityStatisticsResponse
-            {
-                StatisticKey = statistic.Key,
-                AgeBandLabel = FormatBandLabel(bandKey),
-                Value = null,
-                SampleSizeRange = string.Empty,
-                Confidence = string.Empty,
-                ReleasedAtUtc = releasedAtUtc,
-                SuppressionReason = cell.SuppressionReason ?? "suppressed",
-            };
-        }
-
         return new CommunityStatisticsResponse
         {
             StatisticKey = statistic.Key,
-            AgeBandLabel = FormatBandLabel(bandKey),
-            Value = cell.Mean,
-            SampleSizeRange = FormatSampleSizeRange(cell.DistinctFamilies),
-            Confidence = FormatConfidence(cell.DistinctFamilies, statistic.Epsilon),
+            AgeBandLabel = FormatBandLabel(cell.Band),
+            Value = cell.Outputs.Count == 1 ? cell.Outputs.Values.Single() : null,
+            SampleSizeRange = CommunityGroupSizes.ToWire(cell.Babies),
+            Confidence = FormatConfidence(cell.Babies),
             ReleasedAtUtc = releasedAtUtc,
             SuppressionReason = null,
         };
     }
 
-    private static string FormatBandLabel(string bandKey) => $"{bandKey}w";
+    private static string FormatBandLabel(CommunityBand band) =>
+        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{band.FromWeeks}-{band.ToWeeks}w");
 
-    private static string FormatSampleSizeRange(int distinctFamilies) => distinctFamilies switch
+    private static string FormatConfidence(CommunityGroupSize babies) => babies switch
     {
-        < 20 => "<20",
-        < 50 => "20-49",
-        < 100 => "50-99",
-        < 200 => "100-199",
-        < 500 => "200-499",
-        _ => "500+",
+        CommunityGroupSize.Babies100Plus => "high",
+        CommunityGroupSize.Babies50To99 => "moderate",
+        _ => "low",
     };
-
-    private static string FormatConfidence(int distinctFamilies, decimal epsilon)
-    {
-        // Simple heuristic: high when many families and reasonable epsilon, moderate for mid-range, low otherwise.
-        if (distinctFamilies >= 100 && epsilon > 0.1m)
-        {
-            return "high";
-        }
-
-        if (distinctFamilies >= 50)
-        {
-            return "moderate";
-        }
-
-        return "low";
-    }
 }

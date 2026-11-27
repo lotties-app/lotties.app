@@ -37,6 +37,8 @@
     <None Include="..\..\data\age-norms.json" Link="AgeNorms\age-norms.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- The community statistics catalog (docs/design/34-community-insights.md, T4), validated by CommunityInsights tests. -->
     <None Include="..\..\data\community-statistics.json" Link="CommunityInsights\community-statistics.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Histogram vectors written by the percentiles study (ml/benchmark/community_percentiles_built.py), cross-checked by CommunityHistogramTests. -->
+    <None Include="..\..\..\..\ml\tests\community_histogram_vectors.json" Link="CommunityInsights\community_histogram_vectors.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\web\src\ageNorms\ageNormsVectors.json" Link="AgeNorms\ageNormsVectors.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\..\web\src\baby\birthWeekVectors.json" Link="Babies\birthWeekVectors.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Cry reasons scoring vectors shared with the web port (code/web/src/now/cryReasonsVectors.test.ts). -->

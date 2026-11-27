@@ -22,7 +22,7 @@ public sealed class CommunityStatisticsDataTests
         var catalog = ShippedCommunityStatistics.Catalog;
 
         Assert.EndsWith("}\n", ShippedCommunityStatistics.Text.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
-        Assert.Equal((1, 1, "catalog only, not collected"), (catalog.Schema, catalog.Version, catalog.GeneratedFor));
+        Assert.Equal((2, 2, "catalog only, not collected"), (catalog.Schema, catalog.Version, catalog.GeneratedFor));
     }
 
     [Fact]
@@ -54,14 +54,75 @@ public sealed class CommunityStatisticsDataTests
     {
         var statistics = ShippedCommunityStatistics.Catalog.Statistics;
 
-        Assert.Equal("weekly", ShippedCommunityStatistics.Catalog.Release);
-        Assert.All(statistics, statistic => Assert.Equal((20, 18, 0.2m, "planned", true), (statistic.K, statistic.KHysteresis, statistic.Epsilon, statistic.Status, statistic.Proposed)));
+        Assert.Equal("quarterly", ShippedCommunityStatistics.Catalog.Release);
+        Assert.All(statistics, statistic => Assert.Equal((20, "planned", true), (statistic.K, statistic.Status, statistic.Proposed)));
         Assert.All(statistics.Where(statistic => statistic.KTails is not null), statistic => Assert.Equal(50, statistic.KTails));
-        // O6 keeps pooled growth out; O2 (design 34 section 5) defers every percentile statistic: only the crying shares and the
+        // O6 keeps pooled growth out; O2 (design 34 section 5.1) defers every percentile output: only the crying shares and the
         // tummy-time statistic (its share of days) stay candidates for v1.
         Assert.Equal(
-            ["bottle_ml_per_feed", "growth_vs_age", "naps_per_day", "day_sleep_minutes", "night_sleep_minutes", "feeds_per_day", "diapers_per_day", "routine_shift_scale"],
+            ["growth_vs_age", "feeds_per_day", "diapers_per_day", "routine_shift_scale"],
             statistics.Where(statistic => statistic.NotInV1).Select(statistic => statistic.Key));
+    }
+
+    [Fact]
+    public void File_CarriesTheNoiseTiersOfSection51()
+    {
+        var statistics = ShippedCommunityStatistics.Catalog.Statistics;
+
+        // Tier A (strict, 0.2): the crying shares; tier B (relaxed, about 5): the tummy-time share of days; tier C (2026-11-27): p25,
+        // p50 and p75 of formula bottles and the three sleep routines, epsilon 2 per cell, at most 4 cells (8 per release).
+        string[] quartiles = ["p25:C", "p50:C", "p75:C"];
+        Assert.Equal(
+            [
+                .. quartiles.Select(output => $"bottle_ml_per_feed.{output}"), "tummy_minutes_per_day.share_of_days_with_any:B",
+                .. quartiles.Select(output => $"naps_per_day.{output}"), .. quartiles.Select(output => $"day_sleep_minutes.{output}"),
+                .. quartiles.Select(output => $"night_sleep_minutes.{output}"), "cry_outcome_by_cause.share_helped_by_cause:A",
+            ],
+            statistics.SelectMany(statistic => statistic.V1Outputs.Select(output => $"{statistic.Key}.{output.Name}:{output.Tier}")));
+        Assert.Equal(
+            [("bottle_ml_per_feed", 8m), ("tummy_minutes_per_day", 5m), ("naps_per_day", 8m), ("day_sleep_minutes", 8m), ("night_sleep_minutes", 8m), ("cry_outcome_by_cause", 0.2m)],
+            statistics.Where(statistic => statistic.Epsilon is not null).Select(statistic => (statistic.Key, statistic.Epsilon!.Value)));
+        Assert.All(statistics.SelectMany(statistic => statistic.Outputs).Where(output => CommunityOutputs.Percentiles.Contains(output.Name) && !CommunityOutputs.Quantiles.Contains(output.Name)), output => Assert.Equal(CommunityOutputTier.NotInV1, output.Tier));
+    }
+
+    [Fact]
+    public void File_Percentiles_AreTheBoundedOptionA_AsTheStudyMeasuredIt()
+    {
+        var percentiles = ShippedCommunityStatistics.Catalog.Statistics.Where(statistic => statistic.V1Outputs.Any(output => output.Tier == CommunityOutputTier.C)).ToArray();
+
+        Assert.Equal(["bottle_ml_per_feed", "naps_per_day", "day_sleep_minutes", "night_sleep_minutes"], percentiles.Select(statistic => statistic.Key));
+        Assert.All(percentiles, statistic => Assert.Equal((4, "previous_quarter", "age_weeks_4", (string?)null, 14), (statistic.MaxCellsPerBaby!.Value, statistic.Window!, statistic.Band.Grid, statistic.Band.Dimension, statistic.CapPerBaby)));
+        Assert.Equal(
+            [("bottle_drunk_ml", 0m, 400m, 20m, 10m), ("naps_per_day", 0m, 8m, 0.5m, 0.5m), ("day_sleep_minutes", 0m, 720m, 30m, 10m), ("night_sleep_minutes", 0m, 960m, 30m, 10m)],
+            percentiles.Select(statistic => (statistic.Clip.Single().Input, statistic.Clip.Single().Min, statistic.Clip.Single().Max, statistic.Histogram!.BinWidth, statistic.Histogram.Step)));
+        Assert.Equal([new CommunityBandSegment(0, 104, 4)], ShippedCommunityStatistics.Catalog.BandGrids.AgeWeeks4);
+    }
+
+    [Fact]
+    public void File_Crying_IsOneOutputWithNoDimension_ReadingOnlyWhatItUses()
+    {
+        var cry = ShippedCommunityStatistics.Catalog.Statistics.Single(statistic => statistic.Key == "cry_outcome_by_cause");
+
+        // Owner decision of 2026-11-27: the share each cause helped only, no part of day; the published list does not over-declare.
+        Assert.Equal(["age_weeks", "local_day", "what_helped_cause"], cry.Inputs);
+        Assert.Null(cry.Band.Dimension);
+        Assert.Equal([CommunityOutputs.ShareHelpedByCause], cry.V1Outputs.Select(output => output.Name));
+    }
+
+    [Fact]
+    public void File_CryBandsAreTheFourCryAgeBandsOnWeekEdges()
+    {
+        Assert.Equal(
+            [new("newborn", 0, 6), new("weeks6to3m", 6, 13), new("months3to6", 13, 26), new CommunityNamedBand("months6plus", 26, 104)],
+            ShippedCommunityStatistics.Catalog.BandGrids.CryAgeBands);
+    }
+
+    [Fact]
+    public void Parse_UnknownTier_IsAFormatException()
+    {
+        var unknownTier = ShippedCommunityStatistics.Text.Replace("\"tier\": \"B\"", "\"tier\": \"D\"", StringComparison.Ordinal);
+
+        Assert.Throws<FormatException>(() => CommunityStatisticsJson.Parse(unknownTier));
     }
 
     [Fact]
@@ -83,7 +144,7 @@ public sealed class CommunityStatisticsDataTests
     [Fact]
     public void Parse_NullWhereNotAllowed_IsAFormatException()
     {
-        var nullDescription = ShippedCommunityStatistics.Text.Replace("\"description\": \"Naps per complete local day.\"", "\"description\": null", StringComparison.Ordinal);
+        var nullDescription = ShippedCommunityStatistics.Text.Replace("\"description\": \"Naps per complete local day, by age in 4-week bands, from the previous calendar quarter.\"", "\"description\": null", StringComparison.Ordinal);
 
         Assert.Throws<FormatException>(() => CommunityStatisticsJson.Parse(nullDescription));
     }

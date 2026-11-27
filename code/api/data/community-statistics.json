@@ -1,8 +1,8 @@
 {
-  "schema": 1,
-  "version": 1,
+  "schema": 2,
+  "version": 2,
   "generatedFor": "catalog only, not collected",
-  "release": "weekly",
+  "release": "quarterly",
   "bandGrids": {
     "ageWeeksFine": [
       { "fromWeeks": 0, "toWeeks": 12, "stepWeeks": 1 },
@@ -14,40 +14,64 @@
       { "fromWeeks": 28, "toWeeks": 100, "stepWeeks": 12 },
       { "fromWeeks": 100, "toWeeks": 104, "stepWeeks": 4 }
     ],
-    "cryAgeBands": ["newborn", "weeks6to3m", "months3to6", "months6plus"]
+    "ageWeeks4": [
+      { "fromWeeks": 0, "toWeeks": 104, "stepWeeks": 4 }
+    ],
+    "cryAgeBands": [
+      { "name": "newborn", "fromWeeks": 0, "toWeeks": 6 },
+      { "name": "weeks6to3m", "fromWeeks": 6, "toWeeks": 13 },
+      { "name": "months3to6", "fromWeeks": 13, "toWeeks": 26 },
+      { "name": "months6plus", "fromWeeks": 26, "toWeeks": 104 }
+    ]
   },
   "statistics": [
     {
       "key": "bottle_ml_per_feed",
-      "description": "Milk per bottle by age in weeks, split by bottle kind (formula or breast milk, never a formula's name or brand), and bottles per local day.",
-      "inputs": ["age_weeks", "local_day", "bottle_drunk_ml", "bottle_feeding_type", "bottles_per_day"],
-      "band": { "grid": "age_weeks", "dimension": "bottle_feeding_type" },
-      "outputs": ["p10", "p25", "p50", "p75", "p90", "bottles_per_day_p50"],
+      "description": "Milk per formula bottle by age in 4-week bands, from the previous calendar quarter (the bottle kind is read only to keep formula bottles; breast-milk bottles are not read, never a formula's name or brand).",
+      "inputs": ["age_weeks", "local_day", "bottle_drunk_ml", "bottle_feeding_type"],
+      "band": { "grid": "age_weeks_4", "dimension": null },
+      "outputs": [
+        { "name": "p10", "tier": "notInV1" },
+        { "name": "p25", "tier": "C" },
+        { "name": "p50", "tier": "C" },
+        { "name": "p75", "tier": "C" },
+        { "name": "p90", "tier": "notInV1" },
+        { "name": "bottles_per_day_p50", "tier": "notInV1" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
-      "epsilon": 0.2,
+      "epsilon": 8,
       "capPerBaby": 14,
+      "maxCellsPerBaby": 4,
+      "window": "previous_quarter",
+      "histogram": { "binWidth": 20, "step": 10 },
       "clip": [
-        { "input": "bottle_drunk_ml", "min": 0, "max": 400, "unit": "ml" },
-        { "input": "bottles_per_day", "min": 0, "max": 24, "unit": "count" }
+        { "input": "bottle_drunk_ml", "min": 0, "max": 400, "unit": "ml" }
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": true,
-      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
+      "notInV1": false,
+      "notInV1Reason": "p10, p90 and bottles_per_day_p50: not in v1 (owner defaults of 2026-11-27: p25, p50 and p75 only; bottles per day not decided)."
     },
     {
       "key": "growth_vs_age",
       "description": "Weight, length and head circumference by age in weeks. Not built: WHO curves come first and are not replaced.",
       "inputs": ["age_weeks", "weight_kg", "length_cm", "head_cm"],
       "band": { "grid": "age_weeks", "dimension": null },
-      "outputs": ["p3", "p15", "p50", "p85", "p97"],
+      "outputs": [
+        { "name": "p3", "tier": "notInV1" },
+        { "name": "p15", "tier": "notInV1" },
+        { "name": "p50", "tier": "notInV1" },
+        { "name": "p85", "tier": "notInV1" },
+        { "name": "p97", "tier": "notInV1" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": 50,
-      "epsilon": 0.2,
+      "epsilon": null,
       "capPerBaby": 4,
+      "maxCellsPerBaby": null,
+      "window": null,
+      "histogram": null,
       "clip": [
         { "input": "weight_kg", "min": 0.5, "max": 25, "unit": "kg" },
         { "input": "length_cm", "min": 30, "max": 110, "unit": "cm" },
@@ -63,126 +87,178 @@
       "description": "Effective tummy time minutes per local day with at least one entry, and the share of days with any.",
       "inputs": ["age_weeks", "local_day", "tummy_minutes_per_day"],
       "band": { "grid": "age_weeks", "dimension": null },
-      "outputs": ["p25", "p50", "p75", "share_of_days_with_any"],
+      "outputs": [
+        { "name": "p25", "tier": "notInV1" },
+        { "name": "p50", "tier": "notInV1" },
+        { "name": "p75", "tier": "notInV1" },
+        { "name": "share_of_days_with_any", "tier": "B" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
-      "epsilon": 0.2,
+      "epsilon": 5,
       "capPerBaby": 14,
+      "maxCellsPerBaby": null,
+      "window": null,
+      "histogram": null,
       "clip": [
         { "input": "tummy_minutes_per_day", "min": 0, "max": 240, "unit": "minutes" }
       ],
       "status": "planned",
       "proposed": true,
       "notInV1": false,
-      "notInV1Reason": null
+      "notInV1Reason": "p25, p50 and p75: not in v1 (O2, docs/design/34-community-insights.md section 5.1; tummy-time percentiles were not decided on 2026-11-27)."
     },
     {
       "key": "naps_per_day",
-      "description": "Naps per complete local day.",
+      "description": "Naps per complete local day, by age in 4-week bands, from the previous calendar quarter.",
       "inputs": ["age_weeks", "local_day", "naps_per_day"],
-      "band": { "grid": "age_weeks", "dimension": null },
-      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "band": { "grid": "age_weeks_4", "dimension": null },
+      "outputs": [
+        { "name": "p10", "tier": "notInV1" },
+        { "name": "p25", "tier": "C" },
+        { "name": "p50", "tier": "C" },
+        { "name": "p75", "tier": "C" },
+        { "name": "p90", "tier": "notInV1" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
-      "epsilon": 0.2,
+      "epsilon": 8,
       "capPerBaby": 14,
+      "maxCellsPerBaby": 4,
+      "window": "previous_quarter",
+      "histogram": { "binWidth": 0.5, "step": 0.5 },
       "clip": [
-        { "input": "naps_per_day", "min": 0, "max": 12, "unit": "count" }
+        { "input": "naps_per_day", "min": 0, "max": 8, "unit": "count" }
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": true,
-      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
+      "notInV1": false,
+      "notInV1Reason": "p10 and p90: not in v1 (owner default of 2026-11-27: p25, p50 and p75 only)."
     },
     {
       "key": "day_sleep_minutes",
-      "description": "Effective day sleep minutes per complete local day.",
+      "description": "Effective day sleep minutes per complete local day, by age in 4-week bands, from the previous calendar quarter.",
       "inputs": ["age_weeks", "local_day", "day_sleep_minutes"],
-      "band": { "grid": "age_weeks", "dimension": null },
-      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "band": { "grid": "age_weeks_4", "dimension": null },
+      "outputs": [
+        { "name": "p10", "tier": "notInV1" },
+        { "name": "p25", "tier": "C" },
+        { "name": "p50", "tier": "C" },
+        { "name": "p75", "tier": "C" },
+        { "name": "p90", "tier": "notInV1" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
-      "epsilon": 0.2,
+      "epsilon": 8,
       "capPerBaby": 14,
+      "maxCellsPerBaby": 4,
+      "window": "previous_quarter",
+      "histogram": { "binWidth": 30, "step": 10 },
       "clip": [
         { "input": "day_sleep_minutes", "min": 0, "max": 720, "unit": "minutes" }
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": true,
-      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
+      "notInV1": false,
+      "notInV1Reason": "p10 and p90: not in v1 (owner default of 2026-11-27: p25, p50 and p75 only)."
     },
     {
       "key": "night_sleep_minutes",
-      "description": "Effective night sleep minutes per complete local day.",
+      "description": "Effective night sleep minutes per complete local day, by age in 4-week bands, from the previous calendar quarter.",
       "inputs": ["age_weeks", "local_day", "night_sleep_minutes"],
-      "band": { "grid": "age_weeks", "dimension": null },
-      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "band": { "grid": "age_weeks_4", "dimension": null },
+      "outputs": [
+        { "name": "p10", "tier": "notInV1" },
+        { "name": "p25", "tier": "C" },
+        { "name": "p50", "tier": "C" },
+        { "name": "p75", "tier": "C" },
+        { "name": "p90", "tier": "notInV1" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
-      "epsilon": 0.2,
+      "epsilon": 8,
       "capPerBaby": 14,
+      "maxCellsPerBaby": 4,
+      "window": "previous_quarter",
+      "histogram": { "binWidth": 30, "step": 10 },
       "clip": [
         { "input": "night_sleep_minutes", "min": 0, "max": 960, "unit": "minutes" }
       ],
       "status": "planned",
       "proposed": true,
-      "notInV1": true,
-      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
+      "notInV1": false,
+      "notInV1Reason": "p10 and p90: not in v1 (owner default of 2026-11-27: p25, p50 and p75 only)."
     },
     {
       "key": "feeds_per_day",
       "description": "Feeds per complete local day.",
       "inputs": ["age_weeks", "local_day", "feeds_per_day"],
       "band": { "grid": "age_weeks", "dimension": null },
-      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "outputs": [
+        { "name": "p10", "tier": "notInV1" },
+        { "name": "p25", "tier": "notInV1" },
+        { "name": "p50", "tier": "notInV1" },
+        { "name": "p75", "tier": "notInV1" },
+        { "name": "p90", "tier": "notInV1" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
-      "epsilon": 0.2,
+      "epsilon": null,
       "capPerBaby": 14,
+      "maxCellsPerBaby": null,
+      "window": null,
+      "histogram": null,
       "clip": [
         { "input": "feeds_per_day", "min": 0, "max": 24, "unit": "count" }
       ],
       "status": "planned",
       "proposed": true,
       "notInV1": true,
-      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
+      "notInV1Reason": "Not in v1: O2 (docs/design/34-community-insights.md section 5.1); not studied or not decided on 2026-11-27 (section 5.1.1)."
     },
     {
       "key": "diapers_per_day",
       "description": "Diaper changes per complete local day.",
       "inputs": ["age_weeks", "local_day", "diapers_per_day"],
       "band": { "grid": "age_weeks", "dimension": null },
-      "outputs": ["p10", "p25", "p50", "p75", "p90"],
+      "outputs": [
+        { "name": "p10", "tier": "notInV1" },
+        { "name": "p25", "tier": "notInV1" },
+        { "name": "p50", "tier": "notInV1" },
+        { "name": "p75", "tier": "notInV1" },
+        { "name": "p90", "tier": "notInV1" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
-      "epsilon": 0.2,
+      "epsilon": null,
       "capPerBaby": 14,
+      "maxCellsPerBaby": null,
+      "window": null,
+      "histogram": null,
       "clip": [
         { "input": "diapers_per_day", "min": 0, "max": 20, "unit": "count" }
       ],
       "status": "planned",
       "proposed": true,
       "notInV1": true,
-      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
+      "notInV1Reason": "Not in v1: O2 (docs/design/34-community-insights.md section 5.1); not studied or not decided on 2026-11-27 (section 5.1.1)."
     },
     {
       "key": "routine_shift_scale",
       "description": "Per baby, the 7-day median of each routine value against her own previous 21-day median, as a ratio; published as a scale per band and metric, never a label.",
       "inputs": ["age_weeks", "local_day", "naps_per_day", "day_sleep_minutes", "night_sleep_minutes", "feeds_per_day", "diapers_per_day"],
       "band": { "grid": "age_weeks", "dimension": "routine_metric" },
-      "outputs": ["shift_ratio_p90", "shift_ratio_p97"],
+      "outputs": [
+        { "name": "shift_ratio_p90", "tier": "notInV1" },
+        { "name": "shift_ratio_p97", "tier": "notInV1" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": 50,
-      "epsilon": 0.2,
+      "epsilon": null,
       "capPerBaby": 4,
+      "maxCellsPerBaby": null,
+      "window": null,
+      "histogram": null,
       "clip": [
         { "input": "naps_per_day", "min": 0, "max": 12, "unit": "count" },
         { "input": "day_sleep_minutes", "min": 0, "max": 720, "unit": "minutes" },
@@ -193,24 +269,29 @@
       "status": "planned",
       "proposed": true,
       "notInV1": true,
-      "notInV1Reason": "O2: percentile outputs require tier-B epsilon approval; Phase 0 uses only tier-A shares"
+      "notInV1Reason": "Not in v1: O2 (docs/design/34-community-insights.md section 5.1); not studied or not decided on 2026-11-27 (section 5.1.1)."
     },
     {
       "key": "cry_outcome_by_cause",
-      "description": "Per answered fussy spell, by cry age band and part of day: the share of spells each cause helped, and the share where the suggested cause was the one that helped.",
-      "inputs": ["cry_age_band", "part_of_day", "what_helped_cause", "suggested_cause", "cry_duration_bucket"],
-      "band": { "grid": "cry_age_band", "dimension": "part_of_day" },
-      "outputs": ["share_helped_by_cause", "share_suggested_equals_helped"],
+      "description": "Per answered fussy spell, by cry age band: the share of spells each cause helped.",
+      "inputs": ["age_weeks", "local_day", "what_helped_cause"],
+      "band": { "grid": "cry_age_band", "dimension": null },
+      "outputs": [
+        { "name": "share_helped_by_cause", "tier": "A" },
+        { "name": "share_suggested_equals_helped", "tier": "notInV1" }
+      ],
       "k": 20,
-      "kHysteresis": 18,
       "kTails": null,
       "epsilon": 0.2,
       "capPerBaby": 14,
+      "maxCellsPerBaby": null,
+      "window": null,
+      "histogram": null,
       "clip": [],
       "status": "planned",
       "proposed": true,
       "notInV1": false,
-      "notInV1Reason": null
+      "notInV1Reason": "share_suggested_equals_helped: dropped from v1 by the owner on 2026-11-27 (one crying output, no part of day); it would need suggested_cause, which is not read."
     }
   ]
 }

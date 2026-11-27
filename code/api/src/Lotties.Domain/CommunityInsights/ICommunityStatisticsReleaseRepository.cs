@@ -10,6 +10,12 @@ public interface ICommunityStatisticsReleaseRepository
     /// <summary>The current active release, or <c>null</c> when no run has completed yet.</summary>
     Task<CommunityStatisticsRelease?> GetActiveAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The stored release with the highest sequence, whatever its status (a pending row left by a failed run counts too), or
+    /// <c>null</c> when none exists; the quarterly cadence reads it (<see cref="CommunityReleaseCadence"/>).
+    /// </summary>
+    Task<CommunityStatisticsRelease?> GetLatestAsync(CancellationToken cancellationToken = default);
+
     /// <summary>The highest sequence number, or 0 when no release exists; used to assign the next one.</summary>
     Task<int> GetMaxSequenceAsync(CancellationToken cancellationToken = default);
 

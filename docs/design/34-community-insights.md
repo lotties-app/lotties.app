@@ -1,6 +1,6 @@
 # 34. Community insights: opt-in pooled statistics (design, 2026-10-23)
 
-Status: **partly built, off by default.** Task T2 (per-baby consent record, `GET/PUT /babies/{id}/community-consent`, Settings > Community insights) is merged (PR #88) and the T4 statistics catalog (`code/api/data/community-statistics.json`, validated at startup, nothing served) is built, behind `CommunityInsights:Enabled` (default `false`); nothing is collected, aggregated or published (T5/T6 not built). The privacy policy describes it as "not active yet" (section
+Status: **partly built, off by default.** Task T2 (per-baby consent record, `GET/PUT /babies/{id}/community-consent`, Settings > Community insights) is merged (PR #88) and the T4 statistics catalog (`code/api/data/community-statistics.json`, schema 2 with the noise tiers of section 5.1, validated at startup, nothing served) is built, behind `CommunityInsights:Enabled` (default `false`). The pure aggregation core of T5 and the served release format are built (section 5.2) but not wired: the job (quarterly since the owner decisions of 2026-11-27, section 5.1.1) reads no events and writes a placeholder release with no cells, so nothing is collected, aggregated or published. The privacy policy describes it as "not active yet" (section
 `community-insights` of `code/web/src/legal/privacy.<lang>.ts`, flow `communityInsights` in
 `code/web/src/legal/dataFlows.ts` `PLANNED_FLOWS`, with status `planned`); tests fail if that wording is removed
 while the flow is planned. **Not legal advice**: the LGPD points below are a starting point for the owner and a
@@ -76,7 +76,8 @@ by a hash once the baby is erased). The baby's export includes its consent histo
 
 ### 3.3 Withdrawal
 
-- Effective at once for future use: the next run excludes the baby (the job reads only babies whose latest row is
+- Effective at once for future use: the next run excludes the baby (since 2026-11-27 runs publish quarterly, so the
+  next release can be up to three months away) (the job reads only babies whose latest row is
   `granted` with the current `text_version`).
 - Already published statistics: they are aggregates; the baby's share cannot be separated out of a number. The
   published file is replaced by the next published run, which excludes the baby; old versions of the file are not kept
@@ -143,9 +144,11 @@ confirmation dialog beyond one tap and an Undo snackbar; withdrawal must be as e
 
 ## 4. Data minimisation, per use case
 
-Every statistic is defined in a published catalog (`code/api/data/community-statistics.json`, schema 1: `key`,
-`description`, `inputs`, `band`, `outputs`, `k`, `epsilon`, `capPerBaby`, `clip`), the "published list" the policy
-promises. Inputs are derived per baby per day in memory; nothing else is read.
+Every statistic is defined in a published catalog (`code/api/data/community-statistics.json`, schema 2: `key`,
+`description`, `inputs` (for a statistic in v1, exactly what the core reads), `band`, `outputs` (each `{name, tier}` with
+tier `A`, `B` or `notInV1`), `k`, `kTails`, `epsilon` (per statistic per release, `null` when no output is in v1), `capPerBaby`, `clip`, `notInV1`,
+`notInV1Reason`; the band grids, with the cry age bands on fixed week edges 0-6, 6-13, 13-26 and 26-104), the "published
+list" the policy promises. Inputs are derived per baby per day in memory; nothing else is read.
 
 | Use case | Exact inputs (per opted-in baby) | Output per age band | Value over published norms |
 | --- | --- | --- | --- |
@@ -154,7 +157,7 @@ promises. Inputs are derived per baby per day in memory; nothing else is read.
 | Tummy time (`tummy_minutes_per_day`) | age in weeks; effective minutes of `tummy_time` per local day with at least one entry, and the share of days with any | median, p25, p75 minutes; share of days with tummy time | **high**: no published per-age norm in `age-norms.json` (guidance is "work up to ~1 h/day", not a distribution) |
 | Routines (`naps_per_day`, `day_sleep_minutes`, `night_sleep_minutes`, `feeds_per_day`, `diapers_per_day`) | age in weeks; per complete local day (a day that is over and has at least one sleep and one feed logged; days split as in the clinical summary): counts and effective durations | median, p10..p90 | **medium**: published sleep norms exist (Pelotas at 3/12/24 months, Galland) but are coarse; feeds/diapers per day by week are thin |
 | Unusual patterns (`routine_shift_scale`) | the same per-day values; per baby, the change of the 7-day median versus her own previous 21-day median, as a ratio | per band and metric, the p90 and p97 of that ratio across babies | **high**: today any "changed a lot" line needs a guessed threshold; the pooled distribution of *self-relative* shifts calibrates it. Output is a scale, never a label: the app only says "a bigger change than most weeks" ("uma mudança maior do que na maioria das semanas") |
-| Crying (`cry_outcome_by_cause`) | age band of docs/design/27 (`cryAgeBand`); per answered `fussy` spell: `what_helped` mapped to a cause (27 section 5), `suggested_cause`, part of day (morning 06-12, afternoon 12-18, evening 18-24, night 00-06 local), duration bucket (<10, 10-30, 30-60, >60 min) | per band and part of day: share of spells where each cause helped; share where the suggested cause equals the helping cause | **medium-high**: `CRY_WEIGHTS` are generic heuristics (27 section 4); pooled outcome shares are the first evidence to tune them. Gate: section 9 |
+| Crying (`cry_outcome_by_cause`) | age band of docs/design/27 (`cryAgeBand`); per answered `fussy` spell: `what_helped` mapped to a cause (27 section 5), `suggested_cause`, part of day (morning 06-12, afternoon 12-18, evening 18-24, night 00-06 local), duration bucket (<10, 10-30, 30-60, >60 min) | per band and part of day: share of spells where each cause helped; share where the suggested cause equals the helping cause | **medium-high**: `CRY_WEIGHTS` are generic heuristics (27 section 4); pooled outcome shares are the first evidence to tune them. Gate: section 9. **Since 2026-11-27** (section 5.1.1): only the share each cause helped, per cry age band (no part of day, no suggested cause, no duration bucket read) |
 
 Which of these outputs v1 may publish, and at which epsilon, is the O2 decision of section 5.1: percentile outputs
 are not in v1; crying shares are in the strict tier; the tummy-time share of days is in the relaxed tier.
@@ -170,8 +173,8 @@ corrected age for preterm babies; using it is a new input and needs the policy r
 ## 5. Aggregation pipeline
 
 - **Where**: a background job in the API process (`Lotties.Application/CommunityInsights/AggregationJob`, a hosted
-  service like `NotificationHousekeeping`), weekly (Sunday 03:30 server time; see "Noise" for why not nightly),
-  behind `CommunityInsights:Enabled`
+  service like `NotificationHousekeeping`), quarterly since the owner decision of 2026-11-27 (section 5.1.1; first
+  proposed weekly, Sunday 03:30 server time), behind `CommunityInsights:Enabled`
   (default `false`; also off in the home lab kit until activation). Read-only connection; it reads opted-in babies'
   events through the same repositories, computes in memory, and writes only the published file and one run row.
   **No staging table of per-baby values** (no copy; withdrawal and deletion are effective by construction).
@@ -194,18 +197,21 @@ corrected age for preterm babies; using it is a new input and needs the policy r
   20 distinct families** (proposal; O1). Below k the cell is **suppressed** (absent from the file; the app falls back
   to the published norm or its built-in default). Also suppressed: a cell where one family contributes more than
   25 % of the values after capping (dominance rule), and complementary suppression so that a suppressed cell cannot be
-  recovered from a published total minus the other cells (no totals across bands are published).
+  recovered from a published total minus the other cells (no totals across bands are published). Since 2026-11-27 the
+  minimum is the same in every release, with no hysteresis (section 5.1.1).
 - **Noise (differential privacy, O2 decided by the owner on 2026-11-11, see 5.1)**: with the per-baby cap the
   sensitivity of a clipped median is bounded; the mechanisms are the Laplace mechanism on counts and shares, and a DP
   median over a fixed grid (the exponential mechanism, e.g. 10 ml steps). Every release spends budget and overlapping
-  releases compose, which is why publication is **weekly, not nightly**. DP here is defence in depth against
+  releases compose, which is why publication is **not nightly** (weekly in the first proposal, quarterly since
+  2026-11-27, section 5.1.1). DP here is defence in depth against
   differencing between releases, not the main protection (that is k, caps, clipping, dominance and suppression). The
   owner chose two epsilon tiers and kept percentile statistics out of v1 (section 5.1); the final values go into the
   policy at activation (section 12). The earlier proposal (epsilon 0.2 for every statistic weekly, or 0.5 monthly) is
   replaced by that decision.
 - **No repeated queries**: there is **no query endpoint**. The output is a static file with fixed cells; nobody can ask
   for "babies of week 14 born in Recife who drink formula X". No filters by place, formula brand, time zone or any
-  attribute beyond the catalog dimensions (age band, feeding kind for bottles, part of day for crying).
+  attribute beyond the catalog dimensions (age band, feeding kind for bottles; crying has no part-of-day dimension since
+  2026-11-27).
 - **Outliers**: clipping (published ranges) plus per-baby summaries before percentiles; percentiles outside p10-p90
   are only published when the cell has at least 50 babies (p3/p97 need more data to be stable and safe).
 - **Run log**: one row per run (`community_runs`: started, finished, catalog version, cells published, cells
@@ -249,17 +255,168 @@ review before activation (section 12).
 
 Consequences, stated as facts of the decision: in v1 only crying shares (tier A) and the tummy-time share of days
 (tier B) remain as candidates, each still subject to the promotion rule and the pilot (section 9). The catalog
-`code/api/data/community-statistics.json` still carries the earlier proposal (epsilon 0.2 on every statistic, only
-`growth_vs_age` marked `notInV1`): its validator accepts epsilon only in (0, 1] and `notInV1` only for growth, and the
-catalog has one epsilon per statistic, not per output, so it cannot yet express a tummy-time statistic whose share is
-in tier B and whose percentiles are deferred. Bringing the catalog in line is a code change (validator and catalog)
-for a later task; until then the catalog is the earlier proposal and this section is the decision.
+`code/api/data/community-statistics.json` (schema 2) carries the decision as amended on 2026-11-27 (section 5.1.1): every
+output has a tier (`A`, `B` or `notInV1`), `cry_outcome_by_cause` has epsilon 0.2 with its one v1 output (the share each
+cause helped) in tier A, `tummy_minutes_per_day` has epsilon 5 with its share of days in tier B and p25/p50/p75
+`notInV1`, and every other statistic is `notInV1` with epsilon `null`. The validator (`CommunityStatisticsValidator`)
+pins it: every percentile output `notInV1` (O2; no quantile mechanism is built), growth `notInV1` (O6), each other output
+exactly in its decided tier (`DecidedTiers`) and only when the core has a mechanism for it, one tier per statistic, tier A
+epsilon in (0, 1], tier B in (1, 5], the release `quarterly`, and for a statistic in v1 inputs that are exactly what the
+core reads.
+
+### 5.1.1 Owner decisions of 2026-11-27
+
+Decided by the owner on 2026-11-27, after a review of the aggregation core and a quick simulation of the crying output
+as it was then (epsilon 0.1 per output after the split over two outputs, four parts of day: about 19 points of error per
+cause at 100 babies per band, against 8 for a uniform guess). **No lawyer has reviewed these decisions, nor the tiers of
+5.1, nor the study they rest on.**
+
+1. **Minimum group size: always 20 babies from 20 families, in every release.** No hysteresis (the earlier proposal kept
+   a published cell down to 18, O1; the consent screen promises at least 20). Built: neither the catalog nor the release
+   format has a `kHysteresis`, and the remainder of a coarse cell after its published fine cells (complementary
+   suppression) is held to the same 20, so dropping hysteresis only made that rule stricter.
+2. **Crying: one output.** The share of spells each cause helped, per cry age band, with no part-of-day dimension;
+   `share_suggested_equals_helped` is out of v1; tier A, epsilon 0.2 per release on that one output. The catalog lists
+   only what is read for it: age in completed weeks, the local day (the per-baby cap picks days) and the cause that
+   helped; part of day, the suggested cause and the duration bucket are no longer inputs. Built. A quick simulation of
+   the built mechanism in this change (per-baby share vectors, seed 1) gives about 17 points of error per cause at 20
+   babies per band, 9 at 50, 5 at 100 and 2 at 300, against about 7 for a uniform guess: below about 70 babies per band
+   the published shares are worse than a uniform guess. Section 9's gate still decides whether they are served.
+3. **Bottle and sleep percentiles in v1: option A of the percentiles study, bounded** (docs/ml/COMMUNITY-SYNTHETIC.md,
+   follow-ups of 2026-11-26 and 2026-11-27; code `ml/benchmark/community_percentiles.py` and
+   `community_percentiles_built.py`) for `bottle_ml_per_feed` (formula bottles only: breast milk was not studied and is not
+   read), `night_sleep_minutes`, `naps_per_day` and `day_sleep_minutes`. `feeds_per_day`, `diapers_per_day`,
+   `bottles_per_day_p50`, growth and `routine_shift_scale` stay not in v1 (not studied or not decided). The study spent
+   epsilon 2 per cell with no bound on the cells one baby is in; the owner then chose the bound (2026-11-27): **each release
+   of a percentile statistic reads only the last 3 months, and one baby is in at most 4 cells of a statistic; epsilon 2 per
+   cell, so at most 8 per baby per statistic per release** (a real ceiling, still a weak formal guarantee, and cells take
+   longer to reach 20). The coordinator's defaults: formula bottles only, 4-week age bands, p25, p50 and p75 only, the
+   study's clipping ranges and bins (naps 0-8), a cell whose noisy total is 0 or less publishes nothing, the snapping
+   sampler. Built (tier C of the catalog), by construction:
+   - **Window**: a release generated in calendar quarter Q (UTC) reads only the local days of quarter Q - 1, compared as
+     dates (`CommunityDataWindow.PreviousQuarterOf`). A local date belongs to exactly one quarter, so two releases never
+     read the same day; a late release still reads only Q - 1, and a skipped quarter's days are never read later. A release
+     is not due in the first day of its quarter (`CommunityReleaseCadence.ReleaseGrace`), so the last local day of Q - 1
+     has ended in every time zone. Only the percentile statistics are windowed.
+   - **4 cells per baby**: after the 14-day cap per band, a baby with data in more than 4 cells of the statistic keeps the
+     4 with the most capped days, ties by HMAC(key, baby id, cell) (`CommunityCellBound`), decided from her own data only
+     and before any k or dominance decision. With a 92-day window and 4-week bands she touches at most 5 bands, and there is
+     no dimension (formula only) and no coarse fallback (one 4-week grid, `age_weeks_4`), so every cell the mechanism spends
+     budget on is one of her at most 4.
+   - **Mechanism** (`CommunityHistogramMechanism`): per cell one summary per baby (her median), a uniform half-step jitter,
+     clipping, the study's fixed bins (20 ml, 30 min, 0.5 nap, offset by half a step), snapped Laplace of scale 1/2 on every
+     bin (L1 sensitivity 1 per cell), the isotonic read-out of p25, p50 and p75, rounded to 10 ml, 10 min or half a nap.
+     The C# tests reproduce the study's bins, binning and read-out exactly on vectors it wrote
+     (`ml/tests/community_histogram_vectors.json`) and its noisy-median error on a synthetic cell.
+   - **What it gives** (built configuration measured in docs/ml/COMMUNITY-SYNTHETIC.md, seed 1): median error at 20 babies
+     9.2 ml (1 cell in 10 over 19 ml), 19.0 min of night sleep (39), 13.5 min of day sleep, 0.1 nap; at 50 babies 5.3 ml,
+     10.2 min, 7.6 min; the p25-p75 holds 49-51 % of babies (naps 75 %: whole numbers). This is what the owner was shown
+     (about 9 ml and 19 min at 20 babies), not materially worse. A 4-week band reaches 20 babies from 20 families for most
+     sleep bands at about 300 babies logging in a quarter (71 % of first-year bands), and for formula bottles at about 600
+     (83 %), on the generator's ages (uniform over two years; real users are younger).
+   - **The formal guarantee of epsilon 2 is weak**: per cell and release no attacker can tell whether a baby is in with an
+     advantage above tanh(1), about 0.76 (from even odds, a posterior of at most 88 %); per baby and release (at most 4
+     cells, epsilon 8) the bound is about 0.9993, i.e. none. It must be described as blurring the effect of any one family,
+     never as a strong mathematical protection. Measured on a synthetic 20-baby cell, the strongest attacker's advantage on
+     one published quartile is 0.10-0.20.
+   - **Per-year budget figures must count that a baby is in several cells.** The study found that a baby is in several
+     published cells of a statistic in every release, so basic composition gives epsilon x cells x releases. For the
+     percentile statistics as built that is at most 2 x 4 x 4 = 32 per baby per statistic per year (128 over the four),
+     and because the windows do not overlap, each day of a baby is read by one release only; a baby who logs for one quarter
+     spends at most 8 per statistic in total. The yearly figures of 5.1 ("about 10", "about 260") counted releases only;
+     for a mechanism that spends epsilon per cell they undercount (with 3 fine cells per baby they would be about 31 and
+     780 at a weekly pace). The share statistics as built spend the statistic's epsilon once per release whatever cells a
+     baby is in (her weights add up to 1, section 5.2), but they are not windowed: every quarterly release re-reads her
+     whole history, so her days compose across releases, epsilon x releases: 0.8 for crying and 20 for tummy time per baby
+     per year, the latter with no meaningful formal bound.4. **Quarterly releases** of the whole file, never weekly, because every release spends budget. Built: the job checks
+   every hour but publishes at most one release with statistics per calendar quarter (UTC), decided from the latest
+   stored release (`CommunityReleaseCadence`): a placeholder does not count against the quarter (and is written at most
+   once per quarter), a row that cannot be read counts, a latest release from a later quarter blocks (a clock behind),
+   and the job lease `community-aggregation` keeps a second instance out; the check is repeated under the lease and the
+   lease is renewed before the write. No setting changes the cadence: `CommunityAggregation:RunDayOfWeek` and
+   `RunHourUtc` are no longer read (`IntervalHours` never was); `Enabled` stays.
+5. Event loading is still not part of this work: the job reads no events and writes a placeholder.
+
+| Statistic | v1 outputs (2026-11-27) | Epsilon | State |
+| --- | --- | --- | --- |
+| `cry_outcome_by_cause` | share of spells each cause helped, per cry age band | A: 0.2 per release, one output | built (core), not wired |
+| `tummy_minutes_per_day` | share of days with tummy time | B: 5 per release | built (core), not wired |
+| `bottle_ml_per_feed` (formula), `night_sleep_minutes`, `naps_per_day`, `day_sleep_minutes` | p25, p50, p75 per 4-week band, previous quarter only | C: 2 per cell, at most 4 cells, 8 per release | built (core), not wired |
+| `feeds_per_day`, `diapers_per_day`, `bottles_per_day_p50`, `growth_vs_age`, `routine_shift_scale` | none | none | not in v1 |
+
+### 5.2 The aggregation core as built (pure Domain, not wired)
+
+`Lotties.Domain/CommunityInsights/CommunityStatisticsAggregator.Aggregate(input, noise)` computes a release from in-memory
+observations; it does no I/O and the job does not call it yet (it reads no events). What it does, per statistic
+with an output in v1:
+
+- **Inputs** (`CommunityAggregationInput`): the validated catalog, the generation time, a secret cap key
+  (`CommunityCapKey`, HMAC-SHA256, at least 32 bytes, stable between runs), and per opted-in, eligible baby: one
+  `CommunityTummyTimeDay` per complete local day (age in completed weeks, the day, tummy minutes, 0 when none) and one
+  `CommunityCrySpell` per answered fussy spell (age in completed weeks, the day, the cause that helped as mapped by design
+  27 section 5; nothing else of the spell), one `CommunityBottleFeed` per live bottle (age, day, bottle kind, millilitres
+  drunk; only formula is read) and one `CommunityRoutineDay` per complete local day (age, day, night sleep minutes, naps,
+  day sleep minutes, each null when not logged). Ids serve only to count distinct babies and families and to pick capped
+  days and cells.
+  An age outside the grid or an unknown cause is not read; tummy minutes are clipped to the catalog range. The cry age
+  bands are on the catalog's fixed week edges, so every cell is a band in weeks. Each sampler declares the catalog inputs
+  it reads, and the validator requires a statistic in v1 to list exactly those.
+- **Cap**: per baby and fine band, the observations of at most `capPerBaby` days, the days with the lowest
+  HMAC(key, baby id, day) (`CommunityDailyCap`): deterministic, independent of input order.
+- **One summary per baby**: each baby's capped observations of one output weigh 1 / their number, so they add up to 1
+  over all her cells (a baby across two bands weighs 1 in total; a heavy-logging family weighs as much as a light one).
+- **Noise** (`CommunityShareMechanism`): for every cell of the fixed grid (fine bands x dimension values) and every
+  component, the sum of the weights. Adding or removing one baby moves the vector of all sums of one output by at most 1
+  (L1), so Laplace noise of scale 1 / epsilon on every sum makes the output epsilon-DP. The statistic's epsilon is split
+  evenly over its v1 outputs, so one baby spends at most the statistic's epsilon per release whatever cells she is in
+  (crying: 0.2 on its one output; tummy time: 5 on its one output). The sampler is Mironov's snapping mechanism
+  (`CommunityLaplace`, `SnappedLaplaceNoise`): a uniform draw on (0, 1) with the full double distribution (never 0), the
+  input clamped to [-2^20, 2^20], the noisy sum rounded to the smallest power of two at least the scale and clamped again
+  (the floating-point attack on naive Laplace; cost a negligible addition to epsilon); randomness from the operating
+  system's cryptographic generator, a seeded source only in tests. A coarse cell's sums are the sum of its fine cells'
+  noisy sums (post-processing, no extra budget). Shares are clamped at 0, renormalised and rounded to 0.001; a cell whose
+  noisy sums are all 0 or less has no value. The noise draws follow the fixed grid, never the data.
+- **Publication** (`CommunityPublication`): a fine cell is published when it has at least k (20) distinct babies from at
+  least k distinct families, in every release (no hysteresis, section 5.1.1), and no family holds more than 25 % of its
+  weight (dominance, measured on the weight each family has in the output). A coarse cell is a
+  fallback only when one of its fine cells is not published: it must meet the same rule, and so must the coarse cell
+  minus its published fine cells (complementary suppression); when that remainder is too small, the published fine cells
+  with the fewest babies are withdrawn into it one by one; when even the whole coarse cell fails, there is no coarse
+  cell and the fine cells stay. An empty remainder is not exempt (so the pattern does not tell 0 from a few babies). The
+  cry grid has no coarse grid. Each output of a cell has its own population.
+- **Percentile statistics** (tier C, section 5.1.1 item 3): their samples are first limited to the previous calendar
+  quarter, and after the cap each baby keeps at most 4 cells; their one release unit (the three quartiles) runs
+  `CommunityHistogramMechanism` with epsilon 2 per cell. **Not computed**: any other percentile. The publication decisions
+  use exact counts and are not themselves differentially private (as in the synthetic study); a family of several babies
+  spends the budget once per baby.
+- **Output**: a `CommunityRelease` (section 6) and a run summary (cells published, coarse cells published, fine cells with
+  data not published, babies included rounded to 10).
+
+The two mechanisms share one contract (`ICommunityOutputMechanism`): epsilon-DP for one baby over all cells of one release
+unit, cells and draws on the fixed grid. The histogram meets it with epsilon per cell = the unit's epsilon / 4 because the
+core has already kept every baby in at most 4 cells.
 
 ## 6. What is published back
 
-- `GET /api/v1/community/statistics` (any signed-in user, like `GET /age-norms`): the current file (schema 1:
-  `{schemaVersion, generatedAt, catalogVersion, k, epsilon, cells: [{statistic, band {fromWeeks, toWeeks},
-  dimension?, outputs {...}, babies: "20-49" | "50-99" | "100+"}]}`; exact counts are not published), strong ETag
+- **Release format as built** (`CommunityReleaseJson`, the one writer and reader; schema 1; stored in
+  `community_statistics_releases.statistics_json`):
+  `{schemaVersion: 1, generatedAt, catalogVersion, placeholder, statistics: [{key, k, epsilon}],
+  cells: [{statistic, band {fromWeeks, toWeeks}, dimension?, outputs {name: value}, babies: "20-49" | "50-99" | "100+"}]}`.
+  `outputs` is a set of named values: a share vector is one value per component (`share_helped_by_cause.hunger`, ...,
+  `share_helped_by_cause.none`), a scalar share is named after its output (`share_of_days_with_any`), and a percentile cell
+  has `p25`, `p50`, `p75`. `dimension` is absent when the
+  statistic has none. Cells below the thresholds are absent (never present with a reason); no exact count, id or day is in
+  the file; every published cell has at least 20 babies. Reading is strict (an unknown or
+  missing property, a duplicate cell, a share outside [0, 1], an unknown bucket, a placeholder with cells is a format
+  error). **No cells and placeholders**: a release with no cells means nothing passed the thresholds, and every caller falls
+  back to the published norms or its built-in default, as for any absent cell. Until event loading is built the job writes
+  a placeholder (`placeholder: true`, no statistics, no cells), read the same way, which does not count against the
+  quarter (section 5.1.1). A release that cannot be read (the phase-1 placeholder rows written before this format, a damaged row) is
+  treated as a release with no cells. Today `GET /community/statistics/{statisticKey}` reads this format and answers the
+  single value of the caller's baby's fine cell, or else its coarse fallback, only for a statistic without a dimension;
+  serving the whole file as below is task T6.
+- `GET /api/v1/community/statistics` (any signed-in user, like `GET /age-norms`): the current file (the release format
+  above; exact counts are not published), strong ETag
   `"community-{generatedAt}-{hash8}"`, `Cache-Control: private, max-age=86400`, 304 on `If-None-Match`; served even to
   babies that did not opt in (O10: give-to-get or open to all; recommendation: open to all signed-in users, since the
   output is aggregate and the benefit should not pressure consent).
@@ -312,7 +469,7 @@ for a later task; until then the catalog is the earlier proposal and this sectio
     be detected (the synthetic study measured a withdrawal advantage of 1.00 without noise and within about 0.07 of
     zero at epsilon 0.2). Mitigation: DP in two tiers (O2, section 5.1: strict 0.2, or relaxed about 5 with a weak
     formal guarantee), percentile statistics kept out of v1; k margin (publish at 20, suppress at 18 once published,
-    hysteresis, so a band does not flip on one baby).
+    hysteresis, so a band does not flip on one baby; hysteresis removed by the owner on 2026-11-27, section 5.1.1).
   - Auxiliary knowledge: an attacker who knows a baby's age and that she is in the pool learns only band statistics,
     not the baby's own values.
   - Conclusion to bring to the lawyer: **treat the published statistics as aggregated data whose anonymity is
@@ -381,8 +538,8 @@ when activated (task T9).
 | T1 | RIPD draft from section 8 outline (docs). **RIPD draft: v0.1 written 2026-11-10, docs/design/34a-community-insights-ripd.md; awaits owner decisions and lawyer review** | Opus | T0 |
 | T2 | Consent: Domain `CommunityConsent` (pure rules: who may consent, versioning), EF table `community_consents` + migration, `GET/PUT /babies/{id}/community-consent` (Owner/Parent; Caregiver/Viewer/Doctor 403), rows in `EndpointRoleMatrixTests` with a scope decision (`BabyReadFamily`, never a Doctor scope), export/import of the history, account/baby deletion handling. **Consent plumbing (T2): built 2026-11-11, off by default** (`CommunityInsights:Enabled=false`, every route a bare 404): `Domain/CommunityInsights/CommunityConsent.cs` (`CommunityConsentEntry` append-only line, `CommunityConsentHistory` state `none/on/off/renewal_needed` and `IsInForce`, `CommunityConsentRules.MayDecide` = Owner or Parent, text version `ci-1`), table `community_consents` (migration `CommunityConsents`, control plane), `GET/PUT /babies/{id}/community-consent` with `BabyWrite` (Caregiver, Viewer, Doctor 403; no Doctor scope, she is refused by role), blocked in the demo, `ICommunityConsentRepository.BabiesInForceAsync` for T5, erased with the baby and kept under the stand-in when a member deletes her account, and the web section Settings > Community insights with the section 3.5 text (shown only when the flag is on). Differences: the history is **not** in the baby's backup file (it names accounts; docs/design/24 and CLAUDE.md forbid account ids there; RIPD R11), so section 3.2's "the baby's export includes its consent history" is not done (the history is shown in the app instead); a `locale` column was added; withdrawal has no Undo snackbar (an Undo would record a yes the person did not tick the declaration for); no notice to the other Owners/Parents yet (O4). Nothing is collected, computed or published; the privacy policy, `legal/dataFlows.ts`, the consent versions and the consent screen are unchanged (activation, T9) | Sonnet | T0 |
 | T3 | Web consent screen and state in Settings > Baby (`communityInsights.json` en + pt-BR, `baby/permissions.ts` gate, axe light/dark) | Sonnet | T2 |
-| T4 | Catalog `community-statistics.json` + validator (like `AgeNormsValidator`), embedded, schema test. **Catalog (T4): built**, catalog only: `code/api/data/community-statistics.json` (schema 1, the 10 use cases of section 4, every entry `planned` with the proposed values of section 13 marked `proposed: true`, `growth_vs_age` `notInV1` per O6, fixed band grids), `Domain/CommunityInsights` (model, strict parser, `CommunityStatisticsValidator`: known keys, k >= 20, inputs from an allow-list and never a "Never read" category, epsilon in (0, 1], status `planned`), embedded in Lotties.Application and validated at startup; nothing served, collected or consented, no table. **Follow-up for O2 (decided 2026-11-11, section 5.1)**: the catalog still carries epsilon 0.2 everywhere; it needs the tiers (an epsilon above the validator's maximum of 1 for tier B, per-output tiers for tummy time, `notInV1` for the percentile statistics) | Sonnet | T0 |
-| T5 | Aggregation job: inputs per use case, caps, clipping, bands, k, dominance, suppression, DP per the tiers of section 5.1 (no percentile output in v1), run log, read-only role, flag; property tests (a cell never below k, a withdrawn baby absent from the next run, a single heavy family bounded) | Opus plan, Sonnet build | T2, T4 |
+| T4 | Catalog `community-statistics.json` + validator (like `AgeNormsValidator`), embedded, schema test. **Catalog (T4): built**, catalog only: `code/api/data/community-statistics.json` (schema 1, the 10 use cases of section 4, every entry `planned` with the proposed values of section 13 marked `proposed: true`, `growth_vs_age` `notInV1` per O6, fixed band grids), `Domain/CommunityInsights` (model, strict parser, `CommunityStatisticsValidator`: known keys, k >= 20, inputs from an allow-list and never a "Never read" category, epsilon in (0, 1], status `planned`), embedded in Lotties.Application and validated at startup; nothing served, collected or consented, no table. **O2 tiers (section 5.1): built** in catalog schema 2 (per-output tiers, epsilon per tier, percentile outputs `notInV1`) | Sonnet | T0 |
+| T5 | Aggregation job: inputs per use case, caps, clipping, bands, k, dominance, suppression, DP per the tiers of section 5.1 (no percentile output in v1), run log, read-only role, flag; property tests (a cell never below k, a withdrawn baby absent from the next run, a single heavy family bounded). **Pure core built** (section 5.2: cap, clipping, one summary per baby, snapped Laplace on the share vectors, k, hysteresis, dominance, coarse fallback with complementary suppression, release format of section 6, property and sampler tests); **not wired**: event loading, the run log table and the read-only role are still to do, and the job writes a placeholder | Opus plan, Sonnet build | T2, T4 |
 | T6 | `GET /community/statistics` with ETag (like `/age-norms`), matrix row | Haiku | T5 |
 | T7 | Web cache + `useCommunityStatistics()`, fallback chain pooled > norms > default, the context lines (wording reviewed) | Sonnet | T6 |
 | T8 | `ml/benchmark/community.py` synthetic study, then the pilot backtest (section 9). **Synthetic study done** (docs/ml/COMMUNITY-SYNTHETIC.md); **pilot backtest still to do** | Sonnet | T4 |
@@ -403,8 +560,8 @@ when activated (task T9).
 
 | # | Decision | Proposal |
 | --- | --- | --- |
-| O1 | k (minimum distinct babies and families per cell) | 20 babies from 20 families; p3/p97 only at 50+; hysteresis 18 |
-| O2 | Differential privacy on or off; epsilon per statistic and yearly budget | **Decided by the owner, 2026-11-11 ("A plus B"), pending the lawyer's review of tier B** (section 5.1): DP on, weekly release; tier A, epsilon 0.2 per statistic, only for statistics that survive that noise (crying shares; about 10 per statistic per year); tier B, epsilon about 5 for the remaining non-percentile statistics (today the tummy-time share of days), with its weak formal guarantee stated plainly (about 260 per statistic per year by basic composition); percentile statistics not in v1. Earlier proposal (0.2 weekly or 0.5 monthly for every statistic) replaced |
+| O1 | k (minimum distinct babies and families per cell) | 20 babies from 20 families; p3/p97 only at 50+; hysteresis 18. **Decided 2026-11-27**: always 20 babies from 20 families in every release, no hysteresis (section 5.1.1) |
+| O2 | Differential privacy on or off; epsilon per statistic and yearly budget | **Decided by the owner, 2026-11-11 ("A plus B"), pending the lawyer's review of tier B** (section 5.1): DP on, weekly release; tier A, epsilon 0.2 per statistic, only for statistics that survive that noise (crying shares; about 10 per statistic per year); tier B, epsilon about 5 for the remaining non-percentile statistics (today the tummy-time share of days), with its weak formal guarantee stated plainly (about 260 per statistic per year by basic composition); percentile statistics not in v1. Earlier proposal (0.2 weekly or 0.5 monthly for every statistic) replaced. **Amended by the owner, 2026-11-27, not reviewed by a lawyer** (section 5.1.1): crying one output (the share each cause helped, no part of day) at 0.2; bottle ml, night sleep, naps and day sleep percentiles in v1 by the study's option A (noisy histogram, epsilon 2 per cell per release, weak formal guarantee; not built, the budget accounting per baby is open); quarterly releases; per-year figures must count the cells a baby is in. **Bound chosen by the owner, 2026-11-27**: a percentile release reads only the previous calendar quarter and one baby is in at most 4 cells of a statistic, epsilon 2 per cell, at most 8 per baby per statistic per release (built as tier C; weak formal guarantee) |
 | O3 | Final consent screen wording, and where it lives | section 3.5 text; Settings > Baby; one dismissible card once |
 | O4 | One parent's yes, or all Owners/Parents; notice to the others | one yes plus a notice to the others, any of them may withdraw |
 | O5 | All-or-nothing or per-purpose consent | all-or-nothing in v1 (simpler to understand), `scopes` kept for later |

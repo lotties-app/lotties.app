@@ -85,6 +85,26 @@ cd ml
 .venv/bin/python -m benchmark.community --k 20 --epsilon 0.2 --seed 1 --out out   # --epsilon 0 turns the noise off
 ```
 
+Percentile statistics in small cells (follow-up of 2026-11-26, same results file): milk per feed, night sleep, naps and
+day sleep released by exact, exponential, joint-exponential, smooth-sensitivity and noisy-histogram mechanisms for
+cells of 20 to 300 babies, with the strongest and a realistic attacker's advantage; writes `percentiles.json` and
+`percentiles.md` (`--render` rewrites the markdown from the JSON); about 26 minutes with 12 worker processes.
+
+```bash
+cd ml
+.venv/bin/python -m benchmark.community_percentiles --seed 1 --out out
+```
+
+The percentile configuration as built in the API (follow-up of 2026-11-27): previous-quarter window, 4-week bands, at most
+4 cells per baby, snapped Laplace at epsilon 2 per cell, p25/p50/p75; cell errors, privacy checks and how many babies a
+band needs; writes `percentiles_built.json` and `percentiles_built.md`, and with `--vectors` the C# cross-check vectors
+`tests/community_histogram_vectors.json`; about 3 minutes.
+
+```bash
+cd ml
+.venv/bin/python -m benchmark.community_percentiles_built --seed 1 --out out --vectors
+```
+
 Tests (heuristic parity with the C# unit tests, leakage checks, synthetic end-to-end backtest):
 
 ```bash
@@ -117,4 +137,6 @@ Every method outputs q10, q25, q50, q75 and q90 in minutes from the decision ins
 | `benchmark/synthetic.py` | Synthetic histories: `generate` (tests), `cohort_baby` (Brazilian and Swiss-like cohorts from published bed times and night lengths) and `community_cohort` (per-baby, per-day inputs of the community statistics, families of 1 to 3, heavy families) |
 | `benchmark/night_window.py` | Night-window evaluation CLI (`night_window.json`, `night_window.md` in `--out`) |
 | `benchmark/community.py` | Community-insights synthetic study: the pooled-statistics pipeline as pure functions and its evaluation CLI (`community.json`, `community.md`) |
+| `benchmark/community_percentiles.py` | Percentile statistics in small cells: DP quantile mechanisms (checked in `tests/test_community_percentiles.py`), privacy measures, cell, attacker and instance studies (`percentiles.json`, `percentiles.md`) |
+| `benchmark/community_percentiles_built.py` | The percentile configuration the API builds (window, 4-week bands, 4-cell bound, snapped histogram; checked in `tests/test_community_percentiles_built.py`): cell errors, privacy checks, instances (`percentiles_built.json`, `percentiles_built.md`) and the C# cross-check vectors `tests/community_histogram_vectors.json` |
 | `benchmark/prior_check.py` | Before/after of the age-band priors on synthetic cohorts (`prior_check.json`, `prior_check.md`) |

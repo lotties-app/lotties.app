@@ -361,3 +361,21 @@ def community_cohort(size: int, seed: int) -> CommunityCohort:
     cause = np.where(heavy[cb], CRY_CAUSES.index("gas"), cause)
     observations["cry_outcome_by_cause"] = Observations(cb, cd, cw, cause.astype(float), part.astype(np.int64))
     return CommunityCohort(baby_id, family, heavy, kind, observations)
+
+
+DAY_SLEEP_MINUTES_BY_WEEK = ((0, 360), (15.2, 180), (26.1, 204), (43.5, 168), (65.2, 120), (91.4, 120), (104, 110))
+"""Day sleep (naps, minutes per day). Weeks 0 and 104 are unsourced (week 0: the 0-3 month total sleep typical of
+14.6 h minus the generator's 8.5 h night); 15.2 / 26.1 / 43.5 / 65.2 / 91.4 are the typical values of the published
+``day_sleep_hours_24h`` bands (3, 3.4, 2.8, 2.0, 2.0 h) placed at their band middles."""
+
+
+def day_sleep_observations(cohort: CommunityCohort, seed: int) -> Observations:
+    """Day sleep minutes per logged day, on the same days as the cohort's night sleep (added for the percentile study,
+    benchmark/community_percentiles.py). Its own random stream, so the cohort's other inputs are unchanged. UNSOURCED:
+    the baby offset (sd 45 min), the day spread (sd 50 min) and the heavy families' +60 min."""
+    night = cohort.observations["night_sleep_minutes"]
+    rng = np.random.default_rng([seed, cohort.size, 34, 5])
+    offset = rng.normal(0, 45, cohort.size)
+    minutes = curve(DAY_SLEEP_MINUTES_BY_WEEK, night.week + 0.5) + offset[night.baby] + rng.normal(0, 50, len(night.baby))
+    minutes = minutes + np.where(cohort.heavy[night.baby], 60, 0)
+    return Observations(night.baby, night.day, night.week, np.clip(minutes, 0, None), np.zeros(len(night.baby), np.int64))

@@ -23,8 +23,8 @@ public sealed record CommunityStatisticsResponse
     public decimal? Value { get; init; }
 
     /// <summary>
-    /// A human-readable range of distinct families that contributed to this cell (e.g. <c>"20-49"</c>, <c>"50-99"</c>). Never an
-    /// exact count; the lower bound is at least the catalog's k for the statistic. Empty when the cell is suppressed.
+    /// The published group-size bucket of distinct babies behind this cell (<c>"20-49"</c>, <c>"50-99"</c> or <c>"100+"</c>,
+    /// <see cref="Lotties.Domain.CommunityInsights.CommunityGroupSizes"/>). Never an exact count. Empty when the cell is absent.
     /// </summary>
     public string SampleSizeRange { get; init; } = string.Empty;
 
