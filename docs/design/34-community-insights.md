@@ -1,6 +1,6 @@
 # 34. Community insights: opt-in pooled statistics (design, 2026-10-23)
 
-Status: **partly built, off by default.** Task T2 (per-baby consent record, `GET/PUT /babies/{id}/community-consent`, Settings > Community insights) is merged (PR #88) and the T4 statistics catalog (`code/api/data/community-statistics.json`, schema 2 with the noise tiers of section 5.1, validated at startup, nothing served) is built, behind `CommunityInsights:Enabled` (default `false`). The pure aggregation core of T5 and the served release format are built (section 5.2) but not wired: the job (quarterly since the owner decisions of 2026-11-27, section 5.1.1) reads no events and writes a placeholder release with no cells, so nothing is collected, aggregated or published. The privacy policy describes it as "not active yet" (section
+Status: **partly built, off by default.** Task T2 (per-baby consent record, `GET/PUT /babies/{id}/community-consent`, Settings > Community insights) is merged (PR #88) and the T4 statistics catalog (`code/api/data/community-statistics.json`, schema 2 with the noise tiers of section 5.1, validated at startup, nothing served) is built, behind `CommunityInsights:Enabled` (default `false`). The pure aggregation core of T5 and the served release format are built (section 5.2), and so is event loading (section 5.3, 2026-11-27), behind a separate switch `CommunityAggregation:ReadEvents` that is off by default and set by no settings file, chart or deploy value: while it is off the job (quarterly since the owner decisions of 2026-11-27, section 5.1.1) reads no events and writes a placeholder release with no cells, so nothing is collected, aggregated or published. The owner turns the switch on only in the same deploy as the policy text that describes the feature as active (T9). The privacy policy describes it as "not active yet" (section
 `community-insights` of `code/web/src/legal/privacy.<lang>.ts`, flow `communityInsights` in
 `code/web/src/legal/dataFlows.ts` `PLANNED_FLOWS`, with status `planned`); tests fail if that wording is removed
 while the flow is planned. **Not legal advice**: the LGPD points below are a starting point for the owner and a
@@ -335,19 +335,21 @@ cause at 100 babies per band, against 8 for a uniform guess). **No lawyer has re
    and the job lease `community-aggregation` keeps a second instance out; the check is repeated under the lease and the
    lease is renewed before the write. No setting changes the cadence: `CommunityAggregation:RunDayOfWeek` and
    `RunHourUtc` are no longer read (`IntervalHours` never was); `Enabled` stays.
-5. Event loading is still not part of this work: the job reads no events and writes a placeholder.
+5. Event loading was not part of this work: the job read no events and wrote a placeholder. It is built since (section 5.3),
+   behind `CommunityAggregation:ReadEvents`, off.
 
 | Statistic | v1 outputs (2026-11-27) | Epsilon | State |
 | --- | --- | --- | --- |
-| `cry_outcome_by_cause` | share of spells each cause helped, per cry age band | A: 0.2 per release, one output | built (core), not wired |
-| `tummy_minutes_per_day` | share of days with tummy time | B: 5 per release | built (core), not wired |
-| `bottle_ml_per_feed` (formula), `night_sleep_minutes`, `naps_per_day`, `day_sleep_minutes` | p25, p50, p75 per 4-week band, previous quarter only | C: 2 per cell, at most 4 cells, 8 per release | built (core), not wired |
+| `cry_outcome_by_cause` | share of spells each cause helped, per cry age band | A: 0.2 per release, one output | built (core and event loading), behind `CommunityAggregation:ReadEvents` (off) |
+| `tummy_minutes_per_day` | share of days with tummy time | B: 5 per release | built (core and event loading), behind `CommunityAggregation:ReadEvents` (off) |
+| `bottle_ml_per_feed` (formula), `night_sleep_minutes`, `naps_per_day`, `day_sleep_minutes` | p25, p50, p75 per 4-week band, previous quarter only | C: 2 per cell, at most 4 cells, 8 per release | built (core and event loading), behind `CommunityAggregation:ReadEvents` (off) |
 | `feeds_per_day`, `diapers_per_day`, `bottles_per_day_p50`, `growth_vs_age`, `routine_shift_scale` | none | none | not in v1 |
 
 ### 5.2 The aggregation core as built (pure Domain, not wired)
 
 `Lotties.Domain/CommunityInsights/CommunityStatisticsAggregator.Aggregate(input, noise)` computes a release from in-memory
-observations; it does no I/O and the job does not call it yet (it reads no events). What it does, per statistic
+observations; it does no I/O. The job calls it only while `CommunityAggregation:ReadEvents` is on (section 5.3), with
+`SnappedLaplaceNoise.Cryptographic()`. What it does, per statistic
 with an output in v1:
 
 - **Inputs** (`CommunityAggregationInput`): the validated catalog, the generation time, a secret cap key
@@ -396,6 +398,128 @@ The two mechanisms share one contract (`ICommunityOutputMechanism`): epsilon-DP 
 unit, cells and draws on the fixed grid. The histogram meets it with epsilon per cell = the unit's epsilon / 4 because the
 core has already kept every baby in at most 4 cells.
 
+### 5.3 Event loading (built 2026-11-27, behind `CommunityAggregation:ReadEvents`, off)
+
+What the job reads to build `CommunityAggregationInput`, and the rules it reads by. Code: `Application/CommunityInsights/`
+(`CommunityAggregationJob.cs` the runner, `CommunityObservationLoader.cs`, `CommunityCapKeySetting.cs`), `Domain/CommunityInsights/`
+(`CommunityEventRows.cs` what is kept of an event, `CommunityObservations.cs` subjects, spans, days and the pure
+`CommunityObservationDeriver`, `ICommunityEventSource.cs`), `Infrastructure/Persistence/Repositories/EfCommunityEventSource.cs`.
+**No lawyer has reviewed these rules.** Where this design left something undefined, the narrower or more conservative reading was
+chosen and is marked *(choice)*.
+
+**Switch.** `CommunityAggregation:ReadEvents` (default `false`) is separate from `CommunityAggregation:Enabled` and
+`CommunityInsights:Enabled`, which production already has on while the policy still says "not active yet". No settings file,
+chart or deploy value in the repository sets it (`deploy.test.sh` checks the chart and values). Off, a run is exactly what it was
+before event loading: at most one placeholder per quarter, and **no query on `events` or any other data-plane table**
+(`CommunityEventLoadingTests.ReadingOff_...` records every SQL command of both contexts and fails on any of
+`DataPlaneTables`). The owner turns it on only in the same deploy as the policy rewrite (T9). A placeholder written while it was
+off, and the phase-1 placeholder row, do not count against the quarter, so the first release with statistics after the switch
+is due in that same quarter (tested end to end).
+
+**Cap key.** `CommunityAggregation:CapKey`: base64 of at least 32 bytes, from the Secret (`COMMUNITY_CAP_KEY`, mapped to
+`CommunityAggregation__CapKey` by `deploy/homelab/values/api.yaml`, optional; docs/DEPLOY.md "Community statistics"). With reading
+on and the key missing, not base64 or shorter than 32 bytes, the run stops before its first query: nothing is read, nothing is
+written, the active release stays, and the log names the problem (`Missing`, `NotBase64`, `TooShort`), never the key or a part of
+it. The job never generates a key. The key must stay the same between releases: the day cap and the cell bound pick a baby's days
+and cells by HMAC(key, baby, day or cell); with the same key a rerun and the next release pick the same days of the same data
+(section 5 "reruns are stable"), while a new key would draw a fresh sample of every baby's history for the share statistics,
+which re-read it every quarter, and so let a comparison of two releases learn more about each baby than either release does.
+
+**Population.** The run's snapshot (`CommunityPopulation.SnapshotAsync`: latest consent line a yes under `ci-2`, a real Owner,
+settled on the built-in store), then for these ids only (`ICommunityEventSource.SubjectsAsync`, control plane): the latest line
+re-read (still a yes under the current text), no demo member (the rule of the community prediction aggregator), account deletion
+not started, the stored birth date, and the family. **Family** = the babies sharing an Owner directly or through other babies
+(`CommunityPredictionAggregator.FamiliesOf`, the same rule as the prediction aggregates), named by its smallest baby id; it is used
+only to count families and never leaves the core. With one Owner per baby this is the Owner *(choice: the stricter grouping when a
+baby has several Owners)*. Right before a baby's records are read, `FilterEligibleBabiesAsync` runs again for her alone, so a move
+between stores that started after the snapshot leaves her out; then the read enters her through `IStoreScope.TryEnterBuiltInAsync`,
+which binds only a baby whose pointer names the built-in store and never opens an external one (design 47: BYO babies are never
+read, fail closed). There is no bulk query across babies: the event query is the ordinary per-baby data-plane read through the
+store scope, so the architecture rule "data-plane repositories get their context only from `IStoreScope`" holds unchanged
+(`StoreRoutingRulesTests`).
+
+**`MaxBabiesPerRun`** (0 = no limit): a population above it reads nothing and publishes nothing, with a warning *(choice: a
+truncated population would publish a biased release)*; the operator raises the limit.
+
+**What a consent covers in time** *(choice, the narrower reading)*. The consent text `ci-2` (en and pt-BR) lets "some of
+{name}'s records" be used and says nothing about time; section 5.1.1 notes that the share statistics "re-read her whole history",
+which describes the budget, not what the consent covers. The job reads only records from the first UTC midnight after the time of
+the consent line in force; the day that starts there is a lead-in (only for sleep that runs past its midnight), and days are counted
+from the next one. Nothing logged before the consent is read. A renewal under a new text, or a withdrawal followed by a new yes,
+starts again from the new line. A release reads up to the midnight that started its own day (the day of the run is not over).
+
+**Days** *(choice)*. A day is a **UTC calendar day**. No time zone is stored for a baby; the only stored zone is a user's
+notification setting, which is push data of an account (section 4 lists both as never read) and a hint of where the family lives
+(the consent text says "never location"). So the catalog's `local_day` is the UTC day: in Brazil (UTC-3) a day runs from 21:00 to
+21:00. Daily totals of a regular routine barely change (a night is split at 21:00 instead of midnight, so each day still gets one
+night's worth), naps per day are unchanged unless naps start after 21:00, and the previous-quarter window still holds whole days
+because a release is not due in the first day of its quarter. If an instance-wide zone is wanted later, it is a new setting and
+not a per-family read.
+
+**The query.** One baby at a time, for the built-in feeding, sleep, tummy time and fussy types only (`CommunityEventRows.ReadTypeIds`;
+never a baby's own type, even one with the same key, nor any other kind), started in the baby's span, live only (the global
+soft-delete filter); it selects the type, start, end and payload, never the notes, the author or the event id. The `jsonb` payload is
+fetched whole and reduced in memory by `CommunityEventRows.Read` right after the query (SQL-side member extraction needs
+provider-specific JSON functions the SQLite test host cannot run); only these facts leave it:
+
+| Row | Kept | Rule |
+| --- | --- | --- |
+| feed | start; for a finished formula bottle with an amount, the ml drunk | any feeding counts as "a feed logged"; `method` = `bottle` and `bottle_feeding_type` = `formula`; drunk = `BottleAmounts.DrunkMl` (the app's totals: `amount_drunk_ml`, at most `amount_ml`, else `amount_ml`); breast milk, unknown kind, no amount, nursing, solids, a running bottle: no amount |
+| sleep | start, end, night or not, finished pauses | sessions as the clinical summary counts them (`SleepObservation.IsSession`: `nap`, `night`, or no kind); `night_waking` and the markers `bed_time`, `woke_up`, `fell_asleep` are not sleep |
+| tummy time | start, end, finished pauses | no mood |
+| crying | start, the cause that helped | an answered spell as design 27 section 5 counts it: a text `what_helped` (mapped by `CommunityCryCauses.FromWhatHelped`, an unknown option is `none`), not a false alarm (`cry_confirmed` false); running or not (no duration is read); no intensity, suggested cause or detection flag |
+
+**Observations** (`CommunityObservationDeriver`, pure):
+- **Age**: completed weeks from the stored birth date to the day; a day before it is not read. The birth date stays in the loader;
+  the input carries only the age. A week-only birth date is the Monday of the birth week (design 46), so the age can be one week
+  more. Gestational age is not read and preterm babies are not left out (O7 open).
+- **Complete day** *(choice: the definition of section 4 "Routines", also used for tummy time)*: a counted day with at least one
+  feed that started on it and some effective sleep of finished sessions inside it. Days before the family's first log, after its last
+  one, or without both are not complete and never count as zeros.
+- **Routine days** (night sleep, naps, day sleep): complete days of the previous quarter (`CommunityDataWindow.PreviousQuarterOf`)
+  that no running sleep session overlaps *(choice: a running timer counts until now, so every day from its start has no known
+  value)*. Night and day sleep: effective minutes of finished night and other sessions inside the day, pauses spread evenly over the
+  session and split at midnight (`PauseMath.EffectiveMsInWindow`, the clinical summary's rule); naps: finished non-night sessions that
+  started on the day. A complete day gives all three, zeros included (as the clinical summary averages them).
+- **Tummy time days**: every complete day since the consent (not windowed, section 5.1.1) that no running tummy time session overlaps,
+  with the effective tummy minutes inside it, 0 when none. A tummy entry with no effective time (an instant) counts as none, because
+  the core's share is "minutes above 0".
+- **Formula bottles**: those of counted days in the previous quarter.
+- **Crying spells**: those of counted days since the consent.
+
+**Memory, cancellation, failure, logs.** One baby's events are in memory at a time (her rows are dropped once derived); the
+observations of all babies are held for the core (a few per baby and day, bounded by `MaxBabiesPerRun`). Every call takes the run's
+`CancellationToken`. Any failure while reading, aggregating, serialising or reading the release back publishes nothing and keeps
+the active release; the log names the exception type only (an exception text could carry an id). The release is serialised by
+`CommunityReleaseJson` and parsed back before it is saved (not a placeholder, the catalog version, statistics listed); the lease
+is renewed right before the write. Logs carry counts only: babies eligible, read and left out, cells published and suppressed,
+babies included rounded to 10.
+
+**PostgreSQL.** The tests run on SQLite. The event query's PostgreSQL translation is checked without a database
+(`CommunityEventQueryTests`, Npgsql `ToQueryString`: `type_id = ANY`, `(baby_id, started_at)` range, `deleted_at IS NULL`, four
+columns selected). The control-plane reads (`community_consents`, `babies` with the store assignment, `baby_members` joined to
+`users`) use the same constructs as `EfCommunityConsentRepository` and the prediction aggregator. Not verified on a real PostgreSQL:
+the query plans and the run time at production size.
+
+**No migration.** Nothing new is stored: no table, no column, no staging of per-baby values.
+
+**Differences from the consent text and the policy, for T9** (the published texts are unchanged by this work):
+1. The consent text says "Never ... date of birth": the stored birth date is read to compute the age in weeks, then dropped (the
+   policy says "the date of birth (only the age in weeks)", which matches; the consent text does not say so).
+2. The consent text says "Never ... exact times" and the policy "exact dates and times (only the part of the day)": the loader reads
+   each event's start and end instants to place it on a day and compute durations, and the core uses the exact **date** of each day
+   in memory (to pick capped days and the window). No date or time is published. Neither text says a date is used.
+3. The consent text lists "age in weeks, amounts, lengths, counts and measurements" (pt-BR: "quantidades, durações, contagens e
+   medidas"): two categories read are not in that list, the bottle kind (formula or not; only formula bottles count) and the cause
+   that helped a crying spell (the intro sentence names "what helps most with crying", the list does not). The en "lengths" and the
+   pt-BR "durações" (durations) do not say the same thing.
+4. History: neither text says from when records are used. The job reads only records from after the consent (above); the policy
+   rewrite should say so.
+5. Days are UTC days, not the family's local days; neither text mentions it (nothing about a place is read).
+6. Section 7 and the audit (design 33 section 19.1) describe a read-only database role `lotties_insights_ro` and a run log table
+   `community_runs`: neither exists. The job reads with the API's connection and writes only the release table.
+7. The audit section 19.1 still describes a weekly job and hysteresis (both replaced on 2026-11-27).
+
 ## 6. What is published back
 
 - **Release format as built** (`CommunityReleaseJson`, the one writer and reader; schema 1; stored in
@@ -409,9 +533,9 @@ core has already kept every baby in at most 4 cells.
   the file; every published cell has at least 20 babies. Reading is strict (an unknown or
   missing property, a duplicate cell, a share outside [0, 1], an unknown bucket, a placeholder with cells is a format
   error). **No cells and placeholders**: a release with no cells means nothing passed the thresholds, and every caller falls
-  back to the published norms or its built-in default, as for any absent cell. Until event loading is built the job writes
-  a placeholder (`placeholder: true`, no statistics, no cells), read the same way, which does not count against the
-  quarter (section 5.1.1). A release that cannot be read (the phase-1 placeholder rows written before this format, a damaged row) is
+  back to the published norms or its built-in default, as for any absent cell. While `CommunityAggregation:ReadEvents` is off the
+  job writes a placeholder (`placeholder: true`, no statistics, no cells), read the same way, which does not count against
+  the quarter (section 5.1.1), so the first release with statistics after the switch is turned on is due in that same quarter. A release that cannot be read (the phase-1 placeholder rows written before this format, a damaged row) is
   treated as a release with no cells. Today `GET /community/statistics/{statisticKey}` reads this format and answers the
   single value of the caller's baby's fine cell, or else its coarse fallback, only for a statistic without a dimension;
   serving the whole file as below is task T6.
@@ -539,7 +663,7 @@ when activated (task T9).
 | T2 | Consent: Domain `CommunityConsent` (pure rules: who may consent, versioning), EF table `community_consents` + migration, `GET/PUT /babies/{id}/community-consent` (Owner/Parent; Caregiver/Viewer/Doctor 403), rows in `EndpointRoleMatrixTests` with a scope decision (`BabyReadFamily`, never a Doctor scope), export/import of the history, account/baby deletion handling. **Consent plumbing (T2): built 2026-11-11, off by default** (`CommunityInsights:Enabled=false`, every route a bare 404): `Domain/CommunityInsights/CommunityConsent.cs` (`CommunityConsentEntry` append-only line, `CommunityConsentHistory` state `none/on/off/renewal_needed` and `IsInForce`, `CommunityConsentRules.MayDecide` = Owner or Parent, text version `ci-1`), table `community_consents` (migration `CommunityConsents`, control plane), `GET/PUT /babies/{id}/community-consent` with `BabyWrite` (Caregiver, Viewer, Doctor 403; no Doctor scope, she is refused by role), blocked in the demo, `ICommunityConsentRepository.BabiesInForceAsync` for T5, erased with the baby and kept under the stand-in when a member deletes her account, and the web section Settings > Community insights with the section 3.5 text (shown only when the flag is on). Differences: the history is **not** in the baby's backup file (it names accounts; docs/design/24 and CLAUDE.md forbid account ids there; RIPD R11), so section 3.2's "the baby's export includes its consent history" is not done (the history is shown in the app instead); a `locale` column was added; withdrawal has no Undo snackbar (an Undo would record a yes the person did not tick the declaration for); no notice to the other Owners/Parents yet (O4). Nothing is collected, computed or published; the privacy policy, `legal/dataFlows.ts`, the consent versions and the consent screen are unchanged (activation, T9) | Sonnet | T0 |
 | T3 | Web consent screen and state in Settings > Baby (`communityInsights.json` en + pt-BR, `baby/permissions.ts` gate, axe light/dark) | Sonnet | T2 |
 | T4 | Catalog `community-statistics.json` + validator (like `AgeNormsValidator`), embedded, schema test. **Catalog (T4): built**, catalog only: `code/api/data/community-statistics.json` (schema 1, the 10 use cases of section 4, every entry `planned` with the proposed values of section 13 marked `proposed: true`, `growth_vs_age` `notInV1` per O6, fixed band grids), `Domain/CommunityInsights` (model, strict parser, `CommunityStatisticsValidator`: known keys, k >= 20, inputs from an allow-list and never a "Never read" category, epsilon in (0, 1], status `planned`), embedded in Lotties.Application and validated at startup; nothing served, collected or consented, no table. **O2 tiers (section 5.1): built** in catalog schema 2 (per-output tiers, epsilon per tier, percentile outputs `notInV1`) | Sonnet | T0 |
-| T5 | Aggregation job: inputs per use case, caps, clipping, bands, k, dominance, suppression, DP per the tiers of section 5.1 (no percentile output in v1), run log, read-only role, flag; property tests (a cell never below k, a withdrawn baby absent from the next run, a single heavy family bounded). **Pure core built** (section 5.2: cap, clipping, one summary per baby, snapped Laplace on the share vectors, k, hysteresis, dominance, coarse fallback with complementary suppression, release format of section 6, property and sampler tests); **not wired**: event loading, the run log table and the read-only role are still to do, and the job writes a placeholder | Opus plan, Sonnet build | T2, T4 |
+| T5 | Aggregation job: inputs per use case, caps, clipping, bands, k, dominance, suppression, DP per the tiers of section 5.1 (no percentile output in v1), run log, read-only role, flag; property tests (a cell never below k, a withdrawn baby absent from the next run, a single heavy family bounded). **Pure core built** (section 5.2: cap, clipping, one summary per baby, snapped Laplace on the share vectors, k, hysteresis, dominance, coarse fallback with complementary suppression, release format of section 6, property and sampler tests); **event loading built** (section 5.3, behind `CommunityAggregation:ReadEvents`, off: the job writes a placeholder until it is on); the run log table and the read-only role are still to do | Opus plan, Sonnet build | T2, T4 |
 | T6 | `GET /community/statistics` with ETag (like `/age-norms`), matrix row | Haiku | T5 |
 | T7 | Web cache + `useCommunityStatistics()`, fallback chain pooled > norms > default, the context lines (wording reviewed) | Sonnet | T6 |
 | T8 | `ml/benchmark/community.py` synthetic study, then the pilot backtest (section 9). **Synthetic study done** (docs/ml/COMMUNITY-SYNTHETIC.md); **pilot backtest still to do** | Sonnet | T4 |

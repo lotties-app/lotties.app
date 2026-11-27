@@ -57,6 +57,7 @@ Compose reads `.env` from the repository root.
 | `PUSH_VAPID_PUBLIC_KEY`, `PUSH_VAPID_PRIVATE_KEY`, `PUSH_VAPID_SUBJECT` | api | no (all or none) | Web Push; see "Push notifications" |
 | `SILENT_PUSH_ENABLED`, `PUSH_APNS_KEY_ID`, `PUSH_APNS_TEAM_ID`, `PUSH_APNS_KEY_P8`, `PUSH_FCM_PROJECT_ID`, `PUSH_FCM_SERVICE_ACCOUNT_JSON` | api | no (`false`; per channel all or none) | Silent pushes that keep the app's widgets current; on only once privacy policy 14 is live; see "Silent pushes for the widgets" |
 | `Demo__SigningKey` (home lab: `DEMO_SIGNING_KEY` in `deploy/homelab/.env`) | api | no | Try-it demo; 32+ characters, secret. Blank = demo off. Tuning: `Demo__LifetimeDays` (3), `Demo__MaxLiveAccounts` (200), `Demo__StartPermitsPerHour` (3), `Demo__CleanupMinutes` (30); see docs/design/45-try-it-demo.md |
+| `CommunityAggregation__CapKey` (home lab: `COMMUNITY_CAP_KEY` in `deploy/homelab/.env`) | api | no | Community statistics cap key; base64 of 32+ random bytes, secret, never changed once used. Used only with `CommunityAggregation__ReadEvents=true` (default false); see "Community statistics" |
 | `Alexa__Enabled`, `Alexa__SkillIds` | api | no (`false`) | The Alexa skill backend; see "Alexa skill" and docs/ALEXA.md |
 | `Mcp__Enabled`, `Mcp__ResourceUrl`, `Mcp__Audience` | api | no (`false`) | The MCP server for AI assistants; see "MCP server" and docs/MCP.md |
 | `Board__Enabled`, `Board__Mcp__Enabled` | api | no (`false`) | The internal project board (owner + AI assistant; no baby data) and its MCP endpoint for AI tools; see "Project board" and docs/KEYCLOAK-BOARD.md |
@@ -429,6 +430,38 @@ curl -s https://lotties.app/api/v1/board/summary -H "X-Board-Key: $LOTTIES_BOARD
 
 Logs carry item and key ids, the actor kind and result codes only (never a secret, a title or a body). CORS is the app's
 (no board-specific origin).
+
+## Community statistics
+
+The community statistics job (docs/design/34-community-insights.md sections 5 and 5.3) runs inside the API behind
+`CommunityInsights__Enabled` and `CommunityAggregation__Enabled`. A third switch, `CommunityAggregation__ReadEvents`, decides
+whether it reads opted-in babies' events and publishes a release with statistics. **It is off by default and no file in this
+repository turns it on**: turn it on only in the same deploy as the privacy policy that describes community insights as active
+(task T9). While it is off the job reads no event or other data-plane table and writes at most one placeholder release per quarter.
+
+| Config key (env) | Default | Purpose |
+|----------|---------|---------|
+| `CommunityAggregation__ReadEvents` | `false` | `true` reads events and publishes statistics (needs the cap key; add it under `env:` in `deploy/homelab/values/api.yaml` with the policy change, never before) |
+| `CommunityAggregation__CapKey` | none | Secret. Base64 of at least 32 random bytes: the key of the per-baby day and cell caps. With reading on and the key missing, not base64 or shorter, a run reads nothing and publishes nothing (the log says which, never the key) |
+| `CommunityAggregation__MaxBabiesPerRun` | `0` | Most eligible babies a run reads (0 = no limit); above it a run reads and publishes nothing rather than a release over part of the population |
+
+**Creating the cap key (once).** On the operator's machine, never in the app:
+
+```bash
+openssl rand -base64 32
+```
+
+Put the output in `deploy/homelab/.env` as `COMMUNITY_CAP_KEY=...` and deploy: `deploy.sh` checks it (base64 of at least 32
+bytes, otherwise the run stops before changing anything), stores it in the Secret `lotties-secrets` and the chart maps it to
+`CommunityAggregation__CapKey` (optional: without it the pod starts as before). A later deploy without the variable keeps the
+Secret's value. Other hosts: give the API the environment variable `CommunityAggregation__CapKey` from your secret store.
+
+**Never change or lose it once a release used it.** Each baby's capped days and cells are picked by a keyed hash of the key, her
+id and the day: the same key picks the same days on every run, which is what makes a rerun give the same release and keeps
+two releases from drawing two different samples of the same history (the tummy time and crying statistics re-read a baby's
+whole history every quarter, so a new key would let a comparison of two releases learn more about each baby). Keep a copy with
+the other operator secrets. If it leaks, the published numbers are not exposed (it is not an encryption key), but the day
+picks become predictable: replace it and write down when, since releases from then on use a new sample.
 
 ## Privacy policy
 

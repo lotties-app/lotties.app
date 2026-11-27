@@ -362,6 +362,29 @@ run "demo on" DEMO_SIGNING_KEY=abcdefghijklmnopqrstuvwxyz0123456789 SKIP_BUILD=1
   check "demo: the value is never printed" out_lacks 'abcdefghijklmnopqrstuvwxyz0123456789'
 }
 
+check "cap key: base64 of 32 random bytes is one" is_cap_key "$KEK_A"
+check "cap key: base64 of 48 random bytes is one" is_cap_key "$(head -c 48 /dev/urandom | base64 | tr -d '\n')"
+check "cap key: 31 bytes is not" bash -c "! (source '$DEPLOY'; is_cap_key '$(head -c 31 /dev/urandom | base64 | tr -d '\n')')"
+check "cap key: unpadded is not" bash -c "! (source '$DEPLOY'; is_cap_key '${KEK_A%=}')"
+check "cap key: a passphrase is not" bash -c "! (source '$DEPLOY'; is_cap_key 'correct horse battery staple')"
+
+run "no cap key" SKIP_BUILD=1 && {
+  check "cap key: none, and says so" out_has 'community statistics cap key: none'
+  check "cap key: no COMMUNITY_CAP_KEY in the Secret" log_lacks '^secret-keys: .*COMMUNITY_CAP_KEY'
+}
+
+EXPECT_FAIL=1 run "short cap key" COMMUNITY_CAP_KEY="$(head -c 16 /dev/urandom | base64 | tr -d '\n')" SKIP_BUILD=1
+check "cap key: a short key is refused" out_has 'COMMUNITY_CAP_KEY must be base64 of at least 32 bytes'
+
+run "cap key set" COMMUNITY_CAP_KEY="$KEK_B" SKIP_BUILD=1 && {
+  check "cap key: it goes to the Secret" log_has '^secret-keys: .*COMMUNITY_CAP_KEY'
+  check "cap key: the value is never printed" out_lacks "$KEK_B"
+  check "cap key: reading events is not turned on by the deploy" log_lacks 'ReadEvents'
+}
+check "cap key: values/api.yaml maps CommunityAggregation__CapKey from the Secret (optional)" \
+  bash -c "grep -A3 '^  CommunityAggregation__CapKey:' '$HERE/values/api.yaml' | grep -q 'key: COMMUNITY_CAP_KEY' && grep -A3 '^  CommunityAggregation__CapKey:' '$HERE/values/api.yaml' | grep -q 'optional: true'"
+check "reading events: no values file or chart sets it" bash -c "! grep -rqiE 'ReadEvents\"?[[:space:]]*[:=]' '$HERE/values' '$HERE/charts'"
+
 run "no admin client" SKIP_BUILD=1 && {
   check "admin client: none keeps the Keycloak user, and says so" out_has 'account deletion: keeps the Keycloak user'
   check "admin client: no AUTH_ADMIN_* key in the Secret" log_lacks '^secret-keys: .*AUTH_ADMIN_'
