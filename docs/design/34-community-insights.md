@@ -154,8 +154,8 @@ list" the policy promises. Inputs are derived per baby per day in memory; nothin
 | --- | --- | --- | --- |
 | Milk per feed (`bottle_ml_per_feed`) | age in completed weeks at the feed; `drunk` ml of each live bottle (docs/SPEC "Feeding amounts"), split by `bottle_feeding_type` (formula / breast milk; never the formula's name or brand); bottles per local day | p10, p25, median, p75, p90 of ml per feed; median bottles per day | **high**: norms are formula-only, 4-8 week bands, no breast-milk-bottle norm, first week flagged (28 section 15.3); pooled gives weekly Brazilian bands for both kinds |
 | Growth (`growth_vs_age`) | age in completed weeks at the measurement; weight (kg), length (cm), head (cm) | median and p3/p15/p85/p97 per week | **low for healthy term babies**: the WHO Child Growth Standards (also the Caderneta da Criança curves) are a prescriptive standard from a large, controlled sample, sex-specific; a pooled app sample is self-selected, self-measured (home scales), unsexed (Lotties has no sex field) and can only describe "babies in this app", not how a baby should grow. **Do not replace WHO curves.** Pooled growth adds value only for (a) preterm babies by corrected age beyond what Intergrowth/Fenton cover, (b) measurement cadence context ("most families weigh every 2 weeks at this age"), (c) self-reported home measurement error. Recommendation: ship WHO curves first (docs/design/04 section 5); do not build pooled growth in v1 (O6) |
-| Tummy time (`tummy_minutes_per_day`) | age in weeks; effective minutes of `tummy_time` per local day with at least one entry, and the share of days with any | median, p25, p75 minutes; share of days with tummy time | **high**: no published per-age norm in `age-norms.json` (guidance is "work up to ~1 h/day", not a distribution) |
-| Routines (`naps_per_day`, `day_sleep_minutes`, `night_sleep_minutes`, `feeds_per_day`, `diapers_per_day`) | age in weeks; per complete local day (a day that is over and has at least one sleep and one feed logged; days split as in the clinical summary): counts and effective durations | median, p10..p90 | **medium**: published sleep norms exist (Pelotas at 3/12/24 months, Galland) but are coarse; feeds/diapers per day by week are thin |
+| Tummy time (`tummy_minutes_per_day`) | age in weeks; effective minutes of `tummy_time` per local day with at least one entry, and the share of days with any (since 2026-11-27, section 5.3: complete days of babies who log tummy time at all) | median, p25, p75 minutes; share of days with tummy time | **high**: no published per-age norm in `age-norms.json` (guidance is "work up to ~1 h/day", not a distribution) |
+| Routines (`naps_per_day`, `day_sleep_minutes`, `night_sleep_minutes`, `feeds_per_day`, `diapers_per_day`) | age in weeks; per complete local day (a day that is over and has at least one sleep and one feed logged; days split as in the clinical summary): counts and effective durations; since 2026-11-27 (section 5.3) a kind of sleep not logged that day is missing, not 0 | median, p10..p90 | **medium**: published sleep norms exist (Pelotas at 3/12/24 months, Galland) but are coarse; feeds/diapers per day by week are thin |
 | Unusual patterns (`routine_shift_scale`) | the same per-day values; per baby, the change of the 7-day median versus her own previous 21-day median, as a ratio | per band and metric, the p90 and p97 of that ratio across babies | **high**: today any "changed a lot" line needs a guessed threshold; the pooled distribution of *self-relative* shifts calibrates it. Output is a scale, never a label: the app only says "a bigger change than most weeks" ("uma mudança maior do que na maioria das semanas") |
 | Crying (`cry_outcome_by_cause`) | age band of docs/design/27 (`cryAgeBand`); per answered `fussy` spell: `what_helped` mapped to a cause (27 section 5), `suggested_cause`, part of day (morning 06-12, afternoon 12-18, evening 18-24, night 00-06 local), duration bucket (<10, 10-30, 30-60, >60 min) | per band and part of day: share of spells where each cause helped; share where the suggested cause equals the helping cause | **medium-high**: `CRY_WEIGHTS` are generic heuristics (27 section 4); pooled outcome shares are the first evidence to tune them. Gate: section 9. **Since 2026-11-27** (section 5.1.1): only the share each cause helped, per cry age band (no part of day, no suggested cause, no duration bucket read) |
 
@@ -480,12 +480,30 @@ provider-specific JSON functions the SQLite test host cannot run); only these fa
   that no running sleep session overlaps *(choice: a running timer counts until now, so every day from its start has no known
   value)*. Night and day sleep: effective minutes of finished night and other sessions inside the day, pauses spread evenly over the
   session and split at midnight (`PauseMath.EffectiveMsInWindow`, the clinical summary's rule); naps: finished non-night sessions that
-  started on the day. A complete day gives all three, zeros included (as the clinical summary averages them).
-- **Tummy time days**: every complete day since the consent (not windowed, section 5.1.1) that no running tummy time session overlaps,
-  with the effective tummy minutes inside it, 0 when none. A tummy entry with no effective time (an instant) counts as none, because
+  started on the day. **A kind of sleep that was not logged is missing, never zero** (orchestrator decision of 2026-11-27,
+  replacing "zeros included"): night sleep counts only on a day with effective time of a finished night inside it; naps and day
+  sleep count only on a day on which a finished non-night session started, and always on the same days. Otherwise a family that
+  logs only naps would publish nights of 0 minutes and one that logs only nights 0 naps. **Limitation**: a real day without a nap
+  (older babies drop naps) is left out of naps and day sleep, so their low percentiles are biased upwards for ages where such days
+  are common. Each routine statistic draws its samples only from the days that have its value, so its day cap, 4-cell bound, k,
+  families and dominance are computed only over the babies and days that contribute to it (a baby with no night is not in any night
+  cell; `CommunityMissingSleepTests`).
+- **Tummy time days**: only for a baby with at least one finished tummy time with effective time on a counted day (orchestrator
+  decision of 2026-11-27: a family that never logs tummy time contributes nothing to the share of days, instead of only zeros); for
+  her, every complete day since the consent (not windowed, section 5.1.1) that no running tummy time session overlaps, with the
+  effective tummy minutes inside it, 0 when none. Remaining bias: a baby who logs tummy time only sometimes still has her other
+  complete days counted as days without. A tummy entry with no effective time (an instant) counts as none, because
   the core's share is "minutes above 0".
 - **Formula bottles**: those of counted days in the previous quarter.
 - **Crying spells**: those of counted days since the consent.
+- **Missing is not zero, elsewhere**: the bottles and the crying spells have one observation per logged record, so nothing missing can
+  become a zero. Of the statistics not in v1, `diapers_per_day` would have the same shape (a complete day needs a feed and sleep, not
+  a diaper, so a family that does not log diapers would give 0) and `routine_shift_scale` inherits whatever its routine values do;
+  `feeds_per_day` would not (a complete day has a feed). They must get the same rule before they are built.
+- **The study** (`ml/benchmark/synthetic.py`, `community_percentiles*.py`) gives every logged day both a night and a nap value, has no
+  family that logs only one kind, and did not simulate the tummy time share, so its numbers neither depend on nor show the old
+  zero behaviour; it was not rerun. Its generator does include real 0-nap days (rounded nap counts clipped at 0), which the loader now
+  leaves out, so the built naps percentiles can sit slightly above the study's for the oldest bands.
 
 **Memory, cancellation, failure, logs.** One baby's events are in memory at a time (her rows are dropped once derived); the
 observations of all babies are held for the core (a few per baby and day, bounded by `MaxBabiesPerRun`). Every call takes the run's

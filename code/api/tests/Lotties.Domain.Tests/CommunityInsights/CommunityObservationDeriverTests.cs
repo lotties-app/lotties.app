@@ -201,7 +201,7 @@ public sealed class CommunityObservationDeriverTests
         var rows = Rows(
             feeds: [.. days.Select(day => Feed(At(day, 8)))],
             sleeps: [.. days.Select(day => Nap(At(day, 13), 60))],
-            tummy: [new CommunityTummyRow(At(days[2], 10), null, 0)]);
+            tummy: [Tummy(At(days[0], 10), 10), new CommunityTummyRow(At(days[2], 10), null, 0)]);
 
         var observations = CommunityObservationDeriver.Derive(Subject, rows, Span);
 
@@ -214,7 +214,8 @@ public sealed class CommunityObservationDeriverTests
     {
         var rows = Rows(
             feeds: [Feed(At(Span.FirstDay.AddDays(-1), 8)), Feed(At(Span.FirstDay, 8)), Feed(At(Span.LastDay.AddDays(1), 1))],
-            sleeps: [Nap(At(Span.FirstDay.AddDays(-1), 13), 60), Nap(At(Span.FirstDay, 13), 60), Nap(At(Span.LastDay.AddDays(1), 1), 30)]);
+            sleeps: [Nap(At(Span.FirstDay.AddDays(-1), 13), 60), Nap(At(Span.FirstDay, 13), 60), Nap(At(Span.LastDay.AddDays(1), 1), 30)],
+            tummy: [Tummy(At(Span.FirstDay.AddDays(-1), 10), 10), Tummy(At(Span.FirstDay, 10), 10), Tummy(At(Span.LastDay.AddDays(1), 1), 10)]);
 
         var observations = CommunityObservationDeriver.Derive(Subject, rows, Span);
 
@@ -228,6 +229,7 @@ public sealed class CommunityObservationDeriverTests
         var rows = Rows(
             feeds: [Feed(At(InWindow, 8)), Feed(At(InWindow.AddDays(1), 8))],
             sleeps: [Nap(At(InWindow, 13), 60), Nap(At(InWindow.AddDays(1), 13), 60)],
+            tummy: [Tummy(At(InWindow.AddDays(1), 10), 10)],
             spells: [new CommunitySpellRow(At(InWindow, 18), "hunger")]);
 
         var observations = CommunityObservationDeriver.Derive(subject, rows, Span);
@@ -268,7 +270,8 @@ public sealed class CommunityObservationDeriverTests
         var after = new DateOnly(2026, 10, 1);
         var rows = Rows(
             feeds: [Feed(At(before, 8)), Feed(At(InWindow, 8)), Feed(At(after, 8))],
-            sleeps: [Nap(At(before, 13), 60), Nap(At(InWindow, 13), 60), Nap(At(after, 13), 60)]);
+            sleeps: [Nap(At(before, 13), 60), Nap(At(InWindow, 13), 60), Nap(At(after, 13), 60)],
+            tummy: [Tummy(At(before, 10), 10)]);
 
         var observations = CommunityObservationDeriver.Derive(Subject, rows, Span);
 
@@ -282,7 +285,8 @@ public sealed class CommunityObservationDeriverTests
         var days = Enumerable.Range(0, 3).Select(InWindow.AddDays).ToArray();
         var rows = Rows(
             feeds: [.. days.Select(day => Feed(At(day, 8)))],
-            sleeps: [.. days.Select(day => Nap(At(day, 13), 60)), new CommunitySleepRow(At(days[1], 20), null, true, 0)]);
+            sleeps: [.. days.Select(day => Nap(At(day, 13), 60)), new CommunitySleepRow(At(days[1], 20), null, true, 0)],
+            tummy: [Tummy(At(days[0], 10), 10)]);
 
         var observations = CommunityObservationDeriver.Derive(Subject, rows, Span);
 
@@ -301,6 +305,56 @@ public sealed class CommunityObservationDeriverTests
 
         Assert.Empty(observations.RoutineDays);
         Assert.Empty(observations.TummyTimeDays);
+    }
+
+    [Fact]
+    public void RoutineDays_ANightNotLogged_IsMissing_NotZeroMinutes()
+    {
+        var days = Enumerable.Range(0, 3).Select(InWindow.AddDays).ToArray();
+        var rows = Rows(feeds: [.. days.Select(day => Feed(At(day, 8)))], sleeps: [.. days.Select(day => Nap(At(day, 13), 60))]);
+
+        var observations = CommunityObservationDeriver.Derive(Subject, rows, Span);
+
+        Assert.Equal(3, observations.RoutineDays.Count);
+        Assert.All(observations.RoutineDays, day => Assert.Null(day.NightSleepMinutes));
+        Assert.All(observations.RoutineDays, day => Assert.Equal((1m, 60m), (day.NapsPerDay!.Value, day.DaySleepMinutes!.Value)));
+    }
+
+    [Fact]
+    public void RoutineDays_NoNapStarted_NapsAndDaySleepAreMissing_EvenWithNapTimeSpilledFromTheDayBefore()
+    {
+        var day = InWindow;
+        var rows = Rows(
+            feeds: [Feed(At(day, 8)), Feed(At(day.AddDays(1), 8))],
+            sleeps:
+            [
+                new CommunitySleepRow(At(day, 20), At(day.AddDays(1), 6), true, 0),
+                new CommunitySleepRow(At(day, 23), At(day.AddDays(1), 1), false, 0),
+            ]);
+
+        var observations = CommunityObservationDeriver.Derive(Subject, rows, Span);
+
+        var second = observations.RoutineDays.Single(item => item.LocalDay == day.AddDays(1));
+        Assert.Equal(360m, second.NightSleepMinutes);
+        Assert.Null(second.NapsPerDay);
+        Assert.Null(second.DaySleepMinutes);
+        var first = observations.RoutineDays.Single(item => item.LocalDay == day);
+        Assert.Equal((240m, 1m, 60m), (first.NightSleepMinutes!.Value, first.NapsPerDay!.Value, first.DaySleepMinutes!.Value));
+    }
+
+    [Fact]
+    public void TummyDays_ABabyWhoNeverLogsTummyTime_ContributesNoDay()
+    {
+        var days = Enumerable.Range(0, 3).Select(InWindow.AddDays).ToArray();
+        var rows = Rows(
+            feeds: [.. days.Select(day => Feed(At(day, 8)))],
+            sleeps: [.. days.Select(day => Nap(At(day, 13), 60))],
+            tummy: [new CommunityTummyRow(At(days[0], 10), At(days[0], 10), 0)]);
+
+        var observations = CommunityObservationDeriver.Derive(Subject, rows, Span);
+
+        Assert.Empty(observations.TummyTimeDays);
+        Assert.Equal(3, observations.RoutineDays.Count);
     }
 
     // ── Bottles and crying ──────────────────────────────────────────────────

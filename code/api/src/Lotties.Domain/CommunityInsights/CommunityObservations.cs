@@ -73,9 +73,13 @@ public sealed record CommunityBabyObservations(
 /// its last one, or simply not logged are not complete, so they never count as zeros.</item>
 /// <item><b>Routine days</b> (night sleep, naps, day sleep): complete days of the percentile window that no running sleep session
 /// overlaps; night and day sleep are the effective minutes of finished night and other sessions inside the day (pauses spread over the
-/// session, split at midnight, as in the clinical summary), naps the finished non-night sessions that started on it.</item>
-/// <item><b>Tummy time days</b>: complete days that no running tummy time session overlaps, with the effective tummy minutes inside the
-/// day (0 when none).</item>
+/// session, split at midnight, as in the clinical summary), naps the finished non-night sessions that started on it. A kind of sleep
+/// that was not logged is missing, never zero: night sleep only on a day with effective night time inside it; naps and day sleep only
+/// on a day on which a finished non-night session started (the two on the same days). A real day without a nap is therefore left out
+/// of naps and day sleep.</item>
+/// <item><b>Tummy time days</b>: only for a baby with at least one finished tummy time with effective time on a counted day (a family
+/// that never logs it contributes nothing); then every complete day that no running tummy time session overlaps, with the effective
+/// tummy minutes inside the day (0 when none).</item>
 /// <item><b>Bottles</b>: finished formula bottles with an amount that started on a counted day of the percentile window.</item>
 /// <item><b>Crying</b>: answered spells that started on a counted day.</item>
 /// </list>
@@ -97,17 +101,27 @@ public static class CommunityObservationDeriver
 
         var days = DayTotals.Of(subject, rows, span);
         return new CommunityBabyObservations(
-            [.. days.Complete.Where(day => day.Date < days.TummyRunningFrom).Select(day => TummyDay(subject, day))],
+            [.. days.Complete.Where(day => days.LogsTummyTime && day.Date < days.TummyRunningFrom).Select(day => TummyDay(subject, day))],
             [.. rows.Spells.Select(spell => SpellOf(subject, spell, span)).OfType<CommunityCrySpell>()],
             [.. rows.Feeds.Select(feed => BottleOf(subject, feed, span)).OfType<CommunityBottleFeed>()],
-            [.. days.Complete.Where(day => day.Date < days.SleepRunningFrom && span.PercentileWindow.Contains(day.Date)).Select(day => RoutineDay(subject, day))]);
+            [.. days.Complete.Where(day => day.Date < days.SleepRunningFrom && span.PercentileWindow.Contains(day.Date)).Select(day => RoutineDay(subject, day)).Where(HasValue)]);
     }
 
     private static CommunityTummyTimeDay TummyDay(CommunitySubject subject, DayTotal day) =>
         new(subject.BabyId, subject.FamilyId, day.AgeWeeks, day.Date, Minutes(day.TummyMs));
 
+    /// <summary>The day's routine values; a kind of sleep not logged that day is null (missing), never 0.</summary>
     private static CommunityRoutineDay RoutineDay(CommunitySubject subject, DayTotal day) =>
-        new(subject.BabyId, subject.FamilyId, day.AgeWeeks, day.Date, Minutes(day.NightMs), day.Naps, Minutes(day.NapMs));
+        new(
+            subject.BabyId,
+            subject.FamilyId,
+            day.AgeWeeks,
+            day.Date,
+            day.NightMs > 0 ? Minutes(day.NightMs) : null,
+            day.Naps > 0 ? day.Naps : null,
+            day.Naps > 0 ? Minutes(day.NapMs) : null);
+
+    private static bool HasValue(CommunityRoutineDay day) => day.NightSleepMinutes is not null || day.NapsPerDay is not null;
 
     private static CommunityCrySpell? SpellOf(CommunitySubject subject, CommunitySpellRow spell, CommunityReadSpan span)
     {
@@ -141,10 +155,11 @@ public static class CommunityObservationDeriver
     private readonly record struct DayShare(DateOnly Day, double Milliseconds);
 
     /// <summary>
-    /// The complete days of one baby and the first day a running session makes unknown (<see cref="DateOnly.MaxValue"/> when none
-    /// runs): a running session counts from its start to now, so every day from the one it started on has no known value.
+    /// The complete days of one baby, the first day a running session makes unknown (<see cref="DateOnly.MaxValue"/> when none
+    /// runs: a running session counts from its start to now, so every day from the one it started on has no known value), and whether
+    /// she logs tummy time at all (some effective tummy time on a counted day).
     /// </summary>
-    private sealed record DayTotals(IReadOnlyList<DayTotal> Complete, DateOnly SleepRunningFrom, DateOnly TummyRunningFrom)
+    private sealed record DayTotals(IReadOnlyList<DayTotal> Complete, DateOnly SleepRunningFrom, DateOnly TummyRunningFrom, bool LogsTummyTime)
     {
         public static DayTotals Of(CommunitySubject subject, CommunityEventRows rows, CommunityReadSpan span)
         {
@@ -170,7 +185,8 @@ public static class CommunityObservationDeriver
             return new DayTotals(
                 complete,
                 RunningFrom(rows.Sleeps.Where(sleep => sleep.EndedAt is null).Select(sleep => sleep.StartedAt)),
-                RunningFrom(rows.TummyTimes.Where(item => item.EndedAt is null).Select(item => item.StartedAt)));
+                RunningFrom(rows.TummyTimes.Where(item => item.EndedAt is null).Select(item => item.StartedAt)),
+                tummy.Values.Any(milliseconds => milliseconds > 0));
         }
 
         private static DateOnly RunningFrom(IEnumerable<DateTimeOffset> runningStarts) =>

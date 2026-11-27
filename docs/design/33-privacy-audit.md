@@ -540,7 +540,9 @@ community statistics**. The switch is to be turned on only in the same deploy as
 reads, per opted-in baby on the built-in store only, the start and end of her feeding, sleep, tummy time and fussy events from the
 first full day after her consent in force, the payload members listed in design 34 section 5.3 (bottle kind and drunk amount, sleep
 kind and pauses, tummy time pauses, what helped a crying spell and the false-alarm flag), her stored birth date (for the age in weeks,
-then dropped) and the family grouping; never notes, names, other members, time zones or other event kinds. The cap key is a new
+then dropped) and the family grouping; never notes, names, other members, time zones or other event kinds. A kind of sleep a family does not log is treated as missing, never as zero, and a baby who never logs tummy
+time is not counted for it, so a statistic is computed only over the babies whose records actually hold its value (design 34
+section 5.3). The cap key is a new
 operator secret (`COMMUNITY_CAP_KEY`), not personal data. Not built yet, although 19.1 describes them: the read-only role
 `lotties_insights_ro` (the job uses the API's connection) and the run log table `community_runs`. The differences between what is
 read and the consent text and policy wording are listed in design 34 section 5.3 for the T9 rewrite; this change does not edit the
