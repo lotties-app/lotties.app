@@ -10,10 +10,13 @@ namespace Lotties.Domain.CommunityInsights;
 /// <see cref="AllowedInputs"/> and never one of <see cref="ForbiddenCategories"/>, the band's grid and dimension fed by its inputs,
 /// known outputs, k at least <see cref="MinimumK"/>, a tail size of at least <see cref="MinimumKTails"/>
 /// exactly when p3/p97 are listed, a per-baby cap, clipping ranges on its own inputs, status <c>planned</c>, values marked proposed;
-/// and the noise tiers of section 5.1: every percentile output <c>notInV1</c> (O2), pooled growth <c>notInV1</c> (O6), every other
-/// output in exactly the tier the owner decided (<see cref="DecidedTiers"/>) and only when the core computes it, one tier per
-/// statistic, epsilon null exactly when nothing is in v1 and otherwise in the tier's range, <c>notInV1</c> exactly when no output is
-/// in v1, a <c>notInV1Reason</c> exactly when an output is not, and for a statistic in v1 inputs that are exactly what the core reads.
+/// and the noise tiers of sections 5.1 and 5.1.1: every output in exactly the tier the owner decided (<see cref="DecidedTiers"/>) and
+/// only when the core computes it, no percentile in v1 but the quartiles of tier C, pooled growth <c>notInV1</c> (O6), one tier per
+/// statistic, epsilon null exactly when nothing is in v1 and otherwise in the tier's range (tier C: exactly
+/// <see cref="EpsilonPerCellC"/> times the cell bound), a tier C statistic on the 4-week grid with no dimension, the cell bound of
+/// <see cref="MaxCellsPerBabyC"/>, the previous-quarter window, a histogram and one clip range, and no bound, window or histogram on
+/// any other statistic; <c>notInV1</c> exactly when no output is in v1, a <c>notInV1Reason</c> exactly when an output is not, and for
+/// a statistic in v1 inputs that are exactly what the core reads.
 /// </summary>
 public static partial class CommunityStatisticsValidator
 {
@@ -29,6 +32,12 @@ public static partial class CommunityStatisticsValidator
     /// <summary>The largest epsilon per statistic per release of tier B, relaxed (decided: about 5).</summary>
     public const decimal MaximumRelaxedEpsilon = 5m;
 
+    /// <summary>Tier C (option A as bounded on 2026-11-27): epsilon per cell and release of the percentile histograms.</summary>
+    public const decimal EpsilonPerCellC = 2m;
+
+    /// <summary>Tier C: the most cells of one percentile statistic one baby is in per release.</summary>
+    public const int MaxCellsPerBabyC = 4;
+
     /// <summary>The largest number of days one baby may add per statistic and band.</summary>
     public const int MaximumCapPerBaby = 31;
 
@@ -37,6 +46,9 @@ public static partial class CommunityStatisticsValidator
     public const string AgeWeeksGrid = "age_weeks";
 
     public const string CryAgeBandGrid = "cry_age_band";
+
+    /// <summary>The 4-week grid of the percentile statistics (owner default of 2026-11-27), with no coarse fallback.</summary>
+    public const string AgeWeeks4Grid = "age_weeks_4";
 
     /// <summary>The last week (exclusive) the age grids cover: two years.</summary>
     public const int AgeWeeksEnd = 104;
@@ -50,16 +62,21 @@ public static partial class CommunityStatisticsValidator
         "night_sleep_minutes", "feeds_per_day", "diapers_per_day", "routine_shift_scale", "cry_outcome_by_cause",
     ];
 
+    /// <summary>The percentile statistics of tier C (owner decisions of 2026-11-27): formula bottles and the three sleep routines.</summary>
+    public static readonly IReadOnlyList<string> PercentileStatistics = ["bottle_ml_per_feed", "night_sleep_minutes", "naps_per_day", "day_sleep_minutes"];
+
     /// <summary>
-    /// The tier the owner decided for each output that is not a percentile (section 5.1, O2 of 2026-11-11): the crying shares in
-    /// tier A (one output, owner decision of 2026-11-27), the tummy-time share of days in tier B. An output not listed here (and every
-    /// percentile) is <c>notInV1</c>.
+    /// The tier the owner decided for each output (sections 5.1 and 5.1.1): the crying shares in tier A (one output, 2026-11-27), the
+    /// tummy-time share of days in tier B, and p25, p50 and p75 of <see cref="PercentileStatistics"/> in tier C. Every other output is
+    /// <c>notInV1</c>.
     /// </summary>
-    public static readonly IReadOnlyDictionary<string, CommunityOutputTier> DecidedTiers = new Dictionary<string, CommunityOutputTier>(StringComparer.Ordinal)
-    {
-        [$"cry_outcome_by_cause.{CommunityOutputs.ShareHelpedByCause}"] = CommunityOutputTier.A,
-        [$"tummy_minutes_per_day.{CommunityOutputs.ShareOfDaysWithAny}"] = CommunityOutputTier.B,
-    };
+    public static readonly IReadOnlyDictionary<string, CommunityOutputTier> DecidedTiers = new Dictionary<string, CommunityOutputTier>(
+        new[]
+        {
+            KeyValuePair.Create($"cry_outcome_by_cause.{CommunityOutputs.ShareHelpedByCause}", CommunityOutputTier.A),
+            KeyValuePair.Create($"tummy_minutes_per_day.{CommunityOutputs.ShareOfDaysWithAny}", CommunityOutputTier.B),
+        }.Concat(PercentileStatistics.SelectMany(key => CommunityOutputs.Quantiles.Select(output => KeyValuePair.Create($"{key}.{output}", CommunityOutputTier.C)))),
+        StringComparer.Ordinal);
 
     /// <summary>The release cadence (owner decision of 2026-11-27): one release per calendar quarter, never weekly.</summary>
     public static readonly IReadOnlyList<string> Releases = ["quarterly"];
@@ -119,6 +136,7 @@ public static partial class CommunityStatisticsValidator
     {
         [AgeWeeksGrid] = "age_weeks",
         [CryAgeBandGrid] = "age_weeks",
+        [AgeWeeks4Grid] = "age_weeks",
     };
 
     /// <summary>Every rule broken, as readable messages; empty when the catalog is valid.</summary>
@@ -167,6 +185,8 @@ public static partial class CommunityStatisticsValidator
         var fine = EdgesOf(grids.AgeWeeksFine, "ageWeeksFine", errors);
         var coarse = EdgesOf(grids.AgeWeeksCoarse, "ageWeeksCoarse", errors);
         Check(coarse.All(fine.Contains), "every ageWeeksCoarse edge must be an ageWeeksFine edge.", errors);
+        EdgesOf(grids.AgeWeeks4, "ageWeeks4", errors);
+        Check(grids.AgeWeeks4.All(segment => segment.StepWeeks == 4), "ageWeeks4 must be 4-week bands.", errors);
         CheckCryBands(grids.CryAgeBands, errors);
     }
 
@@ -210,6 +230,7 @@ public static partial class CommunityStatisticsValidator
         CheckOutputs(statistic, where, errors);
         CheckTiers(statistic, where, errors);
         CheckEpsilon(statistic, where, errors);
+        CheckPercentileShape(statistic, where, errors);
         CheckPrivacy(statistic, where, errors);
         CheckClip(statistic, where, errors);
         CheckStatus(statistic, where, errors);
@@ -248,9 +269,9 @@ public static partial class CommunityStatisticsValidator
 
     private static void CheckTiers(CommunityStatistic statistic, string where, List<string> errors)
     {
-        errors.AddRange(statistic.V1Outputs.Where(output => CommunityOutputs.Percentiles.Contains(output.Name)).Select(output => $"{where} output '{output.Name}' is a percentile and must be notInV1 (O2, section 5.1)."));
+        errors.AddRange(statistic.V1Outputs.Where(output => CommunityOutputs.Percentiles.Contains(output.Name) && !IsTierCQuartile(output)).Select(output => $"{where} output '{output.Name}' is a percentile and must be notInV1 (O2, section 5.1) unless it is a tier C quartile."));
         Check(statistic.Key != GrowthKey || !statistic.IsInV1, $"{where} must be marked notInV1 (O6).", errors);
-        errors.AddRange(statistic.Outputs.Where(output => !CommunityOutputs.Percentiles.Contains(output.Name) && output.Tier != DecidedTierOf(statistic, output)).Select(output => $"{where} output '{output.Name}' must be tier {DecidedTierOf(statistic, output)} (section 5.1)."));
+        errors.AddRange(statistic.Outputs.Where(output => output.Tier != DecidedTierOf(statistic, output)).Select(output => $"{where} output '{output.Name}' must be tier {DecidedTierOf(statistic, output)} (section 5.1)."));
         errors.AddRange(statistic.V1Outputs.Where(output => !CommunityOutputs.IsBuilt(output.Name)).Select(output => $"{where} output '{output.Name}' has no mechanism built and must be notInV1."));
         Check(!statistic.IsInV1 || CommunityStatisticsAggregator.CanRead(statistic), $"{where} is in v1 but the aggregation core does not read it.", errors);
         Check(statistic.V1Outputs.Select(output => output.Tier).Distinct().Count() <= 1, $"{where} mixes noise tiers in v1.", errors);
@@ -262,6 +283,22 @@ public static partial class CommunityStatisticsValidator
         Check((statistic.Epsilon is null) == (tier is null), $"{where} epsilon must be null exactly when no output is in v1.", errors);
         Check(tier != CommunityOutputTier.A || statistic.Epsilon is > 0m and <= MaximumStrictEpsilon, $"{where} epsilon {statistic.Epsilon} is out of the tier A range (0, {MaximumStrictEpsilon}].", errors);
         Check(tier != CommunityOutputTier.B || statistic.Epsilon is > MaximumStrictEpsilon and <= MaximumRelaxedEpsilon, $"{where} epsilon {statistic.Epsilon} is out of the tier B range ({MaximumStrictEpsilon}, {MaximumRelaxedEpsilon}].", errors);
+        Check(tier != CommunityOutputTier.C || statistic.Epsilon == EpsilonPerCellC * (statistic.MaxCellsPerBaby ?? 0), $"{where} epsilon {statistic.Epsilon} must be {EpsilonPerCellC} per cell times the cell bound (tier C).", errors);
+    }
+
+    /// <summary>
+    /// A tier C statistic is the bounded option A (section 5.1.1): the 4-week grid with no dimension, at most 4 cells per baby, the
+    /// previous-quarter window, a histogram with positive bins and step, and one clip range; no other statistic has any of these.
+    /// </summary>
+    private static void CheckPercentileShape(CommunityStatistic statistic, string where, List<string> errors)
+    {
+        var tierC = statistic.V1Outputs.Any(output => output.Tier == CommunityOutputTier.C);
+        var histogram = statistic.Histogram;
+        Check(!tierC || (statistic.Band.Grid == AgeWeeks4Grid && statistic.Band.Dimension is null), $"{where} is tier C and must use the {AgeWeeks4Grid} grid with no dimension.", errors);
+        Check(!tierC || statistic.MaxCellsPerBaby == MaxCellsPerBabyC, $"{where} is tier C and must keep each baby in at most {MaxCellsPerBabyC} cells.", errors);
+        Check(!tierC || statistic.Window == CommunityStatisticsAggregator.PreviousQuarterWindow, $"{where} is tier C and must read only the {CommunityStatisticsAggregator.PreviousQuarterWindow}.", errors);
+        Check(!tierC || (histogram is not null && histogram.BinWidth > 0m && histogram.Step > 0m && statistic.Clip.Count == 1), $"{where} is tier C and needs a histogram with a positive bin width and step, and one clip range.", errors);
+        Check(tierC || (statistic.MaxCellsPerBaby is null && statistic.Window is null && histogram is null), $"{where} has a cell bound, window or histogram but no tier C output.", errors);
     }
 
     private static void CheckPrivacy(CommunityStatistic statistic, string where, List<string> errors)
@@ -287,6 +324,9 @@ public static partial class CommunityStatisticsValidator
         Check(statistic.NotInV1 == !statistic.IsInV1, statistic.IsInV1 ? $"{where} must not be marked notInV1 (an output is in v1)." : $"{where} must be marked notInV1 (no output is in v1).", errors);
         Check(anyDeferred == !string.IsNullOrWhiteSpace(statistic.NotInV1Reason), $"{where} needs a notInV1Reason exactly when an output is notInV1.", errors);
     }
+
+    private static bool IsTierCQuartile(CommunityStatisticOutput output) =>
+        output.Tier == CommunityOutputTier.C && CommunityOutputs.Quantiles.Contains(output.Name);
 
     private static CommunityOutputTier DecidedTierOf(CommunityStatistic statistic, CommunityStatisticOutput output) =>
         DecidedTiers.GetValueOrDefault($"{statistic.Key}.{output.Name}", CommunityOutputTier.NotInV1);

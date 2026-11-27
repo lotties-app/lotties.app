@@ -1214,3 +1214,185 @@ Basic composition (pure DP): a baby in C published cells of a statistic per rele
 | 3.0 | 0.91 | quarterly, wide grid | 1 / 2 | 12 / 24 | 1.000 |
 
 Runtime: 1555 s (12 worker processes).
+
+## Follow-up, 2026-11-27: the percentile configuration as built
+
+The owner chose option A with a bound (2026-11-27): each release of a percentile statistic reads only the last 3 months,
+one baby is in at most 4 cells of a statistic, epsilon 2 per cell, so at most 8 per baby per statistic per release. The
+coordinator set the other defaults: formula bottles only (breast milk was not studied), 4-week age bands, p25, p50 and p75
+only, the clipping ranges and bins the study measured (naps 0-8), a cell whose noisy total is 0 or less publishes nothing,
+and the snapping sampler. The API builds exactly that (`CommunityHistogramMechanism` and `CommunityStatisticsAggregator` in
+code/api/src/Lotties.Domain/CommunityInsights; docs/design/34-community-insights.md section 5.1.1 item 3). Because the
+sampler, the window and the bound differ from what the 2026-11-26 study measured, this follow-up measures the built
+configuration itself.
+
+Code: [`ml/benchmark/community_percentiles_built.py`](../../ml/benchmark/community_percentiles_built.py), tests in
+[`ml/tests/test_community_percentiles_built.py`](../../ml/tests/test_community_percentiles_built.py) (8 tests: the snapped
+bin's privacy loss against the definition on neighbouring counts, the sampler against its exact distribution, the cell
+bound and "one summary per baby" through the cell code, the window, the "nothing" case, determinism). Command (about 3
+minutes, one process; existing venv, nothing installed):
+
+```bash
+cd ml
+.venv/bin/python -m benchmark.community_percentiles_built --seed 1 --out out --vectors
+.venv/bin/python -m pytest tests/test_community_percentiles_built.py tests/test_community_percentiles.py tests/test_community.py
+```
+
+`--vectors` rewrites `ml/tests/community_histogram_vectors.json`: bin edges, binning probes, read-outs of given noisy
+counts and the noisy median's error on one synthetic cell per metric, which the C# tests (`CommunityHistogramTests`)
+reproduce. How the built configuration is simulated: each synthetic baby's history is placed at a random calendar position
+overlapping one 91-day quarter and only the days inside it are kept; then 4-week bands, the 14-day cap, at most 4 cells per
+baby (most capped days, then a keyed rank), one median per baby and cell, the half-step jitter, the fixed bins, snapped
+Laplace of scale 1/2 per bin, the isotonic read-out. Cells of 20, 30, 50 and 100 babies are drawn from each band's
+population, as in the 2026-11-26 cell study; "study" rows are that study's histogram (plain Laplace, whole history, no
+bound) on the same 4-week bands, for a like-for-like comparison.
+
+**Verdict.** The built configuration is not materially worse than what the owner was shown: at 20 babies the median is
+9.2 ml off on bottles (study 9.1 on its bands; 9.5 on these bands) and 19.0 min on night sleep (study 18.9; 18.3 on these
+bands), the middle half holds 49-51 % of babies. The window and the bound cost little because a 4-week band holds at most
+28 days of a baby anyway and the cap keeps 14 of them; the snapping (counts on a 0.5 grid) is within the measurement
+noise. Cells fill more slowly: in this generator a 4-week band reaches 20 babies from 20 families for 71 % of first-year
+sleep bands at about 300 babies logging in a quarter and for 83 % of formula bottle bands at about 600.
+
+**Review of the 2026-11-26 study (second pair of eyes).** Its tests pass (86, with this follow-up's 8: 94). Points the
+build had to settle and that remain worth knowing:
+- Its option A spends epsilon 2 per cell with each release reading a baby's whole history, so a baby's epsilon per
+  release was 2 x her cells with no fixed bound (median 2, up to 11 on its coarse grid). The owner's bound fixes that.
+- Its "coarse grid" was 4-week bands to week 52, then 12-week bands; the built grid is 4-week bands to week 104 (owner
+  default), measured here.
+- Bottles were formula only in every cell it measured; the breast-milk dimension was never studied (now not read).
+- It returned the middle of the range when the noisy total was 0 or less; the build publishes nothing (no cell measured
+  here hit that case).
+- Its histogram read-out spreads a bin's count evenly over the bin, so a tie block reads up to half a bin off (20 babies at
+  exactly 150 ml read 140 / 140 / 150): the jitter and the offset bins limit, not remove, that bias; the errors above
+  include it.
+- It used numpy's plain Laplace and pseudo-random generator; the build uses the snapping mechanism and the operating
+  system's cryptographic generator (Monte Carlo here uses numpy's generator for the same distribution).
+- Its options listed hysteresis among the common rules; the owner removed hysteresis on 2026-11-27.
+- The suppression decisions (k, dominance) remain non-differentially private, as the study says.
+### Results of the built configuration (generated, seed 1)
+
+`python -m benchmark.community_percentiles_built --seed 1`: population of 80000 synthetic babies, each history placed to overlap one 91-day quarter; 4-week bands 0-4, 4-8, 8-12, 16-20, 24-28, 36-40, 60-64, 88-92; 200 cells per band and size; epsilon 2.0 per cell, at most 4 cells per baby; p25, p50, p75. Error against the band's truth under the same pipeline, pooled over the bands; "bad case" is the 90th percentile of the median's error; coverage is the share of the band's babies inside the released p25-p75 (target 50 %). "study" is the 2026-11-26 study's histogram (plain Laplace, each baby's whole history, no cell bound) on the same bands.
+
+#### bottle_ml_per_feed (ml)
+
+| Configuration | Cell size | Median error | Bad case | p25 error | p75 error | Coverage p25-p75 | Cells with nothing |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| built | 20 | 9.2 | 19.1 | 9.8 | 13.2 | 49 % | 0 |
+| built | 30 | 7.2 | 14.1 | 7.7 | 9.9 | 51 % | 0 |
+| built | 50 | 5.3 | 10.9 | 5.8 | 7.2 | 50 % | 0 |
+| built | 100 | 4.2 | 7.9 | 4.8 | 5.3 | 51 % | 0 |
+| study | 20 | 9.5 | 21.4 | 9.9 | 14.1 | 49 % | 0 |
+| study | 30 | 7.4 | 15.8 | 7.6 | 10.7 | 50 % | 0 |
+| study | 50 | 5.8 | 12.5 | 5.8 | 8.1 | 51 % | 0 |
+| study | 100 | 4.1 | 7.7 | 4.6 | 5.7 | 51 % | 0 |
+
+Babies per band in the population (built pipeline): 0-4: 1323, 4-8: 2576, 8-12: 3365, 16-20: 3909, 24-28: 3932, 36-40: 4127, 60-64: 3997, 88-92: 3726.
+
+#### night_sleep_minutes (min)
+
+| Configuration | Cell size | Median error | Bad case | p25 error | p75 error | Coverage p25-p75 | Cells with nothing |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| built | 20 | 19.0 | 39.0 | 26.9 | 23.0 | 50 % | 0 |
+| built | 30 | 14.4 | 29.1 | 18.4 | 17.2 | 50 % | 0 |
+| built | 50 | 10.2 | 21.1 | 12.4 | 12.0 | 50 % | 0 |
+| built | 100 | 6.7 | 13.6 | 7.8 | 7.9 | 50 % | 0 |
+| study | 20 | 18.3 | 37.4 | 25.1 | 23.6 | 49 % | 0 |
+| study | 30 | 14.6 | 29.6 | 18.0 | 17.5 | 50 % | 0 |
+| study | 50 | 10.1 | 22.1 | 12.0 | 12.3 | 50 % | 0 |
+| study | 100 | 7.3 | 15.5 | 7.8 | 8.3 | 50 % | 0 |
+
+Babies per band in the population (built pipeline): 0-4: 2143, 4-8: 4277, 8-12: 5577, 16-20: 6482, 24-28: 6651, 36-40: 6755, 60-64: 6772, 88-92: 6232.
+
+#### naps_per_day (naps)
+
+| Configuration | Cell size | Median error | Bad case | p25 error | p75 error | Coverage p25-p75 | Cells with nothing |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| built | 20 | 0.1 | 0.5 | 0.2 | 0.2 | 75 % | 0 |
+| built | 30 | 0.1 | 0.5 | 0.1 | 0.1 | 76 % | 0 |
+| built | 50 | 0.1 | 0.5 | 0.1 | 0.1 | 77 % | 0 |
+| built | 100 | 0.0 | 0.0 | 0.1 | 0.1 | 78 % | 0 |
+| study | 20 | 0.1 | 0.5 | 0.2 | 0.2 | 75 % | 0 |
+| study | 30 | 0.1 | 0.5 | 0.1 | 0.1 | 75 % | 0 |
+| study | 50 | 0.1 | 0.5 | 0.1 | 0.1 | 76 % | 0 |
+| study | 100 | 0.0 | 0.0 | 0.1 | 0.1 | 76 % | 0 |
+
+Babies per band in the population (built pipeline): 0-4: 2143, 4-8: 4277, 8-12: 5577, 16-20: 6482, 24-28: 6651, 36-40: 6755, 60-64: 6772, 88-92: 6232.
+
+#### day_sleep_minutes (min)
+
+| Configuration | Cell size | Median error | Bad case | p25 error | p75 error | Coverage p25-p75 | Cells with nothing |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| built | 20 | 13.5 | 29.4 | 14.8 | 20.0 | 50 % | 0 |
+| built | 30 | 10.6 | 20.6 | 11.4 | 13.8 | 51 % | 0 |
+| built | 50 | 7.6 | 15.7 | 8.2 | 9.6 | 51 % | 0 |
+| built | 100 | 5.1 | 10.6 | 5.9 | 6.7 | 51 % | 0 |
+| study | 20 | 13.4 | 27.5 | 13.9 | 19.3 | 50 % | 0 |
+| study | 30 | 11.2 | 23.5 | 11.6 | 13.6 | 51 % | 0 |
+| study | 50 | 8.1 | 16.0 | 8.2 | 9.5 | 51 % | 0 |
+| study | 100 | 5.7 | 11.9 | 5.5 | 6.3 | 51 % | 0 |
+
+Babies per band in the population (built pipeline): 0-4: 2143, 4-8: 4277, 8-12: 5577, 16-20: 6482, 24-28: 6651, 36-40: 6755, 60-64: 6772, 88-92: 6232.
+
+#### Privacy of the built configuration
+
+- Exact check of one snapped bin (scale 0.5, grid 0.5), counts 0-50 against count + 1: largest |log probability ratio| 2.0000, at most epsilon 2.0 per cell.
+- Formal bound per cell and release tanh(epsilon / 2) = 0.76; per baby and release (at most 4 cells, epsilon 8) 0.9993; the histogram's own TV at most 0.63.
+
+Strongest attacker on one published percentile of a 20-baby cell (20000 draws per world; plug-in, a lower bound for the release):
+
+| Statistic | Band | Advantage, most extreme baby | Advantage, random baby |
+|---|---|---:|---:|
+| bottle_ml_per_feed | 8-12 | 0.14 | 0.11 |
+| night_sleep_minutes | 36-40 | 0.14 | 0.10 |
+| naps_per_day | 24-28 | 0.20 | 0.06 |
+| day_sleep_minutes | 36-40 | 0.16 | 0.11 |
+
+#### Babies logging in a quarter for a 4-week band to reach 20 babies from 20 families
+
+Instances of N babies whose logging overlaps the quarter (all opted in, about 1.3 babies per family; the generator's ages are uniform over two years, histories 2-16 weeks); mean over 5 instances. Bands published: share of the 26 bands passing k and dominance; first year: share of the 13 bands up to week 52.
+
+| Babies logging in the quarter | Statistic | Bands published | First-year bands published | Median babies per band | Cells per baby (median / p90 / max) |
+|---:|---|---:|---:|---:|---|
+| 100 | bottle_ml_per_feed | 0 % | 0 % | 5 | 2 / 3 / 4 |
+| 100 | night_sleep_minutes | 0 % | 0 % | 8 | 2 / 3 / 4 |
+| 100 | naps_per_day | 0 % | 0 % | 8 | 2 / 3 / 4 |
+| 100 | day_sleep_minutes | 0 % | 0 % | 8 | 2 / 3 / 4 |
+| 150 | bottle_ml_per_feed | 0 % | 0 % | 7 | 2 / 3 / 4 |
+| 150 | night_sleep_minutes | 2 % | 0 % | 12 | 2 / 3 / 4 |
+| 150 | naps_per_day | 2 % | 0 % | 12 | 2 / 3 / 4 |
+| 150 | day_sleep_minutes | 2 % | 0 % | 12 | 2 / 3 / 4 |
+| 200 | bottle_ml_per_feed | 0 % | 0 % | 9 | 2 / 3 / 4 |
+| 200 | night_sleep_minutes | 14 % | 5 % | 16 | 2 / 3 / 4 |
+| 200 | naps_per_day | 14 % | 5 % | 16 | 2 / 3 / 4 |
+| 200 | day_sleep_minutes | 14 % | 5 % | 16 | 2 / 3 / 4 |
+| 300 | bottle_ml_per_feed | 8 % | 5 % | 14 | 2 / 3 / 4 |
+| 300 | night_sleep_minutes | 78 % | 71 % | 23 | 2 / 3 / 4 |
+| 300 | naps_per_day | 78 % | 71 % | 23 | 2 / 3 / 4 |
+| 300 | day_sleep_minutes | 78 % | 71 % | 23 | 2 / 3 / 4 |
+| 400 | bottle_ml_per_feed | 45 % | 43 % | 19 | 2 / 3 / 4 |
+| 400 | night_sleep_minutes | 92 % | 86 % | 32 | 2 / 3 / 4 |
+| 400 | naps_per_day | 92 % | 86 % | 32 | 2 / 3 / 4 |
+| 400 | day_sleep_minutes | 92 % | 86 % | 32 | 2 / 3 / 4 |
+| 600 | bottle_ml_per_feed | 92 % | 83 % | 30 | 2 / 3 / 4 |
+| 600 | night_sleep_minutes | 96 % | 92 % | 49 | 2 / 3 / 4 |
+| 600 | naps_per_day | 96 % | 92 % | 49 | 2 / 3 / 4 |
+| 600 | day_sleep_minutes | 96 % | 92 % | 49 | 2 / 3 / 4 |
+| 800 | bottle_ml_per_feed | 96 % | 92 % | 39 | 2 / 3 / 4 |
+| 800 | night_sleep_minutes | 98 % | 95 % | 64 | 2 / 3 / 4 |
+| 800 | naps_per_day | 98 % | 95 % | 64 | 2 / 3 / 4 |
+| 800 | day_sleep_minutes | 98 % | 95 % | 64 | 2 / 3 / 4 |
+| 1000 | bottle_ml_per_feed | 96 % | 92 % | 49 | 2 / 3 / 4 |
+| 1000 | night_sleep_minutes | 100 % | 100 % | 82 | 2 / 3 / 4 |
+| 1000 | naps_per_day | 100 % | 100 % | 82 | 2 / 3 / 4 |
+| 1000 | day_sleep_minutes | 100 % | 100 % | 82 | 2 / 3 / 4 |
+| 1500 | bottle_ml_per_feed | 100 % | 100 % | 74 | 2 / 3 / 4 |
+| 1500 | night_sleep_minutes | 100 % | 100 % | 122 | 2 / 3 / 4 |
+| 1500 | naps_per_day | 100 % | 100 % | 122 | 2 / 3 / 4 |
+| 1500 | day_sleep_minutes | 100 % | 100 % | 122 | 2 / 3 / 4 |
+| 2000 | bottle_ml_per_feed | 100 % | 100 % | 97 | 2 / 3 / 4 |
+| 2000 | night_sleep_minutes | 100 % | 100 % | 162 | 2 / 3 / 4 |
+| 2000 | naps_per_day | 100 % | 100 % | 162 | 2 / 3 / 4 |
+| 2000 | day_sleep_minutes | 100 % | 100 % | 162 | 2 / 3 / 4 |
+
+Runtime: 134 s.

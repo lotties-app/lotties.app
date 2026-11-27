@@ -63,16 +63,21 @@ public sealed class CommunityAggregationRunnerTests(ApiFactory factory) : IClass
         Assert.Equal(["2026-W41", "2026-W53"], (await StoredAsync()).Select(release => release.ReleaseId));
     }
 
+    /// <summary>A placeholder is written at most once per quarter: after a release, a damaged row or the phase-1 placeholder, none.</summary>
     [Theory]
     [InlineData("release")]
-    [InlineData("unreadable")]
-    public async Task Run_AfterAReleaseThatCountsThisQuarter_WritesNothing(string stored)
+    [InlineData("damaged")]
+    [InlineData("phase-1-placeholder")]
+    public async Task Run_AfterAnyStoredRowThisQuarter_WritesNoPlaceholder(string stored)
     {
         await ResetAsync();
         await SeedEligibleBabyAsync();
-        var json = stored == "release"
-            ? CommunityReleaseJson.Serialize(new CommunityRelease(Parse("2026-10-02T03:30:00Z"), 2, IsPlaceholder: false, [new("tummy_minutes_per_day", 20, 5m)], []))
-            : """{"schema":1,"cells":[],"generatedBy":"phase-1-placeholder"}""";
+        var json = stored switch
+        {
+            "release" => CommunityReleaseJson.Serialize(new CommunityRelease(Parse("2026-10-02T03:30:00Z"), 2, IsPlaceholder: false, [new("tummy_minutes_per_day", 20, 5m)], [])),
+            "damaged" => """{"schema":1,"cells":[{"statistic":"tummy_minutes_per_day"}],"generatedBy":"phase-1-placeholder"}""",
+            _ => """{"schema":1,"cells":[],"generatedBy":"phase-1-placeholder"}""",
+        };
         await SeedReleaseAsync(json, "2026-10-02T03:30:00Z");
 
         await RunAsync("2026-11-29T03:30:00Z");

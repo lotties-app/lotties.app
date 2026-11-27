@@ -2,8 +2,9 @@ namespace Lotties.Domain.CommunityInsights;
 
 /// <summary>
 /// The catalog outputs (docs/design/34-community-insights.md sections 4 and 5.1) and what the aggregation core can compute of them:
-/// the share outputs (<see cref="Shares"/>) have a built mechanism; percentile outputs have none yet and stay <c>notInV1</c>. A
-/// quantile mechanism added later publishes its values (<c>p10</c>..<c>p90</c>) in the same named-values shape of a cell.
+/// the share outputs (<see cref="Shares"/>, one release unit each) and the published quartiles (<see cref="Quantiles"/>, read
+/// together from one noisy histogram per cell, the release unit <see cref="QuantileUnit"/>) have a built mechanism; every other
+/// percentile has none and stays <c>notInV1</c>.
 /// </summary>
 public static class CommunityOutputs
 {
@@ -22,7 +23,13 @@ public static class CommunityOutputs
         ShareHelpedByCause, ShareSuggestedEqualsHelped,
     ];
 
-    /// <summary>The outputs that are percentiles (O2: not in v1, no quantile mechanism built).</summary>
+    /// <summary>The release unit of a percentile statistic: one histogram per cell, read for every published quartile.</summary>
+    public const string QuantileUnit = "quantiles";
+
+    /// <summary>The percentiles the histogram mechanism publishes (owner default of 2026-11-27: p25, p50 and p75 only).</summary>
+    public static readonly IReadOnlyList<string> Quantiles = ["p25", "p50", "p75"];
+
+    /// <summary>The outputs that are percentiles (in v1 only the <see cref="Quantiles"/> of tier C statistics).</summary>
     public static readonly IReadOnlyList<string> Percentiles =
     [
         "p3", "p10", "p15", "p25", "p50", "p75", "p85", "p90", "p97", "bottles_per_day_p50", "shift_ratio_p90", "shift_ratio_p97",
@@ -42,7 +49,10 @@ public static class CommunityOutputs
     };
 
     /// <summary>Whether the core has a mechanism for <paramref name="output"/> (only such an output may be in v1).</summary>
-    public static bool IsBuilt(string output) => Shares.ContainsKey(output);
+    public static bool IsBuilt(string output) => Shares.ContainsKey(output) || Quantiles.Contains(output);
+
+    /// <summary>The release unit an output is computed in: its own name for a share, <see cref="QuantileUnit"/> for a quartile.</summary>
+    public static string UnitOf(string output) => Quantiles.Contains(output) ? QuantileUnit : output;
 }
 
 /// <summary>

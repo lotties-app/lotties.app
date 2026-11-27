@@ -30,6 +30,8 @@ internal sealed class ConstantRandomSource(ulong bits) : ICommunityRandomSource
 internal sealed class ExactNoise : ICommunityNoise
 {
     public double Perturb(double exact, double scale) => exact;
+
+    public double Jitter(double halfWidth) => 0.0;
 }
 
 /// <summary>Exact sums, and every scale it was asked for, in call order.</summary>
@@ -42,6 +44,8 @@ internal sealed class RecordingNoise : ICommunityNoise
         Scales.Add(scale);
         return exact;
     }
+
+    public double Jitter(double halfWidth) => 0.0;
 }
 
 /// <summary>A synthetic baby and her family.</summary>
@@ -79,8 +83,28 @@ internal static class CommunityFixtures
     public static IReadOnlyList<CommunityCrySpell> Spells(IReadOnlyList<TestBaby> babies, int ageWeeks, string cause, int day = 0) =>
         [.. babies.Select(baby => new CommunityCrySpell(baby.Baby, baby.Family, ageWeeks, FirstDay.AddDays(day), cause))];
 
-    public static CommunityAggregationInput Input(IReadOnlyList<CommunityTummyTimeDay>? tummy = null, IReadOnlyList<CommunityCrySpell>? spells = null) =>
-        new(Catalog, new DateTimeOffset(2026, 11, 29, 3, 30, 0, TimeSpan.Zero), CapKey, tummy ?? [], spells ?? []);
+    /// <summary>When the test runs are generated: inside 2026-Q4, so the percentile window is 2026-07-01 to 2026-09-30.</summary>
+    public static readonly DateTimeOffset GeneratedAt = new(2026, 11, 29, 3, 30, 0, TimeSpan.Zero);
+
+    /// <summary>The first day of the percentile window of <see cref="GeneratedAt"/>.</summary>
+    public static readonly DateOnly WindowStart = new(2026, 7, 1);
+
+    public static CommunityAggregationInput Input(
+        IReadOnlyList<CommunityTummyTimeDay>? tummy = null,
+        IReadOnlyList<CommunityCrySpell>? spells = null,
+        IReadOnlyList<CommunityBottleFeed>? bottles = null,
+        IReadOnlyList<CommunityRoutineDay>? routines = null) =>
+        new(Catalog, GeneratedAt, CapKey, tummy ?? [], spells ?? [], bottles ?? [], routines ?? []);
+
+    /// <summary>Formula bottles: one per baby and day for <paramref name="days"/> days from <paramref name="first"/> (default the window start), all at <paramref name="ageWeeks"/>.</summary>
+    public static IReadOnlyList<CommunityBottleFeed> Bottles(IReadOnlyList<TestBaby> babies, int ageWeeks, Func<int, decimal> mlOfBaby, int days = 1, DateOnly? first = null, string kind = "formula") =>
+        [.. babies.SelectMany((baby, index) => Enumerable.Range(0, days).Select(day =>
+            new CommunityBottleFeed(baby.Baby, baby.Family, ageWeeks, (first ?? WindowStart).AddDays(day), kind, mlOfBaby(index))))];
+
+    /// <summary>Routine days with night sleep only, one per baby and day from <paramref name="first"/> (default the window start).</summary>
+    public static IReadOnlyList<CommunityRoutineDay> Nights(IReadOnlyList<TestBaby> babies, int ageWeeks, Func<int, decimal> minutesOfBaby, int days = 1, DateOnly? first = null) =>
+        [.. babies.SelectMany((baby, index) => Enumerable.Range(0, days).Select(day =>
+            new CommunityRoutineDay(baby.Baby, baby.Family, ageWeeks, (first ?? WindowStart).AddDays(day), minutesOfBaby(index), null, null)))];
 
     public static CommunityRelease Run(CommunityAggregationInput input, ICommunityNoise? noise = null) =>
         CommunityStatisticsAggregator.Aggregate(input, noise ?? new ExactNoise()).Release;

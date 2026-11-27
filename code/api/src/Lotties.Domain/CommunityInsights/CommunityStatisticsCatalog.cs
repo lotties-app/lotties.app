@@ -27,12 +27,13 @@ public sealed record CommunityStatisticsCatalog(
 
 /// <summary>
 /// The fixed band edges (section 5 "Bands"): a fine grid of age in completed weeks, the coarser fallback grid a fine cell
-/// below k is published in, and the cry age bands of docs/design/27 on fixed week edges (read from age in completed weeks).
-/// Edges never move with the data.
+/// below k is published in, the 4-week grid of the percentile statistics (no fallback), and the cry age bands of docs/design/27
+/// on fixed week edges (read from age in completed weeks). Edges never move with the data.
 /// </summary>
 public sealed record CommunityBandGrids(
     IReadOnlyList<CommunityBandSegment> AgeWeeksFine,
     IReadOnlyList<CommunityBandSegment> AgeWeeksCoarse,
+    IReadOnlyList<CommunityBandSegment> AgeWeeks4,
     IReadOnlyList<CommunityNamedBand> CryAgeBands);
 
 /// <summary>Bands of <see cref="StepWeeks"/> weeks from <see cref="FromWeeks"/> (inclusive) to <see cref="ToWeeks"/> (exclusive).</summary>
@@ -50,8 +51,11 @@ public sealed record CommunityNamedBand(string Name, int FromWeeks, int ToWeeks)
 /// published, in every release (no hysteresis, owner decision of 2026-11-27), <see cref="KTails"/> the size needed for p3/p97
 /// (null when the statistic has no tail output). <see cref="Epsilon"/> is the budget one baby spends on this statistic per
 /// release, over all its cells and v1 outputs (null when nothing of it is in v1). For a statistic with an output in v1,
-/// <see cref="Inputs"/> are exactly what the aggregation core reads. <see cref="Proposed"/> marks values that still wait for the
-/// owner's decision O1 (section 13).
+/// <see cref="Inputs"/> are exactly what the aggregation core reads. A percentile statistic (tier C) also has
+/// <see cref="MaxCellsPerBaby"/> (one baby is in at most that many of its cells per release, so the epsilon per cell is
+/// <see cref="Epsilon"/> divided by it), <see cref="Window"/> (the days a release reads) and <see cref="Histogram"/> (bins and
+/// published step); the share statistics have none. <see cref="Proposed"/> marks values that still wait for the owner's decision O1
+/// (section 13).
 /// </summary>
 public sealed record CommunityStatistic(
     string Key,
@@ -63,6 +67,9 @@ public sealed record CommunityStatistic(
     int? KTails,
     decimal? Epsilon,
     int CapPerBaby,
+    int? MaxCellsPerBaby,
+    string? Window,
+    CommunityHistogramSpec? Histogram,
     IReadOnlyList<CommunityClip> Clip,
     string Status,
     bool Proposed,
@@ -94,9 +101,18 @@ public enum CommunityOutputTier
     /// <summary>Relaxed: epsilon about 5 per statistic per weekly release; weak formal guarantee, stated as such.</summary>
     B,
 
+    /// <summary>
+    /// Percentiles, option A as bounded on 2026-11-27: a noisy histogram per cell at epsilon 2 per cell and release, at most 4 cells
+    /// per baby per statistic (8 per statistic per release), reading only the previous calendar quarter; weak formal guarantee.
+    /// </summary>
+    C,
+
     /// <summary>Deferred: not computed nor published in v1.</summary>
     NotInV1,
 }
+
+/// <summary>The fixed histogram of a percentile statistic: bins of <see cref="BinWidth"/> offset by half a <see cref="Step"/>, values published on multiples of <see cref="Step"/>.</summary>
+public sealed record CommunityHistogramSpec(decimal BinWidth, decimal Step);
 
 /// <summary>The grid a statistic is banded on and its one extra dimension (bottle kind, part of day, routine metric), if any.</summary>
 public sealed record CommunityStatisticBand(string Grid, string? Dimension);

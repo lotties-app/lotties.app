@@ -1,22 +1,23 @@
 namespace Lotties.Domain.CommunityInsights;
 
+/// <summary>What one release unit of one statistic is computed with: the statistic, the unit, its fixed grid, its epsilon and the noise.</summary>
+internal sealed record CommunityMechanismContext(CommunityStatistic Statistic, string Unit, CommunityCellGrid Grid, double Epsilon, ICommunityNoise Noise);
+
 /// <summary>
-/// The noise mechanism of one kind of output. Contract: from every capped, weighted sample of one output and that output's epsilon,
-/// return the noisy named values of every fine and coarse cell of the grid that has a value, such that the whole map is
-/// epsilon-differentially private for the addition or removal of one baby; the cells computed and the noise drawn follow the fixed
-/// grid, never the data. Built: <see cref="CommunityShareMechanism"/>. A quantile mechanism for the percentile outputs joins here
-/// later and publishes <c>p10</c>..<c>p90</c> in the same cell shape.
+/// The noise mechanism of one kind of release unit. Contract: from every capped sample of one unit (and, for a percentile statistic,
+/// at most <see cref="CommunityStatistic.MaxCellsPerBaby"/> cells per baby, enforced before) and that unit's epsilon, return the
+/// noisy named values of every cell of the grid that has a value, such that the whole map is epsilon-differentially private for the
+/// addition or removal of one baby; the cells computed and the noise drawn follow the fixed grid, never the data.
+/// <see cref="Weigh"/> gives each baby's weight in each cell, which the k and dominance rules read. Built:
+/// <see cref="CommunityShareMechanism"/> and <see cref="CommunityHistogramMechanism"/>.
 /// </summary>
 internal interface ICommunityOutputMechanism
 {
-    bool CanHandle(string output);
+    bool CanHandle(string unit);
 
-    IReadOnlyDictionary<CommunityCellKey, IReadOnlyDictionary<string, decimal>> Release(
-        string output,
-        CommunityCellGrid grid,
-        IReadOnlyList<CommunityWeightedSample> samples,
-        double epsilon,
-        ICommunityNoise noise);
+    IReadOnlyList<CommunityWeightedSample> Weigh(IReadOnlyList<CommunityCellSample> samples);
+
+    IReadOnlyDictionary<CommunityCellKey, IReadOnlyDictionary<string, decimal>> Release(CommunityMechanismContext context, IReadOnlyList<CommunityCellSample> samples);
 }
 
 /// <summary>
@@ -34,20 +35,18 @@ internal sealed class CommunityShareMechanism : ICommunityOutputMechanism
 
     public static CommunityShareMechanism Instance { get; } = new();
 
-    public bool CanHandle(string output) => CommunityOutputs.Shares.ContainsKey(output);
+    public bool CanHandle(string unit) => CommunityOutputs.Shares.ContainsKey(unit);
 
-    public IReadOnlyDictionary<CommunityCellKey, IReadOnlyDictionary<string, decimal>> Release(
-        string output,
-        CommunityCellGrid grid,
-        IReadOnlyList<CommunityWeightedSample> samples,
-        double epsilon,
-        ICommunityNoise noise)
+    /// <summary>1 / the baby's capped samples of the output, so each baby's weights add up to 1.</summary>
+    public IReadOnlyList<CommunityWeightedSample> Weigh(IReadOnlyList<CommunityCellSample> samples) => CommunityWeightedSample.Of(samples);
+
+    public IReadOnlyDictionary<CommunityCellKey, IReadOnlyDictionary<string, decimal>> Release(CommunityMechanismContext context, IReadOnlyList<CommunityCellSample> samples)
     {
-        var share = CommunityOutputs.Shares[output];
-        var exact = samples.ToLookup(sample => sample.Cell);
-        var scale = 1.0 / epsilon;
-        var fine = grid.FineCells.ToDictionary(cell => cell, cell => NoisySums(share, exact[cell], scale, noise));
-        var coarse = grid.CoarseCells.ToDictionary(cell => cell.Key, cell => SumOf(share, cell.FineCells.Select(key => fine[key])));
+        var share = CommunityOutputs.Shares[context.Unit];
+        var exact = Weigh(samples).ToLookup(sample => sample.Cell);
+        var scale = 1.0 / context.Epsilon;
+        var fine = context.Grid.FineCells.ToDictionary(cell => cell, cell => NoisySums(share, exact[cell], scale, context.Noise));
+        var coarse = context.Grid.CoarseCells.ToDictionary(cell => cell.Key, cell => SumOf(share, cell.FineCells.Select(key => fine[key])));
         return fine.Concat(coarse)
             .Select(cell => new KeyValuePair<CommunityCellKey, IReadOnlyDictionary<string, decimal>?>(cell.Key, ValuesOf(share, cell.Value)))
             .Where(cell => cell.Value is not null)

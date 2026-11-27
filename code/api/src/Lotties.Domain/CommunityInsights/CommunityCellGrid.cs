@@ -7,8 +7,9 @@ public readonly record struct CommunityCellKey(CommunityBand Band, string? Dimen
 public sealed record CommunityCoarseCell(CommunityCellKey Key, IReadOnlyList<CommunityCellKey> FineCells);
 
 /// <summary>
-/// The fixed bands of the catalog grids (docs/design/34-community-insights.md section 5 "Bands"): the fine age grid, its coarse
-/// fallback, and the cry age bands (no coarse grid). Edges come from the catalog only, never from the data.
+/// The fixed bands of the catalog grids (docs/design/34-community-insights.md section 5 "Bands"): the fine age grid and its coarse
+/// fallback, the 4-week grid of the percentile statistics, and the cry age bands (no coarse grid for either). Edges come from the
+/// catalog only, never from the data.
 /// </summary>
 public static class CommunityBandGrid
 {
@@ -19,12 +20,13 @@ public static class CommunityBandGrid
         return grid switch
         {
             CommunityStatisticsValidator.AgeWeeksGrid => Expand(grids.AgeWeeksFine),
+            CommunityStatisticsValidator.AgeWeeks4Grid => Expand(grids.AgeWeeks4),
             CommunityStatisticsValidator.CryAgeBandGrid => [.. grids.CryAgeBands.Select(band => new CommunityBand(band.FromWeeks, band.ToWeeks))],
             _ => [],
         };
     }
 
-    /// <summary>The coarse fallback bands of <paramref name="grid"/>; the cry grid has none.</summary>
+    /// <summary>The coarse fallback bands of <paramref name="grid"/>; the 4-week grid and the cry grid have none.</summary>
     public static IReadOnlyList<CommunityBand> CoarseBands(CommunityBandGrids grids, string grid)
     {
         ArgumentNullException.ThrowIfNull(grids);

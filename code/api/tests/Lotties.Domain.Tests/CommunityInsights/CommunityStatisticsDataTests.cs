@@ -60,7 +60,7 @@ public sealed class CommunityStatisticsDataTests
         // O6 keeps pooled growth out; O2 (design 34 section 5.1) defers every percentile output: only the crying shares and the
         // tummy-time statistic (its share of days) stay candidates for v1.
         Assert.Equal(
-            ["bottle_ml_per_feed", "growth_vs_age", "naps_per_day", "day_sleep_minutes", "night_sleep_minutes", "feeds_per_day", "diapers_per_day", "routine_shift_scale"],
+            ["growth_vs_age", "feeds_per_day", "diapers_per_day", "routine_shift_scale"],
             statistics.Where(statistic => statistic.NotInV1).Select(statistic => statistic.Key));
     }
 
@@ -69,12 +69,33 @@ public sealed class CommunityStatisticsDataTests
     {
         var statistics = ShippedCommunityStatistics.Catalog.Statistics;
 
-        // Tier A (strict, 0.2): the crying shares; tier B (relaxed, about 5): the tummy-time share of days; nothing else in v1.
+        // Tier A (strict, 0.2): the crying shares; tier B (relaxed, about 5): the tummy-time share of days; tier C (2026-11-27): p25,
+        // p50 and p75 of formula bottles and the three sleep routines, epsilon 2 per cell, at most 4 cells (8 per release).
+        string[] quartiles = ["p25:C", "p50:C", "p75:C"];
         Assert.Equal(
-            ["tummy_minutes_per_day.share_of_days_with_any:B", "cry_outcome_by_cause.share_helped_by_cause:A"],
+            [
+                .. quartiles.Select(output => $"bottle_ml_per_feed.{output}"), "tummy_minutes_per_day.share_of_days_with_any:B",
+                .. quartiles.Select(output => $"naps_per_day.{output}"), .. quartiles.Select(output => $"day_sleep_minutes.{output}"),
+                .. quartiles.Select(output => $"night_sleep_minutes.{output}"), "cry_outcome_by_cause.share_helped_by_cause:A",
+            ],
             statistics.SelectMany(statistic => statistic.V1Outputs.Select(output => $"{statistic.Key}.{output.Name}:{output.Tier}")));
-        Assert.Equal([("tummy_minutes_per_day", 5m), ("cry_outcome_by_cause", 0.2m)], statistics.Where(statistic => statistic.Epsilon is not null).Select(statistic => (statistic.Key, statistic.Epsilon!.Value)));
-        Assert.All(statistics.SelectMany(statistic => statistic.Outputs).Where(output => CommunityOutputs.Percentiles.Contains(output.Name)), output => Assert.Equal(CommunityOutputTier.NotInV1, output.Tier));
+        Assert.Equal(
+            [("bottle_ml_per_feed", 8m), ("tummy_minutes_per_day", 5m), ("naps_per_day", 8m), ("day_sleep_minutes", 8m), ("night_sleep_minutes", 8m), ("cry_outcome_by_cause", 0.2m)],
+            statistics.Where(statistic => statistic.Epsilon is not null).Select(statistic => (statistic.Key, statistic.Epsilon!.Value)));
+        Assert.All(statistics.SelectMany(statistic => statistic.Outputs).Where(output => CommunityOutputs.Percentiles.Contains(output.Name) && !CommunityOutputs.Quantiles.Contains(output.Name)), output => Assert.Equal(CommunityOutputTier.NotInV1, output.Tier));
+    }
+
+    [Fact]
+    public void File_Percentiles_AreTheBoundedOptionA_AsTheStudyMeasuredIt()
+    {
+        var percentiles = ShippedCommunityStatistics.Catalog.Statistics.Where(statistic => statistic.V1Outputs.Any(output => output.Tier == CommunityOutputTier.C)).ToArray();
+
+        Assert.Equal(["bottle_ml_per_feed", "naps_per_day", "day_sleep_minutes", "night_sleep_minutes"], percentiles.Select(statistic => statistic.Key));
+        Assert.All(percentiles, statistic => Assert.Equal((4, "previous_quarter", "age_weeks_4", (string?)null, 14), (statistic.MaxCellsPerBaby!.Value, statistic.Window!, statistic.Band.Grid, statistic.Band.Dimension, statistic.CapPerBaby)));
+        Assert.Equal(
+            [("bottle_drunk_ml", 0m, 400m, 20m, 10m), ("naps_per_day", 0m, 8m, 0.5m, 0.5m), ("day_sleep_minutes", 0m, 720m, 30m, 10m), ("night_sleep_minutes", 0m, 960m, 30m, 10m)],
+            percentiles.Select(statistic => (statistic.Clip.Single().Input, statistic.Clip.Single().Min, statistic.Clip.Single().Max, statistic.Histogram!.BinWidth, statistic.Histogram.Step)));
+        Assert.Equal([new CommunityBandSegment(0, 104, 4)], ShippedCommunityStatistics.Catalog.BandGrids.AgeWeeks4);
     }
 
     [Fact]
@@ -99,7 +120,7 @@ public sealed class CommunityStatisticsDataTests
     [Fact]
     public void Parse_UnknownTier_IsAFormatException()
     {
-        var unknownTier = ShippedCommunityStatistics.Text.Replace("\"tier\": \"B\"", "\"tier\": \"C\"", StringComparison.Ordinal);
+        var unknownTier = ShippedCommunityStatistics.Text.Replace("\"tier\": \"B\"", "\"tier\": \"D\"", StringComparison.Ordinal);
 
         Assert.Throws<FormatException>(() => CommunityStatisticsJson.Parse(unknownTier));
     }
@@ -123,7 +144,7 @@ public sealed class CommunityStatisticsDataTests
     [Fact]
     public void Parse_NullWhereNotAllowed_IsAFormatException()
     {
-        var nullDescription = ShippedCommunityStatistics.Text.Replace("\"description\": \"Naps per complete local day.\"", "\"description\": null", StringComparison.Ordinal);
+        var nullDescription = ShippedCommunityStatistics.Text.Replace("\"description\": \"Naps per complete local day, by age in 4-week bands, from the previous calendar quarter.\"", "\"description\": null", StringComparison.Ordinal);
 
         Assert.Throws<FormatException>(() => CommunityStatisticsJson.Parse(nullDescription));
     }

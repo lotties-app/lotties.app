@@ -55,7 +55,40 @@ public sealed class CommunityReleaseCadenceTests
         Assert.False(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, Now, latest));
         Assert.False(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Placeholder, Now, latest));
         Assert.False(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, new DateTimeOffset(2026, 12, 31, 23, 59, 59, TimeSpan.Zero), latest));
-        Assert.True(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero), latest));
+        Assert.True(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, new DateTimeOffset(2027, 1, 2, 0, 0, 0, TimeSpan.Zero), latest));
+    }
+
+    [Fact]
+    public void Release_IsNotDueInTheFirstDayOfAQuarter_SoEveryLocalDayOfItsWindowHasEnded()
+    {
+        var latest = Real(new DateTimeOffset(2026, 10, 1, 3, 30, 0, TimeSpan.Zero));
+
+        Assert.False(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero), latest));
+        Assert.False(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, new DateTimeOffset(2027, 1, 1, 23, 59, 59, TimeSpan.Zero), latest));
+        Assert.True(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, new DateTimeOffset(2027, 1, 2, 0, 0, 0, TimeSpan.Zero), latest));
+        Assert.True(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Placeholder, new DateTimeOffset(2027, 1, 1, 0, 0, 0, TimeSpan.Zero), latest));
+    }
+
+    [Theory]
+    [InlineData("2027-01-02T00:00:00Z", "2026-10-01", "2026-12-31")]
+    [InlineData("2027-03-31T23:59:59Z", "2026-10-01", "2026-12-31")]
+    [InlineData("2027-04-01T00:00:00Z", "2027-01-01", "2027-03-31")]
+    [InlineData("2026-08-15T12:00:00Z", "2026-04-01", "2026-06-30")]
+    [InlineData("2026-02-01T00:00:00-05:00", "2025-10-01", "2025-12-31")]
+    public void Window_IsThePreviousCalendarQuarter(string generatedAt, string from, string to)
+    {
+        var window = CommunityDataWindow.PreviousQuarterOf(DateTimeOffset.Parse(generatedAt, System.Globalization.CultureInfo.InvariantCulture));
+
+        Assert.Equal(new CommunityDataWindow(DateOnly.Parse(from, System.Globalization.CultureInfo.InvariantCulture), DateOnly.Parse(to, System.Globalization.CultureInfo.InvariantCulture)), window);
+    }
+
+    [Fact]
+    public void Windows_OfConsecutiveReleases_NeverShareADay_AndLeaveNoGap()
+    {
+        var quarters = Enumerable.Range(0, 12).Select(index => new CommunityQuarter(2026, 1).Start.AddMonths(3 * index).AddDays(5)).Select(CommunityDataWindow.PreviousQuarterOf).ToArray();
+
+        Assert.All(quarters.Zip(quarters.Skip(1)), pair => Assert.Equal(pair.First.To.AddDays(1), pair.Second.From));
+        Assert.All(quarters, window => Assert.InRange(window.To.DayNumber - window.From.DayNumber + 1, 90, 92));
     }
 
     [Fact]
@@ -87,17 +120,31 @@ public sealed class CommunityReleaseCadenceTests
         Assert.False(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Placeholder, Now, latest));
     }
 
-    [Fact]
-    public void StoredRow_UnreadableContent_CountsAsARelease()
+    [Theory]
+    [InlineData("""{"schema":1,"cells":[],"generatedBy":"phase-1-placeholder"}""")]
+    [InlineData("""{ "generatedBy": "phase-1-placeholder", "cells": [ ], "schema": 1 }""")]
+    public void StoredRow_ThePhase1Placeholder_IsAPlaceholder_AndDoesNotBlockTheQuartersRelease(string json)
     {
-        var at = new DateTimeOffset(2026, 10, 2, 0, 0, 0, TimeSpan.Zero);
+        var legacy = CommunityStoredRelease.Of(new DateTimeOffset(2026, 10, 2, 0, 0, 0, TimeSpan.Zero), json);
 
-        var legacy = CommunityStoredRelease.Of(at, """{"schema":1,"cells":[],"generatedBy":"phase-1-placeholder"}""");
-        var damaged = CommunityStoredRelease.Of(at, "{");
+        Assert.False(legacy.CountsAgainstQuarter);
+        Assert.True(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, Now, legacy));
+        Assert.False(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Placeholder, Now, legacy));
+    }
 
-        Assert.True(legacy.CountsAgainstQuarter);
+    [Theory]
+    [InlineData("{")]
+    [InlineData("""{"schema":1,"cells":[{"statistic":"x"}],"generatedBy":"phase-1-placeholder"}""")]
+    [InlineData("""{"schema":1,"cells":[],"generatedBy":"phase-1-placeholder","extra":true}""")]
+    [InlineData("""{"schema":2,"cells":[],"generatedBy":"phase-1-placeholder"}""")]
+    [InlineData("""{"schema":1,"cells":[],"generatedBy":"phase-2"}""")]
+    [InlineData("""[]""")]
+    public void StoredRow_AnyOtherUnreadableContent_CountsAsARelease(string json)
+    {
+        var damaged = CommunityStoredRelease.Of(new DateTimeOffset(2026, 10, 2, 0, 0, 0, TimeSpan.Zero), json);
+
         Assert.True(damaged.CountsAgainstQuarter);
-        Assert.False(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, Now, legacy));
+        Assert.False(CommunityReleaseCadence.IsDue(CommunityReleaseKind.Release, Now, damaged));
     }
 
     [Fact]

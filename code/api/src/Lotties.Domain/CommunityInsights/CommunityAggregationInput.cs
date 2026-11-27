@@ -3,15 +3,18 @@ namespace Lotties.Domain.CommunityInsights;
 /// <summary>
 /// Everything one aggregation run reads (docs/design/34-community-insights.md section 5), derived in memory by the caller from the
 /// opted-in, eligible babies of the run's population snapshot (<c>CommunityPopulation</c>): the validated catalog, the generation
-/// time, the secret cap key and the per-baby observations of each v1 statistic. The ids
-/// are used only to count distinct babies and families and to pick capped days; they never reach the release.
+/// time (it also fixes the window of the percentile statistics, <see cref="CommunityDataWindow.PreviousQuarterOf"/>), the secret
+/// cap key and the per-baby observations of each v1 statistic. The ids are used only to count distinct babies and families and to
+/// pick capped days and cells; they never reach the release.
 /// </summary>
 public sealed record CommunityAggregationInput(
     CommunityStatisticsCatalog Catalog,
     DateTimeOffset GeneratedAt,
     CommunityCapKey CapKey,
     IReadOnlyList<CommunityTummyTimeDay> TummyTimeDays,
-    IReadOnlyList<CommunityCrySpell> CrySpells);
+    IReadOnlyList<CommunityCrySpell> CrySpells,
+    IReadOnlyList<CommunityBottleFeed> BottleFeeds,
+    IReadOnlyList<CommunityRoutineDay> RoutineDays);
 
 /// <summary>
 /// One complete local day of an opted-in baby for <c>tummy_minutes_per_day</c>: her family (the babies sharing an Owner), her age
@@ -28,13 +31,30 @@ public sealed record CommunityTummyTimeDay(Guid BabyId, Guid FamilyId, int AgeWe
 /// </summary>
 public sealed record CommunityCrySpell(Guid BabyId, Guid FamilyId, int AgeWeeks, DateOnly LocalDay, string HelpedCause);
 
-/// <summary>One observation of one share output, before its band: which category it falls in (<see cref="Component"/>).</summary>
-internal readonly record struct CommunitySample(Guid BabyId, Guid FamilyId, int AgeWeeks, DateOnly Day, string? Dimension, string Output, int Component);
+/// <summary>
+/// One live bottle of an opted-in baby for <c>bottle_ml_per_feed</c>: her family, her age in completed weeks on the local day of
+/// the bottle, the day, the bottle kind (<c>formula</c> or <c>breast_milk</c>; only formula bottles are read, breast milk was not
+/// studied) and the millilitres drunk. A bottle of another kind is not read.
+/// </summary>
+public sealed record CommunityBottleFeed(Guid BabyId, Guid FamilyId, int AgeWeeks, DateOnly LocalDay, string FeedingType, decimal DrunkMl);
+
+/// <summary>
+/// One complete local day of an opted-in baby for the routine statistics: her family, her age in completed weeks that day, the day,
+/// and that day's effective night sleep minutes, number of naps and day sleep minutes (null when that value was not logged that day;
+/// the day then counts for none of that statistic).
+/// </summary>
+public sealed record CommunityRoutineDay(Guid BabyId, Guid FamilyId, int AgeWeeks, DateOnly LocalDay, decimal? NightSleepMinutes, decimal? NapsPerDay, decimal? DaySleepMinutes);
+
+/// <summary>
+/// One observation of one release unit, before its band: for a share output the category it falls in (<see cref="Component"/>), for
+/// the quantile unit of a percentile statistic its clipped value (<see cref="Value"/>).
+/// </summary>
+internal readonly record struct CommunitySample(Guid BabyId, Guid FamilyId, int AgeWeeks, DateOnly Day, string? Dimension, string Output, int Component, double Value = 0);
 
 /// <summary>One observation located in its fine cell.</summary>
-internal readonly record struct CommunityCellSample(Guid BabyId, Guid FamilyId, DateOnly Day, CommunityCellKey Cell, string Output, int Component);
+internal readonly record struct CommunityCellSample(Guid BabyId, Guid FamilyId, DateOnly Day, CommunityCellKey Cell, string Output, int Component, double Value);
 
-/// <summary>Turns one statistic's typed observations into share samples of its v1 outputs, after clipping and validation.</summary>
+/// <summary>Turns one statistic's typed observations into samples of its v1 release units, after clipping and validation.</summary>
 internal interface ICommunityStatisticSampler
 {
     /// <summary>The catalog inputs this sampler reads; a statistic in v1 must list exactly these (the published list).</summary>
@@ -97,4 +117,55 @@ internal sealed class CryOutcomeSampler : ICommunityStatisticSampler
 
     private static CommunitySample SampleOf(CommunityCrySpell spell) =>
         new(spell.BabyId, spell.FamilyId, spell.AgeWeeks, spell.LocalDay, null, Helped.Name, Helped.IndexOf(spell.HelpedCause));
+}
+
+/// <summary><c>bottle_ml_per_feed</c>: one quantile sample per formula bottle, its clipped millilitres.</summary>
+internal sealed class BottleSampler : ICommunityStatisticSampler
+{
+    public const string Key = "bottle_ml_per_feed";
+
+    public const string Formula = "formula";
+
+    private const string Amount = "bottle_drunk_ml";
+
+    public IReadOnlyList<string> Reads { get; } = ["age_weeks", "local_day", Amount, "bottle_feeding_type"];
+
+    public bool CanHandle(CommunityStatistic statistic) => statistic.Key == Key;
+
+    public IEnumerable<CommunitySample> SamplesOf(CommunityStatistic statistic, CommunityAggregationInput input)
+    {
+        var clip = statistic.ClipOf(Amount);
+        return CommunityQuantileSamples.Wanted(statistic) && clip is not null
+            ? input.BottleFeeds.Where(bottle => bottle.FeedingType == Formula).Select(bottle => CommunityQuantileSamples.Of(bottle.BabyId, bottle.FamilyId, bottle.AgeWeeks, bottle.LocalDay, clip.Apply(bottle.DrunkMl)))
+            : [];
+    }
+}
+
+/// <summary>A routine statistic (night sleep, naps, day sleep): one quantile sample per complete local day with that value, clipped.</summary>
+internal sealed class RoutineSampler(string key, Func<CommunityRoutineDay, decimal?> valueOf) : ICommunityStatisticSampler
+{
+    public IReadOnlyList<string> Reads { get; } = ["age_weeks", "local_day", key];
+
+    public bool CanHandle(CommunityStatistic statistic) => statistic.Key == key;
+
+    public IEnumerable<CommunitySample> SamplesOf(CommunityStatistic statistic, CommunityAggregationInput input)
+    {
+        var clip = statistic.ClipOf(key);
+        return CommunityQuantileSamples.Wanted(statistic) && clip is not null
+            ? input.RoutineDays
+                .GroupBy(day => (day.BabyId, day.LocalDay))
+                .Select(group => group.First())
+                .Where(day => valueOf(day) is not null)
+                .Select(day => CommunityQuantileSamples.Of(day.BabyId, day.FamilyId, day.AgeWeeks, day.LocalDay, clip.Apply(valueOf(day)!.Value)))
+            : [];
+    }
+}
+
+/// <summary>The quantile unit's samples of a percentile statistic.</summary>
+internal static class CommunityQuantileSamples
+{
+    public static bool Wanted(CommunityStatistic statistic) => statistic.V1Outputs.Any(output => CommunityOutputs.Quantiles.Contains(output.Name));
+
+    public static CommunitySample Of(Guid babyId, Guid familyId, int ageWeeks, DateOnly day, decimal clipped) =>
+        new(babyId, familyId, ageWeeks, day, null, CommunityOutputs.QuantileUnit, 0, (double)clipped);
 }

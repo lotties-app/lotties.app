@@ -5,8 +5,8 @@ namespace Lotties.Domain.CommunityInsights;
 
 /// <summary>
 /// Reads the community statistics catalog (schema 2). Strict on the shape: every property must be present (null where
-/// the record allows it), with its JSON type, and no unknown property; an output tier is exactly <c>"A"</c>, <c>"B"</c> or
-/// <c>"notInV1"</c>; anything else is a <see cref="FormatException"/>. The rules across entries are
+/// the record allows it), with its JSON type, and no unknown property; an output tier is exactly <c>"A"</c>, <c>"B"</c>, <c>"C"</c>
+/// or <c>"notInV1"</c>; anything else is a <see cref="FormatException"/>. The rules across entries are
 /// <see cref="CommunityStatisticsValidator"/>'s.
 /// </summary>
 public static class CommunityStatisticsJson
@@ -49,8 +49,9 @@ public static class CommunityStatisticsJson
         {
             "A" => CommunityOutputTier.A,
             "B" => CommunityOutputTier.B,
+            "C" => CommunityOutputTier.C,
             "notInV1" => CommunityOutputTier.NotInV1,
-            _ => throw new JsonException($"Unknown output tier '{name}' (A, B or notInV1)."),
+            _ => throw new JsonException($"Unknown output tier '{name}' (A, B, C or notInV1)."),
         };
     }
 }

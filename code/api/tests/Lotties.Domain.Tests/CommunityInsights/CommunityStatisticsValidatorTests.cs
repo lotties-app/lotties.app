@@ -13,6 +13,7 @@ public sealed class CommunityStatisticsValidatorTests
     private const string Naps = "naps_per_day";
     private const string Tummy = "tummy_minutes_per_day";
     private const string Cry = "cry_outcome_by_cause";
+    private const string Feeds = "feeds_per_day";
 
     private static CommunityStatisticsCatalog Valid => ShippedCommunityStatistics.Catalog;
 
@@ -145,15 +146,17 @@ public sealed class CommunityStatisticsValidatorTests
     [Fact]
     public void Validate_EpsilonNullExactlyWhenNothingIsInV1()
     {
-        AssertReports(WithStatistic(Naps, statistic => statistic with { Epsilon = 0.2m }), $"statistic '{Naps}' epsilon must be null exactly when no output is in v1.");
+        AssertReports(WithStatistic(Feeds, statistic => statistic with { Epsilon = 0.2m }), $"statistic '{Feeds}' epsilon must be null exactly when no output is in v1.");
         AssertReports(WithStatistic(Cry, statistic => statistic with { Epsilon = null }), $"statistic '{Cry}' epsilon must be null exactly when no output is in v1.");
     }
 
     [Fact]
     public void Validate_PercentileInV1_IsRejected()
     {
-        AssertReports(WithStatistic(Tummy, statistic => WithTier(statistic, "p50", CommunityOutputTier.B)), $"statistic '{Tummy}' output 'p50' is a percentile and must be notInV1 (O2, section 5.1).");
-        AssertReports(WithStatistic(Naps, statistic => WithTier(statistic, "p90", CommunityOutputTier.A)), $"statistic '{Naps}' output 'p90' is a percentile and must be notInV1 (O2, section 5.1).");
+        AssertReports(WithStatistic(Tummy, statistic => WithTier(statistic, "p50", CommunityOutputTier.B)), $"statistic '{Tummy}' output 'p50' is a percentile and must be notInV1");
+        AssertReports(WithStatistic(Naps, statistic => WithTier(statistic, "p90", CommunityOutputTier.C)), $"statistic '{Naps}' output 'p90' is a percentile and must be notInV1");
+        AssertReports(WithStatistic(Naps, statistic => WithTier(statistic, "p90", CommunityOutputTier.C)), $"statistic '{Naps}' output 'p90' must be tier NotInV1 (section 5.1).");
+        AssertReports(WithStatistic(Tummy, statistic => WithTier(statistic, "p50", CommunityOutputTier.C)), $"statistic '{Tummy}' output 'p50' must be tier NotInV1 (section 5.1).");
     }
 
     [Fact]
@@ -169,10 +172,10 @@ public sealed class CommunityStatisticsValidatorTests
     [Fact]
     public void Validate_UndecidedShareInV1_IsRejected()
     {
-        var withShare = WithStatistic(Naps, statistic => statistic with { Outputs = [.. statistic.Outputs, new(CommunityOutputs.ShareOfDaysWithAny, CommunityOutputTier.B)], Epsilon = 5m, NotInV1 = false });
+        var withShare = WithStatistic(Feeds, statistic => statistic with { Outputs = [.. statistic.Outputs, new(CommunityOutputs.ShareOfDaysWithAny, CommunityOutputTier.B)], Epsilon = 5m, NotInV1 = false });
 
-        AssertReports(withShare, $"statistic '{Naps}' output '{CommunityOutputs.ShareOfDaysWithAny}' must be tier NotInV1 (section 5.1).");
-        AssertReports(withShare, $"statistic '{Naps}' is in v1 but the aggregation core does not read it.");
+        AssertReports(withShare, $"statistic '{Feeds}' output '{CommunityOutputs.ShareOfDaysWithAny}' must be tier NotInV1 (section 5.1).");
+        AssertReports(withShare, $"statistic '{Feeds}' is in v1 but the aggregation core does not read it.");
     }
 
     [Fact]
@@ -181,6 +184,34 @@ public sealed class CommunityStatisticsValidatorTests
         AssertReports(WithStatistic(Cry, statistic => statistic with { Inputs = [.. statistic.Inputs, "cry_duration_bucket"] }), $"statistic '{Cry}' inputs must be exactly what the aggregation core reads: [age_weeks, local_day, what_helped_cause].");
         AssertReports(WithStatistic(Cry, statistic => statistic with { Inputs = [.. statistic.Inputs, "part_of_day"] }), $"statistic '{Cry}' inputs must be exactly what the aggregation core reads");
         AssertReports(WithStatistic(Tummy, statistic => statistic with { Inputs = ["age_weeks", "tummy_minutes_per_day"] }), $"statistic '{Tummy}' inputs must be exactly what the aggregation core reads: [age_weeks, local_day, tummy_minutes_per_day].");
+    }
+
+    [Fact]
+    public void Validate_TierC_IsTheBoundedOptionA()
+    {
+        AssertReports(WithStatistic(Bottle, statistic => statistic with { MaxCellsPerBaby = 5 }), $"statistic '{Bottle}' is tier C and must keep each baby in at most 4 cells.");
+        AssertReports(WithStatistic(Bottle, statistic => statistic with { MaxCellsPerBaby = null }), $"statistic '{Bottle}' is tier C and must keep each baby in at most 4 cells.");
+        AssertReports(WithStatistic(Bottle, statistic => statistic with { Window = null }), $"statistic '{Bottle}' is tier C and must read only the previous_quarter.");
+        AssertReports(WithStatistic(Bottle, statistic => statistic with { Band = new("age_weeks", null) }), $"statistic '{Bottle}' is tier C and must use the age_weeks_4 grid with no dimension.");
+        AssertReports(WithStatistic(Bottle, statistic => statistic with { Histogram = null }), $"statistic '{Bottle}' is tier C and needs a histogram");
+        AssertReports(WithStatistic(Bottle, statistic => statistic with { Histogram = new(0m, 10m) }), $"statistic '{Bottle}' is tier C and needs a histogram");
+        AssertReports(WithStatistic(Bottle, statistic => statistic with { Epsilon = 2m }), $"statistic '{Bottle}' epsilon 2 must be 2 per cell times the cell bound (tier C).");
+        AssertReports(WithStatistic(Bottle, statistic => statistic with { MaxCellsPerBaby = 8, Epsilon = 16m }), $"statistic '{Bottle}' is tier C and must keep each baby in at most 4 cells.");
+    }
+
+    [Fact]
+    public void Validate_BoundWindowOrHistogram_OnlyOnTierC()
+    {
+        AssertReports(WithStatistic(Tummy, statistic => statistic with { Window = "previous_quarter" }), $"statistic '{Tummy}' has a cell bound, window or histogram but no tier C output.");
+        AssertReports(WithStatistic(Cry, statistic => statistic with { MaxCellsPerBaby = 4 }), $"statistic '{Cry}' has a cell bound, window or histogram but no tier C output.");
+        AssertReports(WithStatistic(Feeds, statistic => statistic with { Histogram = new(1m, 1m) }), $"statistic '{Feeds}' has a cell bound, window or histogram but no tier C output.");
+    }
+
+    [Fact]
+    public void Validate_FourWeekGrid_IsFourWeekBandsFromZeroTo104()
+    {
+        AssertReports(WithGrids(grids => grids with { AgeWeeks4 = [new(0, 104, 2)] }), "ageWeeks4 must be 4-week bands.");
+        AssertReports(WithGrids(grids => grids with { AgeWeeks4 = [new(0, 52, 4)] }), "ageWeeks4 must end at week 104.");
     }
 
     [Fact]
@@ -194,7 +225,7 @@ public sealed class CommunityStatisticsValidatorTests
     [Fact]
     public void Validate_NotInV1FlagAndReason_FollowTheOutputs()
     {
-        AssertReports(WithStatistic(Naps, statistic => statistic with { NotInV1 = false }), $"statistic '{Naps}' must be marked notInV1 (no output is in v1).");
+        AssertReports(WithStatistic(Feeds, statistic => statistic with { NotInV1 = false }), $"statistic '{Feeds}' must be marked notInV1 (no output is in v1).");
         AssertReports(WithStatistic(Cry, statistic => statistic with { NotInV1 = true }), $"statistic '{Cry}' must not be marked notInV1 (an output is in v1).");
         AssertReports(WithStatistic(Tummy, statistic => statistic with { NotInV1Reason = null }), $"statistic '{Tummy}' needs a notInV1Reason exactly when an output is notInV1.");
         AssertReports(WithStatistic(Cry, statistic => statistic with { NotInV1Reason = null }), $"statistic '{Cry}' needs a notInV1Reason exactly when an output is notInV1.");

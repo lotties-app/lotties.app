@@ -32,6 +32,12 @@ public interface ICommunityNoise
 {
     /// <summary>The noisy value of <paramref name="exact"/> for Laplace scale <paramref name="scale"/> (sensitivity / epsilon).</summary>
     double Perturb(double exact, double scale);
+
+    /// <summary>
+    /// A uniform draw in (-<paramref name="halfWidth"/>, <paramref name="halfWidth"/>): the half-step jitter a histogram cell puts on
+    /// each baby's summary against ties (a random per-record transform, so it does not change the privacy guarantee).
+    /// </summary>
+    double Jitter(double halfWidth);
 }
 
 /// <summary>Mironov's snapping mechanism over <see cref="CommunityLaplace"/>, with a bound of <see cref="Bound"/>.</summary>
@@ -44,6 +50,8 @@ public sealed class SnappedLaplaceNoise(ICommunityRandomSource random) : ICommun
     public static SnappedLaplaceNoise Cryptographic() => new(CryptographicRandomSource.Shared);
 
     public double Perturb(double exact, double scale) => CommunityLaplace.Snapped(exact, scale, Bound, random);
+
+    public double Jitter(double halfWidth) => ((2.0 * CommunityLaplace.OpenUnitUniform(random)) - 1.0) * halfWidth;
 }
 
 /// <summary>

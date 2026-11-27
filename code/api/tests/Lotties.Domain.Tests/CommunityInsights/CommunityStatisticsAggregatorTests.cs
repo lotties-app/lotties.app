@@ -42,7 +42,9 @@ public sealed class CommunityStatisticsAggregatorTests
 
         Assert.False(release.IsPlaceholder);
         Assert.Empty(release.Cells);
-        Assert.Equal([(Tummy, 5m), (Cry, 0.2m)], release.Statistics.Select(statistic => (statistic.Key, statistic.Epsilon)));
+        Assert.Equal(
+            [("bottle_ml_per_feed", 8m), (Tummy, 5m), ("naps_per_day", 8m), ("day_sleep_minutes", 8m), ("night_sleep_minutes", 8m), (Cry, 0.2m)],
+            release.Statistics.Select(statistic => (statistic.Key, statistic.Epsilon)));
         Assert.All(release.Statistics, statistic => Assert.Equal(K, statistic.K));
     }
 
@@ -273,9 +275,14 @@ public sealed class CommunityStatisticsAggregatorTests
         CommunityStatisticsAggregator.Aggregate(Input(), empty);
         CommunityStatisticsAggregator.Aggregate(Input(tummy: TummyDays(babies, 5, 12, days: 3), spells: Spells(babies, 14, "sleepy")), full);
 
-        // Tummy time: epsilon 5 on its one v1 output (scale 1/5) over 39 fine bands x 2 components; crying: epsilon 0.2 on its one
-        // output (scale 1/0.2) over 4 cry bands x 6 causes. The same draws whatever the data.
-        double[] expected = [.. Enumerable.Repeat(0.2, 39 * 2), .. Enumerable.Repeat(5.0, 4 * 6)];
+        // In catalog order. Percentile statistics: 26 four-week bands x their bins at scale 1/2 (epsilon 8 per release over at most
+        // 4 cells per baby); tummy time: epsilon 5 on its one v1 output (scale 1/5) over 39 fine bands x 2 components; crying:
+        // epsilon 0.2 on its one output (scale 1/0.2) over 4 cry bands x 6 causes. The same draws whatever the data.
+        double[] expected =
+        [
+            .. Enumerable.Repeat(0.5, 26 * 21), .. Enumerable.Repeat(0.2, 39 * 2), .. Enumerable.Repeat(0.5, 26 * 17),
+            .. Enumerable.Repeat(0.5, 26 * 25), .. Enumerable.Repeat(0.5, 26 * 33), .. Enumerable.Repeat(5.0, 4 * 6),
+        ];
         Assert.Equal(expected, empty.Scales);
         Assert.Equal(expected, full.Scales);
     }
