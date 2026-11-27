@@ -1,4 +1,5 @@
 import type { BabyEvent, EventType } from '../db/models';
+import { bottleAmount } from '../events/bottleAmounts';
 import { effectiveDurationSeconds } from '../timers/pauseMath';
 import { MINUTE_MS, pastLiveEvents, sleepSessionKind, typeIdsForKey } from './eventFacts';
 
@@ -12,6 +13,11 @@ export interface TodayStats {
   lastNightMinutes: number | null;
   naps: { count: number; minutes: number };
   feeds: number;
+  /**
+   * What the baby drank from finished bottles today (ml, the drunk-amount rule), or `null` when no
+   * finished bottle has an amount. A running bottle is left out: its amount is only what was prepared.
+   */
+  bottleMl: number | null;
   diapers: number;
 }
 
@@ -21,6 +27,15 @@ const startOfLocalDay = (now: Date) =>
 /** Effective minutes: pauses are not sleep (docs/design/SYNTHESIS.md section 6). */
 const lengthMinutes = (event: BabyEvent, now: Date) =>
   Math.round(effectiveDurationSeconds(event, now) / 60);
+
+/** Sum of what was drunk from the finished bottles, `null` when none has an amount. */
+function drunkFromBottles(feeds: readonly BabyEvent[]): number | null {
+  const amounts = feeds
+    .filter((e) => e.endedAt !== null)
+    .map(bottleAmount)
+    .filter((ml): ml is number => ml !== undefined);
+  return amounts.length > 0 ? amounts.reduce((sum, ml) => sum + ml, 0) : null;
+}
 
 export function todayStats(
   events: readonly BabyEvent[],
@@ -44,13 +59,15 @@ export function todayStats(
     .sort((a, b) => (b.endedAt as string).localeCompare(a.endedAt as string))[0];
 
   const naps = today.filter((e) => sleepIds.has(e.typeId) && sleepSessionKind(e) === 'nap');
+  const feeds = today.filter((e) => feedIds.has(e.typeId));
   return {
     lastNightMinutes: night ? lengthMinutes(night, now) : null,
     naps: {
       count: naps.length,
       minutes: naps.reduce((sum, e) => sum + lengthMinutes(e, now), 0),
     },
-    feeds: today.filter((e) => feedIds.has(e.typeId)).length,
+    feeds: feeds.length,
+    bottleMl: drunkFromBottles(feeds),
     diapers: today.filter((e) => diaperIds.has(e.typeId)).length,
   };
 }

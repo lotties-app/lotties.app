@@ -257,6 +257,7 @@
       "lastNight": "Last night",
       "naps": "Naps",
       "feeds": "Feeds",
+      "bottleTotal": "{{volume}} drunk from bottles",
       "diapers": "Diapers"
     },
     "firstRun": {

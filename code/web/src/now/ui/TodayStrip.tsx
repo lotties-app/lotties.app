@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
 import { formatDurationCompact, formatNumber } from '../../i18n/format';
 import { RADIUS } from '../../theme/tokens';
+import { volumeText } from '../../units/display';
 import { palette } from '../../ui/form/styles';
 import { hasTodayData, type TodayStats } from '../todayStats';
 
@@ -14,10 +15,13 @@ interface Stat {
   label: string;
   value: string;
   note?: string;
+  /** Accessible name of the note when the bare value would be unclear (the feeds' bottle total). */
+  noteLabel?: string;
 }
 
 /**
- * "Today" strip: last night's sleep, naps, feeds and diapers as a few serif numbers. A value
+ * "Today" strip: last night's sleep, naps (with their total length), feeds (with the volume drunk
+ * from finished bottles, when any has an amount) and diapers as a few serif numbers. A value
  * without data is left out, and the whole strip is hidden when there is nothing to show.
  *
  * Layout: two by two, one row once the strip itself is 32rem wide (a container query, so the width
@@ -44,7 +48,15 @@ export function TodayStrip({ stats }: { stats: TodayStats }) {
     });
   }
   if (stats.feeds > 0) {
-    items.push({ key: 'feeds', label: t('now.today.feeds'), value: formatNumber(stats.feeds) });
+    const bottles = stats.bottleMl === null ? null : volumeText(stats.bottleMl);
+    items.push({
+      key: 'feeds',
+      label: t('now.today.feeds'),
+      value: formatNumber(stats.feeds),
+      ...(bottles
+        ? { note: bottles, noteLabel: t('now.today.bottleTotal', { volume: bottles }) }
+        : {}),
+    });
   }
   if (stats.diapers > 0) {
     items.push({
@@ -117,6 +129,7 @@ export function TodayStrip({ stats }: { stats: TodayStats }) {
                 component="dd"
                 variant="caption"
                 color="text.secondary"
+                aria-label={item.noteLabel}
                 sx={{ m: 0, minHeight: NOTE_HEIGHT, lineHeight: 1.3, whiteSpace: 'nowrap' }}
               >
                 {item.note}
