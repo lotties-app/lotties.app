@@ -53,7 +53,9 @@ export function TodayStrip({ stats }: { stats: TodayStats }) {
       key: 'feeds',
       label: t('now.today.feeds'),
       value: formatNumber(stats.feeds),
-      ...(bottles ? { note: bottles, noteLabel: t('now.today.bottleTotal', { volume: bottles }) } : {}),
+      ...(bottles
+        ? { note: bottles, noteLabel: t('now.today.bottleTotal', { volume: bottles }) }
+        : {}),
     });
   }
   if (stats.diapers > 0) {
