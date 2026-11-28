@@ -50,7 +50,7 @@ const follows = (a: Element, b: Element) =>
 const startBottle = () => putEvent(db, 'feeding', 6, null, { method: 'bottle', amount_ml: 120 });
 
 describe('the order of the Now screen', () => {
-  it('puts Running now first, then Quick log, Milk today, the state card, then the suggestions', async () => {
+  it('puts Running now first, then Quick log, the state card, the suggestions, then Today with Milk today', async () => {
     pinClock(14);
     await seedNow(db);
     await seedMorning(db, 112);
@@ -60,14 +60,21 @@ describe('the order of the Now screen', () => {
     const running = await screen.findByRole('region', { name: 'Running timers' });
     const quickLog = screen.getByRole('region', { name: 'Quick log' });
     const state = screen.getByRole('region', { name: 'Current state' });
-    const milk = screen.getByRole('region', { name: 'Milk today' });
     const today = await screen.findByRole('region', { name: 'Today' });
+    const milk = within(today).getByRole('region', { name: 'Milk today' });
     expect(follows(running, quickLog)).toBe(true);
-    expect(follows(quickLog, milk)).toBe(true);
-    expect(follows(milk, state)).toBe(true);
+    expect(follows(quickLog, state)).toBe(true);
     expect(follows(state, today)).toBe(true);
+    // Milk today is part of the Today section, full width under its tiles.
+    const lastTile = within(today)
+      .getAllByRole('term')
+      .filter((term) => !milk.contains(term))
+      .at(-1);
+    expect(lastTile && follows(lastTile, milk)).toBe(true);
     expect(within(running).getByRole('heading', { name: 'Running now' })).toBeTruthy();
     expect(within(quickLog).getByRole('heading', { name: 'Quick log' })).toBeTruthy();
+    expect(within(today).getByRole('heading', { name: 'Today' }).tagName).toBe('H2');
+    expect(within(milk).getByRole('heading', { name: 'Milk today' }).tagName).toBe('H3');
   });
 
   it('shows the bottle with what matters, a large live time and big Pause and Stop', async () => {

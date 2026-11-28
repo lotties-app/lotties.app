@@ -70,7 +70,7 @@
     "screens": {
       "now": {
         "caption": "Now: what is happening and what is next",
-        "alt": "The Now screen of Lotties: the baby has been awake for 1 hour 52 minutes, with the next nap window, the bedtime estimate, quick log buttons and the milk of today: 230 ml drunk of 270 ml prepared"
+        "alt": "The Now screen of Lotties: the baby has been awake for 1 hour 52 minutes, with the next nap window, the bedtime estimate and quick log buttons"
       },
       "log-feed": {
         "caption": "Log a feed in seconds",

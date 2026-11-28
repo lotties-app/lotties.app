@@ -38,7 +38,7 @@ committing: open the new files, or the landing page at `/welcome` in a dev serve
 
 | File stem | Preview route | Shows |
 | --- | --- | --- |
-| `now` (light and dark) | `/dev/now?state=awake` | the Now screen: quick log, milk today (drunk and prepared), awake time, next nap window, bedtime |
+| `now` (light and dark) | `/dev/now?state=awake` | the Now screen (first screen): quick log, awake time, next nap window, bedtime (Milk today is in the Today section further down, not in the picture) |
 | `bottle-followup` | `/dev/now?state=bottlesleep` | the follow-up card after she fell asleep during the bottle |
 | `log-feed`, `log-sleep`, `log-diaper` | `/dev/sheet?state=bottle|sleep|diaper` | the event sheets |
 | `insights` | `/dev/insights?state=rich` | 14 days of charts |

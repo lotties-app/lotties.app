@@ -1,6 +1,8 @@
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Card, LinearProgress, Typography } from '@mui/material';
+import { Box, LinearProgress, Typography } from '@mui/material';
+import { RADIUS } from '../../theme/tokens';
+import { palette } from '../../ui/form/styles';
 import { useUnits } from '../../units/useUnits';
 import { shownMilk } from '../milkToday';
 import type { MilkToday } from '../todayStats';
@@ -9,12 +11,12 @@ import type { MilkToday } from '../todayStats';
 const GLYPH_WIDTH = 0.62;
 
 /**
- * Font size of the two numbers: as large as the h4 (2rem), but never wider than the column, so the
+ * Font size of the two numbers: as large as the Today tiles' values (1.75rem), but never wider than the column, so the
  * longer of the two values stays on one line; one size for both (equal columns, same length).
  */
 const numberSize = (values: readonly string[]) => {
   const longest = Math.max(...values.map((value) => value.length));
-  return `min(2rem, ${(100 / (longest * GLYPH_WIDTH)).toFixed(1)}cqi)`;
+  return `min(1.75rem, ${(100 / (longest * GLYPH_WIDTH)).toFixed(1)}cqi)`;
 };
 
 interface Amount {
@@ -27,6 +29,9 @@ interface Amount {
  * "Milk today": what was drunk and what was prepared in today's finished bottles, side by side, a
  * thin decorative bar of drunk out of prepared, and what was not drunk when anything was left.
  * Facts only: no percentage, target or judgement. Hidden without a bottle amount (`milk === null`).
+ *
+ * Part of the "Today" section (rendered by `TodayStrip`, full width under its tiles): same surface,
+ * radius and caption style as a tile, and an h3 under the section's "Today" h2.
  */
 export function MilkTodayCard({ milk }: { milk: MilkToday | null }) {
   const { t } = useTranslation();
@@ -44,13 +49,21 @@ export function MilkTodayCard({ milk }: { milk: MilkToday | null }) {
   ];
   const fontSize = numberSize(amounts.map((amount) => amount.value));
   return (
-    <Card component="section" aria-labelledby={headingId} sx={{ p: 2 }}>
+    <Box
+      component="section"
+      aria-labelledby={headingId}
+      sx={(theme) => ({
+        p: 1.5,
+        borderRadius: `${RADIUS.tile}px`,
+        backgroundColor: palette(theme).surfaceRaised,
+      })}
+    >
       <Typography
         id={headingId}
-        variant="overline"
-        component="h2"
+        variant="caption"
+        component="h3"
         color="text.secondary"
-        sx={{ display: 'block', mb: 1 }}
+        sx={{ display: 'block', m: 0, mb: 0.5, lineHeight: 1.3 }}
       >
         {t('now.milkToday.title')}
       </Typography>
@@ -105,6 +118,6 @@ export function MilkTodayCard({ milk }: { milk: MilkToday | null }) {
           {t('now.milkToday.notDrunk', { volume: units.formatVolume(shown.notDrunkMl) })}
         </Typography>
       )}
-    </Card>
+    </Box>
   );
 }

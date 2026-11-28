@@ -23,7 +23,7 @@ describe('MilkTodayCard', () => {
   it('shows drunk and prepared side by side and what was not drunk', () => {
     setUnitSetting('metric');
     renderUi(<MilkTodayCard milk={{ drunkMl: 300, preparedMl: 420 }} />);
-    expect(screen.getByRole('heading', { name: 'Milk today' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Milk today' }).tagName).toBe('H3');
     expect(pairs(card())).toEqual([
       ['drunk', '300 ml'],
       ['prepared', '420 ml'],
@@ -88,14 +88,11 @@ describe('MilkTodayCard', () => {
         milk: { drunkMl: 1237, preparedMl: 1410 },
         diapers: 0,
       };
-      renderUi(
-        <>
-          <MilkTodayCard milk={stats.milk} />
-          <TodayStrip stats={stats} />
-        </>,
-      );
+      renderUi(<TodayStrip stats={stats} />);
       const strip = screen.getByRole('region', { name: 'Today' });
-      const note = within(strip).getAllByRole('definition')[1]?.textContent;
+      const note = within(strip).getByRole('definition', {
+        name: /drunk from bottles/,
+      }).textContent;
       expect(note).toBeTruthy();
       expect(pairs(card())[0]).toEqual(['drunk', note]);
     },
