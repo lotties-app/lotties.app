@@ -42,6 +42,7 @@ committing: open the new files, or the landing page at `/welcome` in a dev serve
 | `bottle-followup` | `/dev/now?state=bottlesleep` | the follow-up card after she fell asleep during the bottle |
 | `log-feed`, `log-sleep`, `log-diaper` | `/dev/sheet?state=bottle|sleep|diaper` | the event sheets |
 | `insights` | `/dev/insights?state=rich` | 14 days of charts |
+| `day-summary` (light and dark) | `/dev/day-summary?state=rich`, Day tab | Insights > Day: today so far, sleep, feeding, diapers, crying, health and care, each with her usual by this time |
 | `rhythm` (light and dark) | `/dev/rhythm?state=ok` | Insights > her rhythm: usual times, ranges, naps, feeds, what the log shows |
 | `vaccines` | `/dev/vaccines?state=timeline` | the vaccine timeline |
 | `sharing` | `/dev/roles` | members, roles and the invite form |
@@ -71,7 +72,7 @@ regenerate: the scripts need no edits unless a preview route or its labels chang
 
 ## Known limits
 
-- The pictures are light mode (the Now, her rhythm and Where your data lives screens also in dark); other screens in
+- The pictures are light mode (the Now, Day summary, her rhythm and Where your data lives screens also in dark); other screens in
   dark are not captured.
 - The video has no sound and no captions; it is a visual tour.
 - The static files are also bundled into the native (Capacitor) builds because they live in `public/`; they are about

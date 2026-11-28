@@ -130,7 +130,8 @@ describe('Rest tab visibility and opt-in', () => {
     renderWithDb(db, <InsightsPage />, { api: fakeApi().api });
     expect(await screen.findByRole('heading', { name: 'Growth', level: 2 })).toBeTruthy();
     expect(screen.queryByRole('switch')).toBeNull();
-    expect(screen.queryByRole('tab')).toBeNull();
+    // Only the Insights and Day tabs (the Day summary is there whenever a baby is).
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Insights', 'Day']);
   });
 });
 

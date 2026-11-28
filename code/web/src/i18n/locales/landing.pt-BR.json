@@ -92,6 +92,10 @@
         "caption": "Gráficos de sono, mamadas e fraldas",
         "alt": "A tela Insights com 14 dias de sono em um gráfico de barras e a média de sono por dia"
       },
+      "day-summary": {
+        "caption": "O dia num relance: sono, mamadas, fraldas e cuidados",
+        "alt": "A aba Dia de Insights: hoje até agora, com o sono total, a noite e as sonecas, o tempo acordado, o leite bebido e preparado, as mamadas, as fraldas com xixi e cocô, e saúde e cuidados, cada um com o valor de costume dos últimos dias do próprio bebê"
+      },
       "rhythm": {
         "caption": "O ritmo dela, só com o registro dela",
         "alt": "A seção de ritmo em Insights: horários habituais de dormir e acordar, duração da noite como faixa, sonecas e mamadas por dia e o que o registro mostra, como fatos simples"
