@@ -28,6 +28,7 @@
 		C0DEA55E7000000000000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C0DEA55E7000000000000001 /* Assets.xcassets */; };
 		C0DE00000000000000000102 /* LottiesMcp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000101 /* LottiesMcp.swift */; };
 		C0DE00000000000000000104 /* LottiesSiriIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000103 /* LottiesSiriIntents.swift */; };
+		C0DE00000000000000000402 /* LottiesSpeechPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000401 /* LottiesSpeechPlugin.swift */; };
 		C0DE00000000000000000202 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000201 /* Localizable.strings */; };
 		C0DE00000000000000000205 /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000204 /* AppShortcuts.strings */; };
 		C0DE00000000000000000302 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C0DE00000000000000000301 /* PrivacyInfo.xcprivacy */; };
@@ -83,6 +84,7 @@
 		C0DEA55E7000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C0DE00000000000000000101 /* LottiesMcp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesMcp.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000103 /* LottiesSiriIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesSiriIntents.swift; sourceTree = "<group>"; };
+		C0DE00000000000000000401 /* LottiesSpeechPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottiesSpeechPlugin.swift; sourceTree = "<group>"; };
 		C0DE00000000000000000203 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		C0DE00000000000000000207 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 		C0DE00000000000000000206 /* pt-BR */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/AppShortcuts.strings"; sourceTree = "<group>"; };
@@ -140,6 +142,7 @@
 				C0DE00000000000000000204 /* AppShortcuts.strings */,
 				C0DE00000000000000000103 /* LottiesSiriIntents.swift */,
 				C0DE00000000000000000101 /* LottiesMcp.swift */,
+				C0DE00000000000000000401 /* LottiesSpeechPlugin.swift */,
 				C0DE00000000000000000006 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -300,6 +303,7 @@
 				C0DE0000000000000000000F /* LottiesShortcuts.swift in Sources */,
 				C0DE00000000000000000104 /* LottiesSiriIntents.swift in Sources */,
 				C0DE00000000000000000102 /* LottiesMcp.swift in Sources */,
+				C0DE00000000000000000402 /* LottiesSpeechPlugin.swift in Sources */,
 				C0DE00000000000000000010 /* LottiesShared.swift in Sources */,
 				C0DE00000000000000000011 /* LottiesIntents.swift in Sources */,
 			);
