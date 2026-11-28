@@ -201,6 +201,29 @@ const isStatus = (value: unknown): value is Status =>
  */
 export const BOTTOM_NAV_SCROLL_PADDING = 'calc(104px + env(safe-area-inset-bottom))';
 
+/**
+ * The strip behind the status bar (docs/design/12-mobile-capacitor.md "Status bar"). Where the app
+ * is drawn edge to edge (the Android app on Android 15+ with WebView 140+, the iOS app), the page
+ * runs under a transparent status bar and the header scrolls away with the page, so scrolled
+ * content would show behind the clock and icons. This fixed strip, as tall as the top safe-area
+ * inset and in the page background of the shown scheme, covers that band on every screen. It is 0
+ * high wherever the inset is 0 (a browser tab, the installed PWA, an older WebView the shell pads
+ * natively) and takes no layout space, so it never adds a gap. Same z-index as the app bars and
+ * first in the tree: the bars (bottom dock, doctor rail, landing header) paint over it, the page
+ * under it, and the modal layer (sheets, dialogs and their scrim) over both.
+ */
+export const STATUS_BAR_STRIP = {
+  content: '""',
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  height: 'env(safe-area-inset-top)',
+  backgroundColor: 'var(--mui-palette-background-default)',
+  // theme.zIndex.appBar (the CssBaseline overrides are a plain object, not a theme callback).
+  zIndex: 1100,
+} as const;
+
 /** Inputs: filled, 48px, 14px radius. Labels are always shrunk, with room above the value. */
 const FILLED_FIELD_PADDING = { paddingTop: 21, paddingBottom: 6 };
 
@@ -269,6 +292,7 @@ export function buildTheme(localization?: Localization) {
             // A word longer than the line (a name, a long Portuguese word at large text) breaks
             // instead of pushing the page sideways; headings also let their flex row shrink them.
             body: { ...NUMERIC, overflowWrap: 'break-word' },
+            'body::before': STATUS_BAR_STRIP,
             'h1, h2, h3, h4, h5, h6': { overflowWrap: 'anywhere' },
             // Sheets, dialogs and popovers (and the scrolling parts inside them) keep their scroll:
             // reaching their end never scrolls or bounces the page behind.
@@ -380,11 +404,21 @@ export function buildTheme(localization?: Localization) {
             }),
           },
         },
+        // Dialogs stay clear of the status bar where the app is drawn edge to edge (the inset is 0
+        // elsewhere; docs/design/12-mobile-capacitor.md "Status bar"): a centred dialog is laid out
+        // below the top inset; a full-screen one keeps the inset as a transparent top border, which
+        // shows the paper's own background (backgrounds paint under the border) and which its
+        // scrolling content never enters.
         MuiDialog: {
           styleOverrides: {
+            container: ({ ownerState }) =>
+              ownerState.fullScreen ? {} : { paddingTop: 'env(safe-area-inset-top)' },
             paper: {
               borderRadius: RADIUS.sheetTop,
-              '&.MuiDialog-paperFullScreen': { borderRadius: 0 },
+              '&.MuiDialog-paperFullScreen': {
+                borderRadius: 0,
+                borderTop: 'env(safe-area-inset-top) solid transparent',
+              },
             },
           },
         },

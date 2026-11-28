@@ -81,9 +81,8 @@ export function ItemDrawer({ inline, onClose, ...props }: DrawerProps) {
   if (!inline) {
     return (
       <Dialog open fullScreen onClose={onClose} aria-labelledby={titleId} scroll="paper">
-        <Box sx={{ p: 2, pt: 'max(16px, env(safe-area-inset-top))', overflowY: 'auto' }}>
-          {body}
-        </Box>
+        {/* The theme keeps a full-screen dialog below the status bar (MuiDialog overrides). */}
+        <Box sx={{ p: 2, overflowY: 'auto' }}>{body}</Box>
       </Dialog>
     );
   }

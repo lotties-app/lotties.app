@@ -11,6 +11,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { SHEET_MAX_HEIGHT } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { palette } from '../ui/form/styles';
 
@@ -66,7 +67,7 @@ export function EditorFrame({
             display: 'flex',
             flexDirection: 'column',
             height: 'auto',
-            maxHeight: 'calc(100dvh - 16px)',
+            maxHeight: SHEET_MAX_HEIGHT,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
           },
