@@ -10,7 +10,7 @@ function Row({ label, value }: { label: string; value: string }) {
       <Typography variant="body2" color="text.secondary">
         {label}
       </Typography>
-      <Typography variant="body2" sx={{ textAlign: 'end', overflowWrap: 'anywhere' }}>
+      <Typography variant="body2" sx={{ textAlign: 'end', overflowWrap: 'break-word' }}>
         {value}
       </Typography>
     </Box>

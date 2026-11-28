@@ -9,8 +9,8 @@ import { PreviewToolbar } from './PreviewToolbar';
 /*
  * Developer-only (route `/dev/voice-lab`, only in a dev server with VITE_VOICE_LAB=true): the voice lab
  * over a scripted speech platform (no microphone, no plugin, no account). `?state=run` hears each pt-BR
- * test phrase in order (the third one misheard as 105 ml), `hang` keeps listening until Cancel,
- * `no-device` is a phone without on-device pt-BR; `&scheme=light|dark|night`.
+ * test phrase in order (the third one misheard as 105 ml, right on its retry), `hang` keeps listening
+ * until Cancel, `no-device` is a phone without on-device pt-BR; `&scheme=light|dark|night`.
  */
 
 const SCENARIOS = ['run', 'hang', 'no-device'] as const;
@@ -35,10 +35,11 @@ function optionsFor(scenario: Scenario): FakeSpeechOptions {
       },
     };
   }
-  const replies: FakeReply[] = LAB_PHRASES['pt-BR'].map((phrase, index) =>
+  // Phrase 3 is misheard first; its retry hears it right, then the run goes on.
+  const replies: FakeReply[] = LAB_PHRASES['pt-BR'].flatMap((phrase, index): FakeReply[] =>
     index === 2
-      ? ['mamadeira de cento e cinco mililitros', phrase.text]
-      : [phrase.text, `${phrase.text} a`],
+      ? [['mamadeira de cento e cinco mililitros', phrase.text], [phrase.text]]
+      : [[phrase.text, `${phrase.text} a`]],
   );
   return { replies };
 }
