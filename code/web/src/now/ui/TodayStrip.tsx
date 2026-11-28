@@ -48,7 +48,9 @@ export function TodayStrip({ stats }: { stats: TodayStats }) {
     });
   }
   if (stats.feeds > 0) {
-    const bottles = stats.bottleMl === null ? null : volumeText(stats.bottleMl);
+    // The "Milk today" card's drunk number; a day of only untouched bottles shows no "0 ml" here.
+    const drunk = stats.milk?.drunkMl ?? 0;
+    const bottles = drunk > 0 ? volumeText(drunk) : null;
     items.push({
       key: 'feeds',
       label: t('now.today.feeds'),

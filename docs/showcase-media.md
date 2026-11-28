@@ -30,7 +30,7 @@ node showcase/build-media.mjs                                   # WebP, MP4, Web
 ```
 
 The first command starts its own Vite dev server on port 5431 (`SHOWCASE_PORT` changes it; reuse of a running one is
-allowed). Narrow a run with `SHOWCASE_ONLY=now,insights SHOWCASE_LOCALES=en SHOWCASE_SCHEMES=light`. Raw captures go to
+allowed). Narrow a run with `SHOWCASE_ONLY=now,insights SHOWCASE_LOCALES=en SHOWCASE_SCHEMES=light`. The previews follow the real clock, so capture in the daytime or set `SHOWCASE_TZ` to a time zone where it is early afternoon (for example `SHOWCASE_TZ=Pacific/Pago_Pago` late in the evening in Brazil); otherwise Now shows a night-time state. Raw captures go to
 `tests/e2e/showcase/output/` (gitignored); only `code/web/public/showcase/` is committed. Look at the result before
 committing: open the new files, or the landing page at `/welcome` in a dev server.
 
@@ -38,7 +38,7 @@ committing: open the new files, or the landing page at `/welcome` in a dev serve
 
 | File stem | Preview route | Shows |
 | --- | --- | --- |
-| `now` (light and dark) | `/dev/now?state=awake` | the Now screen: awake time, next nap window, bedtime, quick log |
+| `now` (light and dark) | `/dev/now?state=awake` | the Now screen: quick log, milk today (drunk and prepared), awake time, next nap window, bedtime |
 | `bottle-followup` | `/dev/now?state=bottlesleep` | the follow-up card after she fell asleep during the bottle |
 | `log-feed`, `log-sleep`, `log-diaper` | `/dev/sheet?state=bottle|sleep|diaper` | the event sheets |
 | `insights` | `/dev/insights?state=rich` | 14 days of charts |

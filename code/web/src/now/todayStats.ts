@@ -1,5 +1,6 @@
 import type { BabyEvent, EventType } from '../db/models';
-import { bottleAmount } from '../events/bottleAmounts';
+import { drunkMl, preparedMl } from '../events/bottleAmounts';
+import { getOwn } from '../util/ownProperty';
 import { effectiveDurationSeconds } from '../timers/pauseMath';
 import { MINUTE_MS, pastLiveEvents, sleepSessionKind, typeIdsForKey } from './eventFacts';
 
@@ -14,11 +15,21 @@ export interface TodayStats {
   naps: { count: number; minutes: number };
   feeds: number;
   /**
-   * What the baby drank from finished bottles today (ml, the drunk-amount rule), or `null` when no
-   * finished bottle has an amount. A running bottle is left out: its amount is only what was prepared.
+   * Milk of the finished bottles today, or `null` when none has an amount. One value for both the
+   * Feeds note (`drunkMl`) and the "Milk today" card, so the two always agree.
    */
-  bottleMl: number | null;
+  milk: MilkToday | null;
   diapers: number;
+}
+
+/**
+ * What the finished bottles of today held (ml). `drunkMl` follows the drunk-amount rule (the drunk
+ * amount capped at the prepared one, else all of it); `preparedMl` is `amount_ml`, or the drunk
+ * amount for a bottle that has only that one, so `drunkMl <= preparedMl` always holds.
+ */
+export interface MilkToday {
+  drunkMl: number;
+  preparedMl: number;
 }
 
 const startOfLocalDay = (now: Date) =>
@@ -28,13 +39,25 @@ const startOfLocalDay = (now: Date) =>
 const lengthMinutes = (event: BabyEvent, now: Date) =>
   Math.round(effectiveDurationSeconds(event, now) / 60);
 
-/** Sum of what was drunk from the finished bottles, `null` when none has an amount. */
-function drunkFromBottles(feeds: readonly BabyEvent[]): number | null {
-  const amounts = feeds
-    .filter((e) => e.endedAt !== null)
-    .map(bottleAmount)
-    .filter((ml): ml is number => ml !== undefined);
-  return amounts.length > 0 ? amounts.reduce((sum, ml) => sum + ml, 0) : null;
+/**
+ * Drunk and prepared milk of the finished bottles, `null` when none has an amount. A running bottle
+ * is left out (its amount is only what was prepared); a bottle with nothing drunk of a prepared
+ * amount counts (prepared, not drunk). Breast, solids and pumping have no `method: bottle`.
+ */
+function milkFromBottles(feeds: readonly BabyEvent[]): MilkToday | null {
+  let bottles = 0;
+  const milk: MilkToday = { drunkMl: 0, preparedMl: 0 };
+  for (const feed of feeds) {
+    if (feed.endedAt === null || getOwn(feed.payload, 'method') !== 'bottle') continue;
+    const drunk = drunkMl(feed.payload);
+    if (drunk === undefined) continue;
+    const prepared = preparedMl(feed.payload) ?? drunk;
+    if (prepared <= 0) continue;
+    bottles += 1;
+    milk.drunkMl += drunk;
+    milk.preparedMl += prepared;
+  }
+  return bottles > 0 ? milk : null;
 }
 
 export function todayStats(
@@ -67,7 +90,7 @@ export function todayStats(
       minutes: naps.reduce((sum, e) => sum + lengthMinutes(e, now), 0),
     },
     feeds: feeds.length,
-    bottleMl: drunkFromBottles(feeds),
+    milk: milkFromBottles(feeds),
     diapers: today.filter((e) => diaperIds.has(e.typeId)).length,
   };
 }

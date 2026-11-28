@@ -9,7 +9,7 @@ const NONE: TodayStats = {
   lastNightMinutes: null,
   naps: { count: 0, minutes: 0 },
   feeds: 0,
-  bottleMl: null,
+  milk: null,
   diapers: 0,
 };
 
@@ -21,7 +21,7 @@ describe('TodayStrip', () => {
           lastNightMinutes: 610,
           naps: { count: 2, minutes: 85 },
           feeds: 5,
-          bottleMl: null,
+          milk: null,
           diapers: 6,
         }}
       />,
@@ -56,7 +56,9 @@ describe('TodayStrip', () => {
 
     it('shows the volume drunk as the note, named for screen readers', () => {
       setUnitSetting('metric');
-      renderUi(<TodayStrip stats={{ ...NONE, feeds: 5, bottleMl: 1240 }} />);
+      renderUi(
+        <TodayStrip stats={{ ...NONE, feeds: 5, milk: { drunkMl: 1240, preparedMl: 1300 } }} />,
+      );
       const strip = screen.getByRole('region', { name: 'Today' });
       expect(
         within(strip)
@@ -78,9 +80,21 @@ describe('TodayStrip', () => {
       ).toEqual(['2']);
     });
 
+    it('never shows "0 ml" when only untouched bottles were logged', () => {
+      renderUi(<TodayStrip stats={{ ...NONE, feeds: 1, milk: { drunkMl: 0, preparedMl: 120 } }} />);
+      const strip = screen.getByRole('region', { name: 'Today' });
+      expect(
+        within(strip)
+          .getAllByRole('definition')
+          .map((value) => value.textContent),
+      ).toEqual(['1']);
+    });
+
     it('shows the total in US units when the person uses them', () => {
       setUnitSetting('us');
-      renderUi(<TodayStrip stats={{ ...NONE, feeds: 3, bottleMl: 360 }} />);
+      renderUi(
+        <TodayStrip stats={{ ...NONE, feeds: 3, milk: { drunkMl: 360, preparedMl: 360 } }} />,
+      );
       const strip = screen.getByRole('region', { name: 'Today' });
       expect(within(strip).getAllByRole('definition')[1]?.textContent).toMatch(/fl oz$/);
     });

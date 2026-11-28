@@ -737,7 +737,20 @@ function seedFor(scenario: Scenario, now: number): Seeded {
     case 'cry':
       return { baby, events: cryLog(now), predictions: empty };
     case 'awake':
-      return { baby, events: morning(now, 112), predictions: prediction(now) };
+      return {
+        baby,
+        events: [
+          ...morning(now, 112),
+          // A bottle not finished: the "Milk today" card shows what was not drunk.
+          eventAt(now, 'feeding', 402, 390, {
+            method: 'bottle',
+            amount_ml: 150,
+            amount_drunk_ml: 110,
+            bottle_feeding_type: 'formula',
+          }),
+        ],
+        predictions: prediction(now),
+      };
   }
 }
 

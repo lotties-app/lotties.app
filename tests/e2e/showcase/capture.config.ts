@@ -23,7 +23,15 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: [['list']],
-  use: { baseURL: url, trace: 'off', actionTimeout: 15_000, navigationTimeout: 30_000 },
+  use: {
+    baseURL: url,
+    trace: 'off',
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
+    // The previews use the real clock: capturing late at night shows a night-time Now. A zone where
+    // it is early afternoon gives the usual day (for example SHOWCASE_TZ=Pacific/Pago_Pago).
+    ...(process.env.SHOWCASE_TZ ? { timezoneId: process.env.SHOWCASE_TZ } : {}),
+  },
   webServer: {
     command: `npm --prefix code/web run dev -- --port ${SHOWCASE_PORT} --strictPort`,
     cwd: repoRoot,

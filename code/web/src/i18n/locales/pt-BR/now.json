@@ -260,6 +260,12 @@
       "bottleTotal": "{{volume}} tomados na mamadeira",
       "diapers": "Fraldas"
     },
+    "milkToday": {
+      "title": "Leite hoje",
+      "drunk": "bebidos",
+      "prepared": "preparados",
+      "notDrunk": "Não bebidos: {{volume}}"
+    },
     "firstRun": {
       "title": "Registre o primeiro evento de {{name}}",
       "body": "Um toque basta. Dá para corrigir o horário logo em seguida.",
