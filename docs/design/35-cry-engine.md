@@ -240,6 +240,10 @@ While it is off:
   microphone, so a device that had the monitor running stops when it loads the new version;
 - Settings > Notifications has no "Cry detected by the monitor" switch (`notifications/ui/BabyReminders.tsx`); a value
   already stored is kept as it is (the server still has the column) and is saved back unchanged with the other switches;
+- at app start (`src/main.tsx`) `cryMonitor/switchedOff.ts` removes this device's monitor consent
+  (`lotties.cry-monitor.consent`), since its page, where it is withdrawn, cannot be opened; switched on, the consent
+  is left untouched and asked again only if missing; the sensitivity stays (a device preference); the module pulls no
+  page or engine code into the start-up chunk (`bundleBoundary.test.ts`);
 - the web build copies no MediaPipe WASM, removes a local `public/models/cry/yamnet.tflite` from the output and checks
   no model (so `CRY_MODEL_REQUIRED=1` never fails it); the dev server serves no WASM; the Dockerfile downloads no model;
 - the service worker registers no route for `/models/cry/` and deletes every cry cache on activate, the current one
