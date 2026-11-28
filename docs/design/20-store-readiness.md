@@ -98,11 +98,29 @@ docs/design/19-native-push.md, not built).
 the microphone when a family member starts the cry monitor; the audio is analysed on the device and never stored or
 sent, which is **not "collected"** for Apple's App Privacy nor Google's Data safety (on-device, ephemeral processing;
 docs/design/31-cry-detector-spike.md section 6). What it saves is an ordinary crying spell, already covered by the
-sleep and feeding logs ("Other Data" / "Health info") above. The native apps do not offer it and request no
-microphone permission today, so **none of the answers above change**. When the native shell gets it (doc 31 CD10):
+sleep and feeding logs ("Other Data" / "Health info") above. The native apps do not offer it, and no build from `main`
+requests a microphone permission (only the hands-free test build does, below), so **none of the answers above change**.
+When the native shell gets it (doc 31 CD10):
 add `NSMicrophoneUsageDescription` and `RECORD_AUDIO` (plus the foreground-service declaration on Android), keep
 "Audio Data: not collected" only if the native capture also never stores or sends audio, and review Apple 2.5.14 and
 Google's prominent disclosure and monitoring policies.
+
+**Hands-free mode (test builds only; docs/design/49a-voice-lab.md, audit section 21, policy 18 of 2026-11-28).** The
+voice lab build (branch `feat/voice-lab`, never merged) asks for the microphone (Android `RECORD_AUDIO`) and, on iOS,
+speech recognition (`NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`), only when the tester taps
+Speak. Recognition is on-device only (Android `createOnDeviceSpeechRecognizer`, iOS `requiresOnDeviceRecognition`);
+Lotties never stores or sends the audio, and the recognised text leaves the phone only in a results file the tester
+exports. Policy 18 describes this. **The store answers were not changed here.** What the owner must check in the
+consoles before such a build reaches anyone beyond the internal testers, and again before the feature ships from
+`main`:
+- Play Console, Data safety: "Audio: voice or sound recordings" stays "not collected" only for on-device processing; decide
+  whether handing the microphone to the phone's recognition service (another app on the device, often Google's) counts
+  as sharing (design 49 section 3.4); `RECORD_AUDIO` itself needs no declaration form (UNVERIFIED against today's Play
+  Console); read the Play Console inbox after the upload.
+- App Store Connect, App Privacy: "Audio Data" stays "not collected" for on-device recognition; the purpose strings must
+  match what the build does (the lab build's speech recognition string still mentions a server option that is being
+  removed: fix it before the upload).
+- Both: the builds published from `main` today request no microphone, so their answers stay as above.
 
 **Community insights (planned, not built; docs/design/34-community-insights.md section 10).** The policy describes a
 future opt-in use of babies' records in pooled statistics as "not active yet". While it is off, **none of the answers
