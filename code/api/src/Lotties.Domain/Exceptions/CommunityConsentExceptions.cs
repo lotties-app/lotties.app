@@ -31,3 +31,34 @@ public sealed class CommunityConsentVersionOutdatedException : DomainException
     public override IReadOnlyDictionary<string, object?> Details { get; } =
         new Dictionary<string, object?> { ["currentTextVersion"] = CommunityConsentTexts.CurrentTextVersion };
 }
+
+/// <summary>
+/// The baby's community insights consent is not in force (never given, withdrawn, or given under an older consent text): her family is
+/// not served the community statistics. 403 <c>community_consent_required</c>, the same for every reason, because Caregivers and Viewers
+/// may read the statistics but not the consent state (docs/design/34-community-insights.md sections 3.1 and 6).
+/// </summary>
+public sealed class CommunityConsentRequiredException : DomainException
+{
+    public CommunityConsentRequiredException(Guid babyId)
+        : base("community_consent_required", "Community insights are not turned on for this baby.")
+    {
+        BabyId = babyId;
+    }
+
+    public Guid BabyId { get; }
+}
+
+/// <summary>
+/// The caller is not a family member of the baby (a Doctor, whatever her scopes, or a non-member): the community statistics are
+/// family-level, never clinical (the route's policy refuses first; the service checks again). 403 <c>community_statistics_not_allowed</c>.
+/// </summary>
+public sealed class CommunityStatisticsNotAllowedException : DomainException
+{
+    public CommunityStatisticsNotAllowedException(Guid babyId)
+        : base("community_statistics_not_allowed", "Only the baby's family may read the community statistics.")
+    {
+        BabyId = babyId;
+    }
+
+    public Guid BabyId { get; }
+}

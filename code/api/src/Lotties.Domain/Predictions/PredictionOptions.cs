@@ -83,12 +83,6 @@ public sealed record PredictionOptions
     /// <summary>Whether community-derived static priors may supplement published norms during cold start.</summary>
     public bool UseCommunityStaticPriors { get; init; } = true;
 
-    /// <summary>Whether live community statistics may supplement static priors during cold start (Phase 1 kill switch).</summary>
-    public bool UseCommunityLivePriors { get; init; } = false;
-
-    /// <summary>Maximum age of a community statistics release before it is considered stale and ignored.</summary>
-    public TimeSpan MaxCommunityPriorAge { get; init; } = TimeSpan.FromDays(14);
-
     /// <summary>Event types eligible for cold-start predictions. Defaults to feeding only.</summary>
     public IReadOnlySet<EventTypeKey> ColdStartTypeKeys { get; init; } = new HashSet<EventTypeKey>
     {
