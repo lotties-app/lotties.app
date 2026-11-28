@@ -22,7 +22,7 @@ export function FreeTry({ lab }: { lab: VoiceLab }) {
           size="normal"
           listening={listening}
           state={lab.listenState}
-          disabled={!lab.ready || lab.speaking !== null}
+          disabled={lab.speaking !== null}
           onSpeak={() => void lab.speakFree()}
           onCancel={lab.cancel}
         />

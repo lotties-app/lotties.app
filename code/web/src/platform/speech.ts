@@ -7,22 +7,19 @@ import {
   type SpeechEngine,
   type SpeechPlatform,
 } from './speechTypes';
-import { createWebSpeechEngine, webSpeechConstructor } from './webSpeech';
 
 export * from './speechTypes';
 
 /*
  * Speech recognition for the voice lab spike (docs/design/49a-voice-lab.md; design 49 sections 3.2 and
- * 7.2), later the hands-free mode. Three engines, always chosen explicitly, never swapped behind the
- * caller's back:
- * - `on_device`: the phone's own recogniser in on-device mode (local plugin `LottiesSpeech`, Kotlin and
- *   Swift in code/mobile). When the phone cannot recognise this language on the device, it fails with
- *   `on_device_unavailable` or `language_unavailable`: it never falls back to a server.
- * - `server`: the same recogniser allowed to use Google's or Apple's servers.
- * - `web`: the WebView's `webkitSpeechRecognition` where it exists; where the audio goes is not known
- *   (Apple's or Google's speech service).
- * `@capacitor/core` loads on first use (dynamic import), so a browser never downloads it. The text that
- * comes back is handed to the caller and kept nowhere here: never logged, stored or sent.
+ * 7.2), later the hands-free mode: one engine, the phone's own recogniser in on-device mode (local plugin
+ * `LottiesSpeech`, Kotlin and Swift in code/mobile). The plugin has no other mode: it refuses
+ * `onDevice: false`, and when the phone cannot recognise the language on the device it fails with
+ * `on_device_unavailable` or `language_unavailable` instead of using a server. There is no Web Speech
+ * engine (server or Web recognition was left out on purpose: speech is recognised on the phone, the app
+ * does not send or record audio). In a browser there is no engine at all. `@capacitor/core` loads on
+ * first use (dynamic import). The text that comes back is handed to the caller and kept nowhere here:
+ * never logged, stored or sent.
  */
 
 /* ---- The native plugin `LottiesSpeech` (code/mobile/android/.../speech, ios/App/App/LottiesSpeechPlugin.swift). */
@@ -59,7 +56,8 @@ export interface LottiesSpeechPlugin {
   capabilities(options: { locale: string }): Promise<NativeCapabilities>;
   listenOnce(options: {
     locale: string;
-    onDevice: boolean;
+    /** Always true: the plugin refuses anything else. */
+    onDevice: true;
     hints: string[];
     maxResults: number;
     timeoutMs: number;
@@ -120,9 +118,9 @@ const permission = (value: string | undefined): PermissionStatus =>
 const flag = (value: boolean | null | undefined): boolean | null =>
   typeof value === 'boolean' ? value : null;
 
-function nativeEngine(kind: 'on_device' | 'server'): SpeechEngine {
+function onDeviceEngine(): SpeechEngine {
   return {
-    kind,
+    kind: 'on_device',
     async listen(request, onState) {
       const { native } = await loadPlugin();
       onState('starting');
@@ -135,13 +133,15 @@ function nativeEngine(kind: 'on_device' | 'server'): SpeechEngine {
         const answer = await withTimeout(
           native.listenOnce({
             locale: request.locale,
-            onDevice: kind === 'on_device',
+            onDevice: true,
             hints: [...request.hints],
             maxResults: request.maxResults,
             timeoutMs: request.timeoutMs,
           }),
           request.timeoutMs + LISTEN_MARGIN_MS,
         );
+        // The plugin confirms every answer came from the device; anything else is not used.
+        if (answer.onDevice !== true) throw new SpeechError('not_supported');
         const alternatives = (answer.alternatives ?? []).filter((a) => typeof a === 'string');
         return {
           alternatives,
@@ -152,7 +152,7 @@ function nativeEngine(kind: 'on_device' | 'server'): SpeechEngine {
           startedAt: answer.startedAt ?? Date.now(),
           endOfSpeechAt: typeof answer.endOfSpeechAt === 'number' ? answer.endOfSpeechAt : null,
           resultAt: answer.resultAt ?? Date.now(),
-          onDevice: answer.onDevice ?? kind === 'on_device',
+          onDevice: true,
         };
       } catch (error) {
         if (speechErrorCode(error) === 'timeout') await native.cancel().catch(() => undefined);
@@ -169,12 +169,7 @@ function nativeEngine(kind: 'on_device' | 'server'): SpeechEngine {
 }
 
 function nativePlatformSpeech(platformName: 'android' | 'ios'): SpeechPlatform {
-  const engines = {
-    on_device: nativeEngine('on_device'),
-    server: nativeEngine('server'),
-  } as const;
-  const web = webSpeechConstructor();
-  const webEngine = web ? createWebSpeechEngine(web) : null;
+  const engine = onDeviceEngine();
   return {
     async capabilities(locale) {
       const { native } = await loadPlugin();
@@ -192,7 +187,6 @@ function nativePlatformSpeech(platformName: 'android' | 'ios'): SpeechPlatform {
         biasing: flag(c.biasing),
         microphone: permission(c.microphonePermission),
         speech: permission(c.speechPermission),
-        webSpeech: web !== null,
       };
     },
     async downloadModel(locale) {
@@ -205,21 +199,20 @@ function nativePlatformSpeech(platformName: 'android' | 'ios'): SpeechPlatform {
         ? status
         : 'error';
     },
-    engine(kind) {
-      return kind === 'web' ? webEngine : engines[kind];
+    engine() {
+      return engine;
     },
   };
 }
 
+/** A browser has no on-device recogniser the app may use: no engine. */
 function browserSpeech(): SpeechPlatform {
-  const web = webSpeechConstructor();
-  const webEngine = web ? createWebSpeechEngine(web) : null;
   return {
     async capabilities() {
       return {
         platform: 'web',
         osVersion: null,
-        recognitionAvailable: web !== null,
+        recognitionAvailable: null,
         onDeviceAvailable: false,
         onDeviceReason: 'no_native_app',
         languageInstalled: null,
@@ -229,19 +222,18 @@ function browserSpeech(): SpeechPlatform {
         biasing: null,
         microphone: 'unknown',
         speech: 'unknown',
-        webSpeech: web !== null,
       };
     },
     async downloadModel() {
       return 'unsupported';
     },
-    engine(kind) {
-      return kind === 'web' ? webEngine : null;
+    engine() {
+      return null;
     },
   };
 }
 
-/** The speech engines of this device: the plugin inside the app, the web engine only in a browser. */
+/** The speech platform of this device: the plugin inside the app, nothing in a browser. */
 export function speechPlatform(): SpeechPlatform {
   const platformName = nativePlatform();
   return isNativeApp() && platformName ? nativePlatformSpeech(platformName) : browserSpeech();

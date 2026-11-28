@@ -75,16 +75,15 @@ describe('speech platform in the app', () => {
       canDownload: true,
       microphone: 'prompt',
       speech: 'not_needed',
-      webSpeech: false,
     });
   });
 
-  it('asks the on-device engine for on-device recognition only, with the hints, and forwards states', async () => {
+  it('asks the plugin for on-device recognition only, with the hints, and forwards states', async () => {
     inApp('ios');
     const { plugin, removed } = fakePlugin();
     setSpeechPluginForTests(plugin);
     const states: ListenState[] = [];
-    const engine = speechPlatform().engine('on_device');
+    const engine = speechPlatform().engine();
     const result = await engine?.listen(REQUEST, (s) => states.push(s));
     expect(plugin.listenOnce).toHaveBeenCalledWith({
       locale: 'pt-BR',
@@ -116,7 +115,7 @@ describe('speech platform in the app', () => {
     setSpeechPluginForTests(plugin);
     await expect(
       speechPlatform()
-        .engine('on_device')
+        .engine()
         ?.listen(REQUEST, () => undefined),
     ).rejects.toMatchObject({ code: 'on_device_unavailable' });
     expect(plugin.listenOnce).toHaveBeenCalledTimes(1);
@@ -124,14 +123,17 @@ describe('speech platform in the app', () => {
     expect(removed).toHaveBeenCalledTimes(1);
   });
 
-  it('lets the server engine use the server', async () => {
+  it('uses no answer the plugin does not mark as recognised on the device', async () => {
     inApp('android');
-    const { plugin } = fakePlugin();
+    const { plugin } = fakePlugin({
+      listenOnce: vi.fn(async () => ({ alternatives: ['dormiu'], onDevice: false })),
+    });
     setSpeechPluginForTests(plugin);
-    await speechPlatform()
-      .engine('server')
-      ?.listen(REQUEST, () => undefined);
-    expect(plugin.listenOnce).toHaveBeenCalledWith(expect.objectContaining({ onDevice: false }));
+    await expect(
+      speechPlatform()
+        .engine()
+        ?.listen(REQUEST, () => undefined),
+    ).rejects.toMatchObject({ code: 'not_supported' });
   });
 
   it('starts the language download and reads its status', async () => {
@@ -144,12 +146,12 @@ describe('speech platform in the app', () => {
 });
 
 describe('speech platform in a browser', () => {
-  it('has no plugin engines and never loads the plugin', async () => {
+  it('has no engine at all (no Web Speech) and never loads the plugin', async () => {
+    vi.stubGlobal('webkitSpeechRecognition', class {});
     const { plugin } = fakePlugin();
     setSpeechPluginForTests(plugin);
     const platform = speechPlatform();
-    expect(platform.engine('on_device')).toBeNull();
-    expect(platform.engine('server')).toBeNull();
+    expect(platform.engine()).toBeNull();
     await expect(platform.capabilities('pt-BR')).resolves.toMatchObject({
       platform: 'web',
       onDeviceAvailable: false,

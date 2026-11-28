@@ -58,7 +58,6 @@ function Rows({ c }: { c: SpeechCapabilities }) {
         label={t('voiceLab.capabilities.speech')}
         value={t(`voiceLab.capabilities.permission.${c.speech}`)}
       />
-      <Row label={t('voiceLab.capabilities.webSpeech')} value={yesNo(c.webSpeech)} />
     </>
   );
 }

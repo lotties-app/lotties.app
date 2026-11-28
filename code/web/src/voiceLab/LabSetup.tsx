@@ -1,19 +1,26 @@
 import { useTranslation } from 'react-i18next';
-import { Alert, Checkbox, FormControlLabel, Stack } from '@mui/material';
-import { SPEECH_ENGINES, type SpeechEngineKind } from '../platform/speechTypes';
+import { Stack } from '@mui/material';
 import { Field, SegmentedControl } from '../ui/form';
 import type { SpeechLocale } from '../voice/numberWords';
 import { LAB_CONDITIONS, LAB_LOCALES, type LabCondition } from './labPhrases';
-import { needsConfirmation, type VoiceLab } from './useVoiceLab';
+import type { VoiceLab } from './useVoiceLab';
 
-/** Language, engine and condition of the run; the audio warning and its confirmation for server and web. */
+/**
+ * Language and condition of the run. There is no engine choice: speech is recognised on the phone
+ * only (server and Web recognition were left out on purpose, docs/design/49a-voice-lab.md).
+ */
 export function LabSetup({ lab }: { lab: VoiceLab }) {
   const { t } = useTranslation();
   const { settings, change } = lab;
   const busy = lab.speaking !== null;
   return (
     <Stack spacing={2}>
-      <Field label={t('voiceLab.setup.language')} group disabled={busy}>
+      <Field
+        label={t('voiceLab.setup.language')}
+        group
+        disabled={busy}
+        help={t('voiceLab.setup.onDeviceOnly')}
+      >
         <SegmentedControl<SpeechLocale>
           value={settings.locale}
           options={LAB_LOCALES.map((value) => ({
@@ -23,40 +30,6 @@ export function LabSetup({ lab }: { lab: VoiceLab }) {
           onChange={(locale) => locale && change({ locale })}
         />
       </Field>
-      <Field
-        label={t('voiceLab.setup.engine')}
-        group
-        disabled={busy}
-        help={t(`voiceLab.setup.engineHelp.${settings.engine}`)}
-      >
-        <SegmentedControl<SpeechEngineKind>
-          value={settings.engine}
-          options={SPEECH_ENGINES.map((value) => ({
-            value,
-            label: t(`voiceLab.setup.engines.${value}`),
-          }))}
-          onChange={(engine) => engine && change({ engine })}
-        />
-      </Field>
-      {needsConfirmation(settings.engine) && (
-        <Alert severity="warning">
-          <Stack spacing={1}>
-            <span>{t(`voiceLab.warning.${settings.engine === 'web' ? 'web' : 'server'}`)}</span>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={lab.confirmed}
-                  onChange={(event) => lab.confirm(event.target.checked)}
-                  disabled={busy}
-                />
-              }
-              label={t(
-                `voiceLab.warning.${settings.engine === 'web' ? 'confirmWeb' : 'confirmServer'}`,
-              )}
-            />
-          </Stack>
-        </Alert>
-      )}
       <Field
         label={t('voiceLab.setup.condition')}
         group

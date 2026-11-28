@@ -92,10 +92,10 @@ describe('retries', () => {
     expect(row).toMatchObject({ attempts: 1, passed: 0, accuracy: 0, wrongActions: 1, retries: 2 });
   });
 
-  it('keep runs apart by engine, condition and language', () => {
+  it('keep runs apart by condition and language', () => {
     let records: PhraseRecord[] = [];
     records = addAttempt(records, RUN, pt(1), attempt(pt(1), ['mamadeira de 120 ml']));
-    records = addAttempt(records, { ...RUN, engine: 'server' }, pt(1), attempt(pt(1), ['x']));
+    records = addAttempt(records, { ...RUN, locale: 'en' }, pt(1), attempt(pt(1), ['x']));
     records = addAttempt(records, { ...RUN, condition: 'C2' }, pt(1), attempt(pt(1), ['x']));
     expect(records).toHaveLength(3);
     expect(records.every((r) => r.retries === 0)).toBe(true);

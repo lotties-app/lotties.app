@@ -42,7 +42,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Test build: the voice lab uses the microphone only while you tap Speak, to measure how well the phone understands spoken commands. Versão de teste: o laboratório de voz usa o microfone só enquanto você toca em Falar, para medir o quanto o celular entende os comandos falados.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Test build: the voice lab turns what you say into text to check the spoken commands. With the on-device option nothing leaves the iPhone; the server option sends the audio to Apple. Versão de teste: o laboratório de voz transforma o que você fala em texto para conferir os comandos. Com a opção no aparelho nada sai do iPhone; a opção servidor envia o áudio para a Apple.</string>
+	<string>Test build: the voice lab turns what you say into text to check the spoken commands. Speech is recognised on the iPhone only: no audio is sent or recorded. Versão de teste: o laboratório de voz transforma o que você fala em texto para conferir os comandos. A fala é reconhecida só no iPhone: nenhum áudio é enviado ou gravado.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -26,13 +26,14 @@ import org.json.JSONObject
 
 /**
  * Capacitor plugin `LottiesSpeech` v0 (code/web/src/platform/speech.ts; docs/design/49a-voice-lab.md, the voice lab
- * spike, branch feat/voice-lab only). One recognition at a time with the system SpeechRecognizer:
- * - `onDevice: true` uses `createOnDeviceSpeechRecognizer` (Android 12+) and, on Android 13+, first checks that the
- *   language is installed on the phone. When it is not available it rejects (`on_device_unavailable`,
- *   `language_unavailable`): it never falls back to the default recogniser, which may stream audio to a server.
- * - `onDevice: false` uses the default recogniser ("likely to stream audio to remote servers", Android docs).
- * Hints go in `EXTRA_BIASING_STRINGS` (Android 13+). The recogniser is destroyed (the microphone released) on every
- * way out: result, error, Cancel, timeout, the app leaving the screen. Nothing heard is logged or kept here.
+ * spike, branch feat/voice-lab only). One recognition at a time, on the device only: the recogniser is always
+ * `createOnDeviceSpeechRecognizer` (Android 12+) with `EXTRA_PREFER_OFFLINE`; on Android 13+ the language must first be
+ * reported installed on the phone. When it is not available the call is rejected (`on_device_unavailable`,
+ * `language_unavailable`). The default recogniser ("likely to stream audio to remote servers", Android docs) is never
+ * created, and `onDevice: false` is refused (`not_supported`). Hints go in `EXTRA_BIASING_STRINGS` (Android 13+). The
+ * recogniser is destroyed (the microphone released) on every way out: result, error, Cancel, timeout, the app leaving
+ * the screen. Nothing heard is logged or kept here; this plugin sends no audio or text anywhere. `downloadModel` only
+ * asks the system speech service to fetch its own language model (no audio, no text).
  * UNVERIFIED: written without Android Studio, compiled by CI only, never run on a phone.
  */
 @CapacitorPlugin(
@@ -44,7 +45,6 @@ class LottiesSpeechPlugin : Plugin() {
     private class Session(
         val call: PluginCall,
         val recognizer: SpeechRecognizer,
-        val onDevice: Boolean,
         val startedAt: Long,
     ) {
         var endOfSpeechAt: Long? = null
@@ -53,7 +53,6 @@ class LottiesSpeechPlugin : Plugin() {
 
     private class Request(
         val locale: String,
-        val onDevice: Boolean,
         val maxResults: Int,
         val timeoutMs: Long,
         val hints: List<String>,
@@ -96,6 +95,11 @@ class LottiesSpeechPlugin : Plugin() {
     fun listenOnce(call: PluginCall) {
         if (call.getString("locale").isNullOrBlank()) {
             call.reject("locale is required", "not_supported")
+            return
+        }
+        if (call.getBoolean("onDevice", true) == false) {
+            // Server recognition does not exist in this plugin (docs/design/49a-voice-lab.md).
+            call.reject("Only on-device recognition is available", "not_supported")
             return
         }
         if (getPermissionState(MICROPHONE) != PermissionState.GRANTED) {
@@ -194,24 +198,20 @@ class LottiesSpeechPlugin : Plugin() {
         }
         val request = Request(
             locale = call.getString("locale") ?: "",
-            onDevice = call.getBoolean("onDevice", true) ?: true,
             maxResults = SpeechCodes.maxResults(call.getInt("maxResults")),
             timeoutMs = SpeechCodes.timeoutMs(call.getInt("timeoutMs")),
             hints = strings(call.getArray("hints")),
         )
-        if (!request.onDevice) {
-            if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-                call.reject("No speech recognizer on this phone", "not_available")
-                return
-            }
-            begin(call, request)
-            return
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            startOnDevice(call, request)
+        } else {
             call.reject("On-device recognition needs Android 12", "on_device_unavailable")
-            return
         }
-        if (!onDeviceAvailable()) {
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun startOnDevice(call: PluginCall, request: Request) {
+        if (!onDeviceServiceAvailable()) {
             call.reject("No on-device recognizer on this phone", "on_device_unavailable")
             return
         }
@@ -240,42 +240,36 @@ class LottiesSpeechPlugin : Plugin() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private fun begin(call: PluginCall, request: Request) {
         val recognizer =
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && request.onDevice) {
-                    createOnDevice()
-                } else {
-                    SpeechRecognizer.createSpeechRecognizer(context)
-                }
+                SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
             } catch (error: Exception) {
-                call.reject("The recognizer could not start", if (request.onDevice) "on_device_unavailable" else "not_available")
+                call.reject("The on-device recognizer could not start", "on_device_unavailable")
                 return
             }
-        val current = Session(call, recognizer, request.onDevice, System.currentTimeMillis())
+        val current = Session(call, recognizer, System.currentTimeMillis())
         session = current
         recognizer.setRecognitionListener(listenerFor(current))
         val watchdog = Runnable { finish(current) { it.call.reject("No answer in time", "timeout") } }
         current.watchdog = watchdog
         main.postDelayed(watchdog, request.timeoutMs)
         try {
-            recognizer.startListening(intentFor(request.locale, request.maxResults, request.onDevice, request.hints))
+            recognizer.startListening(intentFor(request.locale, request.maxResults, request.hints))
         } catch (error: Exception) {
             finish(current) { it.call.reject("The recognizer could not start", "recognizer_error") }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun createOnDevice(): SpeechRecognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
-
-    private fun intentFor(locale: String, maxResults: Int, onDevice: Boolean, hints: List<String>): Intent =
+    private fun intentFor(locale: String, maxResults: Int, hints: List<String>): Intent =
         Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, locale)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, maxResults)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-            if (onDevice) putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
             if (hints.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS, ArrayList(hints))
             }
@@ -325,7 +319,7 @@ class LottiesSpeechPlugin : Plugin() {
             put("startedAt", current.startedAt)
             put("endOfSpeechAt", current.endOfSpeechAt ?: JSONObject.NULL)
             put("resultAt", resultAt)
-            put("onDevice", current.onDevice)
+            put("onDevice", true)
         }
     }
 
@@ -388,7 +382,7 @@ class LottiesSpeechPlugin : Plugin() {
         main.postDelayed(timeout, LANGUAGE_CHECK_MS)
         try {
             recognizer.checkRecognitionSupport(
-                intentFor(locale, 1, true, emptyList()),
+                intentFor(locale, 1, emptyList()),
                 context.mainExecutor,
                 object : RecognitionSupportCallback {
                     override fun onSupportResult(recognitionSupport: RecognitionSupport) {
@@ -423,7 +417,7 @@ class LottiesSpeechPlugin : Plugin() {
                 call.resolve(status("error"))
                 return
             }
-        val intent = intentFor(locale, 1, true, emptyList())
+        val intent = intentFor(locale, 1, emptyList())
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 downloadWithUpdates(call, recognizer, intent)

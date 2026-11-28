@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 /*
  * Captures the voice lab (`/dev/voice-lab`) at 360 px in English and Portuguese: the start of a run, the
- * listening state, a passed and a failed attempt with its retry, the server warning, the summary after
- * a few phrases, a phone without on-device recognition, and the key logger. Fails on horizontal page
+ * listening state, a passed and a failed attempt with its retry, the summary after a few phrases, a
+ * phone without on-device recognition, and the key logger. Fails on horizontal page
  * scroll. Credential-free (see voice-lab-preview.config.ts).
  *
  * Narrow it with VOICE_LAB_LOCALES=en VOICE_LAB_SCHEMES=dark.
@@ -26,7 +26,6 @@ const TEXT = {
     next: 'Next',
     retry: 'Retry',
     cancel: 'Cancel',
-    server: 'Server',
     keys: 'Key logger',
   },
   'pt-BR': {
@@ -34,7 +33,6 @@ const TEXT = {
     next: 'Próxima',
     retry: 'Repetir',
     cancel: 'Cancelar',
-    server: 'Servidor',
     keys: 'Teclas',
   },
 } as const;
@@ -101,10 +99,6 @@ test('voice lab at 360 px', async ({ browser }) => {
       await page.waitForTimeout(300);
       await page.getByTestId('voice-lab-summary').scrollIntoViewIfNeeded();
       await shot(page, `summary-${tag}`);
-
-      await page.getByRole('radio', { name: t.server }).click();
-      await page.getByRole('radio', { name: t.server }).scrollIntoViewIfNeeded();
-      await shot(page, `server-warning-${tag}`, false);
 
       await page.getByRole('button', { name: t.keys }).click();
       await page.keyboard.press('PageDown');

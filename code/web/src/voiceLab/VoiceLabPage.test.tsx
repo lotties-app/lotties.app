@@ -58,9 +58,7 @@ describe('VoiceLabPage', () => {
     expect(phraseCard().getByText('Parsed: Bottle 120 ml')).toBeTruthy();
     expect(phraseCard().getByText('mamadeira de 20 ml')).toBeTruthy();
     expect(phraseCard().getByText(/^Latency: 0[.,]4\d s$/)).toBeTruthy();
-    expect(platform.calls).toEqual([
-      expect.objectContaining({ engine: 'on_device', locale: 'pt-BR' }),
-    ]);
+    expect(platform.calls).toEqual([expect.objectContaining({ locale: 'pt-BR' })]);
     expect(platform.calls[0].hints).toContain('mamadeira');
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(phraseCard().getByText('mamadeira de 90')).toBeTruthy();
@@ -78,26 +76,22 @@ describe('VoiceLabPage', () => {
     expect(summary.getByText('0% (below target)')).toBeTruthy();
   });
 
-  it('asks for a confirmation before the server engine can listen', async () => {
-    const { platform } = renderLab({ replies: [['mamadeira de 120 ml']] });
-    fireEvent.click(screen.getByRole('radio', { name: 'Server' }));
-    expect(
-      screen.getByText(/the audio of what you say goes to Google \(Android\) or Apple/),
-    ).toBeTruthy();
+  it('offers no engine choice: on-device recognition only, with no server or web option', () => {
+    renderLab({ replies: [] });
+    expect(screen.getByText(/Recognised on this phone only/)).toBeTruthy();
+    expect(screen.queryByRole('radio', { name: 'Server' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: 'Web' })).toBeNull();
+    expect(screen.queryByRole('checkbox')).toBeNull();
     expect((screen.getByRole('button', { name: 'Speak' }) as HTMLButtonElement).disabled).toBe(
-      true,
+      false,
     );
-    fireEvent.click(
-      screen.getByRole('checkbox', {
-        name: 'I understand that my voice reading these phrases goes to Google or Apple',
-      }),
-    );
+  });
+
+  it('has nothing to listen with outside the phone app', async () => {
+    renderLab({ replies: [['dormiu']], hasEngine: false });
     speak();
-    expect(await phraseCard().findByText('Pass')).toBeTruthy();
-    expect(platform.calls.map((c) => c.engine)).toEqual(['server']);
-    // The web engine has its own warning and confirmation.
-    fireEvent.click(screen.getByRole('radio', { name: 'Web' }));
-    expect(screen.getByText(/may go to Apple or Google; where it goes is not known/)).toBeTruthy();
+    expect(await screen.findByText(/only in the phone app/)).toBeTruthy();
+    expect(screen.getByText('No attempts yet.')).toBeTruthy();
   });
 
   it('says when on-device recognition is missing, records nothing and never tries a server', async () => {
@@ -106,7 +100,7 @@ describe('VoiceLabPage', () => {
     expect(
       await screen.findByText(/On-device recognition is not available on this phone/),
     ).toBeTruthy();
-    expect(platform.calls.map((c) => c.engine)).toEqual(['on_device']);
+    expect(platform.calls).toHaveLength(1);
     expect(screen.getByText('No attempts yet.')).toBeTruthy();
   });
 

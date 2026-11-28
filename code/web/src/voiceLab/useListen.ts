@@ -3,7 +3,6 @@ import {
   speechErrorCode,
   type ListenResult,
   type ListenState,
-  type SpeechEngineKind,
   type SpeechErrorCode,
   type SpeechPlatform,
 } from '../platform/speechTypes';
@@ -22,7 +21,7 @@ export interface Listener {
   /** The engine's state while a listen runs, null when idle. */
   state: ListenState | null;
   /** Listens once; resolves with what was heard or the error (never throws). Ignored while busy. */
-  listen: (engine: SpeechEngineKind, locale: SpeechLocale) => Promise<ListenOutcome | null>;
+  listen: (locale: SpeechLocale) => Promise<ListenOutcome | null>;
   cancel: () => void;
 }
 
@@ -32,19 +31,18 @@ export interface Listener {
  */
 export function useListen(platform: SpeechPlatform): Listener {
   const [state, setState] = useState<ListenState | null>(null);
-  const running = useRef<{ kind: SpeechEngineKind; interrupted: boolean } | null>(null);
+  const running = useRef<{ interrupted: boolean } | null>(null);
 
   const cancel = useCallback(() => {
-    const current = running.current;
-    if (current) void platform.engine(current.kind)?.cancel();
+    if (running.current) void platform.engine()?.cancel();
   }, [platform]);
 
   const listen = useCallback(
-    async (kind: SpeechEngineKind, locale: SpeechLocale): Promise<ListenOutcome | null> => {
+    async (locale: SpeechLocale): Promise<ListenOutcome | null> => {
       if (running.current) return null;
-      const engine = platform.engine(kind);
+      const engine = platform.engine();
       if (!engine) return { listen: null, error: 'not_available' };
-      const session = { kind, interrupted: false };
+      const session = { interrupted: false };
       running.current = session;
       setState('starting');
       try {

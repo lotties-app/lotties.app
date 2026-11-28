@@ -18,6 +18,7 @@ const FREE_TRIES_KEPT = 5;
 
 export interface LabSettings {
   locale: SpeechLocale;
+  /** Always the on-device engine (server and Web recognition were left out on purpose). */
   engine: SpeechEngineKind;
   condition: LabCondition;
 }
@@ -25,9 +26,6 @@ export interface LabSettings {
 export type Speaking = 'phrase' | 'free' | null;
 
 const runId = ({ engine, condition, locale }: LabSettings) => `${engine}|${condition}|${locale}`;
-
-/** Engines whose audio may leave the phone: each needs its own confirmation once per visit. */
-export const needsConfirmation = (engine: SpeechEngineKind) => engine !== 'on_device';
 
 /**
  * The lab's state, in memory only: the chosen run, the attempts, where each run is, the free tries,
@@ -40,7 +38,6 @@ export function useVoiceLab(platform: SpeechPlatform) {
     engine: 'on_device',
     condition: 'C1',
   });
-  const [confirmed, setConfirmed] = useState<Partial<Record<SpeechEngineKind, boolean>>>({});
   const [records, setRecords] = useState<PhraseRecord[]>([]);
   const [positions, setPositions] = useState<Record<string, number>>({});
   const [freeTries, setFreeTries] = useState<Attempt[]>([]);
@@ -51,9 +48,7 @@ export function useVoiceLab(platform: SpeechPlatform) {
   const position = Math.min(positions[runId(settings)] ?? 0, phrases.length);
   const phrase: LabPhrase | null = phrases[position] ?? null;
   const record = phrase ? records.find((r) => r.key === recordKey(settings, phrase.id)) : undefined;
-  const ready = !needsConfirmation(settings.engine) || confirmed[settings.engine] === true;
-
-  const change = (next: Partial<LabSettings>) => {
+  const change = (next: Partial<Pick<LabSettings, 'locale' | 'condition'>>) => {
     setSettings((current) => ({ ...current, ...next }));
     setError(null);
   };
@@ -67,7 +62,7 @@ export function useVoiceLab(platform: SpeechPlatform) {
     setSpeaking(mode);
     setError(null);
     try {
-      return await listener.listen(settings.engine, settings.locale);
+      return await listener.listen(settings.locale);
     } finally {
       setSpeaking(null);
     }
@@ -88,7 +83,7 @@ export function useVoiceLab(platform: SpeechPlatform) {
   }
 
   async function speakPhrase() {
-    if (!phrase || !ready || speaking) return;
+    if (!phrase || speaking) return;
     const target = phrase;
     const run = settings;
     const heard = await hear('phrase');
@@ -102,7 +97,7 @@ export function useVoiceLab(platform: SpeechPlatform) {
   }
 
   async function speakFree() {
-    if (!ready || speaking) return;
+    if (speaking) return;
     const heard = await hear('free');
     if (!heard) return;
     if (heard.error && !countsAsAttempt(heard.error)) {
@@ -116,9 +111,6 @@ export function useVoiceLab(platform: SpeechPlatform) {
   return {
     settings,
     change,
-    confirmed: confirmed[settings.engine] === true,
-    confirm: (value: boolean) => setConfirmed((all) => ({ ...all, [settings.engine]: value })),
-    ready,
     phrases,
     position,
     phrase,

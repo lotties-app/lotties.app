@@ -34,7 +34,6 @@ function useCells() {
     const target = row.condition === 'all' ? undefined : THRESHOLDS.accuracy[row.condition];
     const rate = row.wrongActionRate;
     return [
-      { text: t(`voiceLab.setup.engines.${row.engine}`), miss: false },
       { text: t(`voiceLab.setup.languages.${row.locale}`), miss: false },
       {
         text: row.condition === 'all' ? t('voiceLab.summary.all') : row.condition,
@@ -69,7 +68,6 @@ function useCells() {
 }
 
 const HEADERS = [
-  'engine',
   'language',
   'condition',
   'attempts',
@@ -83,7 +81,7 @@ const HEADERS = [
   'retries',
 ] as const;
 
-/** The section 7.4 measures per engine, language and condition; values below target are marked. */
+/** The section 7.4 measures per language and condition (one engine: on device); misses are marked. */
 export function SummaryTable({ records }: { records: readonly PhraseRecord[] }) {
   const { t } = useTranslation();
   const cells = useCells();

@@ -64,7 +64,7 @@ describe('the voice lab switch', () => {
       (file) =>
         file.startsWith('voiceLab/') ||
         file.startsWith('voice/') ||
-        /^platform\/(speech|speechTypes|webSpeech)\.ts$/.test(file),
+        /^platform\/(speech|speechTypes)\.ts$/.test(file),
     );
     expect(lab).toEqual([]);
   });

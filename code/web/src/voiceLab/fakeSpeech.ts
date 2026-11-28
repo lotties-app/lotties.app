@@ -3,7 +3,6 @@ import {
   type ListenResult,
   type SpeechCapabilities,
   type SpeechEngine,
-  type SpeechEngineKind,
   type SpeechErrorCode,
   type SpeechPlatform,
 } from '../platform/speechTypes';
@@ -19,8 +18,8 @@ export type FakeReply = readonly string[] | { error: SpeechErrorCode } | 'hang';
 export interface FakeSpeechOptions {
   replies: readonly FakeReply[];
   capabilities?: Partial<SpeechCapabilities>;
-  /** Engines this platform has (default all three). */
-  engines?: readonly SpeechEngineKind[];
+  /** Whether there is an engine at all (a browser has none). */
+  hasEngine?: boolean;
   /** Engine-reported end of speech to result, ms. */
   latencyMs?: number;
 }
@@ -38,19 +37,18 @@ export const FAKE_CAPABILITIES: SpeechCapabilities = {
   biasing: true,
   microphone: 'granted',
   speech: 'granted',
-  webSpeech: false,
 };
 
 export interface FakeSpeech extends SpeechPlatform {
-  /** Listens started, per engine. */
-  calls: { engine: SpeechEngineKind; locale: string; hints: readonly string[] }[];
+  /** Listens started. */
+  calls: { locale: string; hints: readonly string[] }[];
   cancels: number;
 }
 
 export function fakeSpeech({
   replies,
   capabilities,
-  engines = ['on_device', 'server', 'web'],
+  hasEngine = true,
   latencyMs = 420,
 }: FakeSpeechOptions): FakeSpeech {
   let next = 0;
@@ -64,12 +62,12 @@ export function fakeSpeech({
     async downloadModel() {
       return 'started';
     },
-    engine(kind) {
-      if (!engines.includes(kind)) return null;
+    engine() {
+      if (!hasEngine) return null;
       const engine: SpeechEngine = {
-        kind,
+        kind: 'on_device',
         listen(request, onState) {
-          platform.calls.push({ engine: kind, locale: request.locale, hints: request.hints });
+          platform.calls.push({ locale: request.locale, hints: request.hints });
           const reply = replies[next % Math.max(1, replies.length)] ?? 'hang';
           next += 1;
           onState('starting');
@@ -91,7 +89,7 @@ export function fakeSpeech({
                 startedAt: resultAt - latencyMs - 1500,
                 endOfSpeechAt: resultAt - latencyMs,
                 resultAt,
-                onDevice: kind === 'on_device' ? true : kind === 'server' ? false : null,
+                onDevice: true,
               });
             }, 0);
           });

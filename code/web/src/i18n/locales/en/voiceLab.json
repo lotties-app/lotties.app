@@ -1,26 +1,16 @@
 {
   "voiceLab": {
     "title": "Voice lab",
-    "intro": "A test build tool for the hands-free mode. Nothing you say becomes an entry, nothing is sent to Lotties and no baby data is read. Results stay on this screen until you export them.",
+    "intro": "A test build tool for the hands-free mode. Speech is recognised on this phone only: the lab sends and records no audio. Nothing you say becomes an entry, nothing is sent to Lotties and no baby data is read. Results stay on this screen until you export them.",
     "link": "Open the voice lab",
     "linkHint": "Test build only: measures how well this phone understands the spoken commands.",
     "setup": {
       "language": "Language",
-      "engine": "Engine",
+      "onDeviceOnly": "Recognised on this phone only. If the phone cannot recognise this language on the device, the lab says so: it never uses a server.",
       "condition": "Condition",
       "languages": {
         "pt-BR": "Português",
         "en": "English"
-      },
-      "engines": {
-        "on_device": "On device",
-        "server": "Server",
-        "web": "Web"
-      },
-      "engineHelp": {
-        "on_device": "The phone's recogniser, on the phone only. If it cannot do this language on the phone, the lab says so: it never switches to a server.",
-        "server": "The phone's recogniser, allowed to use Google's (Android) or Apple's (iPhone) servers.",
-        "web": "The WebView's own speech recognition, where it exists."
       },
       "conditions": {
         "C1": "C1",
@@ -35,12 +25,6 @@
         "C4": "Airplane mode, with the on-device engine: it must still produce text."
       }
     },
-    "warning": {
-      "server": "With the server engine, the audio of what you say goes to Google (Android) or Apple (iPhone). Read only the test phrases.",
-      "web": "With the web engine, the audio of what you say may go to Apple or Google; where it goes is not known. Read only the test phrases.",
-      "confirmServer": "I understand that my voice reading these phrases goes to Google or Apple",
-      "confirmWeb": "I understand that my voice reading these phrases may go to Apple or Google"
-    },
     "capabilities": {
       "title": "What this phone reports",
       "loading": "Checking…",
@@ -54,7 +38,6 @@
       "biasing": "Phrase hints",
       "microphone": "Microphone permission",
       "speech": "Speech recognition permission",
-      "webSpeech": "Web speech in this view",
       "yes": "Yes",
       "no": "No",
       "unknown": "Not reported",
@@ -126,7 +109,7 @@
       "speech_timeout": "No speech was heard.",
       "language_unavailable": "This language is not available for this engine on this phone.",
       "on_device_unavailable": "On-device recognition is not available on this phone for this language. Nothing was sent anywhere.",
-      "not_available": "This engine is not available here.",
+      "not_available": "Speech recognition on the device is not available here (only in the phone app).",
       "busy": "The recogniser is busy. Try again.",
       "network": "The recogniser needs the network.",
       "audio": "The microphone could not be used.",
@@ -179,7 +162,6 @@
       "title": "Summary",
       "hint": "First attempts only. Targets of the spike: accuracy 90 % in C1 and 80 % in C2 and C3, wrong actions 2 % at most and no wrong amount in C1, phrases 22 to 24 log nothing, latency median 1.5 s and 90th percentile 3 s, and in C4 every phrase produces text.",
       "empty": "No attempts yet.",
-      "engine": "Engine",
       "language": "Language",
       "condition": "Condition",
       "all": "All",

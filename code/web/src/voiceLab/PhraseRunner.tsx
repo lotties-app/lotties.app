@@ -60,7 +60,7 @@ export function PhraseRunner({ lab }: { lab: VoiceLab }) {
                 variant="outlined"
                 size="large"
                 sx={{ flex: 1 }}
-                disabled={!lab.ready || lab.speaking !== null}
+                disabled={lab.speaking !== null}
                 onClick={() => void lab.speakPhrase()}
               >
                 {t('voiceLab.retry')}
@@ -76,7 +76,7 @@ export function PhraseRunner({ lab }: { lab: VoiceLab }) {
             size="large"
             listening={listening}
             state={lab.listenState}
-            disabled={!lab.ready || lab.speaking !== null}
+            disabled={lab.speaking !== null}
             onSpeak={() => void lab.speakPhrase()}
             onCancel={lab.cancel}
           />

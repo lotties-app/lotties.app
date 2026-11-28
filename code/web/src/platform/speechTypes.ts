@@ -1,11 +1,11 @@
 /*
- * Types of the speech engines (platform/speech.ts, platform/webSpeech.ts): kept apart so both import
- * them without an import cycle.
+ * Types of the speech engine (platform/speech.ts) and its fakes. There is one engine: the phone's own
+ * recogniser in on-device mode. Server and Web Speech recognition were left out on purpose (the privacy
+ * wording: speech is recognised on the phone, the app does not send or record audio).
  */
 
-export type SpeechEngineKind = 'on_device' | 'server' | 'web';
-
-export const SPEECH_ENGINES: readonly SpeechEngineKind[] = ['on_device', 'server', 'web'];
+/** The only engine; named in the lab's records and export. */
+export type SpeechEngineKind = 'on_device';
 
 export type SpeechErrorCode =
   | 'denied'
@@ -67,7 +67,7 @@ export type PermissionStatus =
 export interface SpeechCapabilities {
   platform: 'android' | 'ios' | 'web';
   osVersion: string | null;
-  /** A recogniser exists at all (server or on-device). */
+  /** A speech recogniser exists on the phone at all (on-device or not; only on-device is used). */
   recognitionAvailable: boolean | null;
   /** The phone has an on-device recogniser for this language (null: cannot tell). */
   onDeviceAvailable: boolean | null;
@@ -82,8 +82,6 @@ export interface SpeechCapabilities {
   biasing: boolean | null;
   microphone: PermissionStatus;
   speech: PermissionStatus;
-  /** `webkitSpeechRecognition` (or `SpeechRecognition`) exists in this WebView. */
-  webSpeech: boolean;
 }
 
 export type ListenState = 'starting' | 'ready' | 'speech' | 'processing';
@@ -107,8 +105,8 @@ export interface ListenResult {
   /** When the engine decided the speech ended (null: it did not say). */
   endOfSpeechAt: number | null;
   resultAt: number;
-  /** Whether the engine ran on the device (null: not known, the web engine). */
-  onDevice: boolean | null;
+  /** The plugin's confirmation that the recognition ran on the device. */
+  onDevice: boolean;
 }
 
 export interface SpeechEngine {
@@ -124,6 +122,6 @@ export interface SpeechPlatform {
   capabilities(locale: string): Promise<SpeechCapabilities>;
   /** Asks the phone to download the on-device model of `locale` (Android 13+). */
   downloadModel(locale: string): Promise<DownloadStatus>;
-  /** The engine of `kind`, or null when this platform has none (no plugin in a browser). */
-  engine(kind: SpeechEngineKind): SpeechEngine | null;
+  /** The on-device engine, or null where there is none (a browser: no plugin). */
+  engine(): SpeechEngine | null;
 }

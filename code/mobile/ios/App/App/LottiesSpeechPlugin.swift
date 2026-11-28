@@ -4,10 +4,10 @@ import Speech
 import UIKit
 
 /// Capacitor plugin `LottiesSpeech` v0 (code/web/src/platform/speech.ts; docs/design/49a-voice-lab.md, the voice lab
-/// spike, branch feat/voice-lab only). One recognition at a time with `SFSpeechRecognizer`:
-/// - `onDevice: true` sets `requiresOnDeviceRecognition` and refuses (`on_device_unavailable`) when the language has no
-///   on-device support (`supportsOnDeviceRecognition`): it never lets the request go to Apple's servers instead.
-/// - `onDevice: false` lets the recogniser use Apple's servers.
+/// spike, branch feat/voice-lab only). One recognition at a time with `SFSpeechRecognizer`, on the device only: every
+/// request sets `requiresOnDeviceRecognition = true` (Apple: the request never sends audio over the network), a
+/// language without on-device support (`supportsOnDeviceRecognition`) is refused (`on_device_unavailable`), and
+/// `onDevice: false` is refused (`not_supported`). This plugin sends no audio or text anywhere.
 /// The hints go in `contextualStrings` (at most 100). iOS has no end-of-speech detection for buffer requests: the plugin
 /// ends the audio after `silenceSeconds` without a new partial result, which is the `endOfSpeechAt` it reports. The
 /// microphone (audio engine, tap, audio session) is released on every way out: result, error, Cancel, timeout, the app
@@ -29,7 +29,6 @@ public class LottiesSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private struct Request {
         let locale: String
-        let onDevice: Bool
         let maxResults: Int
         let timeout: TimeInterval
         let hints: [String]
@@ -40,7 +39,6 @@ public class LottiesSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         let recognizer: SFSpeechRecognizer
         let engine: AVAudioEngine
         let request: SFSpeechAudioBufferRecognitionRequest
-        let onDevice: Bool
         let maxResults: Int
         let startedAt: Int
         var task: SFSpeechRecognitionTask?
@@ -54,13 +52,12 @@ public class LottiesSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
 
         init(
             call: CAPPluginCall, recognizer: SFSpeechRecognizer, engine: AVAudioEngine,
-            request: SFSpeechAudioBufferRecognitionRequest, onDevice: Bool, maxResults: Int, startedAt: Int
+            request: SFSpeechAudioBufferRecognitionRequest, maxResults: Int, startedAt: Int
         ) {
             self.call = call
             self.recognizer = recognizer
             self.engine = engine
             self.request = request
-            self.onDevice = onDevice
             self.maxResults = maxResults
             self.startedAt = startedAt
         }
@@ -134,9 +131,13 @@ public class LottiesSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("locale is required", "not_supported")
             return
         }
+        if call.getBool("onDevice") == false {
+            // Server recognition does not exist in this plugin (docs/design/49a-voice-lab.md).
+            call.reject("Only on-device recognition is available", "not_supported")
+            return
+        }
         let request = Request(
             locale: tag,
-            onDevice: call.getBool("onDevice") ?? true,
             maxResults: min(max(call.getInt("maxResults") ?? 5, 1), 10),
             timeout: Double(min(max(call.getInt("timeoutMs") ?? 15_000, 3_000), 60_000)) / 1000,
             hints: Array((call.getArray("hints", String.self) ?? []).filter { !$0.isEmpty }.prefix(100)))
@@ -178,12 +179,8 @@ public class LottiesSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("This language is not supported", "language_unavailable")
             return
         }
-        if request.onDevice && !recognizer.supportsOnDeviceRecognition {
+        guard recognizer.supportsOnDeviceRecognition else {
             call.reject("No on-device recognition for this language", "on_device_unavailable")
-            return
-        }
-        guard recognizer.isAvailable else {
-            call.reject("The recognizer is not available", "not_available")
             return
         }
         let audio = AVAudioSession.sharedInstance()
@@ -204,13 +201,13 @@ public class LottiesSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         let speech = SFSpeechAudioBufferRecognitionRequest()
         speech.shouldReportPartialResults = true
-        speech.requiresOnDeviceRecognition = request.onDevice
+        speech.requiresOnDeviceRecognition = true
         speech.contextualStrings = request.hints
         // A question mark helps the parser refuse questions ("ela dormiu?").
         speech.addsPunctuation = true
         let current = Session(
-            call: call, recognizer: recognizer, engine: engine, request: speech, onDevice: request.onDevice,
-            maxResults: request.maxResults, startedAt: Self.nowMs())
+            call: call, recognizer: recognizer, engine: engine, request: speech, maxResults: request.maxResults,
+            startedAt: Self.nowMs())
         session = current
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             speech.append(buffer)
@@ -307,7 +304,7 @@ public class LottiesSpeechPlugin: CAPPlugin, CAPBridgedPlugin {
                 "startedAt": $0.startedAt,
                 "endOfSpeechAt": endOfSpeechAt,
                 "resultAt": resultAt,
-                "onDevice": $0.onDevice,
+                "onDevice": true,
             ])
         }
     }
