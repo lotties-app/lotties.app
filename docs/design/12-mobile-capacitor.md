@@ -94,8 +94,7 @@ Fix (web, `theme/theme.ts`, test `theme/statusBar.test.tsx`):
   inset as a transparent top border, which shows the paper's own background and which its scrolling content never
   enters (the board item dialog and the cry monitor's listening view no longer pad it themselves).
 - Bottom sheets: `SHEET_MAX_HEIGHT` (`calc(100dvh - 16px - env(safe-area-inset-top))`) in the event sheet, the
-  prescription/proposal editor and the timer sheet. Pending: `now/ui/SheetFrame.tsx` (Now trays, Why sheet) still uses
-  `calc(100dvh - 16px)` (listed as pending in the test).
+  prescription/proposal editor and the timer sheet. The Now trays and the Why sheet (`now/ui/SheetFrame.tsx`) use it too.
 - `env()`, not `var(--safe-area-inset-top)`: `env()` is where the WebView actually is; Capacitor's variable is the inset
   it computed and equals `env()` in every case above, and every other inset in the app already uses `env()`.
 

@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Drawer, IconButton, Stack, Typography } from '@mui/material';
-import { CONTENT_MAX_WIDTH } from '../../theme/tokens';
+import { CONTENT_MAX_WIDTH, SHEET_MAX_HEIGHT } from '../../theme/tokens';
 import { Icon } from '../../ui/Icon';
 
 export interface SheetFrameProps {
@@ -19,8 +19,8 @@ export interface SheetFrameProps {
 
 /** Full height on phones, at most the screen height elsewhere; the paper scrolls. */
 const FULL_HEIGHT = {
-  height: { xs: 'calc(100dvh - 16px)', sm: 'auto' },
-  maxHeight: 'calc(100dvh - 16px)',
+  height: { xs: SHEET_MAX_HEIGHT, sm: 'auto' },
+  maxHeight: SHEET_MAX_HEIGHT,
 } as const;
 
 /**

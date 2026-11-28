@@ -118,9 +118,6 @@ function sources(dir: string): string[] {
 }
 
 describe('bottom sheets', () => {
-  // The Now trays' sheet moves to SHEET_MAX_HEIGHT once the Now work in flight has landed.
-  const PENDING = ['now/ui/SheetFrame.tsx'];
-
   it('stop 16 px below the status bar', () => {
     expect(SHEET_MAX_HEIGHT).toBe(`calc(100dvh - 16px - ${INSET})`);
     const sheets = sources(SRC)
@@ -129,7 +126,6 @@ describe('bottom sheets', () => {
     expect(sheets.length).toBeGreaterThan(0);
     // A sheet's own "nearly the whole screen" height would reach under the status bar.
     const ownHeight = sheets
-      .filter(([file]) => !PENDING.includes(file))
       .filter(([, path]) => readFileSync(path, 'utf8').includes('100dvh - 16px'))
       .map(([file]) => file);
     expect(ownHeight).toEqual([]);
