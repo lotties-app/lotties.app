@@ -1,0 +1,218 @@
+{
+  "voiceLab": {
+    "title": "Voice lab",
+    "intro": "A test build tool for the hands-free mode. Nothing you say becomes an entry, nothing is sent to Lotties and no baby data is read. Results stay on this screen until you export them.",
+    "link": "Open the voice lab",
+    "linkHint": "Test build only: measures how well this phone understands the spoken commands.",
+    "setup": {
+      "language": "Language",
+      "engine": "Engine",
+      "condition": "Condition",
+      "languages": {
+        "pt-BR": "Português",
+        "en": "English"
+      },
+      "engines": {
+        "on_device": "On device",
+        "server": "Server",
+        "web": "Web"
+      },
+      "engineHelp": {
+        "on_device": "The phone's recogniser, on the phone only. If it cannot do this language on the phone, the lab says so: it never switches to a server.",
+        "server": "The phone's recogniser, allowed to use Google's (Android) or Apple's (iPhone) servers.",
+        "web": "The WebView's own speech recognition, where it exists."
+      },
+      "conditions": {
+        "C1": "C1",
+        "C2": "C2",
+        "C3": "C3",
+        "C4": "C4"
+      },
+      "conditionHelp": {
+        "C1": "Quiet room, normal voice, phone 30 to 50 cm away.",
+        "C2": "Night voice: quiet and low, phone on the bed or table about 1 m away.",
+        "C3": "Background noise: a crying-baby or white-noise sound from another device at moderate volume, or the TV on.",
+        "C4": "Airplane mode, with the on-device engine: it must still produce text."
+      }
+    },
+    "warning": {
+      "server": "With the server engine, the audio of what you say goes to Google (Android) or Apple (iPhone). Read only the test phrases.",
+      "web": "With the web engine, the audio of what you say may go to Apple or Google; where it goes is not known. Read only the test phrases.",
+      "confirmServer": "I understand that my voice reading these phrases goes to Google or Apple",
+      "confirmWeb": "I understand that my voice reading these phrases may go to Apple or Google"
+    },
+    "capabilities": {
+      "title": "What this phone reports",
+      "loading": "Checking…",
+      "failed": "The phone did not answer. Try again.",
+      "refresh": "Check again",
+      "platform": "Platform",
+      "os": "System version",
+      "recognition": "Speech recognition",
+      "onDevice": "On-device recognition",
+      "language": "This language on the device",
+      "biasing": "Phrase hints",
+      "microphone": "Microphone permission",
+      "speech": "Speech recognition permission",
+      "webSpeech": "Web speech in this view",
+      "yes": "Yes",
+      "no": "No",
+      "unknown": "Not reported",
+      "platforms": {
+        "android": "Android",
+        "ios": "iPhone",
+        "web": "Browser"
+      },
+      "languageState": {
+        "installed": "Installed",
+        "pending": "Download pending",
+        "downloadable": "Not installed, can be downloaded",
+        "missing": "Not available on the device",
+        "unknown": "Not reported"
+      },
+      "permission": {
+        "granted": "Allowed",
+        "denied": "Refused",
+        "prompt": "Not asked yet",
+        "restricted": "Restricted",
+        "not_needed": "Not needed",
+        "unknown": "Not reported"
+      },
+      "reason": "Why: {{reason}}",
+      "download": "Download this language",
+      "downloadStatus": {
+        "started": "Download started. Check again in a moment.",
+        "scheduled": "The phone scheduled the download for later.",
+        "success": "The language is ready.",
+        "unsupported": "This phone cannot start the download from the app.",
+        "error": "The download did not start."
+      }
+    },
+    "phrase": {
+      "counter": "Phrase {{n}} of {{total}} (test phrase #{{number}})",
+      "expected": "Expected: {{command}}",
+      "done": "Every phrase of this run has an attempt. Change the engine or the condition for the next run, or retry a phrase.",
+      "restart": "Back to phrase 1"
+    },
+    "speak": "Speak",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "next": "Next",
+    "state": {
+      "starting": "Starting the microphone…",
+      "ready": "Listening. Speak now.",
+      "speech": "Listening…",
+      "processing": "Recognising…"
+    },
+    "result": {
+      "heard": "What the phone heard",
+      "noText": "No text",
+      "parsed": "Parsed: {{result}}",
+      "matched": "Taken from alternative {{n}}",
+      "alternative": "{{text}} (confidence {{confidence}})",
+      "pass": "Pass",
+      "fail": "Fail",
+      "wrongAction": "Would log the wrong entry",
+      "wrongAmount": "Wrong amount",
+      "latency": "Latency: {{value}}",
+      "noLatency": "Latency not reported",
+      "retries_one": "{{count}} retry (the first attempt counts)",
+      "retries_other": "{{count}} retries (the first attempt counts)",
+      "error": "Engine: {{error}}"
+    },
+    "errors": {
+      "denied": "The microphone or speech recognition permission was refused. Allow it in the phone's settings.",
+      "no_match": "Nothing was recognised.",
+      "speech_timeout": "No speech was heard.",
+      "language_unavailable": "This language is not available for this engine on this phone.",
+      "on_device_unavailable": "On-device recognition is not available on this phone for this language. Nothing was sent anywhere.",
+      "not_available": "This engine is not available here.",
+      "busy": "The recogniser is busy. Try again.",
+      "network": "The recogniser needs the network.",
+      "audio": "The microphone could not be used.",
+      "interrupted": "Listening stopped because the app left the screen.",
+      "cancelled": "Cancelled.",
+      "timeout": "The recogniser did not answer in time.",
+      "not_supported": "Not supported on this phone.",
+      "recognizer_error": "The recogniser failed."
+    },
+    "command": {
+      "bottle": "Bottle {{amount}}",
+      "bottleFormula": "Bottle {{amount}}, formula",
+      "bottleBreastMilk": "Bottle {{amount}}, breast milk",
+      "nursingStart": "Start nursing",
+      "nursingLeft": "Start nursing, left",
+      "nursingRight": "Start nursing, right",
+      "nursingStop": "Stop nursing",
+      "sleepStart": "Fell asleep",
+      "sleepEnd": "Woke up",
+      "diaperWet": "Diaper, wet",
+      "diaperDirty": "Diaper, dirty",
+      "diaperBoth": "Diaper, wet and dirty",
+      "askMilkToday": "Question: milk today",
+      "askLastFeed": "Question: last feed"
+    },
+    "outcome": {
+      "needsAmount": "Needs an amount (nothing logged)",
+      "outOfRange": "Amount out of range, {{amount}} (nothing logged)",
+      "ambiguous": "Ambiguous (nothing logged)",
+      "notUnderstood": "Not understood: {{reason}} (nothing logged)",
+      "nothing": "Nothing logged"
+    },
+    "reason": {
+      "empty": "no text",
+      "no_intent": "no command words",
+      "negation": "a negation",
+      "question": "a question",
+      "report": "another time, a plan or a comment",
+      "time": "a time or a duration",
+      "conflict": "two commands at once",
+      "stray_number": "a number that is not an amount",
+      "ambiguous_amount": "two amounts",
+      "content_conflict": "two contents",
+      "invalid_number": "an unclear number",
+      "diaper_kind": "no diaper kind",
+      "no_running": "nothing running to stop"
+    },
+    "seconds": "{{value}} s",
+    "summary": {
+      "title": "Summary",
+      "hint": "First attempts only. Targets of the spike: accuracy 90 % in C1 and 80 % in C2 and C3, wrong actions 2 % at most and no wrong amount in C1, phrases 22 to 24 log nothing, latency median 1.5 s and 90th percentile 3 s, and in C4 every phrase produces text.",
+      "empty": "No attempts yet.",
+      "engine": "Engine",
+      "language": "Language",
+      "condition": "Condition",
+      "all": "All",
+      "attempts": "Attempts",
+      "accuracy": "Accuracy",
+      "wrong": "Wrong actions",
+      "wrongAmounts": "Wrong amounts",
+      "noneLogged": "22-24 logged",
+      "median": "Median latency",
+      "p90": "90th percentile",
+      "text": "With text",
+      "retries": "Retries",
+      "missing": "–",
+      "wrongValue": "{{value}} ({{rate}})",
+      "belowTarget": "{{value}} (below target)"
+    },
+    "export": {
+      "button": "Export results",
+      "hint": "A JSON file with the test phrases, what the phone heard, the parsed commands and the summary, through the share sheet. Free tries are not in it.",
+      "done": "Results exported.",
+      "failed": "The export did not work."
+    },
+    "freeTry": {
+      "title": "Free try",
+      "hint": "Say anything to see what the phone hears and how the parser reads it. Free tries are not counted, not exported and gone when you leave this screen.",
+      "speak": "Speak (free try)"
+    },
+    "keys": {
+      "title": "Key logger",
+      "hint": "While this is open, every key a keyboard or a Bluetooth button sends shows here.",
+      "empty": "No key pressed yet.",
+      "clear": "Clear",
+      "row": "{{time}} key {{keyName}}, code {{code}}"
+    }
+  }
+}

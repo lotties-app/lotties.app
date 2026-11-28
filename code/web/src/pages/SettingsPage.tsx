@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Alert, CircularProgress, Stack, Typography } from '@mui/material';
@@ -26,6 +26,10 @@ import { babyShownName } from '../baby/shownName';
 import { ProfileSection } from '../settings/ProfileSection';
 import { DataLocationSection } from '../byoDatabase/DataLocationSection';
 import { CommunityInsightsSection } from '../communityInsights/CommunityInsightsSection';
+
+/** The voice lab's line (spike branch only): absent, with its chunk, from builds without VITE_VOICE_LAB. */
+const VoiceLabLink =
+  import.meta.env.VITE_VOICE_LAB === 'true' ? lazy(() => import('../voiceLab/VoiceLabLink')) : null;
 
 /**
  * Sections that moved to the Hub: an old `/settings#medications` link (a bookmark, a reminder or
@@ -135,6 +139,11 @@ export function SettingsPage() {
         >
           <Stack spacing={1.5}>
             <VoiceCommandsLink />
+            {VoiceLabLink && (
+              <Suspense fallback={null}>
+                <VoiceLabLink />
+              </Suspense>
+            )}
             <VoiceAssistantsSection babies={babies} />
           </Stack>
         </SettingsSection>

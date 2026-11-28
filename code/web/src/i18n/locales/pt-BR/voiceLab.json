@@ -1,0 +1,218 @@
+{
+  "voiceLab": {
+    "title": "Laboratório de voz",
+    "intro": "Uma ferramenta da versão de teste para o modo mãos livres. Nada do que você fala vira registro, nada é enviado ao Lotties e nenhum dado do bebê é lido. Os resultados ficam nesta tela até você exportá-los.",
+    "link": "Abrir o laboratório de voz",
+    "linkHint": "Só na versão de teste: mede o quanto este celular entende os comandos falados.",
+    "setup": {
+      "language": "Idioma",
+      "engine": "Reconhecedor",
+      "condition": "Condição",
+      "languages": {
+        "pt-BR": "Português",
+        "en": "English"
+      },
+      "engines": {
+        "on_device": "No aparelho",
+        "server": "Servidor",
+        "web": "Web"
+      },
+      "engineHelp": {
+        "on_device": "O reconhecedor do celular, só no celular. Se ele não reconhece este idioma no aparelho, o laboratório avisa: nunca passa para um servidor.",
+        "server": "O reconhecedor do celular, podendo usar os servidores do Google (Android) ou da Apple (iPhone).",
+        "web": "O reconhecimento de fala da própria WebView, onde existir."
+      },
+      "conditions": {
+        "C1": "C1",
+        "C2": "C2",
+        "C3": "C3",
+        "C4": "C4"
+      },
+      "conditionHelp": {
+        "C1": "Ambiente silencioso, voz normal, celular a 30 a 50 cm.",
+        "C2": "Voz de noite: baixa e calma, celular na cama ou na mesa a cerca de 1 m.",
+        "C3": "Barulho de fundo: som de bebê chorando ou ruído branco em outro aparelho, volume moderado, ou a TV ligada.",
+        "C4": "Modo avião, com o reconhecedor no aparelho: ele ainda precisa gerar texto."
+      }
+    },
+    "warning": {
+      "server": "Com o reconhecedor do servidor, o áudio do que você fala vai para o Google (Android) ou para a Apple (iPhone). Leia só as frases de teste.",
+      "web": "Com o reconhecedor web, o áudio do que você fala pode ir para a Apple ou para o Google; não se sabe para onde vai. Leia só as frases de teste.",
+      "confirmServer": "Entendo que a minha voz lendo estas frases vai para o Google ou para a Apple",
+      "confirmWeb": "Entendo que a minha voz lendo estas frases pode ir para a Apple ou para o Google"
+    },
+    "capabilities": {
+      "title": "O que este celular informa",
+      "loading": "Verificando…",
+      "failed": "O celular não respondeu. Tente de novo.",
+      "refresh": "Verificar de novo",
+      "platform": "Plataforma",
+      "os": "Versão do sistema",
+      "recognition": "Reconhecimento de fala",
+      "onDevice": "Reconhecimento no aparelho",
+      "language": "Este idioma no aparelho",
+      "biasing": "Dicas de frases",
+      "microphone": "Permissão do microfone",
+      "speech": "Permissão de reconhecimento de fala",
+      "webSpeech": "Fala web nesta tela",
+      "yes": "Sim",
+      "no": "Não",
+      "unknown": "Não informado",
+      "platforms": {
+        "android": "Android",
+        "ios": "iPhone",
+        "web": "Navegador"
+      },
+      "languageState": {
+        "installed": "Instalado",
+        "pending": "Download pendente",
+        "downloadable": "Não instalado, pode ser baixado",
+        "missing": "Não disponível no aparelho",
+        "unknown": "Não informado"
+      },
+      "permission": {
+        "granted": "Permitida",
+        "denied": "Recusada",
+        "prompt": "Ainda não pedida",
+        "restricted": "Restrita",
+        "not_needed": "Não é necessária",
+        "unknown": "Não informada"
+      },
+      "reason": "Motivo: {{reason}}",
+      "download": "Baixar este idioma",
+      "downloadStatus": {
+        "started": "Download iniciado. Verifique de novo daqui a pouco.",
+        "scheduled": "O celular agendou o download para depois.",
+        "success": "O idioma está pronto.",
+        "unsupported": "Este celular não deixa o app iniciar o download.",
+        "error": "O download não começou."
+      }
+    },
+    "phrase": {
+      "counter": "Frase {{n}} de {{total}} (frase de teste nº {{number}})",
+      "expected": "Esperado: {{command}}",
+      "done": "Todas as frases desta rodada têm uma tentativa. Troque o reconhecedor ou a condição para a próxima rodada, ou repita uma frase.",
+      "restart": "Voltar à frase 1"
+    },
+    "speak": "Falar",
+    "cancel": "Cancelar",
+    "retry": "Repetir",
+    "next": "Próxima",
+    "state": {
+      "starting": "Ligando o microfone…",
+      "ready": "Ouvindo. Fale agora.",
+      "speech": "Ouvindo…",
+      "processing": "Reconhecendo…"
+    },
+    "result": {
+      "heard": "O que o celular ouviu",
+      "noText": "Sem texto",
+      "parsed": "Interpretado: {{result}}",
+      "matched": "Tirado da alternativa {{n}}",
+      "alternative": "{{text}} (confiança {{confidence}})",
+      "pass": "Passou",
+      "fail": "Falhou",
+      "wrongAction": "Registraria a coisa errada",
+      "wrongAmount": "Quantidade errada",
+      "latency": "Tempo: {{value}}",
+      "noLatency": "Tempo não informado",
+      "retries_one": "{{count}} repetição (a primeira tentativa é a que conta)",
+      "retries_other": "{{count}} repetições (a primeira tentativa é a que conta)",
+      "error": "Reconhecedor: {{error}}"
+    },
+    "errors": {
+      "denied": "A permissão do microfone ou do reconhecimento de fala foi recusada. Permita nos ajustes do celular.",
+      "no_match": "Nada foi reconhecido.",
+      "speech_timeout": "Nenhuma fala foi ouvida.",
+      "language_unavailable": "Este idioma não está disponível para este reconhecedor neste celular.",
+      "on_device_unavailable": "O reconhecimento no aparelho não está disponível neste celular para este idioma. Nada foi enviado.",
+      "not_available": "Este reconhecedor não está disponível aqui.",
+      "busy": "O reconhecedor está ocupado. Tente de novo.",
+      "network": "O reconhecedor precisa de internet.",
+      "audio": "Não foi possível usar o microfone.",
+      "interrupted": "A escuta parou porque o app saiu da tela.",
+      "cancelled": "Cancelado.",
+      "timeout": "O reconhecedor não respondeu a tempo.",
+      "not_supported": "Não suportado neste celular.",
+      "recognizer_error": "O reconhecedor falhou."
+    },
+    "command": {
+      "bottle": "Mamadeira {{amount}}",
+      "bottleFormula": "Mamadeira {{amount}}, fórmula",
+      "bottleBreastMilk": "Mamadeira {{amount}}, leite materno",
+      "nursingStart": "Começar mamada",
+      "nursingLeft": "Começar mamada, esquerdo",
+      "nursingRight": "Começar mamada, direito",
+      "nursingStop": "Parar mamada",
+      "sleepStart": "Dormiu",
+      "sleepEnd": "Acordou",
+      "diaperWet": "Fralda, xixi",
+      "diaperDirty": "Fralda, cocô",
+      "diaperBoth": "Fralda, xixi e cocô",
+      "askMilkToday": "Pergunta: leite hoje",
+      "askLastFeed": "Pergunta: última mamada"
+    },
+    "outcome": {
+      "needsAmount": "Falta a quantidade (nada registrado)",
+      "outOfRange": "Quantidade fora do limite, {{amount}} (nada registrado)",
+      "ambiguous": "Ambíguo (nada registrado)",
+      "notUnderstood": "Não entendido: {{reason}} (nada registrado)",
+      "nothing": "Nada registrado"
+    },
+    "reason": {
+      "empty": "sem texto",
+      "no_intent": "sem palavras de comando",
+      "negation": "uma negação",
+      "question": "uma pergunta",
+      "report": "outro momento, um plano ou um comentário",
+      "time": "um horário ou uma duração",
+      "conflict": "dois comandos de uma vez",
+      "stray_number": "um número que não é quantidade",
+      "ambiguous_amount": "duas quantidades",
+      "content_conflict": "dois conteúdos",
+      "invalid_number": "um número pouco claro",
+      "diaper_kind": "sem o tipo de fralda",
+      "no_running": "nada em andamento para parar"
+    },
+    "seconds": "{{value}} s",
+    "summary": {
+      "title": "Resumo",
+      "hint": "Só as primeiras tentativas. Metas do teste: acerto de 90 % em C1 e 80 % em C2 e C3, no máximo 2 % de ações erradas e nenhuma quantidade errada em C1, as frases 22 a 24 não registram nada, tempo mediano de 1,5 s e percentil 90 de 3 s, e em C4 todas as frases geram texto.",
+      "empty": "Nenhuma tentativa ainda.",
+      "engine": "Reconhecedor",
+      "language": "Idioma",
+      "condition": "Condição",
+      "all": "Todas",
+      "attempts": "Tentativas",
+      "accuracy": "Acerto",
+      "wrong": "Ações erradas",
+      "wrongAmounts": "Quantidades erradas",
+      "noneLogged": "22-24 registradas",
+      "median": "Tempo mediano",
+      "p90": "Percentil 90",
+      "text": "Com texto",
+      "retries": "Repetições",
+      "missing": "–",
+      "wrongValue": "{{value}} ({{rate}})",
+      "belowTarget": "{{value}} (abaixo da meta)"
+    },
+    "export": {
+      "button": "Exportar resultados",
+      "hint": "Um arquivo JSON com as frases de teste, o que o celular ouviu, os comandos interpretados e o resumo, pela tela de compartilhar. As tentativas livres não entram.",
+      "done": "Resultados exportados.",
+      "failed": "A exportação não funcionou."
+    },
+    "freeTry": {
+      "title": "Teste livre",
+      "hint": "Fale qualquer coisa para ver o que o celular ouve e como o interpretador lê. Os testes livres não contam, não são exportados e somem quando você sai desta tela.",
+      "speak": "Falar (teste livre)"
+    },
+    "keys": {
+      "title": "Teclas",
+      "hint": "Enquanto isto estiver aberto, cada tecla que um teclado ou um botão Bluetooth envia aparece aqui.",
+      "empty": "Nenhuma tecla pressionada ainda.",
+      "clear": "Limpar",
+      "row": "{{time}} tecla {{keyName}}, código {{code}}"
+    }
+  }
+}

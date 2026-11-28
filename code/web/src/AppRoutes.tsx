@@ -70,6 +70,12 @@ const FromDoctorPage = lazy(() =>
 );
 // The project board: its own frame outside the parents' shell (no baby data near it), online only.
 const BoardPage = lazy(() => import('./board/BoardPage'));
+/**
+ * The voice lab (docs/design/49a-voice-lab.md, spike branch only): the inline build-time comparison lets
+ * the bundler drop the import, so a build without VITE_VOICE_LAB=true has no lab chunk and no route.
+ */
+const VoiceLabPage =
+  import.meta.env.VITE_VOICE_LAB === 'true' ? lazy(() => import('./voiceLab/VoiceLabPage')) : null;
 
 /**
  * Developer UI gallery and Now preview: registered only in development. `import.meta.env.DEV` is a build-time
@@ -117,6 +123,10 @@ const DevRhythmPreview = import.meta.env.DEV ? lazy(() => import('./dev/RhythmPr
 const DevCommunityInsightsPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/CommunityInsightsPreview'))
   : null;
+const DevVoiceLabPreview =
+  import.meta.env.DEV && import.meta.env.VITE_VOICE_LAB === 'true'
+    ? lazy(() => import('./dev/VoiceLabPreview'))
+    : null;
 
 export function AppRoutes() {
   const { pathname } = useLocation();
@@ -351,6 +361,16 @@ export function AppRoutes() {
           }
         />
       )}
+      {DevVoiceLabPreview && (
+        <Route
+          path="/dev/voice-lab"
+          element={
+            <Suspense fallback={null}>
+              <DevVoiceLabPreview />
+            </Suspense>
+          }
+        />
+      )}
       {DevRingPreview && (
         <Route
           path="/dev/ring"
@@ -460,6 +480,7 @@ export function AppRoutes() {
               <Route path="settings" element={<SettingsPage />} />
               <Route path="settings/voice-commands" element={<HubVoiceCommandsPage />} />
               <Route path="settings/data-location" element={<HubDataLocationPage />} />
+              {VoiceLabPage && <Route path="lab/voice" element={<VoiceLabPage />} />}
               <Route path="help/own-database" element={<HubOwnDatabaseHelpPage />} />
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="vaccines" element={<VaccinesPage />} />
