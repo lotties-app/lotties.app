@@ -55,12 +55,68 @@ Android SDK on the dev machine, no developer accounts). Payments are out of scop
   - `auth/nativeAuth.ts` + `auth/OidcAuthProvider.tsx`: sign-in (section 3).
   - `pwa/ReloadPrompt.tsx` registers no service worker, `pwa/useInstallPrompt.ts` offers no install button or iOS hint.
 - Status bar, safe areas, keyboard: `index.html` already has `viewport-fit=cover` and the layout pads with
-  `env(safe-area-inset-*)`. iOS `contentInset: never`; Android `SystemBars.insetsHandling: css` (edge-to-edge with real
+  `env(safe-area-inset-*)`; the band under the status bar is covered by a page-coloured strip ("Status bar" below). iOS `contentInset: never`; Android `SystemBars.insetsHandling: css` (edge-to-edge with real
   `env()` values, plus `--safe-area-inset-*`), `initialViewportFitValueHint: cover`. The bar content follows the app's
   theme (`data-light` dark content, `data-dark`/`data-night` light content, `platform/systemBars.ts`), which can differ
   from the device appearance. Keyboard: iOS `resize: native` (the WebView shrinks, bottom sheets stay above the
   keyboard), Android `resizeOnFullScreen: true` (needed edge-to-edge). Back button: Capacitor default (WebView history,
   then exit).
+
+### Status bar
+
+Bug fixed 2026-11-27 (owner's Android phone, dark theme, Now tab): scrolled text passed under the status bar, clock and
+icons drawn over it.
+
+What the shell does (Capacitor 8.5.3 `SystemBars.java`, read from the upstream `8.5.3` tag because `code/mobile`'s
+node_modules was not installed here; the same options are documented in `@capacitor/core/system-bars.md`):
+
+| Case | Native side | Page sees |
+| --- | --- | --- |
+| Android 15+ (targetSdk 36 enforces edge to edge), WebView 140+, `viewport-fit=cover` (meta tag, plus `initialViewportFitValueHint: cover` so the first frame agrees) | "passthrough": the decor view is not padded at the top, the real system bar and cutout insets go to the WebView; the status bar is transparent (SystemBars sets no colour, Android 15 ignores `statusBarColor`) | WebView under the status bar; `env(safe-area-inset-top)` and the injected `--safe-area-inset-top` both hold the bar height |
+| WebView older than 140 (or no `cover`) | the decor view is padded by the system bar insets and the WebView gets zeroed insets | `env()` and `--safe-area-inset-*` are `0px`; the status bar shows the decor view's background, which `SystemBars.setStyle` sets to the theme's `windowBackground` |
+| Android 14 and older, WebView 140+ | the window is not edge to edge (nothing calls `EdgeToEdge.enable`; SystemBars does not), yet SystemBars' decor listener passes the insets through as above; whether the WebView then sits under the bar has not been seen on a device | whatever `env()` says: the strip below fills exactly that band, so no gap either way |
+| iOS app | `contentInset: never`, WKWebView under the status bar | `env(safe-area-inset-top)` = bar height |
+| Browser tab, installed PWA (`display: standalone`; iOS `apple-mobile-web-app-status-bar-style: default`) | the browser draws the status bar outside the page | `env(safe-area-inset-top)` = 0 |
+
+Root cause: in the first and third rows the page is drawn under a transparent status bar, and the app only honoured the
+top inset as padding of the header (`TopBar`, `pt: calc(env(safe-area-inset-top) + 8px)`), which is transparent and in
+the normal flow (DESIGN.md section 2): once the page scrolls, nothing occupies the band. The bottom was never affected:
+the dock is `position: fixed` with its own `env(safe-area-inset-bottom)` padding.
+
+Fix (web, `theme/theme.ts`, test `theme/statusBar.test.tsx`):
+
+- `STATUS_BAR_STRIP` (`body::before` in the CssBaseline): fixed, `height: env(safe-area-inset-top)`, background
+  `var(--mui-palette-background-default)` (light, dark and night follow), z-index of the app bars and first in the
+  tree, so the dock, the doctor rail and the landing header paint over it, page content under it, and the modal layer
+  (sheets, dialogs, their scrim) over both. Out of flow: it never adds a gap, and it is 0 high wherever the inset is 0
+  (desktop, PWA, older WebView). Taps in the band reach `body`, not hidden content.
+- Dialogs: a centred one is laid out below the inset (`MuiDialog` container `padding-top`); a full-screen one keeps the
+  inset as a transparent top border, which shows the paper's own background and which its scrolling content never
+  enters (the board item dialog and the cry monitor's listening view no longer pad it themselves).
+- Bottom sheets: `SHEET_MAX_HEIGHT` (`calc(100dvh - 16px - env(safe-area-inset-top))`) in the event sheet, the
+  prescription/proposal editor and the timer sheet. Pending: `now/ui/SheetFrame.tsx` (Now trays, Why sheet) still uses
+  `calc(100dvh - 16px)` (listed as pending in the test).
+- `env()`, not `var(--safe-area-inset-top)`: `env()` is where the WebView actually is; Capacitor's variable is the inset
+  it computed and equals `env()` in every case above, and every other inset in the app already uses `env()`.
+
+Fix (Android, `res/values/styles.xml`): `AppTheme.NoActionBar` (the theme `BridgeActivity` switches to) sets
+`android:windowBackground` to the page colour (`@color/splash_background`, `#F5EFE4`, `#1B1814` in `values-night`)
+instead of AppCompat's grey, so the padded band of an older WebView matches the page.
+
+Checked in Chromium at 360 x 780 with a simulated inset (CDP `Emulation.setSafeAreaInsetsOverride`, top 36, bottom
+48) on the `/dev/*` previews: before, Now scrolled under the band; after, the band is the page colour in light, dark
+and night, the doctor header still starts at 36 + 8 px (no double gap), the event sheet starts at 52 px instead of 16
+px, and the listening view's title stays at 52 px.
+
+To check on a device (not possible here: no Android SDK, emulator or phone): Now, Day, Insights, Hub and a settings
+page scrolled, in light, dark and night; a bottom sheet and the Now trays; the doctor dashboard; sign-in and the consent
+screen; landscape and a phone with a camera cutout; the clock and icons readable each time.
+
+Known limit: the bar icons follow the app's scheme, the native band of an older WebView follows the device's. On a
+WebView older than 140 with an app theme different from the device's (or the night view on a light device), the icons
+can be low-contrast there. Capacitor 9 makes `insetsHandling: native` and `EdgeToEdge.enable` the default; until then
+`EdgeToEdge.enable(this)` in `MainActivity` is the documented option for Android 14 and older (not done: it changes the
+bottom bars there and cannot be tried without a device).
 
 ## 3. Sign-in and sign-out
 

@@ -283,3 +283,10 @@ export const RADIUS = {
 
 /** Maximum width of the centred content column. */
 export const CONTENT_MAX_WIDTH = 480;
+
+/**
+ * Tallest a bottom sheet may grow on a phone: 16 px short of the top of the screen, below the
+ * status bar where the app is drawn edge to edge (the Android and iOS apps; the inset is 0 in a
+ * browser and in the installed PWA). docs/design/12-mobile-capacitor.md "Status bar".
+ */
+export const SHEET_MAX_HEIGHT = 'calc(100dvh - 16px - env(safe-area-inset-top))';

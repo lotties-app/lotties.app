@@ -15,7 +15,7 @@ import { useEventTypeText } from '../i18n/eventTypeText';
 import { formatDate, formatTime } from '../i18n/format';
 import { FormulaField } from '../formulas/FormulaField';
 import { ErrorBoundary } from '../layout/ErrorBoundary';
-import { RADIUS } from '../theme/tokens';
+import { RADIUS, SHEET_MAX_HEIGHT } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Field, MedicationPicker, NotesRow } from '../ui/form';
 import { daysBeforeToday } from '../ui/form/timeMath';
@@ -167,7 +167,7 @@ function Frame({
             flexDirection: 'column',
             // Short for a quick log; long forms scroll inside, the Save footer stays in view.
             height: 'auto',
-            maxHeight: 'calc(100dvh - 16px)',
+            maxHeight: SHEET_MAX_HEIGHT,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
           },

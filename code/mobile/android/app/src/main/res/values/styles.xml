@@ -13,6 +13,11 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- The page colour (light, or dark from values-night) instead of AppCompat's grey: Capacitor's
+             SystemBars paints the window's decor view with windowBackground, and on a WebView older than
+             140 it pads the WebView by the system bar insets, so this colour is the status bar strip there
+             (docs/design/12-mobile-capacitor.md "Status bar"). -->
+        <item name="android:windowBackground">@color/splash_background</item>
     </style>
 
 

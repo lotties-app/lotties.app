@@ -17,7 +17,7 @@ import { SLEEP_DETAIL_KEYS, type DetailValues } from '../events/sleepDetailModel
 import { formatElapsed, useNow } from '../events/time';
 import { formatDuration, formatTime } from '../i18n/format';
 import { useEventTypeText } from '../i18n/eventTypeText';
-import { CONTENT_MAX_WIDTH, RADIUS } from '../theme/tokens';
+import { CONTENT_MAX_WIDTH, RADIUS, SHEET_MAX_HEIGHT } from '../theme/tokens';
 import { NotesRow, TimePanel } from '../ui/form';
 import { palette } from '../ui/form/styles';
 import { Icon } from '../ui/Icon';
@@ -153,7 +153,7 @@ export function TimerSheet({
             maxWidth: CONTENT_MAX_WIDTH,
             mx: 'auto',
             width: '100%',
-            maxHeight: 'calc(100dvh - 16px)',
+            maxHeight: SHEET_MAX_HEIGHT,
             borderTopLeftRadius: RADIUS.sheetTop,
             borderTopRightRadius: RADIUS.sheetTop,
           },

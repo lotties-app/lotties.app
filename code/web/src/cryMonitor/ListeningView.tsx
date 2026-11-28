@@ -87,7 +87,8 @@ export function ListeningView({
           maxWidth: CONTENT_MAX_WIDTH,
           mx: 'auto',
           px: 2,
-          pt: 'calc(16px + env(safe-area-inset-top))',
+          // The theme keeps a full-screen dialog below the status bar (MuiDialog overrides).
+          pt: 2,
         }}
       >
         <Stack spacing={2.5} sx={{ flex: '1 0 auto', pb: 2 }}>
