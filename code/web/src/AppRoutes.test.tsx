@@ -1,11 +1,12 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppRoutes } from './AppRoutes';
 import type { BabyRoutineDb } from './db/database';
 import { fakeApi, httpError, testDatabase, BABY_ID, type ApiCall } from './test/fakeApi';
 import { renderWithDb, settleSync } from './test/renderApp';
 import { seedBaby } from './test/seed';
 import { PENDING_INVITE_KEY } from './invite/inviteToken';
+import { LocationProbe } from './test/LocationProbe';
 
 let db: BabyRoutineDb;
 
@@ -16,6 +17,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  vi.unstubAllEnvs();
   await settleSync();
   await db.delete();
 });
@@ -41,6 +43,33 @@ describe('lazy routes', () => {
 
     renderWithDb(db, <AppRoutes />, { route: '/' });
     expect(await screen.findByRole('heading', { name: 'Now' })).toBeTruthy();
+  });
+});
+
+describe('cry monitor route', () => {
+  const routes = (
+    <>
+      <AppRoutes />
+      <LocationProbe />
+    </>
+  );
+
+  it('sends an old link to the cry monitor to the Hub while the monitor is switched off', async () => {
+    await seedBaby(db);
+    renderWithDb(db, routes, { route: '/hub/cry-monitor' });
+
+    expect(await screen.findByRole('heading', { name: 'Hub', level: 1 })).toBeTruthy();
+    expect(screen.getByTestId('location').textContent).toBe('/hub');
+    expect(screen.queryByRole('heading', { name: 'Cry monitor (beta)' })).toBeNull();
+  });
+
+  it('opens the cry monitor page when the build switches it on', async () => {
+    vi.stubEnv('VITE_CRY_MONITOR', 'true');
+    await seedBaby(db);
+    renderWithDb(db, routes, { route: '/hub/cry-monitor' });
+
+    expect(await screen.findByRole('heading', { name: 'Cry monitor (beta)' })).toBeTruthy();
+    expect(screen.getByTestId('location').textContent).toBe('/hub/cry-monitor');
   });
 });
 

@@ -13,6 +13,7 @@ import {
   precacheAndRoute,
 } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
+import { cryMonitorEnabled } from '../../cryMonitor/featureFlag';
 import { cryAssetResponse, deleteOldCryCaches, isCryAssetRequest } from './cryAssets';
 import { NAVIGATION_DENYLIST, NAVIGATION_FALLBACK } from './navigation';
 import { registerPushHandlers } from './pushHandlers';
@@ -32,14 +33,18 @@ registerRoute(
   }),
 );
 
-// The cry monitor's model and WASM: runtime cache only, cache-first (src/pwa/sw/cryAssets.ts).
-registerRoute(
-  ({ url, request }) =>
-    isCryAssetRequest(url, request.method, self.location.origin, self.registration.scope),
-  ({ request }) => cryAssetResponse(request, { caches: self.caches, fetch: (r) => fetch(r) }),
-);
+// The cry monitor's model and WASM: runtime cache only, cache-first (src/pwa/sw/cryAssets.ts). With the
+// monitor switched off (src/cryMonitor/featureFlag.ts) nothing is cached and a cache left from before is deleted.
+const cryMonitorOn = cryMonitorEnabled();
+if (cryMonitorOn) {
+  registerRoute(
+    ({ url, request }) =>
+      isCryAssetRequest(url, request.method, self.location.origin, self.registration.scope),
+    ({ request }) => cryAssetResponse(request, { caches: self.caches, fetch: (r) => fetch(r) }),
+  );
+}
 self.addEventListener('activate', (event) => {
-  event.waitUntil(deleteOldCryCaches(self.caches));
+  event.waitUntil(deleteOldCryCaches(self.caches, cryMonitorOn));
 });
 
 registerPushHandlers({

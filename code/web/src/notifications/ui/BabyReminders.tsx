@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Stack, Typography } from '@mui/material';
 import { useApiClient } from '../../api/ApiClientContext';
 import { canDecideProposals, canLog, canWrite } from '../../baby/permissions';
+import { cryMonitorEnabled } from '../../cryMonitor/featureFlag';
 import type { Baby } from '../../db/models';
 import { ErrorNotice } from '../../settings/ErrorNotice';
 import { useServerAction } from '../../settings/useServerAction';
@@ -165,13 +166,16 @@ function BabyRow({
         label={t('notifications.reminders.fussy')}
         description={t('notifications.reminders.fussyHelp')}
       />
-      <SwitchRow
-        icon="mood-cry"
-        checked={prefs.cryDetected ?? false}
-        disabled={off}
-        onChange={(cryDetected) => update({ cryDetected })}
-        label={t('notifications.reminders.cryDetected')}
-      />
+      {/* The cry monitor's alert: only while the monitor is switched on (cryMonitor/featureFlag.ts). */}
+      {cryMonitorEnabled() && (
+        <SwitchRow
+          icon="mood-cry"
+          checked={prefs.cryDetected ?? false}
+          disabled={off}
+          onChange={(cryDetected) => update({ cryDetected })}
+          label={t('notifications.reminders.cryDetected')}
+        />
+      )}
       <SwitchRow
         icon="diaper"
         checked={prefs.diaperWetHeadsUp ?? false}

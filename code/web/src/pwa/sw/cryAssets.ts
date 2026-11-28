@@ -31,14 +31,21 @@ export async function cryAssetResponse(request: Request, deps: CryCacheDeps): Pr
   return response;
 }
 
-/** Deletes cry caches of other versions. */
+/**
+ * Deletes cry caches of other versions; with the monitor switched off (`keepCurrent` false) the current
+ * one too, so a device that used the monitor gets its 11 MB back.
+ */
 export async function deleteOldCryCaches(
   caches: Pick<CacheStorage, 'keys' | 'delete'>,
+  keepCurrent = true,
 ): Promise<void> {
   const keys = await caches.keys();
   await Promise.all(
     keys
-      .filter((key) => key.startsWith(CRY_ASSET_CACHE_PREFIX) && key !== CRY_ASSET_CACHE)
+      .filter(
+        (key) =>
+          key.startsWith(CRY_ASSET_CACHE_PREFIX) && !(keepCurrent && key === CRY_ASSET_CACHE),
+      )
       .map((key) => caches.delete(key)),
   );
 }

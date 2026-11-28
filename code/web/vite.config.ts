@@ -68,7 +68,8 @@ export default defineConfig({
     darkManifestPlugin(),
     // Native build only: the app has no server to send a Content-Security-Policy header.
     nativeCspPlugin(),
-    // The cry monitor's MediaPipe WASM under /models/cry/wasm/ and the model check (cry-assets.ts).
+    // The cry monitor's MediaPipe WASM under /models/cry/wasm/ and the model check (cry-assets.ts); with the
+    // monitor switched off (VITE_CRY_MONITOR, src/cryMonitor/featureFlag.ts) it ships no cry files at all.
     cryAssetsPlugin(),
   ],
   // ES-module workers: the cry classifier worker loads MediaPipe's ES-module WASM loader, and the capture

@@ -7,6 +7,7 @@ import {
   canWrite,
   isOwner,
 } from '../baby/permissions';
+import { cryMonitorEnabled } from '../cryMonitor/featureFlag';
 import type { Baby } from '../db/models';
 import type { IconName } from '../ui/icons';
 
@@ -146,7 +147,9 @@ export function isEntryVisible(id: HubEntryId, ctx: HubContext): boolean {
       // A backup restores into a new baby of anyone's; into the selected one only for who may write to it.
       return baby ? canWrite(baby) : !ctx.hasPatients;
     case 'cryMonitor':
-      // It logs fussy spells: the roles that log. Web only for now (docs/design/35 section 8).
+      // Switched off unless the build turns it on (cryMonitor/featureFlag.ts). It logs fussy spells:
+      // the roles that log. Web only for now (docs/design/35 section 8).
+      if (!cryMonitorEnabled()) return false;
       return !!baby && canLog(baby) && !ctx.native && ctx.cryMonitorSupported;
     case 'vaccines':
     case 'growth':

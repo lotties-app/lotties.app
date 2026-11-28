@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import axe from 'axe-core';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiClientContext } from '../../api/ApiClientContext';
 import { ConsentContext, SIGNED_OUT_CONSENT } from '../../consent/ConsentContext';
 import type { Baby } from '../../db/models';
@@ -48,6 +48,7 @@ const recordOptional = vi.fn();
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   recordOptional.mockClear();
 });
 
@@ -670,6 +671,9 @@ describe('NotificationsSection vaccine reminders', () => {
 });
 
 describe('NotificationsSection cry monitor alerts', () => {
+  // The alert belongs to the cry monitor, switched off unless the build turns it on.
+  beforeEach(() => vi.stubEnv('VITE_CRY_MONITOR', 'true'));
+
   it('offers the switch per baby, off by default, and saves it', async () => {
     const { server } = setup();
     const lia = await screen.findByRole('region', { name: 'Lia' });
@@ -720,5 +724,22 @@ describe('NotificationsSection cry monitor alerts', () => {
 
     const lia = await screen.findByRole('region', { name: 'Lia' });
     expect(within(lia).getByRole('switch', { name: /Choro detectado pelo monitor/ })).toBeTruthy();
+  });
+});
+
+describe('NotificationsSection with the cry monitor switched off (the default)', () => {
+  it('offers no cry monitor alert, and keeps a stored one when another switch is saved', async () => {
+    const { server } = setup({}, { preferences: [{ ...PREFS[0]!, cryDetected: true }, PREFS[1]!] });
+    const lia = await screen.findByRole('region', { name: 'Lia' });
+    await within(lia).findByRole('switch', { name: /Fussy time heads-up/ });
+    expect(screen.queryByRole('switch', { name: /Cry detected by the monitor/ })).toBeNull();
+
+    fireEvent.click(within(lia).getByRole('switch', { name: /Fussy time heads-up/ }));
+
+    await waitFor(() =>
+      expect(writes(server).at(-1)?.body).toEqual(
+        expect.objectContaining({ fussyPattern: true, cryDetected: true }),
+      ),
+    );
   });
 });

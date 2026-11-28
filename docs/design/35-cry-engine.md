@@ -1,5 +1,8 @@
 # Cry engine (CD1 + CD2)
 
+**Switched off (2026-11-28)**: the owner put the cry monitor on hold; it is disabled, not deleted, behind
+`VITE_CRY_MONITOR` (off by default). See section 9 for what is off and how to turn it back on.
+
 Status: built (CD1, CD2) and wired to the monitor page (CD3) and the fussy event flow (CD5), section 8. The engine
 behind the foreground "cry monitor" of [31-cry-detector-spike.md](31-cry-detector-spike.md) (tasks of its section 13).
 The engine itself shows no text, writes no event and calls no API; the page (`code/web/src/cryMonitor/`) does.
@@ -220,3 +223,37 @@ and axe (contrast included) with `npx playwright test -c design-review/cry-monit
 "denied" paths on each browser, the iOS installed-app microphone after a relaunch, Wake Lock on iOS 18.4+ and on
 Android, what happens to capture on a call or with the screen locked on each platform (the stall and `lost` paths are
 exercised with the scripted engine only), the processing read-back on real hardware, battery and heat.
+
+## 9. Switched off (2026-11-28)
+
+The owner put the cry monitor on hold ("not very useful for now"). It is disabled, not deleted: one build-time switch,
+`VITE_CRY_MONITOR`, off unless it is exactly `true` (`code/web/src/cryMonitor/featureFlag.ts`, read by the app, the
+service worker and `cry-assets.ts`). Turn it on by building with `VITE_CRY_MONITOR=true`: in the shell or
+`code/web/.env.local` for `npm run dev` / `npm run build`, as a build arg for the web image (`code/web/Dockerfile`, the
+root `docker-compose.yml` reads it from the root `.env`). `deploy/homelab/deploy.sh` does not pass it yet: add
+`--build-arg "VITE_CRY_MONITOR=true"` to its web image build when it is turned back on.
+
+While it is off:
+
+- the Hub has no "Cry monitor (beta)" entry (`hub/hubEntries.ts`, so neither the list nor the Hub search shows it);
+- `/hub/cry-monitor` (an old bookmark, a link in the privacy policy) redirects to `/hub`; nothing opens the
+  microphone, so a device that had the monitor running stops when it loads the new version;
+- Settings > Notifications has no "Cry detected by the monitor" switch (`notifications/ui/BabyReminders.tsx`); a value
+  already stored is kept as it is (the server still has the column) and is saved back unchanged with the other switches;
+- the web build copies no MediaPipe WASM, removes a local `public/models/cry/yamnet.tflite` from the output and checks
+  no model (so `CRY_MODEL_REQUIRED=1` never fails it); the dev server serves no WASM; the Dockerfile downloads no model;
+- the service worker registers no route for `/models/cry/` and deletes every cry cache on activate, the current one
+  too, so a device that used the monitor gets its 11 MB back.
+
+Unchanged on purpose: the engine and page code and their tests (the page tests render the page directly; the Hub,
+route and settings tests turn the switch on with `vi.stubEnv('VITE_CRY_MONITOR', 'true')` and prove the off state);
+the developer preview `/dev/cry-monitor` (dev server only); the spells the monitor already recorded, which are ordinary
+`fussy` events (timeline, statistics, export, backup, erasure) with their "Was she crying?" answer row
+(`events/CryAnswerRow.tsx`); the manual crying log, "Why is she crying?" (doc 27) and the assistants' cry answer, which
+never used the monitor. The API is unchanged: the `cry_detected` push (doc 09 section 2.12) is sent only for a spell a
+monitor wrote (`auto_detected = true`) to a member who turned the switch on, and a build with the monitor off writes
+none. A browser still running an older build with the monitor open could write one until it reloads. `nginx.conf`
+still sends `'wasm-unsafe-eval'` and `microphone=(self)` (section 5): nothing else uses them, so they can be tightened
+to `microphone=()` and no `'wasm-unsafe-eval'` while the monitor stays off, and put back when it is turned on. The
+privacy policy, its data flows (`legal/dataFlows.ts` `ON_DEVICE_FLOWS`) and doc 33 section 12 still describe the
+monitor: the planned policy rewrite takes them up.
