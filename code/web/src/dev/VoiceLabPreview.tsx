@@ -3,17 +3,21 @@ import { Box } from '@mui/material';
 import { useSearchParams } from 'react-router-dom';
 import { LAB_PHRASES } from '../voiceLab/labPhrases';
 import VoiceLabPage from '../voiceLab/VoiceLabPage';
+import { VoiceTestSection } from '../voiceLab/VoiceTestSetting';
 import { fakeSpeech, type FakeReply, type FakeSpeechOptions } from '../voiceLab/fakeSpeech';
 import { PreviewToolbar } from './PreviewToolbar';
 
 /*
- * Developer-only (route `/dev/voice-lab`, only in a dev server with VITE_VOICE_LAB=true): the voice lab
- * over a scripted speech platform (no microphone, no plugin, no account). `?state=run` hears each pt-BR
- * test phrase in order (the third one misheard as 105 ml, right on its retry), `hang` keeps listening
- * until Cancel, `no-device` is a phone without on-device pt-BR; `&scheme=light|dark|night`.
+ * Developer-only (route `/dev/voice-lab`, only in a dev server with VITE_VOICE_LAB=true): the voice test
+ * over a scripted speech platform (no microphone, no plugin, no account). `?state=run` hears one pt-BR
+ * bottle for the first Try it, then each pt-BR test phrase in order (the third one misheard as 105 ml,
+ * right on its retry), `hang` keeps listening
+ * until Cancel, `no-device` is a phone without on-device pt-BR, `settings` is the Settings >
+ * Experimental group as the phone app shows it (its switch writes this browser's opt-in);
+ * `&scheme=light|dark|night`.
  */
 
-const SCENARIOS = ['run', 'hang', 'no-device'] as const;
+const SCENARIOS = ['run', 'hang', 'no-device', 'settings'] as const;
 type Scenario = (typeof SCENARIOS)[number];
 
 function optionsFor(scenario: Scenario): FakeSpeechOptions {
@@ -35,13 +39,13 @@ function optionsFor(scenario: Scenario): FakeSpeechOptions {
       },
     };
   }
-  // Phrase 3 is misheard first; its retry hears it right, then the run goes on.
+  // One Try it first; then the guided run: phrase 3 is misheard first, its retry hears it right.
   const replies: FakeReply[] = LAB_PHRASES['pt-BR'].flatMap((phrase, index): FakeReply[] =>
     index === 2
       ? [['mamadeira de cento e cinco mililitros', phrase.text], [phrase.text]]
       : [[phrase.text, `${phrase.text} a`]],
   );
-  return { replies };
+  return { replies: [['mamadeira de 120 ml'], ...replies] };
 }
 
 /** Developer-only: the voice lab with scripted engines (`/dev/voice-lab?state=run`). */
@@ -53,7 +57,11 @@ export default function VoiceLabPreview() {
   return (
     <Box sx={{ bgcolor: 'background.default', color: 'text.primary', minHeight: '100dvh' }}>
       <Box component="main" sx={{ maxWidth: 480, mx: 'auto', px: 2, pt: 1, pb: 4 }}>
-        <VoiceLabPage key={scenario} platform={platform} save={async () => true} />
+        {scenario === 'settings' ? (
+          <VoiceTestSection expanded />
+        ) : (
+          <VoiceLabPage key={scenario} platform={platform} save={async () => true} />
+        )}
         <PreviewToolbar
           scenarios={SCENARIOS}
           scenario={scenario}

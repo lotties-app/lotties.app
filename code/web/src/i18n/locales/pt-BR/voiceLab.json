@@ -1,12 +1,54 @@
 {
   "voiceLab": {
-    "title": "Laboratório de voz",
-    "intro": "Uma ferramenta da versão de teste para o modo mãos livres. A fala é reconhecida só neste celular: o laboratório não envia nem grava áudio. Nada do que você fala vira registro, nada é enviado ao Lotties e nenhum dado do bebê é lido. Os resultados ficam nesta tela até você exportá-los.",
-    "link": "Abrir o laboratório de voz",
-    "linkHint": "Só na versão de teste: mede o quanto este celular entende os comandos falados.",
+    "title": "Teste de voz (experimental)",
+    "nothingRecorded": "Nada é gravado.",
+    "intro": "Veja o quanto o Lotties entende o que você fala. A fala é reconhecida neste celular, e nada do que você fala vira registro.",
+    "noOnDevice": "Este celular não consegue reconhecer este idioma no próprio aparelho, então o teste de voz não funciona aqui. O Lotties nunca envia sua voz para um servidor no lugar.",
+    "technical": "Detalhes técnicos",
+    "modes": {
+      "label": "Modo",
+      "try": "Experimentar",
+      "guided": "Teste guiado"
+    },
+    "settings": {
+      "section": "Experimental",
+      "switch": "Mãos livres (teste de voz)",
+      "description": "Teste o quanto o Lotties entende comandos falados. Fica desligado até você ligar.",
+      "open": "Abrir o teste de voz"
+    },
+    "optIn": {
+      "title": "Ligar o teste de voz?",
+      "points": {
+        "experimental": "É um teste experimental de como o Lotties entende comandos falados.",
+        "nothingRecorded": "Não grava nada e não muda nenhum dado do bebê: nada do que você fala vira registro.",
+        "microphone": "O microfone só é usado depois que você toca para falar. O celular pede a permissão na primeira vez.",
+        "onPhone": "A fala é reconhecida neste celular. O Lotties não grava nem envia o áudio.",
+        "turnOff": "Você pode desligar quando quiser, aqui nos Ajustes."
+      },
+      "turnOn": "Ligar"
+    },
+    "tryIt": {
+      "hint": "Toque no botão e fale algo que você registraria, como “mamadeira de 120 ml” ou “dormiu”. Você vê o que o celular ouviu e o que o Lotties faria. Nada é registrado.",
+      "speak": "Tocar para falar",
+      "heard": "O celular ouviu",
+      "quoted": "“{{text}}”",
+      "wouldLog": "O Lotties registraria: {{command}}",
+      "wouldAnswer": {
+        "ask_milk_today": "O Lotties responderia quanto leite foi tomado hoje",
+        "ask_last_feed": "O Lotties responderia quando foi a última mamada"
+      },
+      "needsAmount": "O Lotties não registraria nada: falta a quantidade.",
+      "outOfRange": "O Lotties não registraria nada: {{amount}} está fora das quantidades aceitas por voz.",
+      "ambiguous": "O Lotties não registraria nada: pode querer dizer mais de uma coisa.",
+      "notUnderstood": "O Lotties não registraria nada ({{reason}}).",
+      "kept": "Isto foi só um teste: nada foi registrado. As últimas 5 tentativas ficam nesta tela e somem quando você sai dela."
+    },
+    "guided": {
+      "hint": "Leia cada frase em voz alta, do jeito que está escrita. No fim você vê um resumo e, se quiser, pode exportar os resultados em um arquivo."
+    },
     "setup": {
       "language": "Idioma",
-      "onDeviceOnly": "Reconhecido só neste celular. Se o celular não reconhece este idioma no aparelho, o laboratório avisa: nunca usa um servidor.",
+      "onDeviceOnly": "Reconhecido só neste celular. Se o celular não reconhece este idioma no aparelho, o teste avisa: nunca usa um servidor.",
       "condition": "Condição",
       "languages": {
         "pt-BR": "Português",
@@ -74,7 +116,7 @@
     "phrase": {
       "counter": "Frase {{n}} de {{total}} (frase de teste nº {{number}})",
       "expected": "Esperado: {{command}}",
-      "done": "Todas as frases desta rodada têm uma tentativa. Troque o reconhecedor ou a condição para a próxima rodada, ou repita uma frase.",
+      "done": "Todas as frases desta rodada têm uma tentativa. Troque o idioma ou a condição para a próxima rodada, ou volte para repetir uma frase.",
       "restart": "Voltar à frase 1"
     },
     "speak": "Falar",
@@ -90,7 +132,7 @@
     "result": {
       "heard": "O que o celular ouviu",
       "noText": "Sem texto",
-      "parsed": "Interpretado: {{result}}",
+      "parsed": "Entendido como: {{result}}",
       "matched": "Tirado da alternativa {{n}}",
       "alternative": "{{text}} (confiança {{confidence}})",
       "pass": "Passou",
@@ -136,11 +178,11 @@
       "askLastFeed": "Pergunta: última mamada"
     },
     "outcome": {
-      "needsAmount": "Falta a quantidade (nada registrado)",
-      "outOfRange": "Quantidade fora do limite, {{amount}} (nada registrado)",
-      "ambiguous": "Ambíguo (nada registrado)",
-      "notUnderstood": "Não entendido: {{reason}} (nada registrado)",
-      "nothing": "Nada registrado"
+      "needsAmount": "Falta a quantidade (não registraria nada)",
+      "outOfRange": "Quantidade fora do limite, {{amount}} (não registraria nada)",
+      "ambiguous": "Ambíguo (não registraria nada)",
+      "notUnderstood": "Não entendido: {{reason}} (não registraria nada)",
+      "nothing": "Não registraria nada"
     },
     "reason": {
       "empty": "sem texto",
@@ -180,14 +222,9 @@
     },
     "export": {
       "button": "Exportar resultados",
-      "hint": "Um arquivo JSON com as frases de teste, o que o celular ouviu, os comandos interpretados e o resumo, pela tela de compartilhar. As tentativas livres não entram.",
+      "hint": "Um arquivo JSON com as frases de teste, o que o celular ouviu, como foi entendido e o resumo, mais a versão do app e o que o celular informa sobre o reconhecimento de fala (plataforma, versão do sistema, idiomas, permissões). Ele sai pela tela de compartilhar, e só você escolhe para onde. As tentativas de Experimentar não entram.",
       "done": "Resultados exportados.",
       "failed": "A exportação não funcionou."
-    },
-    "freeTry": {
-      "title": "Teste livre",
-      "hint": "Fale qualquer coisa para ver o que o celular ouve e como o interpretador lê. Os testes livres não contam, não são exportados e somem quando você sai desta tela.",
-      "speak": "Falar (teste livre)"
     },
     "keys": {
       "title": "Teclas",

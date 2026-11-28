@@ -71,11 +71,12 @@ const FromDoctorPage = lazy(() =>
 // The project board: its own frame outside the parents' shell (no baby data near it), online only.
 const BoardPage = lazy(() => import('./board/BoardPage'));
 /**
- * The voice lab (docs/design/49a-voice-lab.md, spike branch only): the inline build-time comparison lets
- * the bundler drop the import, so a build without VITE_VOICE_LAB=true has no lab chunk and no route.
+ * The experimental voice test (docs/design/49a-voice-lab.md): the inline build-time comparison lets
+ * the bundler drop the import, so a build without VITE_VOICE_LAB=true has no voice test chunk and no
+ * route. With it, the route still opens the test only inside the phone app after the opt-in.
  */
-const VoiceLabPage =
-  import.meta.env.VITE_VOICE_LAB === 'true' ? lazy(() => import('./voiceLab/VoiceLabPage')) : null;
+const VoiceLabRoute =
+  import.meta.env.VITE_VOICE_LAB === 'true' ? lazy(() => import('./voiceLab/VoiceLabRoute')) : null;
 
 /**
  * Developer UI gallery and Now preview: registered only in development. `import.meta.env.DEV` is a build-time
@@ -493,7 +494,7 @@ export function AppRoutes() {
               <Route path="settings" element={<SettingsPage />} />
               <Route path="settings/voice-commands" element={<HubVoiceCommandsPage />} />
               <Route path="settings/data-location" element={<HubDataLocationPage />} />
-              {VoiceLabPage && <Route path="lab/voice" element={<VoiceLabPage />} />}
+              {VoiceLabRoute && <Route path="lab/voice" element={<VoiceLabRoute />} />}
               <Route path="help/own-database" element={<HubOwnDatabaseHelpPage />} />
               <Route path="appointments" element={<AppointmentsPage />} />
               <Route path="vaccines" element={<VaccinesPage />} />

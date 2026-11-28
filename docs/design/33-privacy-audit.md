@@ -94,10 +94,11 @@ for the web); the web CSP (`code/web/nginx.conf`) is `default-src 'self'; script
 img-src 'self' data:; connect-src 'self' <OIDC origin>`, and the native build has the same policy in a meta tag
 (`code/web/native-csp.ts`); `index.html` loads only own files; the Fraunces font ships in the bundle
 (`@fontsource-variable/fraunces`); the Keycloak theme loads only its own files (no external URL in
-`code/keycloak-theme/src`). Native apps request only `android.permission.INTERNET`; the iOS `Info.plist` has no usage
-description (no camera, photos, location, contacts, microphone). That holds for every build from `main`; the voice lab
-test build of the hands-free mode (branch `feat/voice-lab`, never merged) adds `RECORD_AUDIO` and the iOS microphone and
-speech recognition purpose strings (section 21). No photo or file of the baby is collected anywhere.
+`code/keycloak-theme/src`). Native apps request `android.permission.INTERNET` and, for the experimental hands-free voice
+test only (section 21, off by default), `android.permission.RECORD_AUDIO`; the iOS `Info.plist` has only the microphone
+and speech recognition usage descriptions of that test (localised in `InfoPlist.strings`; no camera, photos, location or
+contacts). Both are asked for only at a tap to speak, after the person turned the test on. No photo or file of the baby is
+collected anywhere.
 The web app asks for the microphone only for the cry monitor (section 12), when a person starts it; its model and WASM
 are served by our own web container (`/models/cry/`), so no third party is contacted at run time.
 
@@ -717,36 +718,54 @@ writes outcomes today. Facts from the code (`legal/dataFlows.ts` `DERIVED_FLOWS`
   each row the first event after its anchor by event time, with a conditional write, so out-of-order or concurrent
   writes end the same way.
 
-## 21. Optional phone microphone: the hands-free mode (test builds only, 2026-11-28, policy 18)
+## 21. Optional phone microphone: the experimental hands-free voice test (2026-11-28, policy 18)
 
-Status: **only in test builds of the iOS and Android apps**: the voice lab of the hands-free mode (docs/design/49a-voice-lab.md,
-branch `feat/voice-lab`, never merged into `main`; design 49 on `docs/hands-free-design`). No build from `main` has it: the
-lab is behind `VITE_VOICE_LAB` (absent on `main`), and `main` has neither `RECORD_AUDIO` nor the iOS purpose strings
-(section 3). Policy 18 says, in both languages, that in the phone apps the microphone (and on iPhone speech recognition) is
-optional, asked for only if the person chooses to use the hands-free mode, which today exists only in test versions; that
-not using it changes nothing else; that it can be turned off at any time (stop using it, or remove the permission in the
-phone's settings); that speech is turned into text by the phone's own recogniser in on-device mode and the audio is never
-recorded, stored or sent by Lotties; and that in the test versions the recognised text stays in memory on the lab's screen
-and leaves the phone only in a results file the tester exports. `dataFlows.ts` `ON_DEVICE_FLOWS` pins it (`handsFree`:
-`testOnly`, permissions microphone and speech recognition, opt-in, `consentBy: 'self'`, raw signal
-`{stored: false, sent: false}`, `derivedText: 'memoryUntilExported'`, `modelFrom: 'phoneSystem'`, no recipient, Android and
-iOS, data row `handsFree`) and `dataFlows.test.ts` holds the text to it.
+Status: **an experimental feature of the published iOS and Android apps, off by default** (owner decision of 2026-11-28,
+which replaced "the voice lab branch is never merged"): the voice test of the hands-free mode (docs/design/49a-voice-lab.md;
+design 49 on `docs/hands-free-design`). It is compiled only into the phone builds (`VITE_VOICE_LAB=true` in
+`code/web/.env.native`; the web builds do not set it, so the web bundle has no voice test chunk and no `/lab/voice` route),
+offered only inside the app (`isNativeApp()`), and runs only after the person turns it on in Settings > Experimental >
+Hands-free (voice test), after an explainer. The phone builds therefore carry `RECORD_AUDIO` and the iOS microphone and
+speech recognition purpose strings (section 3), now localised (`en.lproj` and `pt-BR.lproj` `InfoPlist.strings`).
 
-Facts, checked against `feat/voice-lab` on 2026-11-28 (the lab's working copy was being changed to remove the Server and
-Web engines; the text is written for on-device recognition only):
+Policy 18 says, in both languages: only in the iOS and Android apps, not in the web app; an experimental feature, off until
+the person turns it on in Settings > Experimental > Hands-free (voice test), used only to test how well the app understands
+spoken commands; turning it on asks for no permission, the permissions are asked only at a tap to speak; the microphone
+listens only after a tap, until the phrase ends or she cancels, and leaving the screen or the app stops it; speech is
+turned into text by the phone's own recogniser in on-device mode, never a server instead; on Android a button in the
+technical details can ask the phone's speech service to download a missing language (the service fetches it from its own
+provider; Lotties sends it no audio or text); the audio is never recorded, stored or sent by Lotties; the recognised text
+stays in memory on that screen until she leaves it, what she says in Try it is never saved or exported; nothing becomes an
+entry and no baby data is read or changed; the guided test's results leave the phone only in a file she exports herself,
+and the file's contents are listed (below); not using it changes nothing; it can be turned off in Settings or by removing
+the permission, and signing out turns it off. Device storage lists the switch; retention says what is kept.
+`dataFlows.ts` `ON_DEVICE_FLOWS` pins it (`handsFree`: `experimental`, permissions microphone and speech recognition,
+opt-in, off by default, `consentBy: 'self'`, raw signal `{stored: false, sent: false}`, `derivedText:
+'memoryUntilExported'`, `modelFrom: 'phoneSystem'`, no recipient, Android and iOS, data row `handsFree`) and
+`dataFlows.test.ts` holds the text to it, including the Settings path and the "Try it" label as the catalogs spell them,
+and that no sentence still says "only in test versions".
 
-| Fact | Where in the code (branch `feat/voice-lab`) |
+Facts, checked against `feat/voice-lab` on 2026-11-28:
+
+| Fact | Where in the code |
 | --- | --- |
-| The permissions are asked at the first Speak, not at install or start: Android `RECORD_AUDIO` (Capacitor alias `microphone`); iOS speech recognition, then microphone | `speech/LottiesSpeechPlugin.kt`, `ios/App/App/LottiesSpeechPlugin.swift` |
-| On-device only: Android `SpeechRecognizer.createOnDeviceSpeechRecognizer` (Android 12+, language checked installed on 13+); iOS `requiresOnDeviceRecognition = true`, refused when `supportsOnDeviceRecognition` is false. Where the phone cannot, the lab says so (`on_device_unavailable`, `language_unavailable`) and never retries on a server | same plugins; `platform/speech.ts`, `platform/speechTypes.ts` |
-| Listening is one phrase per tap (`listenOnce`), ended by the recogniser's end of speech (iOS: 1.2 s without a new partial result), Cancel, a watchdog timeout, the app going to the background, an audio interruption, `visibilitychange` (hidden) or `pagehide` | plugins, `voiceLab/useListen.ts` |
+| Built only into the phone builds: `VITE_VOICE_LAB` read through the inline comparison, so a build without it drops the route and the Settings group; the app entry's static graph never reaches `voiceLab/`, `voice/` or `platform/speech*` | `AppRoutes.tsx`, `pages/SettingsPage.tsx`, `voiceLab/voiceLabSwitch.test.tsx` |
+| Offered only inside the app; off by default; the switch first shows the explainer (experimental, records nothing, changes no baby data, microphone only after a tap, recognised on the phone, can be turned off); turning it on calls no plugin and asks for no permission | `voiceLab/featureFlag.ts` `voiceTestOffered`, `voiceLab/VoiceTestSetting.tsx`, `voiceLab/voiceLabRoute.test.tsx` |
+| Off (or outside the app): `/lab/voice` goes back to Settings and nothing starts; turning it off or signing out while the page is open unmounts it, which cancels a listen and drops every result | `voiceLab/VoiceLabRoute.tsx`, `voiceLab/useListen.ts` |
+| The switch is the only thing kept: `localStorage` `lotties.voice-test.opt-in`, part of the account's device state (cleared at sign-out and when another account signs in on the device) | `settings/voiceTestOptIn.ts`, `session/deviceState.ts` |
+| The permissions are asked at the first Speak, not at install, start or the switch: Android `RECORD_AUDIO` (Capacitor alias `microphone`); iOS speech recognition, then microphone | `speech/LottiesSpeechPlugin.kt`, `ios/App/App/LottiesSpeechPlugin.swift` |
+| On-device only: Android `SpeechRecognizer.createOnDeviceSpeechRecognizer` (Android 12+, language checked installed on 13+); iOS `requiresOnDeviceRecognition = true`, refused when `supportsOnDeviceRecognition` is false. Where the phone cannot, the page says so (`on_device_unavailable`, `language_unavailable`, and a warning when the phone reports no on-device recognition) and never retries on a server | same plugins; `platform/speech.ts`, `voiceLab/onDeviceOnly.test.ts` |
+| Listening is one phrase per tap (`listenOnce`), shown by a bordered microphone state ("Listening. Speak now.", announced) with Cancel, ended by the recogniser's end of speech (iOS: 1.2 s without a new partial result), Cancel, a watchdog timeout, the app going to the background, an audio interruption, `visibilitychange` (hidden), `pagehide` or leaving the page | plugins, `voiceLab/useListen.ts`, `voiceLab/ListenControls.tsx` |
 | Audio buffers go from the microphone to the recogniser in memory; no file is written, no network call is made by Lotties' code, nothing is logged (no `console`, no `appLog`, nothing in the native plugins) | plugins; `voiceLab/VoiceLabPage.test.tsx` |
-| The lab writes no event and nothing to Dexie, the outbox, `localStorage` or the server, reads no baby data and calls no API; the recognised text is React state of the page, gone when the person leaves it | `voiceLab/useVoiceLab.ts`, `voiceLab/VoiceLabPage.tsx` |
-| Export: only on the tester's tap, `lotties-voice-lab-*.json` through the share sheet (`platform/saveFile.ts`): the fixed test phrases, what the recogniser heard for them, the parsed result and timings, what the phone reported; free tries are never exported | `voiceLab/ExportResults.tsx`, `voiceLab/labModel.ts` |
+| The page writes no event and nothing to Dexie, the outbox, `localStorage` or the server, reads no baby data and calls no API; the recognised text is React state of the page (Try it: the last 5 tries), gone when the person leaves it | `voiceLab/useVoiceLab.ts`, `voiceLab/VoiceLabPage.tsx` |
+| Export (guided test only): on the person's tap, `lotties-voice-lab-*.json` through the share sheet (`platform/saveFile.ts`): the fixed test phrases with their expected command, condition and retries, for each the first and latest attempt (alternatives, confidences, parsed result, pass, wrong action or amount, latency, error, on-device flag, time), the summary, the export time, the app version and commit, the platform and OS version, and per language what the phone reported (recogniser and on-device availability, language install state, phrase hints, permission states). No account, member or baby field; Try it is never exported (tested) | `voiceLab/ExportResults.tsx`, `voiceLab/labModel.ts` |
+| Android language download: only on the button in Technical details; `triggerModelDownload` on the on-device recogniser with the language tag; the system speech service downloads its model from its own vendor | `speech/LottiesSpeechPlugin.kt` |
 
-Version: **minor** (design 38 section 2, decision 3; section 11): no new data reaches Lotties, no new recipient, no change of
-rights or controller, and the feature is opt-in through the phone's own permission. Existing consents stay valid (the newest
-material entry is still `2026-11-15.1`) and builds with section 11 accept their bundled version.
+Version: **still minor, policy 18, consent entry `2026-11-28.1`** (not published yet, so its text was edited in place and
+its `textDigest` updated, no new entry). Design 38 section 2, decision 3, and section 11: no new data reaches Lotties, no
+new recipient, no change of rights, purpose of the service or controller; the feature is opt-in, off by default, behind its
+own switch and the phone's permission, and processes nothing on our side. Existing consents stay valid (the newest material
+entry is still `2026-11-15.1`) and builds with section 11 accept their bundled version.
 
 Open points (not decided here):
 
@@ -754,11 +773,9 @@ Open points (not decided here):
   whether handing it the microphone counts as "sharing with another app on the device" for Play's Data safety is an owner
   question (design 49 section 3.4). The policy does not describe what the OS vendor does inside that service beyond the
   on-device API.
+- Store forms: App Store Connect privacy labels and Play Data safety must be checked for the published apps now that the
+  microphone permission ships (design 20 section on the microphone; docs/PRIVACY-OWNER-CHECKLIST.md).
 - No legal basis bullet was added for it (the processing happens on the phone and nothing reaches Lotties); the owner may
   want one in the next material rewrite.
-- Branch `feat/voice-lab` at `b110b885` still carries the Server and Web engines and a native `onDevice: false` path
-  (Android `createSpeechRecognizer`, iOS `requiresOnDeviceRecognition = false`) and an iOS
-  `NSSpeechRecognitionUsageDescription` that mentions "the server option sends the audio to Apple". The policy is true for
-  the lab only once that path is gone from the build the testers install.
 - The web cry monitor is switched off (`VITE_CRY_MONITOR`, PR #120); the policy's cry monitor passages (rights link to
   `/hub/cry-monitor`, the data row) were not rewritten here.

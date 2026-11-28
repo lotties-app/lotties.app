@@ -17,7 +17,7 @@ export const privacyEn: PolicyDocument = {
           'What you and the people you invite record about your baby, including health information such as medicines and vaccines.',
           'What the service needs to work: reminder settings if you turn reminders on, the push token of the iOS or Android app while it shows a Lotties widget, and technical logs.',
           'If you start the Cry monitor: the microphone, analysed only on your device and never recorded; only the crying spells it detects are saved.',
-          "If you use the hands-free mode in a phone app (today only in test versions): your voice, through the microphone, turned into text by the phone's own speech recognition on the phone; Lotties does not record or send the audio. It is optional, and you can turn it off at any time.",
+          "If you turn on the experimental hands-free voice test in a phone app: your voice, through the microphone, turned into text by the phone's own speech recognition on the phone, only to test how well the app understands spoken commands; Lotties does not record or send the audio. It is optional, off until you turn it on, and you can turn it off at any time.",
           'If you turn on the optional rest estimate: your work and night windows and time zone; the estimate is worked out when you ask, shown only to you and never stored.',
         ],
       },
@@ -184,9 +184,9 @@ export const privacyEn: PolicyDocument = {
             {
               id: 'handsFree',
               cells: [
-                'Hands-free mode (optional, phone apps, test versions only)',
-                "Only in the iOS and Android apps, and today only in test versions of them: the hands-free mode is not in the public versions of the apps or in the web app. If you choose to use it, the app asks for the microphone and, on iPhone, for speech recognition. The microphone listens only after you tap to speak, until your phrase ends or you cancel; leaving the app stops it too. What you say is turned into text by the phone's own speech recognition, which Lotties asks to run on the phone itself (on-device mode); if the phone cannot do that for the language, the app says so and does not use a server instead. The sound is never recorded, stored or sent by Lotties, not even to us. In the test versions, the recognised text stays in the app's memory, on that screen, until you leave it. Only the text of the fixed test phrases can leave the phone, and only if you export the results file yourself and choose where to send it. Nothing you say there becomes an entry, and no baby data is read. Using it is optional: not using it changes nothing else in the app. You can turn it off at any time: stop using it, or remove the microphone permission (and, on iPhone, the speech recognition permission) for Lotties in the phone's settings.",
-                'To try out, in test versions, logging by voice without touching the phone. Nothing from it is sent to our servers.',
+                'Hands-free voice test (optional, experimental, phone apps)',
+                "Only in the iOS and Android apps: the voice test is not in the web app. It is an experimental feature, off until you turn it on yourself in Settings > Experimental > Hands-free (voice test), and it is used only to test how well the app understands spoken commands. Turning it on asks for no permission: the app asks for the microphone and, on iPhone, for speech recognition only when you tap to speak and the permission was not given yet. The microphone listens only after you tap to speak, until your phrase ends or you cancel; leaving the screen or the app stops it too. What you say is turned into text by the phone's own speech recognition, which Lotties asks to run on the phone itself (on-device mode); if the phone cannot do that for the language, the app says so and does not use a server instead. On Android, if the language is missing, a button in the test's technical details can ask the phone's own speech service to download it; that service fetches it from its own provider (for example Google), and Lotties sends it no audio and no text. The sound is never recorded, stored or sent by Lotties, not even to us. The recognised text stays in the app's memory, on that screen, until you leave it; what you say in Try it is never saved or exported. Nothing you say there becomes an entry, and no baby data is read or changed. In the guided test, where you read fixed test phrases, the results leave the phone only if you export the results file yourself and choose where to send it. The file holds the test phrases, the text the phone recognised for each (with its alternatives, confidence and timing) and how the app understood it, the summary, the app version, and what the phone reports about its speech recognition (platform, system version, languages, permission states); never your account, any baby data or what you said in Try it. Using it is optional: not using it changes nothing else in the app. You can turn it off at any time: switch it off in Settings, or remove the microphone permission (and, on iPhone, the speech recognition permission) for Lotties in the phone's settings. Signing out turns it off too.",
+                'To let you test, as an experimental feature, how well the app understands spoken commands. Nothing from it is sent to our servers.',
               ],
             },
             {
@@ -233,7 +233,7 @@ export const privacyEn: PolicyDocument = {
         },
         {
           kind: 'note',
-          text: "Lotties does not ask for your location, contacts, camera or photos. In the web app, it asks for the microphone only when you start the Cry monitor on a device, and uses it only while that page is open; the sound never leaves the device. In the iOS and Android apps, the microphone (and, on iPhone, speech recognition) is optional and asked for only if you choose to use the hands-free mode, which today exists only in test versions; you can turn it off at any time in the phone's settings. The app contains no advertising, analytics or crash-reporting tools.",
+          text: "Lotties does not ask for your location, contacts, camera or photos. In the web app, it asks for the microphone only when you start the Cry monitor on a device, and uses it only while that page is open; the sound never leaves the device. In the iOS and Android apps, the microphone (and, on iPhone, speech recognition) is optional and asked for only if you turn on the experimental hands-free voice test in Settings and then tap to speak; you can turn it off at any time in Settings or in the phone's settings. The app contains no advertising, analytics or crash-reporting tools.",
         },
       ],
     },
@@ -501,7 +501,7 @@ export const privacyEn: PolicyDocument = {
             'Widget updates: the push token of a device is switched off when you sign out there, when the app finds its last Lotties widget removed (it checks each time it opens), when Apple or Google says it no longer works or sends to it keep failing, or when the app has not renewed it for 60 days; switched-off tokens are deleted 30 days later.',
             'Doctor access log and invites: kept with the baby until it is erased.',
             'Cry monitor: the sound is never kept. The crying spells it logs are ordinary records (above); its consent stays on the device until you withdraw it or sign out.',
-            'Hands-free mode: the sound is never kept. In the test versions, the recognised text stays on the screen until you leave it, and leaves the phone only in a results file you export yourself.',
+            'Hands-free voice test: the sound is never kept. The recognised text stays on the screen until you leave it, and leaves the phone only in a guided-test results file you export yourself. The choice to turn it on is kept on the device until you turn it off or sign out.',
             'Technical logs: only as long as needed to run and protect the service.',
             'Database copies made before updates: deleted when no longer needed. Until then they still contain data deleted in the meantime.',
             'On your device: until you sign out (the app then deletes its copy) or clear the app data.',
@@ -579,6 +579,7 @@ export const privacyEn: PolicyDocument = {
             'Preferences and shortcuts: language, theme, the selected baby, pinned buttons, dismissed cards, recent values and estimates, and how often you open each place in the Hub (to order your shortcuts).',
             'An invite link while you sign in, for a moment (session storage).',
             'If you use the Cry monitor: that you agreed on this device (when, and to which version of the text) and the sensitivity you chose. Never any sound.',
+            'If you turn on the hands-free voice test in a phone app: that it is on, until you turn it off or sign out. Never any sound or recognised text.',
             "The app's own files, so that it opens offline. No records are kept in that cache.",
           ],
         },

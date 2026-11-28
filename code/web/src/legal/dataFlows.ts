@@ -41,10 +41,11 @@ export type DataCategoryId = (typeof DATA_CATEGORY_IDS)[number];
 export interface OnDeviceFlow {
   id: 'cryMonitor' | 'handsFree';
   /**
-   * `active`: built and offered behind its own consent (the cry monitor, web app only). `testOnly`: only in test builds of
-   * the phone apps, never in a public build (the hands-free voice lab, `VITE_VOICE_LAB`, docs/design/49a-voice-lab.md).
+   * `active`: built and offered behind its own consent (the cry monitor, web app only). `experimental`: in the published phone
+   * apps as an experimental feature, off until the person turns it on in Settings > Experimental, never in the web app (the
+   * hands-free voice test, `VITE_VOICE_LAB` in the phone builds only, docs/design/49a-voice-lab.md).
    */
-  status: 'active' | 'testOnly';
+  status: 'active' | 'experimental';
   /** The permissions it asks for, only when the person chooses to use it (`speechRecognition`: iOS only). */
   permissions: readonly ('microphone' | 'speechRecognition')[];
   /** Off until the person chooses to use it on a device. */
@@ -52,15 +53,16 @@ export interface OnDeviceFlow {
   defaultOn: false;
   /**
    * Who may start it: the roles that log for the baby (the cry monitor, after a separate consent on the device), or `self`:
-   * the person on her own phone, through the phone's permission prompt, with no baby data involved (the voice lab).
+   * the person on her own phone, through the Settings switch and then the phone's permission prompt, with no baby data
+   * involved (the voice test).
    */
   consentBy: readonly ('Owner' | 'Parent' | 'Caregiver')[] | 'self';
   /** The raw signal: analysed on the device only, never recorded, stored or sent (not even to us). */
   rawSignal: { stored: false; sent: false };
   /**
    * Text made from the signal. `none`: the cry monitor makes only a score. `memoryUntilExported`: the recognised text stays in
-   * memory on the lab's screen until she leaves it; only the fixed test phrases' records can leave the phone, in a results file
-   * she exports herself (free tries are never exported).
+   * memory on the test's screen until she leaves it; only the guided test's records (fixed test phrases) can leave the phone,
+   * in a results file she exports herself (Try it is never exported).
    */
   derivedText: 'none' | 'memoryUntilExported';
   /** The row of "What we collect" that describes it. */
@@ -92,9 +94,9 @@ export const ON_DEVICE_FLOWS: readonly OnDeviceFlow[] = [
     platforms: ['web'],
   },
   {
-    // Policy 18: the voice lab of the hands-free mode (docs/design/49a-voice-lab.md), only in test builds of the phone apps.
+    // Policy 18: the experimental hands-free voice test of the phone apps (docs/design/49a-voice-lab.md), off by default.
     id: 'handsFree',
-    status: 'testOnly',
+    status: 'experimental',
     permissions: ['microphone', 'speechRecognition'],
     trigger: 'optIn',
     defaultOn: false,

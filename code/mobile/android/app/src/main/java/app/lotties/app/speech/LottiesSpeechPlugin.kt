@@ -25,8 +25,8 @@ import com.getcapacitor.annotation.PermissionCallback
 import org.json.JSONObject
 
 /**
- * Capacitor plugin `LottiesSpeech` v0 (code/web/src/platform/speech.ts; docs/design/49a-voice-lab.md, the voice lab
- * spike, branch feat/voice-lab only). One recognition at a time, on the device only: the recogniser is always
+ * Capacitor plugin `LottiesSpeech` v0 (code/web/src/platform/speech.ts; docs/design/49a-voice-lab.md, the experimental
+ * voice test, opt-in in Settings). One recognition at a time, on the device only: the recogniser is always
  * `createOnDeviceSpeechRecognizer` (Android 12+) with `EXTRA_PREFER_OFFLINE`; on Android 13+ the language must first be
  * reported installed on the phone. When it is not available the call is rejected (`on_device_unavailable`,
  * `language_unavailable`). The default recogniser ("likely to stream audio to remote servers", Android docs) is never

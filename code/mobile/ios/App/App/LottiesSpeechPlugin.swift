@@ -3,8 +3,8 @@ import Capacitor
 import Speech
 import UIKit
 
-/// Capacitor plugin `LottiesSpeech` v0 (code/web/src/platform/speech.ts; docs/design/49a-voice-lab.md, the voice lab
-/// spike, branch feat/voice-lab only). One recognition at a time with `SFSpeechRecognizer`, on the device only: every
+/// Capacitor plugin `LottiesSpeech` v0 (code/web/src/platform/speech.ts; docs/design/49a-voice-lab.md, the experimental
+/// voice test, opt-in in Settings). One recognition at a time with `SFSpeechRecognizer`, on the device only: every
 /// request sets `requiresOnDeviceRecognition = true` (Apple: the request never sends audio over the network), a
 /// language without on-device support (`supportsOnDeviceRecognition`) is refused (`on_device_unavailable`), and
 /// `onDevice: false` is refused (`not_supported`). This plugin sends no audio or text anywhere.

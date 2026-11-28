@@ -154,8 +154,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- The voice lab (spike branch feat/voice-lab only, never merged; docs/design/49a-voice-lab.md): the speech
-         recogniser listens only while the lab's Speak button runs, asked at runtime, never in the background. -->
+    <!-- The experimental voice test (docs/design/49a-voice-lab.md), off until the person turns it on in Settings: the
+         speech recogniser listens only after a tap to speak, asked at runtime then, never in the background. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Firebase Messaging adds com.google.android.c2dm.permission.RECEIVE and POST_NOTIFICATIONS to the merged
          manifest (WAKE_LOCK and ACCESS_NETWORK_STATE were there already, from WorkManager). The app never asks for

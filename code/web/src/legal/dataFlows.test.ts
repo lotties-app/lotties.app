@@ -261,37 +261,67 @@ describe('the data flows behind the privacy policy', () => {
   /* The words the policy must use for the optional phone microphone of the hands-free mode (docs/design/33 section 21). */
   const HANDS_FREE_WORDS: Readonly<Record<Locale, Record<string, RegExp>>> = {
     en: {
-      name: /Hands-free mode|hands-free mode/,
+      name: /Hands-free voice test|hands-free voice test/,
       sensor: /microphone/,
       speech: /speech recognition/,
       phones: /iOS and Android apps/,
-      testOnly: /only in test versions/,
-      notPublic: /not in the public versions of the apps or in the web app/,
+      noWeb: /not in the web app/,
+      experimental:
+        /experimental feature, off until you turn it on yourself in Settings > Experimental > Hands-free \(voice test\)/,
+      purpose: /used only to test how well the app understands spoken commands/,
+      noAskOnSwitch: /Turning it on asks for no permission/,
+      askOnTap: /only when you tap to speak and the permission was not given yet/,
       onDevice: /on the phone itself \(on-device mode\)/,
       noServer: /does not use a server instead/,
+      download: /Lotties sends it no audio and no text/,
       never: /never recorded, stored or sent by Lotties/,
       memory: /stays in the app's memory, on that screen, until you leave it/,
+      tryIt: /what you say in Try it is never saved or exported/,
       export: /only if you export the results file yourself/,
+      exportHolds:
+        /the app version, and what the phone reports about its speech recognition \(platform, system version, languages, permission states\); never your account, any baby data or what you said in Try it/,
       optional: /not using it changes nothing else in the app/,
       off: /turn it off at any time/,
       settings: /in the phone's settings/,
+      signOut: /Signing out turns it off too/,
     },
     'pt-BR': {
-      name: /Modo mãos livres|modo mãos livres/,
+      name: /Teste de voz mãos livres|teste de voz mãos livres/,
       sensor: /microfone/,
       speech: /reconhecimento de fala/,
       phones: /apps de iOS e Android/,
-      testOnly: /só em versões de teste/,
-      notPublic: /não está nas versões públicas dos apps nem no app web/,
+      noWeb: /não está no app web/,
+      experimental:
+        /recurso experimental, desligado até você ligá-lo em Ajustes > Experimental > Mãos livres \(teste de voz\)/,
+      purpose: /serve só para testar o quanto o app entende comandos falados/,
+      noAskOnSwitch: /Ao ligar, nenhuma permissão é pedida/,
+      askOnTap: /quando você toca para falar e a permissão ainda não foi dada/,
       onDevice: /no próprio aparelho \(modo no aparelho\)/,
       noServer: /não usa um servidor no lugar/,
+      download: /o Lotties não envia a ele nenhum áudio nem texto/,
       never: /nunca é gravado, guardado ou enviado pelo Lotties/,
       memory: /fica na memória do app, nessa tela, até você sair dela/,
-      export: /só se você mesmo exportar o arquivo de resultados/,
+      tryIt: /o que você fala em Experimentar nunca é guardado nem exportado/,
+      export: /só saem do celular se você exportar o arquivo de resultados/,
+      exportHolds:
+        /a versão do app e o que o celular informa sobre o reconhecimento de fala \(plataforma, versão do sistema, idiomas, situação das permissões\); nunca a sua conta, nenhum dado do bebê nem o que você falou em Experimentar/,
       optional: /não usar não muda nada no resto do app/,
       off: /desligar quando quiser/,
       settings: /nos ajustes do celular/,
+      signOut: /Sair da conta também o desliga/,
     },
+  };
+
+  /* The app's own words that the policy row quotes (Settings path and the first mode), per language. */
+  const VOICE_TEST_UI: Readonly<Record<Locale, string>> = {
+    en: 'locales/en/voiceLab.json',
+    'pt-BR': 'locales/pt-BR/voiceLab.json',
+  };
+  const SETTINGS_WORD: Readonly<Record<Locale, string>> = { en: 'Settings', 'pt-BR': 'Ajustes' };
+  /* Wording of the test builds of the spike that must not come back (the feature ships in the published apps). */
+  const TEST_BUILD_WORDS: Readonly<Record<Locale, RegExp>> = {
+    en: /test versions?|test builds?/i,
+    'pt-BR': /versões de teste|versão de teste/i,
   };
 
   describe.each(
@@ -299,8 +329,8 @@ describe('the data flows behind the privacy policy', () => {
       (flow) => [flow.id, flow] as const,
     ),
   )('the hands-free flow %s (docs/design/33 section 21)', (_, flow) => {
-    it('exists only in test builds of the phone apps, uses the phone recogniser on the device and sends nothing', () => {
-      expect(flow.status).toBe('testOnly');
+    it('is an experimental feature of the phone apps, uses the phone recogniser on the device and sends nothing', () => {
+      expect(flow.status).toBe('experimental');
       expect(flow.platforms).toEqual(['android', 'ios']);
       expect(flow.permissions).toEqual(['microphone', 'speechRecognition']);
       expect(flow.modelFrom).toBe('phoneSystem');
@@ -310,11 +340,23 @@ describe('the data flows behind the privacy policy', () => {
     });
 
     it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
-      'is described in the %s policy: optional, test versions only, on the device, never sent, how to turn it off',
+      'is described in the %s policy: optional, experimental, on the device, never sent, how to turn it off',
       (locale) => {
         const words = HANDS_FREE_WORDS[locale];
         const row = JSON.stringify(dataRow(locale, flow.dataCategory));
         for (const [key, pattern] of Object.entries(words)) expect(row, key).toMatch(pattern);
+        // It names the switch and the first mode exactly as the app shows them.
+        const ui = JSON.parse(
+          readFileSync(resolve(__dirname, '..', 'i18n', VOICE_TEST_UI[locale]), 'utf8'),
+        ) as {
+          voiceLab: { settings: { section: string; switch: string }; modes: { try: string } };
+        };
+        expect(row).toContain(
+          `${SETTINGS_WORD[locale]} > ${ui.voiceLab.settings.section} > ${ui.voiceLab.settings.switch}`,
+        );
+        expect(row).toContain(ui.voiceLab.modes.try);
+        // Nothing in the policy still says it exists only in test versions.
+        expect(JSON.stringify(POLICY_DOCUMENTS[locale])).not.toMatch(TEST_BUILD_WORDS[locale]);
         // The note under "What we collect" says where the microphone is asked, per platform.
         const data = JSON.stringify(sectionOf(locale, 'data'));
         for (const key of ['name', 'phones', 'settings'] as const)

@@ -1,12 +1,54 @@
 {
   "voiceLab": {
-    "title": "Voice lab",
-    "intro": "A test build tool for the hands-free mode. Speech is recognised on this phone only: the lab sends and records no audio. Nothing you say becomes an entry, nothing is sent to Lotties and no baby data is read. Results stay on this screen until you export them.",
-    "link": "Open the voice lab",
-    "linkHint": "Test build only: measures how well this phone understands the spoken commands.",
+    "title": "Voice test (experimental)",
+    "nothingRecorded": "Nothing is recorded.",
+    "intro": "See how well Lotties understands what you say. Speech is recognised on this phone, and nothing you say becomes an entry.",
+    "noOnDevice": "This phone cannot recognise this language on the device, so the voice test cannot run here. Lotties never sends your voice to a server instead.",
+    "technical": "Technical details",
+    "modes": {
+      "label": "Mode",
+      "try": "Try it",
+      "guided": "Guided test"
+    },
+    "settings": {
+      "section": "Experimental",
+      "switch": "Hands-free (voice test)",
+      "description": "Try how well Lotties understands spoken commands. Off until you turn it on.",
+      "open": "Open voice test"
+    },
+    "optIn": {
+      "title": "Turn on the voice test?",
+      "points": {
+        "experimental": "This is an experimental test of how well Lotties understands spoken commands.",
+        "nothingRecorded": "It records nothing and changes no baby data: nothing you say becomes an entry.",
+        "microphone": "The microphone is used only after you tap to speak. The phone asks for permission the first time.",
+        "onPhone": "Speech is recognised on this phone. Lotties does not record or send the audio.",
+        "turnOff": "You can turn it off at any time, here in Settings."
+      },
+      "turnOn": "Turn on"
+    },
+    "tryIt": {
+      "hint": "Tap the button and say something you would log, such as “bottle of 120 ml” or “fell asleep”. You will see what the phone heard and what Lotties would do. Nothing is logged.",
+      "speak": "Tap to speak",
+      "heard": "The phone heard",
+      "quoted": "“{{text}}”",
+      "wouldLog": "Lotties would log: {{command}}",
+      "wouldAnswer": {
+        "ask_milk_today": "Lotties would answer how much milk was drunk today",
+        "ask_last_feed": "Lotties would answer when the last feed was"
+      },
+      "needsAmount": "Lotties would not log anything: the amount is missing.",
+      "outOfRange": "Lotties would not log anything: {{amount}} is outside the amounts accepted by voice.",
+      "ambiguous": "Lotties would not log anything: it could mean more than one thing.",
+      "notUnderstood": "Lotties would not log anything ({{reason}}).",
+      "kept": "This was only a test: nothing was logged. The last 5 tries stay on this screen and are gone when you leave it."
+    },
+    "guided": {
+      "hint": "Read each phrase aloud as it is written. At the end you see a summary and, if you want, you can export the results as a file."
+    },
     "setup": {
       "language": "Language",
-      "onDeviceOnly": "Recognised on this phone only. If the phone cannot recognise this language on the device, the lab says so: it never uses a server.",
+      "onDeviceOnly": "Recognised on this phone only. If the phone cannot recognise this language on the device, the test says so: it never uses a server.",
       "condition": "Condition",
       "languages": {
         "pt-BR": "Português",
@@ -74,7 +116,7 @@
     "phrase": {
       "counter": "Phrase {{n}} of {{total}} (test phrase #{{number}})",
       "expected": "Expected: {{command}}",
-      "done": "Every phrase of this run has an attempt. Change the engine or the condition for the next run, or retry a phrase.",
+      "done": "Every phrase of this run has an attempt. Change the language or the condition for the next run, or go back to retry a phrase.",
       "restart": "Back to phrase 1"
     },
     "speak": "Speak",
@@ -90,7 +132,7 @@
     "result": {
       "heard": "What the phone heard",
       "noText": "No text",
-      "parsed": "Parsed: {{result}}",
+      "parsed": "Understood as: {{result}}",
       "matched": "Taken from alternative {{n}}",
       "alternative": "{{text}} (confidence {{confidence}})",
       "pass": "Pass",
@@ -136,11 +178,11 @@
       "askLastFeed": "Question: last feed"
     },
     "outcome": {
-      "needsAmount": "Needs an amount (nothing logged)",
-      "outOfRange": "Amount out of range, {{amount}} (nothing logged)",
-      "ambiguous": "Ambiguous (nothing logged)",
-      "notUnderstood": "Not understood: {{reason}} (nothing logged)",
-      "nothing": "Nothing logged"
+      "needsAmount": "Needs an amount (would log nothing)",
+      "outOfRange": "Amount out of range, {{amount}} (would log nothing)",
+      "ambiguous": "Ambiguous (would log nothing)",
+      "notUnderstood": "Not understood: {{reason}} (would log nothing)",
+      "nothing": "Would log nothing"
     },
     "reason": {
       "empty": "no text",
@@ -160,7 +202,7 @@
     "seconds": "{{value}} s",
     "summary": {
       "title": "Summary",
-      "hint": "First attempts only. Targets of the spike: accuracy 90 % in C1 and 80 % in C2 and C3, wrong actions 2 % at most and no wrong amount in C1, phrases 22 to 24 log nothing, latency median 1.5 s and 90th percentile 3 s, and in C4 every phrase produces text.",
+      "hint": "First attempts only. Targets of the test: accuracy 90 % in C1 and 80 % in C2 and C3, wrong actions 2 % at most and no wrong amount in C1, phrases 22 to 24 log nothing, latency median 1.5 s and 90th percentile 3 s, and in C4 every phrase produces text.",
       "empty": "No attempts yet.",
       "language": "Language",
       "condition": "Condition",
@@ -180,14 +222,9 @@
     },
     "export": {
       "button": "Export results",
-      "hint": "A JSON file with the test phrases, what the phone heard, the parsed commands and the summary, through the share sheet. Free tries are not in it.",
+      "hint": "A JSON file with the test phrases, what the phone heard, how it was understood and the summary, plus the app version and what the phone reports about speech recognition (platform, system version, languages, permissions). It goes through the share sheet, and only you choose where. Your tries in Try it are not in it.",
       "done": "Results exported.",
       "failed": "The export did not work."
-    },
-    "freeTry": {
-      "title": "Free try",
-      "hint": "Say anything to see what the phone hears and how the parser reads it. Free tries are not counted, not exported and gone when you leave this screen.",
-      "speak": "Speak (free try)"
     },
     "keys": {
       "title": "Key logger",

@@ -1,0 +1,4 @@
+/* Textos das permissões (pt-BR): o teste de voz experimental (docs/design/49a-voice-lab.md). */
+
+"NSMicrophoneUsageDescription" = "O Lotties usa o microfone só no teste de voz experimental, depois que você toca para falar, para conferir o quanto o app entende comandos falados. Nada é gravado.";
+"NSSpeechRecognitionUsageDescription" = "O teste de voz experimental transforma o que você fala em texto neste iPhone para conferir os comandos falados. A fala é reconhecida só no iPhone: o Lotties não grava nem envia o áudio.";

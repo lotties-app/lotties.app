@@ -10,8 +10,8 @@ import { seedBaby } from '../test/seed';
 import { voiceLabEnabled, voiceLabFlagOn } from './featureFlag';
 
 /*
- * The voice lab is compiled only with VITE_VOICE_LAB=true (docs/design/49a-voice-lab.md): this build
- * (the tests run without the flag) has no /lab/voice route and no Settings line, and the app's static
+ * The voice test is compiled only with VITE_VOICE_LAB=true (docs/design/49a-voice-lab.md): this build
+ * (the tests run without the flag) has no /lab/voice route and no Experimental group, and the app's static
  * import graph never reaches the lab, the speech engines or the parser. The production bundle itself
  * is checked by building it (the design doc names the command).
  */
@@ -74,8 +74,8 @@ describe('the voice lab switch', () => {
       new RegExp(
         String.raw`import\.meta\.env\.VITE_VOICE_LAB === 'true'\s*\?\s*lazy\(\(\) => import\('${target}'\)\)\s*:\s*null`,
       ).test(readFileSync(path.join(SRC, file), 'utf8'));
-    expect(guard('AppRoutes.tsx', './voiceLab/VoiceLabPage')).toBe(true);
-    expect(guard('pages/SettingsPage.tsx', '../voiceLab/VoiceLabLink')).toBe(true);
+    expect(guard('AppRoutes.tsx', './voiceLab/VoiceLabRoute')).toBe(true);
+    expect(guard('pages/SettingsPage.tsx', '../voiceLab/VoiceTestSetting')).toBe(true);
     const importers = ['AppRoutes.tsx', 'pages/SettingsPage.tsx'].filter((file) =>
       /from '\.{1,2}\/voiceLab\//.test(readFileSync(path.join(SRC, file), 'utf8')),
     );
@@ -101,12 +101,13 @@ describe('a build without the voice lab', () => {
     expect(
       await screen.findByRole('link', { name: 'Voice commands: what you can say' }),
     ).toBeTruthy();
-    expect(screen.queryByTestId('voice-lab-link')).toBeNull();
+    expect(screen.queryByTestId('voice-test-setting')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Experimental' })).toBeNull();
     settings.unmount();
 
     renderWithDb(db, <AppRoutes />, { route: '/lab/voice' });
     await settleSync();
     expect(screen.queryByTestId('voice-lab')).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Voice lab' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Voice test (experimental)' })).toBeNull();
   });
 });

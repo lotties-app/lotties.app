@@ -12,7 +12,7 @@ public class MainActivity extends BridgeActivity {
         // App-local plugins are registered before the bridge starts (super.onCreate).
         registerPlugin(LottiesSharedPlugin.class);
         registerPlugin(LottiesVoicePlugin.class);
-        // The voice lab's recogniser (spike branch feat/voice-lab only, docs/design/49a-voice-lab.md).
+        // The experimental voice test's recogniser (docs/design/49a-voice-lab.md).
         registerPlugin(LottiesSpeechPlugin.class);
         super.onCreate(savedInstanceState);
     }

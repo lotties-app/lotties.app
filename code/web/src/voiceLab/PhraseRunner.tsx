@@ -15,6 +15,7 @@ export function PhraseRunner({ lab }: { lab: VoiceLab }) {
   const { locale } = useLocale();
   const { phrase, record } = lab;
   const listening = lab.speaking === 'phrase';
+  const error = lab.errorFor('phrase');
 
   if (!phrase) {
     return (
@@ -81,8 +82,8 @@ export function PhraseRunner({ lab }: { lab: VoiceLab }) {
             onCancel={lab.cancel}
           />
         )}
-        {lab.error && !listening && lab.speaking === null && (
-          <Alert severity="info">{t(`voiceLab.errors.${lab.error}`)}</Alert>
+        {error && lab.speaking === null && (
+          <Alert severity="info">{t(`voiceLab.errors.${error}`)}</Alert>
         )}
       </Stack>
     </Paper>

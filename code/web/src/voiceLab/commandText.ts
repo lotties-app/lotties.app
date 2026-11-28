@@ -69,6 +69,37 @@ export function resultText(result: ParseResult, locale: Locale): string {
   }
 }
 
+/**
+ * What Lotties would do with what was heard, for the free try ("Try it"): always in the conditional,
+ * because the voice test never logs anything.
+ */
+export function wouldDoText(result: ParseResult, locale: Locale): string {
+  switch (result.outcome) {
+    case 'command':
+      if (result.command.kind === 'ask_milk_today' || result.command.kind === 'ask_last_feed') {
+        return t(`voiceLab.tryIt.wouldAnswer.${result.command.kind}`, { lng: locale });
+      }
+      return t('voiceLab.tryIt.wouldLog', {
+        command: commandText(result.command, locale),
+        lng: locale,
+      });
+    case 'needs_amount':
+      return t('voiceLab.tryIt.needsAmount', { lng: locale });
+    case 'out_of_range':
+      return t('voiceLab.tryIt.outOfRange', {
+        amount: amount(result.amountMl, locale),
+        lng: locale,
+      });
+    case 'ambiguous':
+      return t('voiceLab.tryIt.ambiguous', { lng: locale });
+    case 'not_understood':
+      return t('voiceLab.tryIt.notUnderstood', {
+        reason: t(`voiceLab.reason.${result.reason}`, { lng: locale }),
+        lng: locale,
+      });
+  }
+}
+
 /** `1.24 s`. */
 export const secondsText = (ms: number, locale: Locale) =>
   t('voiceLab.seconds', {

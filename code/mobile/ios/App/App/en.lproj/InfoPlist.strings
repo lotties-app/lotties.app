@@ -1,0 +1,4 @@
+/* Permission purpose strings (en): the experimental voice test (docs/design/49a-voice-lab.md). Info.plist holds the same English text as the default. */
+
+"NSMicrophoneUsageDescription" = "Lotties uses the microphone only in the experimental voice test, after you tap to speak, to check how well the app understands spoken commands. Nothing is recorded.";
+"NSSpeechRecognitionUsageDescription" = "The experimental voice test turns what you say into text on this iPhone to check the spoken commands. Speech is recognised on the iPhone only: Lotties does not record or send the audio.";

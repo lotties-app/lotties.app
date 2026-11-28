@@ -27,9 +27,14 @@ import { ProfileSection } from '../settings/ProfileSection';
 import { DataLocationSection } from '../byoDatabase/DataLocationSection';
 import { CommunityInsightsSection } from '../communityInsights/CommunityInsightsSection';
 
-/** The voice lab's line (spike branch only): absent, with its chunk, from builds without VITE_VOICE_LAB. */
-const VoiceLabLink =
-  import.meta.env.VITE_VOICE_LAB === 'true' ? lazy(() => import('../voiceLab/VoiceLabLink')) : null;
+/**
+ * The Experimental group with the voice test's switch (docs/design/49a-voice-lab.md): absent, with its
+ * chunk, from builds without VITE_VOICE_LAB; in a build with it, shown only inside the phone app.
+ */
+const VoiceTestSetting =
+  import.meta.env.VITE_VOICE_LAB === 'true'
+    ? lazy(() => import('../voiceLab/VoiceTestSetting'))
+    : null;
 
 /**
  * Sections that moved to the Hub: an old `/settings#medications` link (a bookmark, a reminder or
@@ -139,14 +144,14 @@ export function SettingsPage() {
         >
           <Stack spacing={1.5}>
             <VoiceCommandsLink />
-            {VoiceLabLink && (
-              <Suspense fallback={null}>
-                <VoiceLabLink />
-              </Suspense>
-            )}
             <VoiceAssistantsSection babies={babies} />
           </Stack>
         </SettingsSection>
+      )}
+      {VoiceTestSetting && (
+        <Suspense fallback={null}>
+          <VoiceTestSetting expanded={wants('experimental')} />
+        </Suspense>
       )}
       <SettingsSection
         id="appearance"

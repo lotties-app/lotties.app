@@ -6,34 +6,41 @@ import { LAB_CONDITIONS, LAB_LOCALES, type LabCondition } from './labPhrases';
 import type { VoiceLab } from './useVoiceLab';
 
 /**
- * Language and condition of the run. There is no engine choice: speech is recognised on the phone
- * only (server and Web recognition were left out on purpose, docs/design/49a-voice-lab.md).
+ * The language spoken (both modes). There is no engine choice: speech is recognised on the phone only
+ * (server and Web recognition were left out on purpose, docs/design/49a-voice-lab.md).
  */
+export function LanguageField({ lab }: { lab: VoiceLab }) {
+  const { t } = useTranslation();
+  return (
+    <Field
+      label={t('voiceLab.setup.language')}
+      group
+      disabled={lab.speaking !== null}
+      help={t('voiceLab.setup.onDeviceOnly')}
+    >
+      <SegmentedControl<SpeechLocale>
+        value={lab.settings.locale}
+        options={LAB_LOCALES.map((value) => ({
+          value,
+          label: t(`voiceLab.setup.languages.${value}`),
+        }))}
+        onChange={(locale) => locale && lab.change({ locale })}
+      />
+    </Field>
+  );
+}
+
+/** Language and condition of a guided run. */
 export function LabSetup({ lab }: { lab: VoiceLab }) {
   const { t } = useTranslation();
   const { settings, change } = lab;
-  const busy = lab.speaking !== null;
   return (
     <Stack spacing={2}>
-      <Field
-        label={t('voiceLab.setup.language')}
-        group
-        disabled={busy}
-        help={t('voiceLab.setup.onDeviceOnly')}
-      >
-        <SegmentedControl<SpeechLocale>
-          value={settings.locale}
-          options={LAB_LOCALES.map((value) => ({
-            value,
-            label: t(`voiceLab.setup.languages.${value}`),
-          }))}
-          onChange={(locale) => locale && change({ locale })}
-        />
-      </Field>
+      <LanguageField lab={lab} />
       <Field
         label={t('voiceLab.setup.condition')}
         group
-        disabled={busy}
+        disabled={lab.speaking !== null}
         help={t(`voiceLab.setup.conditionHelp.${settings.condition}`)}
       >
         <SegmentedControl<LabCondition>

@@ -55,3 +55,38 @@ describe('on-device recognition only', () => {
     expect(plugin).toMatch(/getBool\("onDevice"\) == false[\s\S]{0,200}"not_supported"/);
   });
 });
+
+describe('the iOS permission texts', () => {
+  const KEYS = ['NSMicrophoneUsageDescription', 'NSSpeechRecognitionUsageDescription'];
+  const stringsOf = (lang: string) => {
+    const text = read(`code/mobile/ios/App/App/${lang}.lproj/InfoPlist.strings`);
+    return Object.fromEntries(
+      [...text.matchAll(/^"(\w+)" = "((?:[^"\\]|\\.)*)";$/gm)].map((m) => [m[1], m[2]]),
+    );
+  };
+
+  it('are translated in en and pt-BR, say nothing is recorded, and the plist default is the English one', () => {
+    const plist = read('code/mobile/ios/App/App/Info.plist');
+    const en = stringsOf('en');
+    const pt = stringsOf('pt-BR');
+    for (const key of KEYS) {
+      expect(en[key], key).toBeTruthy();
+      expect(pt[key], key).toBeTruthy();
+      const entry = plist.match(new RegExp(`<key>${key}</key>\\s*<string>([^<]*)</string>`));
+      expect(entry?.[1], key).toBe(en[key]);
+    }
+    expect(en.NSSpeechRecognitionUsageDescription).toMatch(/does not record or send the audio/);
+    expect(pt.NSSpeechRecognitionUsageDescription).toMatch(/não grava nem envia o áudio/);
+    // Neither calls the app a beta, demo or test version (App Store 2.2).
+    for (const text of [...Object.values(en), ...Object.values(pt)]) {
+      expect(text).not.toMatch(/beta|demo|test build|versão de teste/i);
+    }
+  });
+
+  it('are bundled with the app (a variant group in the App target resources)', () => {
+    const project = read('code/mobile/ios/App/App.xcodeproj/project.pbxproj');
+    expect(project).toContain('path = en.lproj/InfoPlist.strings;');
+    expect(project).toContain('path = "pt-BR.lproj/InfoPlist.strings";');
+    expect(project).toMatch(/\/\* InfoPlist\.strings in Resources \*\/,/);
+  });
+});

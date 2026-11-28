@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /*
- * Screenshots of the voice lab (docs/design/49a-voice-lab.md, spike branch feat/voice-lab) from the
+ * Screenshots of the experimental voice test (docs/design/49a-voice-lab.md) from the
  * developer-only `/dev/voice-lab` preview: scripted speech engines (no microphone, no plugin), no
  * sign-in, no API and no stored session. The dev server runs with VITE_VOICE_LAB=true (the preview
  * route exists only then), dummy settings and its own port.

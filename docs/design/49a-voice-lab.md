@@ -1,12 +1,39 @@
-# 49a. Voice lab spike (Phase 0 of the hands-free mode, 2026-11-28)
+# 49a. Voice test (Phase 0 of the hands-free mode, 2026-11-28)
 
-> **This branch (`feat/voice-lab`) is a spike and is NOT to be merged into `main`.** It exists so a Mobile release
-> run on this ref puts the voice lab on the owner's own phones (TestFlight internal, Play internal). It turns the
-> lab on in `code/web/.env.native` (`VITE_VOICE_LAB=true`), asks Android for `RECORD_AUDIO`, declares the iOS
-> microphone and speech recognition purpose strings and registers a native plugin, none of which the shipped
-> privacy policy, the privacy audit (design 33) or the store forms describe. What may later go to `main` (the
-> parser, the plugin) goes through Phase 1 of design 49 with its policy, audit and store changes, not by merging
-> this branch.
+> **Owner decision of 2026-11-28 (replaces "this branch is never merged"):** "release it in the normal app: the test
+> screen enters the published apps as experimental, off by default; whoever wants to test turns it on. The privacy
+> policy stops saying 'only in test versions'. It still records nothing." Branch `feat/voice-lab` therefore becomes one
+> PR to `main`: the phone builds (`code/web/.env.native`, `VITE_VOICE_LAB=true`) carry the voice test, Android
+> `RECORD_AUDIO`, the iOS microphone and speech recognition purpose strings and the `LottiesSpeech` plugin; the web builds
+> do not set the flag and hold none of it. Policy 18 (minor, consent `2026-11-28.1`), audit section 21 and design 20
+> describe it. Section 0 below is the opt-in; the rest is the lab as built for the spike.
+
+## 0. Opt-in in the published apps
+
+- **Where**: only inside the iOS and Android apps (`isNativeApp()`) of a build with `VITE_VOICE_LAB=true`
+  (`voiceLab/featureFlag.ts` `voiceTestOffered`). Elsewhere: no Settings group, and `/lab/voice` goes to Settings.
+- **Switch**: Settings > **Experimental** > **Hands-free (voice test)** (`voiceLab/VoiceTestSetting.tsx`, lazy behind the
+  inline flag in `SettingsPage`), off by default. Turning it on first shows an explainer (experimental test of voice
+  understanding; records nothing and changes no baby data; microphone only after a tap to speak; recognised on the phone,
+  Lotties does not record or send the audio; can be turned off any time) with **Turn on** / **Cancel**. The switch calls
+  nothing native: the phone's permission prompt appears only at the first tap to speak inside the test.
+- **Stored**: `localStorage` `lotties.voice-test.opt-in` (`settings/voiceTestOptIn.ts`, outside `voiceLab/` so the
+  sign-out clean-up can import it without pulling the test into the app entry). It is part of the account's device state,
+  like the cry monitor's consent: `clearAccountDeviceState` removes it at sign-out and `claimDeviceState` when another
+  account signs in on the phone, so a different account never inherits the opt-in.
+- **On**: a button **Open voice test** (`/lab/voice`). **Off** (switch, sign-out, another tab): `VoiceLabRoute` sends
+  the person to `/settings#experimental`; an open page unmounts, which cancels a listen and drops every result.
+- **Page**: "Voice test (experimental)", the line "Nothing is recorded.", then two modes: **Try it** (first, default: tap,
+  speak, see what the phone heard and what Lotties *would* log or answer, never "logged"; the last 5 tries on screen
+  only, never exported) and **Guided test** (the phrase list, summary, export, as below). What the phone reports and the
+  key logger sit under a folded **Technical details**. When the phone reports no on-device recognition for the language
+  the page says the test cannot run there and that Lotties never uses a server instead.
+- **Wording**: "experimental" feature, never "beta", "demo" or "test version" of the app (App Store 2.2; design 20).
+  The iOS purpose strings are localised (`en.lproj` / `pt-BR.lproj` `InfoPlist.strings`, English default in `Info.plist`,
+  checked by `onDeviceOnly.test.ts`); `PrivacyInfo.xcprivacy` needs no change (no required-reason API in the plugin, no
+  audio collected).
+- **Not in the voice commands guide**: the test logs nothing, so it adds no command to `docs/VOICE-COMMANDS.md` or the
+  catalog. **No showcase media**: a native-only experimental switch is not something web visitors see.
 
 Design: docs/design/49-hands-free.md (on branch `docs/hands-free-design`), section 7 is the spec. Status: built and
 unit-tested on the web side; the native plugin is written against the official API references and the Capacitor
@@ -24,14 +51,14 @@ the spike no longer measures how much worse on-device is than the server (sectio
 
 | Part | Where | What it does |
 | --- | --- | --- |
-| Switch | `code/web/src/voiceLab/featureFlag.ts` | `VITE_VOICE_LAB`, on only for `true` (the `VITE_CRY_MONITOR` pattern). The route and the Settings line import their chunks only behind the inline comparison `import.meta.env.VITE_VOICE_LAB === 'true'`, so a build without it has no lab chunk |
-| Lab page | `code/web/src/voiceLab/` (`VoiceLabPage.tsx` at `/lab/voice`, inside the app shell) | Language and condition; what the phone reports; one phrase at a time with a large Speak button, the listening state and Cancel; after a result the n-best texts, the parsed command, pass or fail, latency, Retry and Next; the summary table; Export results; free try; key logger |
-| Settings line | `voiceLab/VoiceLabLink.tsx` | One line in Settings > Voice assistants, only in the lab build |
+| Switch | `code/web/src/voiceLab/featureFlag.ts` | `VITE_VOICE_LAB`, on only for `true` (the `VITE_CRY_MONITOR` pattern); `voiceTestOffered()` adds the native-app check. The route and the Settings group import their chunks only behind the inline comparison `import.meta.env.VITE_VOICE_LAB === 'true'`, so a build without it has no lab chunk |
+| Lab page | `code/web/src/voiceLab/` (`VoiceLabRoute.tsx` at `/lab/voice`, inside the app shell, guards `VoiceLabPage.tsx`) | Section 0: Try it (`FreeTry.tsx`), Guided test (language and condition; one phrase at a time with a large Speak button, the listening state and Cancel; after a result the n-best texts, the parsed command, pass or fail, latency, Retry and Next; the summary table; Export results), Technical details (what the phone reports, key logger) |
+| Settings group | `voiceLab/VoiceTestSetting.tsx`, `settings/voiceTestOptIn.ts`, `voiceLab/useVoiceTestOptIn.ts` | Settings > Experimental, the opt-in switch and its explainer (section 0) |
 | Parser v0 | `code/web/src/voice/` (`commandParser.ts`, `tokens.ts`, `numberWords.ts`, `lexicon.ts`, `speechHints.ts`) | Kept for Phase 1. Shared vectors `voice/handsFreeCommandVectors.json` |
 | Speech adapter | `code/web/src/platform/speech.ts`, `speechTypes.ts` | `speechPlatform()`: the `LottiesSpeech` plugin inside the app (lazy `@capacitor/core`), always asked for on-device recognition; an answer not marked on-device is not used. In a browser: no engine |
 | Android plugin | `code/mobile/android/app/src/main/java/app/lotties/app/speech/` (`LottiesSpeechPlugin.kt`, `SpeechCodes.kt` + JVM test) | Registered in `MainActivity.java`; `RECORD_AUDIO` and the `android.speech.RecognitionService` `<queries>` entry in `AndroidManifest.xml` |
-| iOS plugin | `code/mobile/ios/App/App/LottiesSpeechPlugin.swift` | Registered in `LottiesBridgeViewController.swift`, added to `App.xcodeproj`; `NSMicrophoneUsageDescription` and `NSSpeechRecognitionUsageDescription` (one string in English and Portuguese each; the speech one says recognition is on the iPhone only) in `Info.plist` |
-| Guards | `voiceLab/onDeviceOnly.test.ts`, `voiceLabSwitch.test.tsx` | No source uses `SpeechRecognition`; the adapter always sends `onDevice: true`; the Kotlin plugin never calls `createSpeechRecognizer` and refuses `onDevice == false`; the Swift plugin always sets `requiresOnDeviceRecognition = true` and refuses `onDevice == false`; flag off: no route, no line, nothing in the app's static graph |
+| iOS plugin | `code/mobile/ios/App/App/LottiesSpeechPlugin.swift` | Registered in `LottiesBridgeViewController.swift`, added to `App.xcodeproj`; `NSMicrophoneUsageDescription` and `NSSpeechRecognitionUsageDescription` in `Info.plist` (English default), translated in `en.lproj` and `pt-BR.lproj` `InfoPlist.strings` (a variant group in the App target's resources, like `AppShortcuts.strings`); the speech one says recognition is on the iPhone only |
+| Guards | `voiceLab/onDeviceOnly.test.ts`, `voiceLabSwitch.test.tsx`, `voiceLabRoute.test.tsx` | No source uses `SpeechRecognition`; the adapter always sends `onDevice: true`; the Kotlin plugin never calls `createSpeechRecognizer` and refuses `onDevice == false`; the Swift plugin always sets `requiresOnDeviceRecognition = true` and refuses `onDevice == false`; the purpose strings exist in both languages and never say beta, demo or test build; flag off: no route, no group, nothing in the app's static graph; flag on: nothing outside the app, off by default, explainer first, no plugin call from the switch, off or sign-out leaves the page |
 | Preview | `code/web/src/dev/VoiceLabPreview.tsx` (`/dev/voice-lab`, dev server with the flag only), `voiceLab/fakeSpeech.ts` | Scripted engine for tests and screenshots: `tests/e2e/design-review/voice-lab-preview.config.ts` |
 
 Not built (section 7.2 allows it): iOS 26 `SpeechTranscriber` (deferred: it needs `AssetInventory`, an audio format
@@ -66,8 +93,8 @@ engines: removed (above).
   `platform/saveFile.ts` (share sheet in the app): format `lotties-voice-lab` v1, app version and commit, what the
   phone reported per language, every test-phrase record (phrase, expected, engine `on_device`, condition, retries,
   first and latest attempt: n-best texts, confidences, parsed result, pass, wrong action, latency, error) and the
-  summary. **Free tries are never in it** (anything could have been said; tested in `VoiceLabPage.test.tsx`); they
-  stay on screen (last 5) until the page closes, and the free-try panel says so.
+  summary. **Free tries (Try it) are never in it** (anything could have been said; tested in `VoiceLabPage.test.tsx`);
+  they stay on screen (last 5) until the page closes, and the Try it panel says so.
 - **Key logger**: while its panel is open, every `keydown` (key, code, time), the last 20.
 - **Isolation**: the lab writes no event and nothing to Dexie, the outbox or the server, reads no baby data, calls
   no API, and logs nothing (no `console`, no `appLog`; the in-app Logs feature records only explicit `appLog`
@@ -139,64 +166,57 @@ Methods: `capabilities({locale})`, `listenOnce({locale, onDevice: true, hints, m
 
 | What | How | Result (2026-11-28) |
 | --- | --- | --- |
-| Web unit tests | `npm --prefix code/web test -- run` | The lab, parser and speech tests pass (825 in the touched folders after the on-device-only change; parser vectors and properties 704). Whole suite before the change: 5857 pass; one Settings test timed out under the full parallel load and passes alone; one suite cannot load locally (`@mui/icons-material` missing from this machine's node_modules, known) |
+| Web unit tests | `npm --prefix code/web test -- run` | After the opt-in (section 0): 5918 of 5919 pass; the one failure is a Settings test that timed out under the full parallel load and passes alone; one suite cannot load locally (`@mui/icons-material` missing from this machine's node_modules, known). A stale per-checkout `code/web/.vite-cache/vitest-modules` made `catalogs.test.ts` miss a merged catalog file until it was deleted |
 | Lint, format, types | `npm --prefix code/web run lint`, `npx prettier --check`, `tsc -p tsconfig.json --noEmit` | clean except the known local `@mui/icons-material` gap |
-| No lab in a build without the flag | `npx vite build --outDir <tmp>` in code/web, then search the output for `LottiesSpeech`, `/lab/voice`, `lotties-voice-lab` | none found; `VoiceLabPage-*.js` and `VoiceLabLink-*.js` exist only in `vite build --mode native` (flag on). The catalogs still carry the `voiceLab.*` strings (the i18n chunks hold every feature's text, CLAUDE.md rule) |
+| No voice test in a build without the flag | `npx vite build --outDir <tmp>` in code/web, then search the output for `LottiesSpeech`, `/lab/voice`, `lotties-voice-lab`, `VoiceTestSetting` | none found; the only trace is the opt-in key `lotties.voice-test.opt-in` in the sign-out clean-up (`deviceState` chunk). `VoiceLabRoute-*.js` and `VoiceTestSetting-*.js` exist only in `vite build --mode native` (flag on). The catalogs still carry the `voiceLab.*` strings (the i18n chunks hold every feature's text, CLAUDE.md rule) |
 | No Web Speech in the lab build | `vite build --mode native`, search for `SpeechRecognition` | none found |
-| Screenshots | `cd tests/e2e && npx playwright test -c design-review/voice-lab-preview.config.ts` (port 5418) | `docs/design/screenshots/voice-lab-*.png` (gitignored) |
+| Screenshots | `cd tests/e2e && npx playwright test -c design-review/voice-lab-preview.config.ts` (port 5418; `VOICE_LAB_LOCALES=pt-BR` ran) | `docs/design/screenshots/voice-lab-*.png` (gitignored): settings off and on, explainer, Try it start and result, guided pass, fail, summary, technical details, listening, no on-device; no sideways scroll at 360 px |
 | Android compile, lint, JVM tests | push the branch, then `gh workflow run android-compile-check.yml --ref feat/voice-lab` | not run |
 | iOS compile (Xcode 26.5, no signing) | `gh workflow run ios-compile-check.yml --ref feat/voice-lab` | not run |
 
 ## 7. Getting it on the phones
 
-Mobile release on this ref (no workflow change; `workflow_dispatch` runs the workflow file of the chosen ref):
-`gh workflow run mobile-release.yml --ref feat/voice-lab -f version=<the version of the latest main build> -f
-upload_play=true -f upload_testflight=true` (after the branch is pushed and both compile checks are green).
+The voice test ships with the normal Mobile release from `main` once this branch's PR is merged (no workflow change):
+every phone build from `main` has it, off until the person turns it on. Before the first such release:
 
-What to know before running it:
-
-- **Version and build number**: the build number is the workflow run number, shared by every ref, so the next run
-  from `main` is higher and replaces the lab build on both tracks. Pass the same marketing version as the latest
-  `main` build (without `version` the workflow takes `code/mobile/package.json`, `0.1.0`); App Store Connect refuses a
-  marketing version lower than one already approved for release (none so far, UNVERIFIED for this account).
-- **No tag, no GitHub release**: the `github-release` job runs only for `mobile-v*` tags; a manual run creates none.
-  The Gradle cache is read-only outside `main` (slower, harmless).
+- **Compile checks**: run `android-compile-check.yml` and `ios-compile-check.yml` on the PR (the native code was never
+  compiled locally; the iOS project gained the `InfoPlist.strings` variant group).
 - **Signing and provisioning**: unchanged. Speech recognition and the microphone need no entitlement or App ID
-  capability, so the existing App Store profiles (App Group, `aps-environment`) still match. The secrets are
-  repository secrets with no environment protection, so a run on this ref can read them.
-- **iOS upload**: both purpose strings are in `Info.plist` (a missing one fails App Store Connect processing).
-  TestFlight internal testers get the build without Beta App Review; do not add it to the external (public link)
-  group, and check that no external group distributes new builds automatically.
-- **Play internal track**: `RECORD_AUDIO` is a runtime permission with no Play declaration form (it is not one of the
-  restricted permissions, UNVERIFIED against today's Play Console). With on-device recognition only, no audio is
-  collected (Play: data processed only on the device is not collected); whether handing the microphone to the
-  system's on-device recognition service counts as sharing with another app on the device stays the open question of
-  design 49 section 3.4. Play may show a policy warning for the upload: read the Play Console inbox after it.
-- **Policy text**: the shipped privacy policy says the app asks for the microphone only for the web cry monitor;
-  testers of this build see a microphone prompt in the native app. Acceptable only because the build goes to the
-  owner's internal testers (design 49 section 10 Q8: know who is on both lists).
+  capability, so the existing App Store profiles (App Group, `aps-environment`) still match.
+- **iOS upload**: both purpose strings are in `Info.plist` (a missing one fails App Store Connect processing) and
+  translated in `InfoPlist.strings`. App Review sees the microphone and speech recognition strings: the review notes
+  should say how to reach the feature (Settings > Experimental > Hands-free (voice test)) and that it records nothing.
+- **Play**: `RECORD_AUDIO` is a runtime permission with no Play declaration form (it is not one of the restricted
+  permissions, UNVERIFIED against today's Play Console). With on-device recognition only, no audio is collected (Play:
+  data processed only on the device is not collected); whether handing the microphone to the system's on-device
+  recognition service counts as sharing with another app on the device stays the open question of design 49 section
+  3.4. Read the Play Console inbox after the upload.
+- **Store forms and policy**: policy 18 (minor) describes the feature; the store answers are the owner's to check
+  (design 20 section 3, "Hands-free voice test"; docs/PRIVACY-OWNER-CHECKLIST.md section 10).
 
 ## 8. Owner steps on each phone
 
-Before: be on the Play internal testers list (Android) and an internal TestFlight tester (iPhone). Install the build
-from the Play Store (internal testing) or TestFlight. Have a second device for the C3 noise (a crying-baby or white
-noise sound, or the TV).
+Have a second device for the C3 noise (a crying-baby or white noise sound, or the TV).
 
-1. Open Lotties, sign in, Settings > Voice assistants > **Open the voice lab**.
-2. Read **What this phone reports** for Português. Android: if the language is "Not installed, can be downloaded",
-   tap **Download this language** (or download it in the phone's speech recognition settings; the path varies by
-   phone), then **Check again**. iPhone: if on-device recognition is No, add Portuguese (Brazil) under Settings >
-   General > Keyboard > Dictation languages, then Check again. If on-device recognition stays No, the phone cannot
-   take part: note it and stop (the lab never uses a server).
-3. Condition **C1** (quiet room, normal voice, phone 30-50 cm): tap **Speak**, allow the microphone (iPhone: speech
-   recognition too) the first time, read the phrase as written, wait for the result, tap **Next**. Use **Retry** only
-   if you misread the phrase (the first attempt counts anyway). 24 phrases.
-4. **C2** night voice, phone on the bed or table about 1 m away: 8 phrases. **C3** with the noise playing: 24
+1. Open Lotties, sign in, Settings > **Experimental** > **Hands-free (voice test)**, read the explainer, **Turn on**,
+   then **Open voice test**.
+2. **Try it** (the default): tap **Tap to speak**, allow the microphone (iPhone: speech recognition too) the first
+   time, say a few things; it shows what the phone heard and what Lotties would log.
+3. Open **Technical details** and read **What this phone reports** for Português. Android: if the language is "Not
+   installed, can be downloaded", tap **Download this language** (or download it in the phone's speech recognition
+   settings; the path varies by phone), then **Check again**. iPhone: if on-device recognition is No, add Portuguese
+   (Brazil) under Settings > General > Keyboard > Dictation languages, then Check again. If on-device recognition stays
+   No, the phone cannot take part: note it and stop (the test never uses a server).
+4. **Guided test**, condition **C1** (quiet room, normal voice, phone 30-50 cm): tap **Speak**, read the phrase as
+   written, wait for the result, tap **Next**. Use **Retry** only if you misread the phrase (the first attempt counts
+   anyway). 24 phrases.
+5. **C2** night voice, phone on the bed or table about 1 m away: 8 phrases. **C3** with the noise playing: 24
    phrases. **C4**: turn on airplane mode: 5 phrases (each must produce text); turn it off after.
-5. Language **English**, C1: 11 phrases.
-6. Open **Key logger**, press each Bluetooth button you want to try (mode c), note what shows.
-7. **Export results** and save the file through the share sheet (it holds the test phrases and what the phone heard,
-   not the free tries); send it to the orchestrator. About 25 minutes per phone.
+6. Language **English**, C1: 11 phrases.
+7. In **Technical details**, open **Key logger**, press each Bluetooth button you want to try (mode c), note what
+   shows.
+8. **Export results** and save the file through the share sheet (it holds the test phrases and what the phone heard,
+   not Try it); send it to the orchestrator. About 25 minutes per phone. Turn the switch off afterwards if you like.
 
 ## 9. Unverified
 

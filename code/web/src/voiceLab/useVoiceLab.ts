@@ -25,24 +25,33 @@ export interface LabSettings {
 
 export type Speaking = 'phrase' | 'free' | null;
 
+/** A free try on screen; the id only keeps the list stable while it scrolls (never exported). */
+export interface FreeTryEntry {
+  id: number;
+  attempt: Attempt;
+}
+
 const runId = ({ engine, condition, locale }: LabSettings) => `${engine}|${condition}|${locale}`;
 
 /**
  * The lab's state, in memory only: the chosen run, the attempts, where each run is, the free tries,
  * the last setup error. Speaking parses at once; the text is kept only inside the attempt shown.
  */
-export function useVoiceLab(platform: SpeechPlatform) {
+export function useVoiceLab(platform: SpeechPlatform, initialLocale: SpeechLocale = 'pt-BR') {
   const listener = useListen(platform);
   const [settings, setSettings] = useState<LabSettings>({
-    locale: 'pt-BR',
+    locale: initialLocale,
     engine: 'on_device',
     condition: 'C1',
   });
   const [records, setRecords] = useState<PhraseRecord[]>([]);
   const [positions, setPositions] = useState<Record<string, number>>({});
-  const [freeTries, setFreeTries] = useState<Attempt[]>([]);
+  const [freeTries, setFreeTries] = useState<FreeTryEntry[]>([]);
+  const [freeTryCount, setFreeTryCount] = useState(0);
   const [speaking, setSpeaking] = useState<Speaking>(null);
-  const [error, setError] = useState<SpeechErrorCode | null>(null);
+  const [error, setError] = useState<{ code: SpeechErrorCode; mode: 'phrase' | 'free' } | null>(
+    null,
+  );
 
   const phrases = phrasesFor(settings.locale, settings.condition);
   const position = Math.min(positions[runId(settings)] ?? 0, phrases.length);
@@ -89,7 +98,7 @@ export function useVoiceLab(platform: SpeechPlatform) {
     const heard = await hear('phrase');
     if (!heard) return;
     if (heard.error && !countsAsAttempt(heard.error)) {
-      setError(heard.error);
+      setError({ code: heard.error, mode: 'phrase' });
       return;
     }
     const attempt = judged(target, target, heard);
@@ -101,11 +110,13 @@ export function useVoiceLab(platform: SpeechPlatform) {
     const heard = await hear('free');
     if (!heard) return;
     if (heard.error && !countsAsAttempt(heard.error)) {
-      setError(heard.error);
+      setError({ code: heard.error, mode: 'free' });
       return;
     }
     const attempt = judged({ locale: settings.locale, units: currentUnitSystem() }, null, heard);
-    setFreeTries((all) => [attempt, ...all].slice(0, FREE_TRIES_KEPT));
+    const id = freeTryCount + 1;
+    setFreeTryCount(id);
+    setFreeTries((all) => [{ id, attempt }, ...all].slice(0, FREE_TRIES_KEPT));
   }
 
   return {
@@ -122,7 +133,8 @@ export function useVoiceLab(platform: SpeechPlatform) {
     speaking,
     listenState: listener.state,
     cancel: listener.cancel,
-    error,
+    /** The last setup problem (refused, no on-device recognition...) of a guided run or a free try. */
+    errorFor: (mode: 'phrase' | 'free') => (error?.mode === mode ? error.code : null),
     speakPhrase,
     speakFree,
   };

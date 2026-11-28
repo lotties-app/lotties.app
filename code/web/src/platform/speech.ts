@@ -11,7 +11,7 @@ import {
 export * from './speechTypes';
 
 /*
- * Speech recognition for the voice lab spike (docs/design/49a-voice-lab.md; design 49 sections 3.2 and
+ * Speech recognition for the experimental voice test (docs/design/49a-voice-lab.md; design 49 sections 3.2 and
  * 7.2), later the hands-free mode: one engine, the phone's own recogniser in on-device mode (local plugin
  * `LottiesSpeech`, Kotlin and Swift in code/mobile). The plugin has no other mode: it refuses
  * `onDevice: false`, and when the phone cannot recognise the language on the device it fails with
