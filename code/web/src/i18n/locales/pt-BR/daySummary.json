@@ -38,7 +38,10 @@
       "feeds_one": "{{count, number}} mamada",
       "feeds_other": "{{count, number}} mamadas",
       "breast": "Peito {{duration}}",
-      "breastSides": "Peito {{duration}} (esquerdo {{left}}, direito {{right}})",
+      "breastParts": "Peito {{duration}} ({{parts}})",
+      "sideLeft": "esquerdo {{duration}}",
+      "sideRight": "direito {{duration}}",
+      "sideNone": "sem lado informado {{duration}}",
       "lastFeed": "Última mamada às {{time}}"
     },
     "diapers": {

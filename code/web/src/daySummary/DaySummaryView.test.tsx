@@ -200,6 +200,46 @@ describe('today', () => {
   });
 });
 
+describe('breast time', () => {
+  it('shows the time without a side as its own part, the parts adding up to the total', async () => {
+    await seed([
+      // 20.6 + 7.6 minutes timed per side in a 30-minute feed: 1.8 minutes without a side.
+      make(FEEDING_TYPE.id, at(0, 8), at(0, 8, 30), {
+        method: 'breast',
+        breast_left_seconds: 1236,
+        breast_right_seconds: 456,
+      }),
+      // A feed logged without side times.
+      make(FEEDING_TYPE.id, at(0, 12), at(0, 12, 5), { method: 'breast' }),
+    ]);
+    renderView();
+    expect(
+      await screen.findByText('Breast 35m (left 21m, right 7m, side not recorded 7m)'),
+    ).toBeTruthy();
+  });
+
+  it('shows only the total when no side was timed', async () => {
+    await useTestLocale('pt-BR');
+    await seed([make(FEEDING_TYPE.id, at(0, 12), at(0, 12, 25), { method: 'breast' })]);
+    renderView();
+    expect(await screen.findByText('Peito 25 min')).toBeTruthy();
+  });
+
+  it('names the part without a side in Portuguese', async () => {
+    await useTestLocale('pt-BR');
+    await seed([
+      make(FEEDING_TYPE.id, at(0, 8), at(0, 8, 20), {
+        method: 'breast',
+        breast_left_seconds: 600,
+      }),
+    ]);
+    renderView();
+    expect(
+      await screen.findByText('Peito 20 min (esquerdo 10 min e sem lado informado 10 min)'),
+    ).toBeTruthy();
+  });
+});
+
 describe('the day navigator', () => {
   it('goes back to yesterday, measured whole, and stops at the first logged day', async () => {
     await seed([...TODAY_EVENTS(), ...loggedDay(1), ...loggedDay(2)]);

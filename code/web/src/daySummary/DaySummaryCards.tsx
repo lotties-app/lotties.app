@@ -1,16 +1,19 @@
 import { useId, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Box, Card, Typography } from '@mui/material';
 import type { EventType } from '../db/models';
 import { eventTypeIconName } from '../events/iconRegistry';
-import { formatDuration, formatNumber, formatTime } from '../i18n/format';
+import { formatDuration, formatList, formatNumber, formatTime } from '../i18n/format';
 import { useEventTypeText } from '../i18n/eventTypeText';
 import { shownMilk } from '../now/milkToday';
 import type { CategoryName } from '../theme/tokens';
 import { useUnits } from '../units/useUnits';
 import { CategoryIcon } from '../ui/CategoryIcon';
 import type { IconName } from '../ui/icons';
+import { shownBreast } from './daySummaryModel';
 import type {
+  BreastTime,
   CryingDay,
   DiaperDayCounts,
   FeedingDay,
@@ -26,6 +29,7 @@ import type {
  */
 
 const duration = (ms: number) => formatDuration(ms);
+const minutes = (count: number) => formatDuration(count * 60_000);
 /** One decimal at most, as a number for the plural rules and `{{count, number}}`. */
 const roundOne = (value: number) => Math.round(value * 10) / 10;
 
@@ -149,6 +153,29 @@ export function SleepDayCard({ sleep, isToday }: { sleep: SleepDay; isToday: boo
   );
 }
 
+/**
+ * "Breast 34m (left 21m, right 8m, side not recorded 5m)": whole minutes from `shownBreast`, so
+ * the parts add up to the total as shown; only the total when no side was timed.
+ */
+function breastText(t: TFunction, breast: BreastTime): string {
+  const shown = shownBreast(breast);
+  const total = minutes(shown.total);
+  if (!breast.hasSides || shown.left + shown.right === 0) {
+    return t('daySummary.feeding.breast', { duration: total });
+  }
+  const parts = [
+    shown.left > 0 ? t('daySummary.feeding.sideLeft', { duration: minutes(shown.left) }) : null,
+    shown.right > 0 ? t('daySummary.feeding.sideRight', { duration: minutes(shown.right) }) : null,
+    shown.unsided > 0
+      ? t('daySummary.feeding.sideNone', { duration: minutes(shown.unsided) })
+      : null,
+  ].filter((part): part is string => part !== null);
+  return t('daySummary.feeding.breastParts', {
+    duration: total,
+    parts: formatList(parts, 'unit'),
+  });
+}
+
 export function FeedingDayCard({ feeding, isToday }: { feeding: FeedingDay; isToday: boolean }) {
   const { t } = useTranslation();
   const units = useUnits();
@@ -178,17 +205,7 @@ export function FeedingDayCard({ feeding, isToday }: { feeding: FeedingDay; isTo
         </Line>
       )}
       {shown && <Line>{feeds}</Line>}
-      {breast && (
-        <Line>
-          {breast.hasSides
-            ? t('daySummary.feeding.breastSides', {
-                duration: duration(breast.totalMs),
-                left: duration(breast.leftMs),
-                right: duration(breast.rightMs),
-              })
-            : t('daySummary.feeding.breast', { duration: duration(breast.totalMs) })}
-        </Line>
-      )}
+      {breast && <Line>{breastText(t, breast)}</Line>}
       {feeding.lastFeedAt && (
         <Line muted>
           {t('daySummary.feeding.lastFeed', { time: formatTime(feeding.lastFeedAt) })}

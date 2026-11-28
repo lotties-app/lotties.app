@@ -16,6 +16,7 @@ import {
   earliestDay,
   hasDaySummaryData,
   queryFrom,
+  shownBreast,
 } from './daySummaryModel';
 
 const HOUR = 3_600_000;
@@ -159,12 +160,52 @@ describe('feeding of the day', () => {
       }),
       feed(at(0, 11), at(0, 11, 10), { method: 'breast' }),
     ]);
+    // 2 minutes of the first feed and the whole second one have no side.
     expect(s.feeding?.breast).toEqual({
       totalMs: 30 * MIN,
       leftMs: 600_000,
       rightMs: 480_000,
+      unsidedMs: 12 * MIN,
       hasSides: true,
     });
+    expect(shownBreast(s.feeding!.breast!)).toEqual({ total: 30, left: 10, right: 8, unsided: 12 });
+  });
+
+  it('counts a feed whose sides add up to more than its effective time at its sides', () => {
+    const s = summary([
+      feed(at(0, 8), at(0, 8, 10), {
+        method: 'breast',
+        breast_left_seconds: 400,
+        breast_right_seconds: 300,
+      }),
+    ]);
+    expect(s.feeding?.breast).toMatchObject({ totalMs: 700_000, unsidedMs: 0 });
+  });
+});
+
+describe('breast time as shown', () => {
+  const time = (left: number, right: number, unsided: number) => ({
+    totalMs: (left + right + unsided) * MIN,
+    leftMs: left * MIN,
+    rightMs: right * MIN,
+    unsidedMs: unsided * MIN,
+    hasSides: left + right > 0,
+  });
+
+  it('rounds the total once and shares it, so the parts add up as shown', () => {
+    // 20.6 + 7.6 = 28.2: shown 28 = 21 + 7, never 21 + 8.
+    expect(shownBreast(time(20.6, 7.6, 0))).toEqual({ total: 28, left: 21, right: 7, unsided: 0 });
+    expect(shownBreast(time(9.5, 9.5, 0))).toEqual({ total: 19, left: 10, right: 9, unsided: 0 });
+    expect(shownBreast(time(0.4, 0.4, 0.4))).toEqual({ total: 1, left: 1, right: 0, unsided: 0 });
+  });
+
+  it('keeps the sum equal to the total for many splits', () => {
+    for (let i = 0; i < 200; i++) {
+      const parts = [((i * 37) % 97) / 7, ((i * 53) % 89) / 9, ((i * 11) % 31) / 5];
+      const shown = shownBreast(time(parts[0], parts[1], parts[2]));
+      expect(shown.left + shown.right + shown.unsided).toBe(shown.total);
+      expect(shown.total).toBe(Math.round(parts[0] + parts[1] + parts[2]));
+    }
   });
 });
 

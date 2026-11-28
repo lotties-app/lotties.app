@@ -38,7 +38,10 @@
       "feeds_one": "{{count, number}} feed",
       "feeds_other": "{{count, number}} feeds",
       "breast": "Breast {{duration}}",
-      "breastSides": "Breast {{duration}} (left {{left}}, right {{right}})",
+      "breastParts": "Breast {{duration}} ({{parts}})",
+      "sideLeft": "left {{duration}}",
+      "sideRight": "right {{duration}}",
+      "sideNone": "side not recorded {{duration}}",
       "lastFeed": "Last feed at {{time}}"
     },
     "diapers": {

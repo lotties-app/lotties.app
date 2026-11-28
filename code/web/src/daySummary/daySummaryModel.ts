@@ -104,12 +104,32 @@ export interface FeedingDay {
   feeds: number;
   /** Finished bottles of the day (the Now "Milk today" value); `null` without an amount. */
   milk: MilkToday | null;
-  /** Breast feeds: effective total and, when the payload has them, the seconds per side (ms). */
-  breast: { totalMs: number; leftMs: number; rightMs: number; hasSides: boolean } | null;
+  /**
+   * Breast feeds (ms): the effective total, the time timed per side and the rest of the total that
+   * no side accounts for (a feed without side seconds, or minutes a side timer did not cover), so
+   * left + right + unsided = total. `hasSides`: any side was timed.
+   */
+  breast: BreastTime | null;
   lastFeedAt: string | null;
   /** What the usual line measures: the drunk ml when the headline is ml, else the feed count. */
   usualMetric: 'ml' | 'feeds';
   usual: Usual | null;
+}
+
+export interface BreastTime {
+  totalMs: number;
+  leftMs: number;
+  rightMs: number;
+  unsidedMs: number;
+  hasSides: boolean;
+}
+
+/** Breast time as shown, in whole minutes: the parts always add up to the shown total. */
+export interface ShownBreast {
+  total: number;
+  left: number;
+  right: number;
+  unsided: number;
 }
 
 export interface DiaperDayCounts {
@@ -286,22 +306,51 @@ const feedsOf = (facts: Facts, day: MeasuredDay) =>
 const milkOf = (feeds: readonly BabyEvent[], day: MeasuredDay) =>
   milkFromBottles(feeds.filter((feed) => isFinishedBy(feed, day.cutoffMs)));
 
-function breastOf(feeds: readonly BabyEvent[], now: Date): FeedingDay['breast'] {
+function breastOf(feeds: readonly BabyEvent[], now: Date): BreastTime | null {
   const breast = feeds.filter((feed) => payloadString(feed, 'method') === 'breast');
   if (breast.length === 0) return null;
   let totalMs = 0;
   let leftMs = 0;
   let rightMs = 0;
   for (const feed of breast) {
-    totalMs += effectiveDurationMs(feed, now);
     const sides = nursingElapsed(feed, now);
-    leftMs += sides.left * 1000;
-    rightMs += sides.right * 1000;
+    const left = sides.left * 1000;
+    const right = sides.right * 1000;
+    // A feed timed per side is at least as long as its two sides; the rest has no side.
+    totalMs += Math.max(effectiveDurationMs(feed, now), left + right);
+    leftMs += left;
+    rightMs += right;
   }
-  const hasSides = leftMs + rightMs > 0;
-  // A nursing session timed per side is as long as its two sides.
-  const total = Math.max(totalMs, hasSides ? leftMs + rightMs : 0);
-  return total > 0 ? { totalMs: total, leftMs, rightMs, hasSides } : null;
+  if (totalMs <= 0) return null;
+  return {
+    totalMs,
+    leftMs,
+    rightMs,
+    unsidedMs: totalMs - leftMs - rightMs,
+    hasSides: leftMs + rightMs > 0,
+  };
+}
+
+/**
+ * Breast time in whole minutes as the card shows it (like `shownMilk` for the bottles): the total
+ * is rounded once and the parts share it by the largest remainder, so the shown left + right +
+ * unsided always equal the shown total (20.6 + 7.6 min is 28 in total, shown as 21 + 7, not 21 + 8).
+ */
+export function shownBreast(breast: BreastTime): ShownBreast {
+  const raw = [breast.leftMs, breast.rightMs, breast.unsidedMs].map((ms) => ms / MINUTE_MS);
+  const total = Math.round(breast.totalMs / MINUTE_MS);
+  const whole = raw.map(Math.floor);
+  let left = total - whole.reduce((sum, value) => sum + value, 0);
+  const order = raw
+    .map((value, index) => ({ index, rest: value - Math.floor(value) }))
+    .sort((a, b) => b.rest - a.rest || a.index - b.index);
+  for (const { index, rest } of order) {
+    if (left <= 0) break;
+    if (rest <= 0) continue;
+    whole[index] += 1;
+    left -= 1;
+  }
+  return { total, left: whole[0], right: whole[1], unsided: whole[2] };
 }
 
 // --- diapers and crying ---------------------------------------------------------------------
