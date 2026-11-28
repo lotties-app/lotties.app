@@ -37,6 +37,17 @@ export const SCREENS: Screen[] = [
   { id: 'log-sleep', route: '/dev/sheet?state=sleep' },
   { id: 'log-diaper', route: '/dev/sheet?state=diaper' },
   { id: 'insights', route: '/dev/insights?state=rich' },
+  {
+    id: 'day-summary',
+    route: '/dev/day-summary?state=rich',
+    schemes: ['light', 'dark'],
+    // The real Insights page: open its Day tab (the second one, "Day" / "Dia").
+    prepare: async (page) => {
+      await page.getByRole('tab').nth(1).click();
+      await page.getByRole('group').first().waitFor();
+      await page.waitForTimeout(400);
+    },
+  },
   { id: 'rhythm', route: '/dev/rhythm?state=ok', schemes: ['light', 'dark'] },
   { id: 'vaccines', route: '/dev/vaccines?state=timeline' },
   { id: 'sharing', route: '/dev/roles' },

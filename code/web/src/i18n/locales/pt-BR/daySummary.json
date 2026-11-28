@@ -1,0 +1,65 @@
+{
+  "daySummary": {
+    "tab": "Dia",
+    "title": "Resumo do dia",
+    "navLabel": "Dia mostrado",
+    "previous": "Dia anterior",
+    "next": "Próximo dia",
+    "todayUpTo": "Hoje, até {{time}}",
+    "yesterday": "Ontem",
+    "loading": "Carregando o dia",
+    "parts": "{{first}} · {{second}}",
+    "usualByNow_one": "De costume até esta hora: {{value}} (média de {{count}} dia)",
+    "usualByNow_other": "De costume até esta hora: {{value}} (média de {{count}} dias)",
+    "usualPerDay_one": "De costume por dia: {{value}} (média de {{count}} dia)",
+    "usualPerDay_other": "De costume por dia: {{value}} (média de {{count}} dias)",
+    "empty": {
+      "todayTitle": "Nada registrado hoje ainda",
+      "todayBody": "O que você registrar hoje aparece resumido aqui ao longo do dia.",
+      "pastTitle": "Nada registrado neste dia",
+      "pastBody": "Escolha outro dia com as setas."
+    },
+    "footnote": "Calculado neste aparelho a partir do que foi registrado. Não é um conselho médico.",
+    "sleep": {
+      "title": "Sono",
+      "total": "Sono total",
+      "night": "Noite {{duration}}",
+      "naps_one": "{{count}} soneca {{duration}}",
+      "naps_other": "{{count}} sonecas {{duration}}",
+      "longestNap": "Soneca mais longa {{duration}}",
+      "awakeFor": "Tempo acordado: {{duration}}",
+      "asleepFor": "Dormindo há {{duration}}"
+    },
+    "feeding": {
+      "title": "Alimentação",
+      "drunk": "{{volume}} bebidos",
+      "prepared": "de {{volume}} preparados",
+      "notDrunk": "{{volume}} não bebidos",
+      "feeds_one": "{{count, number}} mamada",
+      "feeds_other": "{{count, number}} mamadas",
+      "breast": "Peito {{duration}}",
+      "breastSides": "Peito {{duration}} (esquerdo {{left}}, direito {{right}})",
+      "lastFeed": "Última mamada às {{time}}"
+    },
+    "diapers": {
+      "title": "Fraldas",
+      "count_one": "{{count, number}} fralda",
+      "count_other": "{{count, number}} fraldas",
+      "split": "{{wet}} com xixi · {{dirty}} com cocô"
+    },
+    "crying": {
+      "title": "Choro",
+      "spells_one": "{{count, number}} episódio",
+      "spells_other": "{{count, number}} episódios",
+      "total": "{{duration}} no total"
+    },
+    "health": {
+      "title": "Saúde e cuidados",
+      "temperature": "Temperatura {{value}} às {{time}}",
+      "doses_one": "{{count}} dose de remédio registrada",
+      "doses_other": "{{count}} doses de remédio registradas",
+      "kind": "{{name}}: {{number}}",
+      "kindTimed": "{{name}}: {{number}} · {{duration}}"
+    }
+  }
+}

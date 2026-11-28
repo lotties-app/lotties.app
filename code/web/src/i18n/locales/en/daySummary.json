@@ -1,0 +1,65 @@
+{
+  "daySummary": {
+    "tab": "Day",
+    "title": "Day summary",
+    "navLabel": "Day shown",
+    "previous": "Previous day",
+    "next": "Next day",
+    "todayUpTo": "Today, up to {{time}}",
+    "yesterday": "Yesterday",
+    "loading": "Loading the day",
+    "parts": "{{first}} · {{second}}",
+    "usualByNow_one": "Usual by this time: {{value}} (average of {{count}} day)",
+    "usualByNow_other": "Usual by this time: {{value}} (average of {{count}} days)",
+    "usualPerDay_one": "Usual per day: {{value}} (average of {{count}} day)",
+    "usualPerDay_other": "Usual per day: {{value}} (average of {{count}} days)",
+    "empty": {
+      "todayTitle": "Nothing logged yet today",
+      "todayBody": "What you log today is summed up here as the day goes on.",
+      "pastTitle": "Nothing logged on this day",
+      "pastBody": "Pick another day with the arrows."
+    },
+    "footnote": "Calculated on this device from what was logged. Not medical advice.",
+    "sleep": {
+      "title": "Sleep",
+      "total": "Total sleep",
+      "night": "Night {{duration}}",
+      "naps_one": "{{count}} nap {{duration}}",
+      "naps_other": "{{count}} naps {{duration}}",
+      "longestNap": "Longest nap {{duration}}",
+      "awakeFor": "Awake for {{duration}}",
+      "asleepFor": "Asleep for {{duration}}"
+    },
+    "feeding": {
+      "title": "Feeding",
+      "drunk": "{{volume}} drunk",
+      "prepared": "of {{volume}} prepared",
+      "notDrunk": "{{volume}} not drunk",
+      "feeds_one": "{{count, number}} feed",
+      "feeds_other": "{{count, number}} feeds",
+      "breast": "Breast {{duration}}",
+      "breastSides": "Breast {{duration}} (left {{left}}, right {{right}})",
+      "lastFeed": "Last feed at {{time}}"
+    },
+    "diapers": {
+      "title": "Diapers",
+      "count_one": "{{count, number}} diaper",
+      "count_other": "{{count, number}} diapers",
+      "split": "{{wet}} wet · {{dirty}} dirty"
+    },
+    "crying": {
+      "title": "Crying",
+      "spells_one": "{{count, number}} spell",
+      "spells_other": "{{count, number}} spells",
+      "total": "{{duration}} in total"
+    },
+    "health": {
+      "title": "Health and care",
+      "temperature": "Temperature {{value}} at {{time}}",
+      "doses_one": "{{count}} medication dose logged",
+      "doses_other": "{{count}} medication doses logged",
+      "kind": "{{name}}: {{number}}",
+      "kindTimed": "{{name}}: {{number}} · {{duration}}"
+    }
+  }
+}
