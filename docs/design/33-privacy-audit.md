@@ -525,7 +525,8 @@ had to name Apple before any iOS build that registers a token can reach people. 
 
 **Status: partly built, off by default.** The consent record (`community_consents`, T2), the statistics catalog
 (`code/api/data/community-statistics.json`, T4), the aggregation job (`CommunityAggregationJob`) and the serving
-endpoint (`GET /api/v1/community/statistics/{statisticKey}`, no hyphen in `community`) are built behind
+endpoint (`GET /api/v1/babies/{babyId}/community-statistics`, since 2026-11-27; it replaced
+`GET /api/v1/community/statistics/{statisticKey}`) are built behind
 `CommunityInsights:Enabled` (default `false`). Nothing is collected, aggregated or served while the flag is off. The
 privacy policy describes the feature as "not active yet" (`PLANNED_FLOWS` status `planned` in `legal/dataFlows.ts`).
 This section documents the data flows for when the feature is activated. **ON_DEVICE_FLOWS is NOT affected**: community
@@ -577,17 +578,27 @@ published texts, `legal/dataFlows.ts` or the policy version.
 
 ### 19.2 Serving (what is served, caching, rate limiting)
 
-- **Endpoint:** `GET /api/v1/community/statistics/{statisticKey}` (no hyphen in `community`; per owner route naming
-  preference). Returns the latest active release cell for the caller's baby's age band.
-- **What is served:** age-band-filtered pooled statistics (statistic key, age band label, value or null, sample size
-  range as a string never an exact count, confidence label, release timestamp, suppression reason). Nothing identifies
-  any baby or family; no free text, no names, no timestamps finer than the release date.
-- **Access controls:** authentication required; active community insights consent on at least one of the caller's
-  babies; demo accounts excluded; doctors refused (family-level, not clinical); feature flag `CommunityInsights:Enabled`
-  gates the entire endpoint (bare 404 when off).
-- **Caching:** `Cache-Control: private, max-age=300` (five minutes); strong ETag `"releaseId:statisticKey"`;
-  304 Not Modified on `If-None-Match`. No shared cache.
-- **Rate limiting:** per user per hour (`RequestLimitPolicies.CommunityStatisticsRead`).
+- **Endpoint (2026-11-27):** `GET /api/v1/babies/{babyId}/community-statistics`, one answer per baby with every v1
+  statistic for that baby's age in completed weeks today (UTC); it replaced `GET /api/v1/community/statistics/{statisticKey}`,
+  which took the caller's first opted-in baby. Design 34 section 6 "Serving" has the answer shape.
+- **What is served:** the release's generation time, the days the percentile statistics read (the previous calendar
+  quarter), and per v1 statistic its period (`previous_quarter` or `since_consent`) and either no cell or the cell of
+  her age: the band served (fine or coarse fallback), the group size bucket as published (`20-49`, `50-99`, `100+`, never a
+  count) and the named values. No epsilon, no k, no suppression reason, no confidence label. Crying is served only from a
+  `100+` cell (`CommunityServingThresholds`); a withheld cell looks exactly like an absent one. Nothing identifies any baby
+  or family; no free text, no names, no timestamps finer than the release time. What the request reveals to the server is
+  only which baby the family asks about, which it already knows. The baby's birth date is read (control plane) only to
+  compute her age band for the answer.
+- **Access controls:** authentication required; family members of that baby only (`BabyReadFamily`: Owner, Parent,
+  Caregiver, Viewer; a Doctor never, whatever her scopes); that baby's community insights consent in force under the current
+  text, else 403 `community_consent_required` (one code for none, withdrawn and older text); demo accounts excluded
+  (`DemoBlockedRoutes`); behind the core consent gate; feature flag `CommunityInsights:Enabled` gates the endpoint (bare 404
+  when off). Note: because Caregivers and Viewers may call it, a 200 or a 403 tells them whether the consent is on, a state
+  design 34 section 3.1 otherwise shows only to Owners and Parents.
+- **Caching:** `Cache-Control: private, max-age=300` (five minutes), `Vary: Authorization`; strong ETag, a hash of the baby
+  id, the release row and the exact body (two babies never share one); 304 Not Modified on `If-None-Match`. No shared cache:
+  the web service worker never caches `/api/` and nginx adds no `Cache-Control` to `/api/`.
+- **Rate limiting:** per user per hour over all her babies (`RequestLimitPolicies.CommunityStatisticsRead`, 60).
 - **Third parties:** none. Computed and served on the home lab servers; no processor, no recipient. In transit, the
   response passes through Cloudflare's proxy like all traffic (audit section 1, C2).
 - **International transfer:** none beyond the Cloudflare proxy already disclosed.

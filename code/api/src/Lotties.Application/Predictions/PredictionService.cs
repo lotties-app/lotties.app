@@ -142,27 +142,9 @@ internal sealed class PredictionService : IPredictionService
             : null;
 
     /// <summary>
-    /// Builds the ordered prior provider chain for this prediction run. When live community priors are enabled,
-    /// CommunityLive > CommunityStatic; otherwise just CommunityStatic. The age-norm fallback is handled by
-    /// <see cref="PredictionEngine"/> via the <c>ageNorms</c> parameter (not added here because
-    /// <c>AgeNormPriorProvider</c> is internal to Domain).
+    /// The ordered prior provider chain for this prediction run: the registered providers (today only CommunityStatic). Note that
+    /// <see cref="PredictionEngine"/> uses the <c>ageNorms</c> parameter only when this chain is empty: with a non-empty chain the
+    /// published age norms are not a cold-start fallback (<c>AgeNormPriorProvider</c> is internal to Domain).
     /// </summary>
-    private IReadOnlyList<IPriorProvider> BuildPriorProviders()
-    {
-        var providers = new List<IPriorProvider>();
-
-        foreach (var provider in _priorProviders)
-        {
-            // CommunityLivePriorProvider self-gates on UseCommunityLivePriors inside GetPrior,
-            // but we also skip adding it to keep the chain clean when disabled.
-            if (!_options.UseCommunityLivePriors && provider is CommunityLivePriorProvider)
-            {
-                continue;
-            }
-
-            providers.Add(provider);
-        }
-
-        return providers;
-    }
+    private IReadOnlyList<IPriorProvider> BuildPriorProviders() => [.. _priorProviders];
 }

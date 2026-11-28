@@ -33,7 +33,10 @@ public static class RequestLimitPolicies
     /// <summary>Rate limit policy of data store connection tests (per user, per hour, <see cref="RequestLimitsOptions.DataStoreTestPermitsPerHour"/>).</summary>
     public const string DataStoreTest = "data-store-test";
 
-    /// <summary>Rate limit policy of community statistics reads (per user, per hour, <see cref="RequestLimitsOptions.CommunityStatisticsReadPermitsPerHour"/>).</summary>
+    /// <summary>
+    /// Rate limit policy of community statistics reads, <c>GET /babies/{babyId}/community-statistics</c> (per user over all her babies,
+    /// per hour, <see cref="RequestLimitsOptions.CommunityStatisticsReadPermitsPerHour"/>).
+    /// </summary>
     public const string CommunityStatisticsRead = "community-statistics-read";
 
     /// <summary>

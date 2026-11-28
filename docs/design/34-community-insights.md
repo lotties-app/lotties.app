@@ -554,14 +554,40 @@ the query plans and the run time at production size.
   back to the published norms or its built-in default, as for any absent cell. While `CommunityAggregation:ReadEvents` is off the
   job writes a placeholder (`placeholder: true`, no statistics, no cells), read the same way, which does not count against
   the quarter (section 5.1.1), so the first release with statistics after the switch is turned on is due in that same quarter. A release that cannot be read (the phase-1 placeholder rows written before this format, a damaged row) is
-  treated as a release with no cells. Today `GET /community/statistics/{statisticKey}` reads this format and answers the
-  single value of the caller's baby's fine cell, or else its coarse fallback, only for a statistic without a dimension;
-  serving the whole file as below is task T6.
-- `GET /api/v1/community/statistics` (any signed-in user, like `GET /age-norms`): the current file (the release format
-  above; exact counts are not published), strong ETag
-  `"community-{generatedAt}-{hash8}"`, `Cache-Control: private, max-age=86400`, 304 on `If-None-Match`; served even to
-  babies that did not opt in (O10: give-to-get or open to all; recommendation: open to all signed-in users, since the
-  output is aggregate and the benefit should not pressure consent).
+  treated as a release with no cells.
+- **Serving (built 2026-11-27, task T6; replaces `GET /community/statistics/{statisticKey}` and the whole-file proposal of
+  O10).** `GET /api/v1/babies/{babyId}/community-statistics` (`Api/CommunityInsights/CommunityStatisticsEndpoint.cs`,
+  `Application/CommunityInsights/CommunityStatisticsService.cs`, pure selection `Domain/CommunityInsights/CommunityServing.cs`):
+  every v1 statistic for **that** baby's age in one answer. Owner decisions of 2026-11-27:
+  - **Who**: the baby's family only (`BabyReadFamily`: Owner, Parent, Caregiver, Viewer; a Doctor 403 whatever her scopes), and
+    only while **that baby's** consent is in force under the current text (`CommunityConsentHistory.IsInForce`: the latest
+    line is a yes under `ci-2`; an older text is `renewal_needed`, not in force), else 403 `community_consent_required` (one
+    code for never, withdrawn and older text: a Caregiver or Viewer does not see the consent state). A demo 403
+    `demo_not_available`; a bare 404 while `CommunityInsights:Enabled` is off; behind the core consent gate; rate limited per
+    user per hour over all her babies. Everything it reads is control plane (no store binding). A consequence: a 200 or a 403
+    tells a Caregiver or Viewer whether the consent is on (section 3.1 otherwise shows the state only to Owners and Parents).
+  - **Her age**: completed weeks from her stored birth date to today's UTC day, `CommunityDays.AgeWeeksOn`, the helper the event
+    loader uses; a baby not born yet or older than the grid gets no cells.
+  - **Answer** (`state` `not_yet` when there is no active release, it is a placeholder, it cannot be read, or its
+    `catalogVersion` is not the running catalog's *(choice: an older release's periods and outputs may not be the current
+    catalog's)*; then the other fields are null and `statistics` empty):
+    `{state: "available", generatedAt, previousQuarter: {from, to}, statistics: [{key, period: "previous_quarter" |
+    "since_consent", cell: null | {band: {fromWeeks, toWeeks}, groupSize: "20-49" | "50-99" | "100+", values: {name: value}}}]}`.
+    `previousQuarter` is `CommunityDataWindow.PreviousQuarterOf(generatedAt)`, the window the aggregator read; `period` says
+    whether a statistic reads only that quarter (the percentile statistics) or each baby's whole history since her consent
+    (the shares). `statistics` lists every catalog statistic with an output in v1, in catalog order; `values` holds only its
+    v1 outputs, in name order. The cell is her fine cell when published, else the narrowest published (coarse) cell holding
+    her age (`CommunityRelease.CellFor`). No v1 statistic has a dimension (a test holds it); one that gets one is served no
+    cell until the answer carries the dimension value. No exact count, no epsilon or k, no suppression reason and no
+    confidence label (the earlier "high/moderate/low" overstated noisy data).
+  - **Serving thresholds** (`CommunityServingThresholds.MinimumGroupSize`, the one table to change): crying
+    (`cry_outcome_by_cause`) is served only from a `100+` cell, because below about 70 babies per band its shares are worse
+    than a uniform guess (section 5.1.1 item 2). A withheld cell is served exactly as an absent one, and the coarse fallback is
+    looked up as if it were absent. Section 9's gate is still to be applied before anything is shown.
+  - **Caching**: `Cache-Control: private, max-age=300`, `Vary: Authorization`, a strong `ETag` that hashes the baby id, the
+    release row id and the exact body (it changes with the release, with her age moving to another band and with anything in
+    the answer; two babies never share one), 304 on `If-None-Match`. The web service worker never caches `/api/`
+    (`pwa/sw/navigation.ts`) and nginx sets no `Cache-Control` on `/api/`.
 - Web: Dexie table `communityStatistics` (one row, like `ageNorms`), `useCommunityStatistics()`; each caller uses a
   pooled cell when it exists and passes its gate (section 9), else `priorFor` of the age norms, else its built-in
   default. Offline: the last copy.
@@ -682,7 +708,7 @@ when activated (task T9).
 | T3 | Web consent screen and state in Settings > Baby (`communityInsights.json` en + pt-BR, `baby/permissions.ts` gate, axe light/dark) | Sonnet | T2 |
 | T4 | Catalog `community-statistics.json` + validator (like `AgeNormsValidator`), embedded, schema test. **Catalog (T4): built**, catalog only: `code/api/data/community-statistics.json` (schema 1, the 10 use cases of section 4, every entry `planned` with the proposed values of section 13 marked `proposed: true`, `growth_vs_age` `notInV1` per O6, fixed band grids), `Domain/CommunityInsights` (model, strict parser, `CommunityStatisticsValidator`: known keys, k >= 20, inputs from an allow-list and never a "Never read" category, epsilon in (0, 1], status `planned`), embedded in Lotties.Application and validated at startup; nothing served, collected or consented, no table. **O2 tiers (section 5.1): built** in catalog schema 2 (per-output tiers, epsilon per tier, percentile outputs `notInV1`) | Sonnet | T0 |
 | T5 | Aggregation job: inputs per use case, caps, clipping, bands, k, dominance, suppression, DP per the tiers of section 5.1 (no percentile output in v1), run log, read-only role, flag; property tests (a cell never below k, a withdrawn baby absent from the next run, a single heavy family bounded). **Pure core built** (section 5.2: cap, clipping, one summary per baby, snapped Laplace on the share vectors, k, hysteresis, dominance, coarse fallback with complementary suppression, release format of section 6, property and sampler tests); **event loading built** (section 5.3, behind `CommunityAggregation:ReadEvents`, off: the job writes a placeholder until it is on); the run log table and the read-only role are still to do | Opus plan, Sonnet build | T2, T4 |
-| T6 | `GET /community/statistics` with ETag (like `/age-norms`), matrix row | Haiku | T5 |
+| T6 | `GET /community/statistics` with ETag (like `/age-norms`), matrix row. **Built 2026-11-27 as `GET /babies/{babyId}/community-statistics`** (section 6 "Serving"): per baby, family roles, that baby's consent, every v1 statistic in one answer, crying only from `100+` cells; the live prior provider that called the old route is removed | Haiku | T5 |
 | T7 | Web cache + `useCommunityStatistics()`, fallback chain pooled > norms > default, the context lines (wording reviewed) | Sonnet | T6 |
 | T8 | `ml/benchmark/community.py` synthetic study, then the pilot backtest (section 9). **Synthetic study done** (docs/ml/COMMUNITY-SYNTHETIC.md); **pilot backtest still to do** | Sonnet | T4 |
 | T9 | Activation: policy section rewritten from "not active yet" to the final text, `PLANNED_FLOWS` entry moved to an active flow (data category row, status), version/date raised, in-app notice (gap G6), audit section 11 and docs/design/20 updated, store forms | Opus review, Sonnet edit | T1-T8 green |

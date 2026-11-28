@@ -1,52 +1,84 @@
+using Lotties.Domain.CommunityInsights;
+
 namespace Lotties.Application.CommunityInsights;
 
 /// <summary>
-/// One cell of the community statistics response (docs/design/34-community-insights.md section 5): facts only, never advice.
-/// The value is a noisy aggregate (mean, share or percentile) for the caller's baby's age band; nothing identifies any baby
-/// or family. A suppressed cell carries no value and explains why (privacy threshold not met, family dominance, etc.).
+/// <c>GET /babies/{babyId}/community-statistics</c> (docs/design/34-community-insights.md section 6 "Serving"): every v1 community
+/// statistic for that baby's age, from the active release. Facts only, never advice; no exact count, no noise budget, no reason a cell is
+/// missing, nothing that identifies a baby or a family.
 /// </summary>
-public sealed record CommunityStatisticsResponse
+/// <param name="State">
+/// <c>not_yet</c> (no release to serve: none yet, a placeholder, one that cannot be read, or one of another catalog version; the other
+/// fields are null and the list empty) or <c>available</c>.
+/// </param>
+/// <param name="GeneratedAt">When the served release was generated, UTC.</param>
+/// <param name="PreviousQuarter">The days the <c>previous_quarter</c> statistics read: the calendar quarter before the release's own (UTC).</param>
+/// <param name="Statistics">Every v1 statistic of the catalog, in catalog order; one without a cell for this baby has <c>cell: null</c>.</param>
+public sealed record CommunityStatisticsResponse(
+    string State,
+    DateTimeOffset? GeneratedAt,
+    CommunityDataPeriodResponse? PreviousQuarter,
+    IReadOnlyList<CommunityStatisticResponse> Statistics)
 {
-    /// <summary>The statistic key as defined in the catalog (e.g. <c>sleep_night_mean</c>).</summary>
-    public string StatisticKey { get; init; } = string.Empty;
+    public const string NotYet = "not_yet";
 
-    /// <summary>
-    /// The age band label the value applies to (e.g. <c>8-12w</c>, <c>3-6m</c>). Derived from the caller's baby's birth date
-    /// and the catalog's band grid; the same request always resolves to the same band while the release is active.
-    /// </summary>
-    public string AgeBandLabel { get; init; } = string.Empty;
+    public const string Available = "available";
 
-    /// <summary>
-    /// The noisy aggregate value for this band, or <c>null</c> when the cell is suppressed (see <see cref="SuppressionReason"/>).
-    /// Facts only: a mean, share or percentile, never a recommendation or interpretation.
-    /// </summary>
-    public decimal? Value { get; init; }
+    public static CommunityStatisticsResponse NothingYet { get; } = new(NotYet, null, null, []);
 
-    /// <summary>
-    /// The published group-size bucket of distinct babies behind this cell (<c>"20-49"</c>, <c>"50-99"</c> or <c>"100+"</c>,
-    /// <see cref="Lotties.Domain.CommunityInsights.CommunityGroupSizes"/>). Never an exact count. Empty when the cell is absent.
-    /// </summary>
-    public string SampleSizeRange { get; init; } = string.Empty;
+    public static CommunityStatisticsResponse From(CommunityServedView view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        return new CommunityStatisticsResponse(
+            Available,
+            view.GeneratedAt,
+            new CommunityDataPeriodResponse(view.PreviousQuarter.From, view.PreviousQuarter.To),
+            [.. view.Statistics.Select(CommunityStatisticResponse.From)]);
+    }
+}
 
-    /// <summary>
-    /// Confidence indicator derived from sample size and noise budget (e.g. <c>"high"</c>, <c>"moderate"</c>, <c>"low"</c>).
-    /// Facts only: describes statistical precision, never clinical reliability.
-    /// </summary>
-    public string Confidence { get; init; } = string.Empty;
+/// <summary>A span of calendar days, both included (ISO dates).</summary>
+public sealed record CommunityDataPeriodResponse(DateOnly From, DateOnly To);
 
-    /// <summary>When the release containing this value was generated, UTC.</summary>
-    public DateTimeOffset ReleasedAtUtc { get; init; }
+/// <summary>
+/// One statistic for the baby. <paramref name="Period"/>: <c>previous_quarter</c> (each contributing baby's days of
+/// <see cref="CommunityStatisticsResponse.PreviousQuarter"/> only) or <c>since_consent</c> (all her days since her consent).
+/// </summary>
+public sealed record CommunityStatisticResponse(string Key, string Period, CommunityCellResponse? Cell)
+{
+    public const string PreviousQuarterPeriod = "previous_quarter";
 
-    /// <summary>
-    /// Why the cell has no value, or <c>null</c> when a value is present. Values include <c>"no_data"</c> (no contributions
-    /// for this band yet), <c>"below_threshold"</c> (fewer than k distinct babies), <c>"family_dominance"</c> (one family
-    /// contributed too much) or another reason from the aggregator. Never names a baby or family.
-    /// </summary>
-    public string? SuppressionReason { get; init; }
+    public const string SinceConsentPeriod = "since_consent";
+
+    public static CommunityStatisticResponse From(CommunityServedStatistic statistic)
+    {
+        ArgumentNullException.ThrowIfNull(statistic);
+        return new CommunityStatisticResponse(
+            statistic.Key,
+            statistic.Period == CommunityStatisticPeriod.PreviousQuarter ? PreviousQuarterPeriod : SinceConsentPeriod,
+            statistic.Cell is { } cell ? CommunityCellResponse.From(cell) : null);
+    }
 }
 
 /// <summary>
-/// The result of looking up a community statistic for the caller's baby: either a response with a value or suppression reason,
-/// or <c>null</c> when no active release exists yet (the feature is enabled but the first aggregation has not completed).
+/// The baby's cell of a statistic: the age band actually served in completed weeks (her fine band, or the coarser fallback holding her
+/// age), the group size bucket as published (<c>"20-49"</c>, <c>"50-99"</c> or <c>"100+"</c>, never a count) and the named values
+/// (<c>p25</c>, <c>p50</c>, <c>p75</c>; <c>share_of_days_with_any</c>; <c>share_helped_by_cause.&lt;cause&gt;</c>), in name order.
 /// </summary>
-public sealed record CommunityStatisticsLookupResult(CommunityStatisticsResponse? Response, bool ReleaseExists);
+public sealed record CommunityCellResponse(CommunityBandResponse Band, string GroupSize, IReadOnlyDictionary<string, decimal> Values)
+{
+    public static CommunityCellResponse From(CommunityServedCell cell)
+    {
+        ArgumentNullException.ThrowIfNull(cell);
+        return new CommunityCellResponse(
+            new CommunityBandResponse(cell.Band.FromWeeks, cell.Band.ToWeeks),
+            CommunityGroupSizes.ToWire(cell.GroupSize),
+            new SortedDictionary<string, decimal>(cell.Values.ToDictionary(StringComparer.Ordinal), StringComparer.Ordinal));
+    }
+}
+
+/// <summary>An age band in completed weeks, <paramref name="FromWeeks"/> inclusive to <paramref name="ToWeeks"/> exclusive.</summary>
+public sealed record CommunityBandResponse(int FromWeeks, int ToWeeks);
+
+/// <summary>What the service answers: the response and the id of the release row it was read from (null when none), for the validator.</summary>
+public sealed record CommunityStatisticsAnswer(CommunityStatisticsResponse Response, Guid? ReleaseRowId);

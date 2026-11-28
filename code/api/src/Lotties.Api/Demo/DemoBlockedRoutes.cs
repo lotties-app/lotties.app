@@ -47,7 +47,7 @@ public static class DemoBlockedRoutes
         "POST /api/v1/babies/{babyId:guid}/data-store/move-out",
         "GET /api/v1/babies/{babyId:guid}/community-consent",
         "PUT /api/v1/babies/{babyId:guid}/community-consent",
-        "GET /api/v1/community/statistics/{statisticKey}",
+        "GET /api/v1/babies/{babyId:guid}/community-statistics",
     };
 
     public static bool IsBlocked(HttpContext context)

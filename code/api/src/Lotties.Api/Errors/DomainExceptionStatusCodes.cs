@@ -101,6 +101,8 @@ internal static class DomainExceptionStatusCodes
         [typeof(ConsentVersionOutdatedException)] = StatusCodes.Status409Conflict,
         [typeof(CommunityConsentNotAllowedException)] = StatusCodes.Status403Forbidden,
         [typeof(CommunityConsentVersionOutdatedException)] = StatusCodes.Status409Conflict,
+        [typeof(CommunityConsentRequiredException)] = StatusCodes.Status403Forbidden,
+        [typeof(CommunityStatisticsNotAllowedException)] = StatusCodes.Status403Forbidden,
         [typeof(DemoNotAvailableException)] = StatusCodes.Status403Forbidden,
         [typeof(DemoDisabledException)] = StatusCodes.Status404NotFound,
         [typeof(DemoCapacityException)] = StatusCodes.Status503ServiceUnavailable,

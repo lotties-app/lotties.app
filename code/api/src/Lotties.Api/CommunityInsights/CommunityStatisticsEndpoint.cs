@@ -1,38 +1,44 @@
-using Lotties.Application.Babies;
+using System.Security.Cryptography;
+using System.Text.Json;
+using Lotties.Api.Authorization;
+using Lotties.Api.Endpoints;
 using Lotties.Application.CommunityInsights;
-using Lotties.Application.Users;
-using Lotties.Domain.Babies;
-using Lotties.Domain.CommunityInsights;
-using Lotties.Domain.Exceptions;
-using Lotties.Domain.Users;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 
 namespace Lotties.Api.CommunityInsights;
 
 /// <summary>
-/// The community statistics serving endpoint (docs/design/34-community-insights.md section 5, task T6): one route per statistic key,
-/// filtered to the caller's baby's age band from the latest active release. Facts only, never advice; nothing identifies any baby or
-/// family. Requires authentication, an active community insights consent on at least one of the caller's babies, and the feature flag
-/// <c>CommunityInsights:Enabled</c> (the guard answers a bare 404 while it is off). Demo accounts are excluded. Doctors are refused:
-/// community statistics are family-level, not clinical. Rate limited per user per hour. The route has no <c>{babyId}</c>, so no baby
-/// policy can decide it (a baby policy fails every caller on such a route): the handler counts only the babies on which the caller
-/// holds a family role (<see cref="BabyRoleRules.CanReadFamilyRecords"/>), so a Doctor's patients never open it.
+/// The community statistics of one baby (docs/design/34-community-insights.md section 6 "Serving"):
+/// <c>GET /babies/{babyId}/community-statistics</c>, every v1 statistic for her age from the active release in one answer
+/// (<see cref="ICommunityStatisticsService"/>). Facts only, never advice. Her family only (<see cref="BabyPolicies.ReadFamily"/>: Owner,
+/// Parent, Caregiver, Viewer; a Doctor 403 whatever her scopes, the statistics are family-level, never clinical); a demo 403
+/// <c>demo_not_available</c>; 403 <c>community_consent_required</c> unless her consent is in force under the current text; a bare 404
+/// while <c>CommunityInsights:Enabled</c> is off (<see cref="CommunityInsightsRequestGuard"/>, before any 401). Behind the consent gate,
+/// rate limited per account. No store binding: everything it reads is control plane.
 /// </summary>
+/// <remarks>
+/// Cached privately for a short time, with a strong <c>ETag</c> over the baby id, the release row and the exact body, so the validator
+/// changes with the release, with her served cells (her age moving to another band) and with anything else in the answer, and two babies
+/// never share one; <c>If-None-Match</c> gives 304. <c>Vary: Authorization</c> keeps a browser from reusing one account's copy for
+/// another signed in on the same device.
+/// </remarks>
 internal static class CommunityStatisticsEndpoint
 {
-    public const string Path = "/community/statistics/{statisticKey}";
+    public const string Path = "/community-statistics";
 
-    /// <summary>The response may be cached privately for five minutes (release changes weekly); then a client revalidates.</summary>
+    /// <summary>Private, five minutes: a release changes at most once a quarter, a baby's band at most once a week (at her UTC day change).</summary>
     private const string CacheControl = "private, max-age=300";
 
-    /// <summary>Maps <c>GET /community/statistics/{statisticKey}</c>.</summary>
+    /// <summary>Maps <c>GET /babies/{babyId}/community-statistics</c>.</summary>
     public static IEndpointRouteBuilder MapCommunityStatisticsEndpoint(this IEndpointRouteBuilder api)
     {
         ArgumentNullException.ThrowIfNull(api);
-        api.MapGet(Path, GetAsync)
+        api.MapGroup(BabyRoutes.Prefix)
+            .RequireAuthorization(BabyPolicies.ReadFamily)
             .WithMetadata(CommunityInsightsEndpointMetadata.Instance)
+            .MapGet(Path, GetAsync)
             .RequireRateLimiting(Limits.RequestLimitPolicies.CommunityStatisticsRead)
             .WithName("GetCommunityStatistics")
             .Produces<CommunityStatisticsResponse>(StatusCodes.Status200OK, contentType: "application/json")
@@ -43,147 +49,32 @@ internal static class CommunityStatisticsEndpoint
     }
 
     private static async Task<IResult> GetAsync(
-        string statisticKey,
+        Guid babyId,
         HttpContext http,
-        ICurrentUser currentUser,
-        IBabyService babies,
-        ICommunityConsentRepository consents,
-        ICommunityStatisticsReleaseRepository releases,
-        ICommunityStatisticsCatalogProvider catalogProvider,
-        TimeProvider timeProvider,
+        ICommunityStatisticsService statistics,
+        IOptions<JsonOptions> json,
         CancellationToken cancellationToken)
     {
-        var user = await currentUser.GetUserAsync(cancellationToken);
-        if (user.IsDemo)
-        {
-            throw new DemoNotAvailableException();
-        }
-
-        // Only the babies of the caller's family count: a Doctor's patients are listed too, and she never gets a pooled view
-        // (docs/design/34-community-insights.md section 3.4).
-        var callerBabies = (await babies.ListAsync(cancellationToken)).Where(baby => baby.Role.CanReadFamilyRecords()).ToArray();
-        if (callerBabies.Length == 0)
-        {
-            return Results.Problem(statusCode: StatusCodes.Status403Forbidden, detail: "No baby membership.");
-        }
-
-        // Find the first baby with active community insights consent.
-        Guid? consentedBabyId = null;
-        foreach (var baby in callerBabies)
-        {
-            var history = await consents.HistoryAsync(baby.Id, cancellationToken);
-            if (history.IsInForce)
-            {
-                consentedBabyId = baby.Id;
-                break;
-            }
-        }
-
-        if (consentedBabyId is null)
-        {
-            return Results.Problem(statusCode: StatusCodes.Status403Forbidden, detail: "No active community insights consent on any of your babies.");
-        }
-
-        var release = await releases.GetActiveAsync(cancellationToken);
-        if (release is null)
-        {
-            return Results.NotFound(new { error = "no_release", detail = "No community statistics release is available yet." });
-        }
-
-        var catalog = catalogProvider.Catalog;
-        var statistic = catalog.Statistics.FirstOrDefault(s => string.Equals(s.Key, statisticKey, StringComparison.Ordinal));
-        if (statistic is null)
-        {
-            return Results.NotFound(new { error = "unknown_statistic", detail = $"Unknown statistic key '{statisticKey}'." });
-        }
-
-        // Compute the caller's baby's age band from birth date.
-        var consentedBaby = callerBabies.First(b => b.Id == consentedBabyId.Value);
-        var ageWeeks = ComputeAgeWeeks(consentedBaby.BirthDate, timeProvider.GetUtcNow());
-        var band = CommunityBandGrid.BandOf(CommunityBandGrid.FineBands(catalog.BandGrids, statistic.Band.Grid), ageWeeks);
-        if (band is null)
-        {
-            return Results.NotFound(new { error = "no_band", detail = "No age band matches this baby's age for this statistic." });
-        }
-
-        // The cell for this statistic and age: her fine cell, else the coarse fallback holding her age (statistics without a dimension;
-        // a statistic with a dimension and the whole cell are served by the endpoint rewrite, task T6).
-        var cell = ReadRelease(release.StatisticsJson).CellFor(statisticKey, ageWeeks, dimension: null);
-
-        var etag = $"\"{release.ReleaseId}:{statisticKey}\"";
+        var answer = await statistics.GetAsync(babyId, cancellationToken);
+        var body = JsonSerializer.SerializeToUtf8Bytes(answer.Response, json.Value.SerializerOptions);
+        var etag = ETagOf(babyId, answer.ReleaseRowId, body);
         http.Response.Headers.ETag = etag;
         http.Response.Headers.CacheControl = CacheControl;
+        http.Response.Headers.Vary = HeaderNames.Authorization;
 
-        var requested = http.Request.GetTypedHeaders().IfNoneMatch;
         var current = new EntityTagHeaderValue(etag);
-        if (requested.Any(tag => tag.Compare(current, useStrongComparison: false) || tag.Equals(EntityTagHeaderValue.Any)))
-        {
-            return Results.StatusCode(StatusCodes.Status304NotModified);
-        }
-
-        var response = BuildResponse(statistic, cell, band.Value, release.GeneratedAtUtc);
-        return Results.Ok(response);
+        return http.Request.GetTypedHeaders().IfNoneMatch.Any(tag => tag.Compare(current, useStrongComparison: false) || tag.Equals(EntityTagHeaderValue.Any))
+            ? Results.StatusCode(StatusCodes.Status304NotModified)
+            : Results.Bytes(body, "application/json");
     }
 
-    private static int ComputeAgeWeeks(DateOnly birthDate, DateTimeOffset now)
+    /// <summary>A strong validator of this baby's exact answer: SHA-256 of the baby id, the release row id and the body, 128 bits in hex.</summary>
+    internal static string ETagOf(Guid babyId, Guid? releaseRowId, byte[] body)
     {
-        var birth = new DateTimeOffset(birthDate.Year, birthDate.Month, birthDate.Day, 0, 0, 0, TimeSpan.Zero);
-        var days = (int)(now.Date - birth.Date).TotalDays;
-        return Math.Max(0, days / 7);
+        var input = new byte[32 + body.Length];
+        babyId.TryWriteBytes(input.AsSpan(0, 16));
+        (releaseRowId ?? Guid.Empty).TryWriteBytes(input.AsSpan(16, 16));
+        body.CopyTo(input, 32);
+        return $"\"cs-{Convert.ToHexStringLower(SHA256.HashData(input).AsSpan(0, 16))}\"";
     }
-
-    /// <summary>The served release; one that cannot be read (a phase-1 placeholder row, a damaged row) has no cells, so nothing is served from it.</summary>
-    private static CommunityRelease ReadRelease(string statisticsJson)
-    {
-        try
-        {
-            return CommunityReleaseJson.Parse(statisticsJson);
-        }
-        catch (FormatException)
-        {
-            return CommunityRelease.Placeholder(DateTimeOffset.UnixEpoch, catalogVersion: 0);
-        }
-    }
-
-    /// <summary>
-    /// The single-value response of this endpoint: the cell's value when it has exactly one (a scalar share), else none; the group size
-    /// bucket as published. A cell below the thresholds is absent from the release, so it reads as <c>no_data</c>.
-    /// </summary>
-    private static CommunityStatisticsResponse BuildResponse(CommunityStatistic statistic, CommunityReleaseCell? cell, CommunityBand band, DateTimeOffset releasedAtUtc)
-    {
-        if (cell is null)
-        {
-            return new CommunityStatisticsResponse
-            {
-                StatisticKey = statistic.Key,
-                AgeBandLabel = FormatBandLabel(band),
-                Value = null,
-                SampleSizeRange = string.Empty,
-                Confidence = string.Empty,
-                ReleasedAtUtc = releasedAtUtc,
-                SuppressionReason = "no_data",
-            };
-        }
-
-        return new CommunityStatisticsResponse
-        {
-            StatisticKey = statistic.Key,
-            AgeBandLabel = FormatBandLabel(cell.Band),
-            Value = cell.Outputs.Count == 1 ? cell.Outputs.Values.Single() : null,
-            SampleSizeRange = CommunityGroupSizes.ToWire(cell.Babies),
-            Confidence = FormatConfidence(cell.Babies),
-            ReleasedAtUtc = releasedAtUtc,
-            SuppressionReason = null,
-        };
-    }
-
-    private static string FormatBandLabel(CommunityBand band) =>
-        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{band.FromWeeks}-{band.ToWeeks}w");
-
-    private static string FormatConfidence(CommunityGroupSize babies) => babies switch
-    {
-        CommunityGroupSize.Babies100Plus => "high",
-        CommunityGroupSize.Babies50To99 => "moderate",
-        _ => "low",
-    };
 }

@@ -64,9 +64,10 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
 
         /// <summary>
         /// Family members (Owner, Parent, Caregiver, Viewer) of a baby whose community insights consent is on: the community
-        /// statistics (docs/design/34-community-insights.md, audit docs/design/33 section 19.2). The route has no <c>{babyId}</c>, so
-        /// the handler decides; a Doctor (even of an opted-in baby), a non-member and a family without the consent get 403. The
-        /// matrix turns the consent on for the seeded baby before calling (<see cref="FamilyWithoutCommunityConsent_Is403"/> has the off case).
+        /// statistics of that baby (docs/design/34-community-insights.md section 6, audit docs/design/33 section 19.2): the role is
+        /// <c>BabyReadFamily</c>, then the consent of that baby; a Doctor (even of an opted-in baby, whatever her scopes), a non-member and
+        /// a family without the consent get 403. The matrix turns the consent on for the seeded baby before calling
+        /// (<see cref="FamilyWithoutCommunityConsent_Is403"/> has the off case).
         /// </summary>
         CommunityReader,
 
@@ -277,10 +278,11 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         // is off (before any 401; on in this host). Blocked in the demo. No store binding (control plane).
         ["GET /api/v1/babies/{babyId:guid}/community-consent"] = Access.Write,
         ["PUT /api/v1/babies/{babyId:guid}/community-consent"] = Access.Write,
-        // Community statistics (docs/design/34-community-insights.md section 5, audit docs/design/33 section 19.2): a family member of
-        // a baby whose community insights consent is on; the Doctor never (family-level, not clinical; no Doctor scope), a demo
-        // never. Not baby-scoped (no {babyId} in the route): the handler decides. 404 while CommunityInsights:Enabled is off.
-        ["GET /api/v1/community/statistics/{statisticKey}"] = Access.CommunityReader,
+        // Community statistics of one baby (docs/design/34-community-insights.md section 6, audit docs/design/33 section 19.2): a family
+        // member (BabyReadFamily) of a baby whose community insights consent is in force, else 403 community_consent_required. Doctor
+        // scope decision: none, she is refused by role whatever her scopes (pooled family-level facts, never a clinical section). A demo
+        // never. 404 while CommunityInsights:Enabled is off (before any 401; on in this host). No store binding (control plane only).
+        ["GET /api/v1/babies/{babyId:guid}/community-statistics"] = Access.CommunityReader,
 
         ["GET /api/v1/push/config"] = Access.SignedIn,
         ["POST /api/v1/push/subscriptions"] = Access.SignedIn,
@@ -462,6 +464,7 @@ public sealed partial class EndpointRoleMatrixTests(StoresApiFactory factory) : 
         "POST /api/v1/babies/{babyId:guid}/data-store/move-out",
         "GET /api/v1/babies/{babyId:guid}/community-consent",
         "PUT /api/v1/babies/{babyId:guid}/community-consent",
+        "GET /api/v1/babies/{babyId:guid}/community-statistics",
     };
 
     public static TheoryData<string, Caller> Cases()
