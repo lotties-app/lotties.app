@@ -92,4 +92,20 @@ describe('cache-first', () => {
     });
     expect(deleted).toEqual(['lotties-cry-assets-mp1.0.0-deadbeef']);
   });
+
+  it('deletes every cry cache, the current one too, while the monitor is switched off', async () => {
+    const keys = ['lotties-cry-assets-mp1.0.0-deadbeef', CRY_ASSET_CACHE, 'workbox-precache-v2'];
+    const deleted: string[] = [];
+    await deleteOldCryCaches(
+      {
+        keys: async () => keys,
+        delete: async (key: string) => {
+          deleted.push(key);
+          return true;
+        },
+      },
+      false,
+    );
+    expect(deleted).toEqual(['lotties-cry-assets-mp1.0.0-deadbeef', CRY_ASSET_CACHE]);
+  });
 });

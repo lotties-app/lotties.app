@@ -8,6 +8,8 @@
  * Neither file is precached by the service worker (vite.config.ts globIgnores; runtime cache in src/pwa/sw).
  * The native build (Vite mode `native`) ships neither: monitor mode in the iOS/Android shell is a later, separate
  * decision (docs/design/31 CD10) that also needs the microphone permissions and 'wasm-unsafe-eval' in native-csp.ts.
+ * Neither does a build with the monitor switched off (VITE_CRY_MONITOR not `true`, src/cryMonitor/featureFlag.ts):
+ * no WASM is copied or served, a local model is removed from the output, and the model is not checked.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -22,6 +24,7 @@ import {
   CRY_WASM_DIR,
   CRY_WASM_FILES,
 } from './src/cry/modelAssets';
+import { cryMonitorFlagOn } from './src/cryMonitor/featureFlag';
 import { NATIVE_MODE } from './native-csp';
 
 export const CRY_MODEL_REQUIRED_ENV = 'CRY_MODEL_REQUIRED';
@@ -65,7 +68,8 @@ export function cryAssetsPlugin(env: Record<string, string | undefined> = proces
   let outDir = 'dist';
   let publicDir = 'public';
   let base = '/';
-  let native = false;
+  // Native build or monitor switched off: no cry files in the output.
+  let shipsNone = false;
   return {
     name: 'baby-routine:cry-assets',
     configResolved(config) {
@@ -73,9 +77,10 @@ export function cryAssetsPlugin(env: Record<string, string | undefined> = proces
       outDir = path.resolve(config.root, config.build.outDir);
       publicDir = config.publicDir || path.join(config.root, 'public');
       base = config.base || '/';
-      native = config.mode === NATIVE_MODE;
+      shipsNone = config.mode === NATIVE_MODE || !cryMonitorFlagOn(config.env);
     },
     configureServer(server) {
+      if (shipsNone) return;
       const prefix = `${base.replace(/\/?$/, '/')}${CRY_WASM_DIR}/`;
       const allowed = new Set<string>(Object.values(CRY_WASM_FILES));
       server.middlewares.use((req, res, next) => {
@@ -95,8 +100,8 @@ export function cryAssetsPlugin(env: Record<string, string | undefined> = proces
       // After Vite has copied public/ into the output.
       order: 'post',
       async handler() {
-        if (native) {
-          // A model fetched for local web builds is copied from public/ by Vite: keep it out of the app bundle.
+        if (shipsNone) {
+          // A model fetched for local web builds is copied from public/ by Vite: keep it out of the bundle.
           await rm(path.join(outDir, CRY_ASSET_DIR), { recursive: true, force: true });
           await rmdir(path.dirname(path.join(outDir, CRY_ASSET_DIR))).catch(() => undefined);
           return;

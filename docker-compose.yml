@@ -66,6 +66,8 @@ services:
         VITE_PRIVACY_CONTROLLER_NAME: ${VITE_PRIVACY_CONTROLLER_NAME:-}
         VITE_PRIVACY_CONTACT_EMAIL: ${VITE_PRIVACY_CONTACT_EMAIL:-}
         VITE_PRIVACY_DPO: ${VITE_PRIVACY_DPO:-}
+        # The cry monitor stays off unless this is true (docs/design/35-cry-engine.md section 9).
+        VITE_CRY_MONITOR: ${VITE_CRY_MONITOR:-}
     # The web image is nginx-unprivileged (uid 101), listening on 8080 inside the container.
     ports:
       - "${WEB_PORT:-8080}:8080"

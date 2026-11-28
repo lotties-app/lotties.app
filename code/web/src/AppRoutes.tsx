@@ -9,6 +9,7 @@ import { AppShell } from './layout/AppShell';
 import { HomePage } from './pages/HomePage';
 import { InviteEntry, LegacyInviteEntry } from './invite/InviteEntry';
 import { doctorRoutes } from './doctor/doctorRoutes';
+import { cryMonitorEnabled } from './cryMonitor/featureFlag';
 
 // Everything except Now is split into route chunks so the first load stays small.
 const DayPage = lazy(() => import('./pages/DayPage').then((m) => ({ default: m.DayPage })));
@@ -443,7 +444,13 @@ export function AppRoutes() {
               <Route path="hub/import" element={<HubImportPage />} />
               <Route path="hub/export" element={<HubExportPage />} />
               <Route path="hub/backup" element={<HubBackupImportPage />} />
-              <Route path="hub/cry-monitor" element={<HubCryMonitorPage />} />
+              {/* Switched off unless the build turns it on: an old bookmark or link lands on the Hub. */}
+              <Route
+                path="hub/cry-monitor"
+                element={
+                  cryMonitorEnabled() ? <HubCryMonitorPage /> : <Navigate to="/hub" replace />
+                }
+              />
               <Route path="hub/updates" element={<HubUpdatesPage />} />
               <Route path="hub/logs" element={<HubLogsPage />} />
               <Route path="hub/about" element={<HubAboutPage />} />

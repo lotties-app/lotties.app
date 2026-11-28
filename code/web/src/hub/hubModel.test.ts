@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Appointment, Baby } from '../db/models';
 import { HUB_ENTRIES, isEntryVisible, visibleEntries, type HubContext } from './hubEntries';
 import { parsePrefs, pickShortcuts, type HubPrefs } from './hubUsage';
@@ -21,6 +21,9 @@ const ctx = (role: Baby['role'] | null, extra: Partial<HubContext> = {}): HubCon
   cryMonitorSupported: true,
   ...extra,
 });
+
+// The cry monitor's switch (cryMonitor/featureFlag.ts) is read from the build values: never leak one.
+afterEach(() => vi.unstubAllEnvs());
 
 describe('who sees which entry', () => {
   it('shows the baby entries only with a baby', () => {
@@ -93,23 +96,40 @@ describe('who sees which entry', () => {
     expect(isEntryVisible('backupImport', ctx(role))).toBe(expected);
   });
 
-  it.each([
-    ['Owner', true],
-    ['Parent', true],
-    ['Caregiver', true],
-    ['Viewer', false],
-    ['Doctor', false],
-  ] as const)('cry monitor for %s: %s (roles that log)', (role, expected) => {
-    expect(isEntryVisible('cryMonitor', ctx(role))).toBe(expected);
+  describe('with the cry monitor switched on', () => {
+    beforeEach(() => vi.stubEnv('VITE_CRY_MONITOR', 'true'));
+
+    it.each([
+      ['Owner', true],
+      ['Parent', true],
+      ['Caregiver', true],
+      ['Viewer', false],
+      ['Doctor', false],
+    ] as const)('cry monitor for %s: %s (roles that log)', (role, expected) => {
+      expect(isEntryVisible('cryMonitor', ctx(role))).toBe(expected);
+    });
+
+    it('hides the cry monitor in the native app, without the browser features and without a baby', () => {
+      expect(isEntryVisible('cryMonitor', ctx('Owner', { native: true }))).toBe(false);
+      expect(isEntryVisible('cryMonitor', ctx('Owner', { cryMonitorSupported: false }))).toBe(
+        false,
+      );
+      expect(isEntryVisible('cryMonitor', ctx(null))).toBe(false);
+      const entry = HUB_ENTRIES.find((e) => e.id === 'cryMonitor');
+      expect(entry).toMatchObject({ section: 'app', icon: 'microphone', to: '/hub/cry-monitor' });
+    });
   });
 
-  it('hides the cry monitor in the native app, without the browser features and without a baby', () => {
-    expect(isEntryVisible('cryMonitor', ctx('Owner', { native: true }))).toBe(false);
-    expect(isEntryVisible('cryMonitor', ctx('Owner', { cryMonitorSupported: false }))).toBe(false);
-    expect(isEntryVisible('cryMonitor', ctx(null))).toBe(false);
-    const entry = HUB_ENTRIES.find((e) => e.id === 'cryMonitor');
-    expect(entry).toMatchObject({ section: 'app', icon: 'microphone', to: '/hub/cry-monitor' });
-  });
+  it.each(['Owner', 'Parent', 'Caregiver'] as const)(
+    'hides the cry monitor from %s while it is switched off (the default)',
+    (role) => {
+      expect(isEntryVisible('cryMonitor', ctx(role))).toBe(false);
+      expect(visibleEntries(ctx(role)).map((e) => e.id)).not.toContain('cryMonitor');
+      // Only the exact value `true` turns it on.
+      vi.stubEnv('VITE_CRY_MONITOR', 'yes');
+      expect(isEntryVisible('cryMonitor', ctx(role))).toBe(false);
+    },
+  );
 
   it('offers a backup restore without a baby, except to a doctor who only has patients', () => {
     expect(isEntryVisible('export', ctx(null))).toBe(false);
