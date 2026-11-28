@@ -23,6 +23,7 @@ export const DATA_CATEGORY_IDS = [
   'notifications',
   'widgetUpdates',
   'cryMonitor',
+  'handsFree',
   'assistants',
   'rest',
   'technical',
@@ -38,41 +39,74 @@ export type DataCategoryId = (typeof DATA_CATEGORY_IDS)[number];
  * privacy.<lang>.ts files, the audit and the policy version.
  */
 export interface OnDeviceFlow {
-  id: 'cryMonitor';
-  /** `active`: built and offered (web app only), behind its own consent. */
-  status: 'active';
-  /** The browser permission it asks for, only when the person starts it. */
-  permission: 'microphone';
-  /** Off until someone starts it on a device, after a separate consent on that device. */
+  id: 'cryMonitor' | 'handsFree';
+  /**
+   * `active`: built and offered behind its own consent (the cry monitor, web app only). `experimental`: in the published phone
+   * apps as an experimental feature, off until the person turns it on in Settings > Experimental, never in the web app (the
+   * hands-free voice test, `VITE_VOICE_LAB` in the phone builds only, docs/design/49a-voice-lab.md).
+   */
+  status: 'active' | 'experimental';
+  /** The permissions it asks for, only when the person chooses to use it (`speechRecognition`: iOS only). */
+  permissions: readonly ('microphone' | 'speechRecognition')[];
+  /** Off until the person chooses to use it on a device. */
   trigger: 'optIn';
   defaultOn: false;
-  /** Who may start it (the roles that log for the baby). */
-  consentBy: readonly ('Owner' | 'Parent' | 'Caregiver')[];
+  /**
+   * Who may start it: the roles that log for the baby (the cry monitor, after a separate consent on the device), or `self`:
+   * the person on her own phone, through the Settings switch and then the phone's permission prompt, with no baby data
+   * involved (the voice test).
+   */
+  consentBy: readonly ('Owner' | 'Parent' | 'Caregiver')[] | 'self';
   /** The raw signal: analysed on the device only, never recorded, stored or sent (not even to us). */
   rawSignal: { stored: false; sent: false };
-  /** The row of "What we collect" that describes what it saves (an ordinary fussy record). */
+  /**
+   * Text made from the signal. `none`: the cry monitor makes only a score. `memoryUntilExported`: the recognised text stays in
+   * memory on the test's screen until she leaves it; only the guided test's records (fixed test phrases) can leave the phone,
+   * in a results file she exports herself (Try it is never exported).
+   */
+  derivedText: 'none' | 'memoryUntilExported';
+  /** The row of "What we collect" that describes it. */
   dataCategory: DataCategoryId;
-  /** Where its model and runtime come from: our own server, no third party at run time. */
-  modelFrom: 'ownServer';
-  /** Companies that receive something because of it: the encrypted alert to opted-in family members. */
+  /**
+   * Where the model runs from. `ownServer`: our own files, run in the page (the cry monitor). `phoneSystem`: the phone's own
+   * speech recognition, asked for its on-device mode only (no server engine; refused, never replaced, where the phone cannot).
+   */
+  modelFrom: 'ownServer' | 'phoneSystem';
+  /** Companies that receive something because of it from Lotties (the cry monitor: the encrypted alert to opted-in family members). */
   recipients: readonly ThirdPartyId[];
-  /** The platforms that offer it (not the native apps yet, docs/design/31 CD10). */
-  platforms: readonly 'web'[];
+  /** The platforms that offer it. */
+  platforms: readonly ('web' | 'android' | 'ios')[];
 }
 
 export const ON_DEVICE_FLOWS: readonly OnDeviceFlow[] = [
   {
     id: 'cryMonitor',
     status: 'active',
-    permission: 'microphone',
+    permissions: ['microphone'],
     trigger: 'optIn',
     defaultOn: false,
     consentBy: ['Owner', 'Parent', 'Caregiver'],
     rawSignal: { stored: false, sent: false },
+    derivedText: 'none',
     dataCategory: 'cryMonitor',
     modelFrom: 'ownServer',
     recipients: ['pushServices'],
     platforms: ['web'],
+  },
+  {
+    // Policy 18: the experimental hands-free voice test of the phone apps (docs/design/49a-voice-lab.md), off by default.
+    id: 'handsFree',
+    status: 'experimental',
+    permissions: ['microphone', 'speechRecognition'],
+    trigger: 'optIn',
+    defaultOn: false,
+    consentBy: 'self',
+    rawSignal: { stored: false, sent: false },
+    derivedText: 'memoryUntilExported',
+    dataCategory: 'handsFree',
+    modelFrom: 'phoneSystem',
+    recipients: [],
+    platforms: ['android', 'ios'],
   },
 ];
 

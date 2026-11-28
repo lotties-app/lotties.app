@@ -154,6 +154,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The experimental voice test (docs/design/49a-voice-lab.md), off until the person turns it on in Settings: the
+         speech recogniser listens only after a tap to speak, asked at runtime then, never in the background. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Firebase Messaging adds com.google.android.c2dm.permission.RECEIVE and POST_NOTIFICATIONS to the merged
          manifest (WAKE_LOCK and ACCESS_NETWORK_STATE were there already, from WorkManager). The app never asks for
          POST_NOTIFICATIONS and the silent push shows nothing (a data message, no notification block); removing the
@@ -163,6 +166,10 @@
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <!-- The voice lab's SpeechRecognizer must see the recognition services (Android 11+). -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
         </intent>
     </queries>
 </manifest>

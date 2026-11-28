@@ -1,0 +1,237 @@
+{
+  "voiceLab": {
+    "title": "Voice test (experimental)",
+    "nothingRecorded": "Nothing is recorded.",
+    "intro": "See how well Lotties understands what you say. Speech is recognised on this phone, and nothing you say becomes an entry.",
+    "noOnDevice": "This phone cannot recognise this language on the device, so the voice test cannot run here. Lotties never sends your voice to a server instead.",
+    "technical": "Technical details",
+    "modes": {
+      "label": "Mode",
+      "try": "Try it",
+      "guided": "Guided test"
+    },
+    "settings": {
+      "section": "Experimental",
+      "switch": "Hands-free (voice test)",
+      "description": "Try how well Lotties understands spoken commands. Off until you turn it on.",
+      "open": "Open voice test"
+    },
+    "optIn": {
+      "title": "Turn on the voice test?",
+      "points": {
+        "experimental": "This is an experimental test of how well Lotties understands spoken commands.",
+        "nothingRecorded": "It records nothing and changes no baby data: nothing you say becomes an entry.",
+        "microphone": "The microphone is used only after you tap to speak. The phone asks for permission the first time.",
+        "onPhone": "Speech is recognised on this phone. Lotties does not record or send the audio.",
+        "turnOff": "You can turn it off at any time, here in Settings."
+      },
+      "turnOn": "Turn on"
+    },
+    "tryIt": {
+      "hint": "Tap the button and say something you would log, such as “bottle of 120 ml” or “fell asleep”. You will see what the phone heard and what Lotties would do. Nothing is logged.",
+      "speak": "Tap to speak",
+      "heard": "The phone heard",
+      "quoted": "“{{text}}”",
+      "wouldLog": "Lotties would log: {{command}}",
+      "wouldAnswer": {
+        "ask_milk_today": "Lotties would answer how much milk was drunk today",
+        "ask_last_feed": "Lotties would answer when the last feed was"
+      },
+      "needsAmount": "Lotties would not log anything: the amount is missing.",
+      "outOfRange": "Lotties would not log anything: {{amount}} is outside the amounts accepted by voice.",
+      "ambiguous": "Lotties would not log anything: it could mean more than one thing.",
+      "notUnderstood": "Lotties would not log anything ({{reason}}).",
+      "kept": "This was only a test: nothing was logged. The last 5 tries stay on this screen and are gone when you leave it."
+    },
+    "guided": {
+      "hint": "Read each phrase aloud as it is written. At the end you see a summary and, if you want, you can export the results as a file."
+    },
+    "setup": {
+      "language": "Language",
+      "onDeviceOnly": "Recognised on this phone only. If the phone cannot recognise this language on the device, the test says so: it never uses a server.",
+      "condition": "Condition",
+      "languages": {
+        "pt-BR": "Português",
+        "en": "English"
+      },
+      "conditions": {
+        "C1": "C1",
+        "C2": "C2",
+        "C3": "C3",
+        "C4": "C4"
+      },
+      "conditionHelp": {
+        "C1": "Quiet room, normal voice, phone 30 to 50 cm away.",
+        "C2": "Night voice: quiet and low, phone on the bed or table about 1 m away.",
+        "C3": "Background noise: a crying-baby or white-noise sound from another device at moderate volume, or the TV on.",
+        "C4": "Airplane mode, with the on-device engine: it must still produce text."
+      }
+    },
+    "capabilities": {
+      "title": "What this phone reports",
+      "loading": "Checking…",
+      "failed": "The phone did not answer. Try again.",
+      "refresh": "Check again",
+      "platform": "Platform",
+      "os": "System version",
+      "recognition": "Speech recognition",
+      "onDevice": "On-device recognition",
+      "language": "This language on the device",
+      "biasing": "Phrase hints",
+      "microphone": "Microphone permission",
+      "speech": "Speech recognition permission",
+      "yes": "Yes",
+      "no": "No",
+      "unknown": "Not reported",
+      "platforms": {
+        "android": "Android",
+        "ios": "iPhone",
+        "web": "Browser"
+      },
+      "languageState": {
+        "installed": "Installed",
+        "pending": "Download pending",
+        "downloadable": "Not installed, can be downloaded",
+        "missing": "Not available on the device",
+        "unknown": "Not reported"
+      },
+      "permission": {
+        "granted": "Allowed",
+        "denied": "Refused",
+        "prompt": "Not asked yet",
+        "restricted": "Restricted",
+        "not_needed": "Not needed",
+        "unknown": "Not reported"
+      },
+      "reason": "Why: {{reason}}",
+      "download": "Download this language",
+      "downloadStatus": {
+        "started": "Download started. Check again in a moment.",
+        "scheduled": "The phone scheduled the download for later.",
+        "success": "The language is ready.",
+        "unsupported": "This phone cannot start the download from the app.",
+        "error": "The download did not start."
+      }
+    },
+    "phrase": {
+      "counter": "Phrase {{n}} of {{total}} (test phrase #{{number}})",
+      "expected": "Expected: {{command}}",
+      "done": "Every phrase of this run has an attempt. Change the language or the condition for the next run, or go back to retry a phrase.",
+      "restart": "Back to phrase 1"
+    },
+    "speak": "Speak",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "next": "Next",
+    "state": {
+      "starting": "Starting the microphone…",
+      "ready": "Listening. Speak now.",
+      "speech": "Listening…",
+      "processing": "Recognising…"
+    },
+    "result": {
+      "heard": "What the phone heard",
+      "noText": "No text",
+      "parsed": "Understood as: {{result}}",
+      "matched": "Taken from alternative {{n}}",
+      "alternative": "{{text}} (confidence {{confidence}})",
+      "pass": "Pass",
+      "fail": "Fail",
+      "wrongAction": "Would log the wrong entry",
+      "wrongAmount": "Wrong amount",
+      "latency": "Latency: {{value}}",
+      "noLatency": "Latency not reported",
+      "retries_one": "{{count}} retry (the first attempt counts)",
+      "retries_other": "{{count}} retries (the first attempt counts)",
+      "error": "Engine: {{error}}"
+    },
+    "errors": {
+      "denied": "The microphone or speech recognition permission was refused. Allow it in the phone's settings.",
+      "no_match": "Nothing was recognised.",
+      "speech_timeout": "No speech was heard.",
+      "language_unavailable": "This language is not available for this engine on this phone.",
+      "on_device_unavailable": "On-device recognition is not available on this phone for this language. Nothing was sent anywhere.",
+      "not_available": "Speech recognition on the device is not available here (only in the phone app).",
+      "busy": "The recogniser is busy. Try again.",
+      "network": "The recogniser needs the network.",
+      "audio": "The microphone could not be used.",
+      "interrupted": "Listening stopped because the app left the screen.",
+      "cancelled": "Cancelled.",
+      "timeout": "The recogniser did not answer in time.",
+      "not_supported": "Not supported on this phone.",
+      "recognizer_error": "The recogniser failed."
+    },
+    "command": {
+      "bottle": "Bottle {{amount}}",
+      "bottleFormula": "Bottle {{amount}}, formula",
+      "bottleBreastMilk": "Bottle {{amount}}, breast milk",
+      "nursingStart": "Start nursing",
+      "nursingLeft": "Start nursing, left",
+      "nursingRight": "Start nursing, right",
+      "nursingStop": "Stop nursing",
+      "sleepStart": "Fell asleep",
+      "sleepEnd": "Woke up",
+      "diaperWet": "Diaper, wet",
+      "diaperDirty": "Diaper, dirty",
+      "diaperBoth": "Diaper, wet and dirty",
+      "askMilkToday": "Question: milk today",
+      "askLastFeed": "Question: last feed"
+    },
+    "outcome": {
+      "needsAmount": "Needs an amount (would log nothing)",
+      "outOfRange": "Amount out of range, {{amount}} (would log nothing)",
+      "ambiguous": "Ambiguous (would log nothing)",
+      "notUnderstood": "Not understood: {{reason}} (would log nothing)",
+      "nothing": "Would log nothing"
+    },
+    "reason": {
+      "empty": "no text",
+      "no_intent": "no command words",
+      "negation": "a negation",
+      "question": "a question",
+      "report": "another time, a plan or a comment",
+      "time": "a time or a duration",
+      "conflict": "two commands at once",
+      "stray_number": "a number that is not an amount",
+      "ambiguous_amount": "two amounts",
+      "content_conflict": "two contents",
+      "invalid_number": "an unclear number",
+      "diaper_kind": "no diaper kind",
+      "no_running": "nothing running to stop"
+    },
+    "seconds": "{{value}} s",
+    "summary": {
+      "title": "Summary",
+      "hint": "First attempts only. Targets of the test: accuracy 90 % in C1 and 80 % in C2 and C3, wrong actions 2 % at most and no wrong amount in C1, phrases 22 to 24 log nothing, latency median 1.5 s and 90th percentile 3 s, and in C4 every phrase produces text.",
+      "empty": "No attempts yet.",
+      "language": "Language",
+      "condition": "Condition",
+      "all": "All",
+      "attempts": "Attempts",
+      "accuracy": "Accuracy",
+      "wrong": "Wrong actions",
+      "wrongAmounts": "Wrong amounts",
+      "noneLogged": "22-24 logged",
+      "median": "Median latency",
+      "p90": "90th percentile",
+      "text": "With text",
+      "retries": "Retries",
+      "missing": "–",
+      "wrongValue": "{{value}} ({{rate}})",
+      "belowTarget": "{{value}} (below target)"
+    },
+    "export": {
+      "button": "Export results",
+      "hint": "A JSON file with the test phrases, what the phone heard, how it was understood and the summary, plus the app version and what the phone reports about speech recognition (platform, system version, languages, permissions). It goes through the share sheet, and only you choose where. Your tries in Try it are not in it.",
+      "done": "Results exported.",
+      "failed": "The export did not work."
+    },
+    "keys": {
+      "title": "Key logger",
+      "hint": "While this is open, every key a keyboard or a Bluetooth button sends shows here.",
+      "empty": "No key pressed yet.",
+      "clear": "Clear",
+      "row": "{{time}} key {{keyName}}, code {{code}}"
+    }
+  }
+}

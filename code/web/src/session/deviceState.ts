@@ -18,6 +18,7 @@ import { clearAllLastSeen } from '../now/lastSeen';
 import { clearAllCachedPredictions } from '../predictions/predictionsCache';
 import { clearAllPinned } from '../presets/pinnedStorage';
 import { clearTimeBottles } from '../presets/timeBottlesStorage';
+import { clearVoiceTestOptIn } from '../settings/voiceTestOptIn';
 
 /** Which account (its database name, not the raw subject) the entries below belong to. */
 const ACCOUNT_KEY = 'baby-routine.account';
@@ -26,12 +27,14 @@ const ACCOUNT_KEY = 'baby-routine.account';
  * Removes the account's localStorage entries: the selected baby, the cached predictions, the pinned
  * presets, the "Time bottle feedings" setting, the measurement-units choice, the last accepted consent and the policy notice seen, the doctor dashboard's remembered patients and mode, the remembered field values, the Now "last seen" times, the belly pain and fussy
  * pattern cards' "Not today" and the overtired and diaper cards' "Not now" (all keyed by baby), this device's
- * push opt-in, the reminder card's "Not now" and the cry monitor's consent on this device.
+ * push opt-in, the reminder card's "Not now", the cry monitor's consent and the experimental voice
+ * test's opt-in on this device.
  * Device preferences such as the theme (and the cry monitor's sensitivity) are kept.
  */
 export function clearAccountDeviceState(): void {
   forgetSelectedBaby();
   clearCryMonitorConsent();
+  clearVoiceTestOptIn();
   clearDashboardState();
   clearAllCachedPredictions();
   clearAllPinned();

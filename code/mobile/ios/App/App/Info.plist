@@ -38,6 +38,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- The experimental voice test, off until the person turns it on in Settings (docs/design/49a-voice-lab.md).
+	     English default; translations in en.lproj and pt-BR.lproj InfoPlist.strings. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Lotties uses the microphone only in the experimental voice test, after you tap to speak, to check how well the app understands spoken commands. Nothing is recorded.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>The experimental voice test turns what you say into text on this iPhone to check the spoken commands. Speech is recognised on the iPhone only: Lotties does not record or send the audio.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -1,0 +1,1541 @@
+{
+  "_doc": "Shared vectors of the hands-free command parser v0 (code/web/src/voice/commandParser.ts; docs/design/49-hands-free.md sections 4 and 7.3). Each case: the recognised text, the speech locale, the unit system (default metric), what is running (default nothing) and the expected result: a command (an object with `kind`) or an outcome that logs nothing (`needs_amount`, `out_of_range`, `ambiguous`, `not_understood`; `reason` is checked only when given). `spec` names the phrase of design 49 section 7.3 the lab reads aloud. Amounts are ml (storage); a US amount is converted with units/convert.ts flOzToMl. `nBest` cases give the recogniser's alternatives, best first, and the index of the alternative the result comes from.",
+  "cases": [
+    {
+      "id": "pt-01",
+      "spec": "7.3 #1",
+      "locale": "pt-BR",
+      "text": "mamadeira de 120 ml",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+    {
+      "id": "pt-02",
+      "spec": "7.3 #2",
+      "locale": "pt-BR",
+      "text": "mamadeira de 90",
+      "expect": { "kind": "bottle", "amountMl": 90, "content": null }
+    },
+    {
+      "id": "pt-03",
+      "spec": "7.3 #3",
+      "locale": "pt-BR",
+      "text": "mamadeira de cento e cinquenta mililitros",
+      "expect": { "kind": "bottle", "amountMl": 150, "content": null }
+    },
+    {
+      "id": "pt-04",
+      "spec": "7.3 #4",
+      "locale": "pt-BR",
+      "text": "mamadeira de 60 ml de fórmula",
+      "expect": { "kind": "bottle", "amountMl": 60, "content": "formula" }
+    },
+    {
+      "id": "pt-05",
+      "spec": "7.3 #5",
+      "locale": "pt-BR",
+      "text": "mamadeira de 100 de leite materno",
+      "expect": { "kind": "bottle", "amountMl": 100, "content": "breast_milk" }
+    },
+    {
+      "id": "pt-06",
+      "spec": "7.3 #6",
+      "locale": "pt-BR",
+      "text": "mamadeira de 210",
+      "expect": { "kind": "bottle", "amountMl": 210, "content": null }
+    },
+    {
+      "id": "pt-07",
+      "spec": "7.3 #7",
+      "locale": "pt-BR",
+      "text": "peito esquerdo",
+      "expect": { "kind": "nursing_start", "side": "left" }
+    },
+    {
+      "id": "pt-08",
+      "spec": "7.3 #8",
+      "locale": "pt-BR",
+      "text": "começou no peito direito",
+      "expect": { "kind": "nursing_start", "side": "right" }
+    },
+    {
+      "id": "pt-09",
+      "spec": "7.3 #9",
+      "locale": "pt-BR",
+      "text": "mamando no lado esquerdo",
+      "expect": { "kind": "nursing_start", "side": "left" }
+    },
+    {
+      "id": "pt-10",
+      "spec": "7.3 #10",
+      "locale": "pt-BR",
+      "text": "parou de mamar",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "pt-11",
+      "spec": "7.3 #11",
+      "locale": "pt-BR",
+      "text": "terminou a mamada",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "pt-12",
+      "spec": "7.3 #12",
+      "locale": "pt-BR",
+      "text": "dormiu",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "pt-13",
+      "spec": "7.3 #13",
+      "locale": "pt-BR",
+      "text": "o bebê pegou no sono",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "pt-14",
+      "spec": "7.3 #14",
+      "locale": "pt-BR",
+      "text": "acordou",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "pt-15",
+      "spec": "7.3 #15",
+      "locale": "pt-BR",
+      "text": "ela acordou agora",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "pt-16",
+      "spec": "7.3 #16",
+      "locale": "pt-BR",
+      "text": "fralda de xixi",
+      "expect": { "kind": "diaper", "diaper": "wet" }
+    },
+    {
+      "id": "pt-17",
+      "spec": "7.3 #17",
+      "locale": "pt-BR",
+      "text": "fralda molhada",
+      "expect": { "kind": "diaper", "diaper": "wet" }
+    },
+    {
+      "id": "pt-18",
+      "spec": "7.3 #18",
+      "locale": "pt-BR",
+      "text": "fralda de cocô",
+      "expect": { "kind": "diaper", "diaper": "dirty" }
+    },
+    {
+      "id": "pt-19",
+      "spec": "7.3 #19",
+      "locale": "pt-BR",
+      "text": "xixi e cocô",
+      "expect": { "kind": "diaper", "diaper": "both" }
+    },
+    {
+      "id": "pt-20",
+      "spec": "7.3 #20",
+      "locale": "pt-BR",
+      "text": "quanto leite ela tomou hoje",
+      "expect": { "kind": "ask_milk_today" }
+    },
+    {
+      "id": "pt-21",
+      "spec": "7.3 #21",
+      "locale": "pt-BR",
+      "text": "quando foi a última mamada",
+      "expect": { "kind": "ask_last_feed" }
+    },
+    {
+      "id": "pt-22",
+      "spec": "7.3 #22",
+      "locale": "pt-BR",
+      "text": "mamadeira",
+      "expect": { "outcome": "needs_amount" }
+    },
+    {
+      "id": "pt-23",
+      "spec": "7.3 #23",
+      "locale": "pt-BR",
+      "text": "que horas são",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-24",
+      "spec": "7.3 #24",
+      "locale": "pt-BR",
+      "text": "ela está chorando muito",
+      "expect": { "outcome": "not_understood", "reason": "no_intent" }
+    },
+
+    {
+      "id": "en-01",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "bottle 120 ml",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+    {
+      "id": "en-02",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "90 ml bottle of formula",
+      "expect": { "kind": "bottle", "amountMl": 90, "content": "formula" }
+    },
+    {
+      "id": "en-03",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "left side",
+      "expect": { "kind": "nursing_start", "side": "left" }
+    },
+    {
+      "id": "en-04",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "start nursing on the right",
+      "expect": { "kind": "nursing_start", "side": "right" }
+    },
+    {
+      "id": "en-05",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "stop nursing",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "en-06",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "she fell asleep",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "en-07",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "she woke up",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "en-08",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "wet diaper",
+      "expect": { "kind": "diaper", "diaper": "wet" }
+    },
+    {
+      "id": "en-09",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "dirty diaper",
+      "expect": { "kind": "diaper", "diaper": "dirty" }
+    },
+    {
+      "id": "en-10",
+      "spec": "7.3 en",
+      "locale": "en",
+      "text": "how much milk today",
+      "expect": { "kind": "ask_milk_today" }
+    },
+    {
+      "id": "en-us-01",
+      "spec": "7.3 en us",
+      "locale": "en",
+      "units": "us",
+      "text": "four ounce bottle",
+      "expect": { "kind": "bottle", "amountMl": 118, "content": null }
+    },
+
+    {
+      "id": "pt-rec-01",
+      "locale": "pt-BR",
+      "text": "Mamadeira de 120 mL.",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+    {
+      "id": "pt-rec-02",
+      "locale": "pt-BR",
+      "text": "mamadeira de 120ml",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+    {
+      "id": "pt-rec-03",
+      "locale": "pt-BR",
+      "text": "Fralda de coco",
+      "expect": { "kind": "diaper", "diaper": "dirty" }
+    },
+    {
+      "id": "pt-rec-04",
+      "locale": "pt-BR",
+      "text": "Xixi e coco.",
+      "expect": { "kind": "diaper", "diaper": "both" }
+    },
+    {
+      "id": "pt-rec-05",
+      "locale": "pt-BR",
+      "text": "Peito Esquerdo",
+      "expect": { "kind": "nursing_start", "side": "left" }
+    },
+    {
+      "id": "pt-rec-06",
+      "locale": "pt-BR",
+      "text": "mamadeira de 60 ml de formula",
+      "expect": { "kind": "bottle", "amountMl": 60, "content": "formula" }
+    },
+    {
+      "id": "pt-rec-07",
+      "locale": "pt-BR",
+      "text": "quanto leite ela tomou hoje?",
+      "expect": { "kind": "ask_milk_today" }
+    },
+
+    {
+      "id": "pt-num-01",
+      "locale": "pt-BR",
+      "text": "mamadeira de cento e vinte",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+    {
+      "id": "pt-num-02",
+      "locale": "pt-BR",
+      "text": "mamadeira de duzentos e dez mililitros",
+      "expect": { "kind": "bottle", "amountMl": 210, "content": null }
+    },
+    {
+      "id": "pt-num-03",
+      "locale": "pt-BR",
+      "text": "mamadeira de noventa ml",
+      "expect": { "kind": "bottle", "amountMl": 90, "content": null }
+    },
+    {
+      "id": "pt-num-04",
+      "locale": "pt-BR",
+      "text": "mamadeira de cento e vinte e cinco",
+      "expect": { "kind": "bottle", "amountMl": 125, "content": null }
+    },
+    {
+      "id": "pt-num-05",
+      "locale": "pt-BR",
+      "text": "mamadeira de sessenta",
+      "expect": { "kind": "bottle", "amountMl": 60, "content": null }
+    },
+    {
+      "id": "pt-num-06",
+      "locale": "pt-BR",
+      "text": "mamadeira de dezesseis",
+      "expect": { "kind": "bottle", "amountMl": 16, "content": null }
+    },
+    {
+      "id": "pt-num-07",
+      "locale": "pt-BR",
+      "text": "mamadeira de cem",
+      "expect": { "kind": "bottle", "amountMl": 100, "content": null }
+    },
+    {
+      "id": "pt-num-08",
+      "locale": "pt-BR",
+      "text": "mamadeira de quinhentos",
+      "expect": { "kind": "bottle", "amountMl": 500, "content": null }
+    },
+    {
+      "id": "pt-num-09",
+      "locale": "pt-BR",
+      "text": "uma mamadeira de 120",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+    {
+      "id": "pt-num-10",
+      "locale": "pt-BR",
+      "text": "mamadeira de uma onça",
+      "expect": { "kind": "bottle", "amountMl": 30, "content": null }
+    },
+    {
+      "id": "pt-num-11",
+      "locale": "pt-BR",
+      "text": "mamadeira de 4,5 onças",
+      "expect": { "kind": "bottle", "amountMl": 133, "content": null }
+    },
+    {
+      "id": "pt-num-12",
+      "locale": "pt-BR",
+      "text": "ela tomou 120 ml",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+    {
+      "id": "pt-num-13",
+      "locale": "pt-BR",
+      "text": "cento e vinte mililitros de leite materno",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": "breast_milk" }
+    },
+    {
+      "id": "pt-num-14",
+      "locale": "pt-BR",
+      "text": "mamadeira de uns 150 de leite do peito",
+      "expect": { "kind": "bottle", "amountMl": 150, "content": "breast_milk" }
+    },
+    {
+      "id": "pt-num-15",
+      "locale": "pt-BR",
+      "text": "deu 90 de fórmula",
+      "expect": { "kind": "bottle", "amountMl": 90, "content": "formula" }
+    },
+    {
+      "id": "pt-num-16",
+      "locale": "pt-BR",
+      "units": "us",
+      "text": "mamadeira de 4",
+      "expect": { "kind": "bottle", "amountMl": 118, "content": null }
+    },
+    {
+      "id": "pt-num-17",
+      "locale": "pt-BR",
+      "units": "us",
+      "text": "mamadeira de 120 ml",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+    {
+      "id": "pt-num-18",
+      "locale": "pt-BR",
+      "text": "terminou a mamadeira de 120",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+
+    {
+      "id": "pt-range-01",
+      "locale": "pt-BR",
+      "text": "mamadeira de 1000 ml",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "pt-range-02",
+      "locale": "pt-BR",
+      "text": "mamadeira de 1.000 ml",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "pt-range-03",
+      "locale": "pt-BR",
+      "text": "mamadeira de 0",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "pt-range-04",
+      "locale": "pt-BR",
+      "text": "mamadeira de seiscentos",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "pt-range-05",
+      "locale": "pt-BR",
+      "text": "mamadeira de quinhentos e um",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "pt-range-06",
+      "locale": "pt-BR",
+      "text": "mamadeira de cinco litros",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "pt-range-07",
+      "locale": "pt-BR",
+      "units": "us",
+      "text": "mamadeira de 120",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "pt-range-08",
+      "locale": "pt-BR",
+      "text": "mamadeira de mil",
+      "expect": { "outcome": "out_of_range" }
+    },
+
+    {
+      "id": "pt-amb-01",
+      "locale": "pt-BR",
+      "text": "mamadeira de 90 ou 120",
+      "expect": { "outcome": "not_understood" }
+    },
+    {
+      "id": "pt-amb-02",
+      "locale": "pt-BR",
+      "text": "mamadeira de 120 às 3",
+      "expect": { "outcome": "not_understood", "reason": "ambiguous_amount" }
+    },
+    {
+      "id": "pt-amb-03",
+      "locale": "pt-BR",
+      "text": "mamadeira de 120 às três horas",
+      "expect": { "outcome": "not_understood" }
+    },
+    {
+      "id": "pt-amb-04",
+      "locale": "pt-BR",
+      "text": "mamadeira 120 150",
+      "expect": { "outcome": "not_understood", "reason": "invalid_number" }
+    },
+    {
+      "id": "pt-amb-05",
+      "locale": "pt-BR",
+      "text": "mamadeira de 120 de fórmula e leite materno",
+      "expect": { "outcome": "not_understood", "reason": "content_conflict" }
+    },
+    {
+      "id": "pt-amb-06",
+      "locale": "pt-BR",
+      "text": "mamadeira de leite materno",
+      "expect": { "outcome": "needs_amount" }
+    },
+    {
+      "id": "pt-amb-07",
+      "locale": "pt-BR",
+      "text": "mamadeira de um",
+      "expect": { "outcome": "needs_amount" }
+    },
+    {
+      "id": "pt-amb-08",
+      "locale": "pt-BR",
+      "text": "mamadeira de 1.2.3",
+      "expect": { "outcome": "not_understood", "reason": "invalid_number" }
+    },
+    {
+      "id": "pt-amb-09",
+      "locale": "pt-BR",
+      "text": "120",
+      "expect": { "outcome": "not_understood", "reason": "no_intent" }
+    },
+    {
+      "id": "pt-amb-10",
+      "locale": "pt-BR",
+      "text": "mamadeira de noventa noventa",
+      "expect": { "outcome": "not_understood", "reason": "invalid_number" }
+    },
+
+    {
+      "id": "pt-neg-01",
+      "locale": "pt-BR",
+      "text": "não dormiu",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "pt-neg-02",
+      "locale": "pt-BR",
+      "text": "ainda não acordou",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "pt-neg-03",
+      "locale": "pt-BR",
+      "text": "ela não fez cocô",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "pt-neg-04",
+      "locale": "pt-BR",
+      "text": "fralda sem cocô",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "pt-neg-05",
+      "locale": "pt-BR",
+      "text": "ela não quis a mamadeira de 120",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "pt-neg-06",
+      "locale": "pt-BR",
+      "text": "nem mamou no peito esquerdo",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "pt-neg-07",
+      "locale": "pt-BR",
+      "text": "ela nunca dorme",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "pt-neg-08",
+      "locale": "pt-BR",
+      "text": "nao acordou",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+
+    {
+      "id": "pt-q-01",
+      "locale": "pt-BR",
+      "text": "ela dormiu?",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-02",
+      "locale": "pt-BR",
+      "text": "será que ela acordou",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-03",
+      "locale": "pt-BR",
+      "text": "quando ela acordou",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-04",
+      "locale": "pt-BR",
+      "text": "que horas ela dormiu",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-05",
+      "locale": "pt-BR",
+      "text": "como ela dormiu",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-06",
+      "locale": "pt-BR",
+      "text": "quantas fraldas de xixi hoje",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-07",
+      "locale": "pt-BR",
+      "text": "ela fez cocô né",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-08",
+      "locale": "pt-BR",
+      "text": "mamadeira de 120?",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-09",
+      "locale": "pt-BR",
+      "text": "quanto tempo ela dormiu",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-10",
+      "locale": "pt-BR",
+      "text": "quanto leite ela tomou ontem",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "pt-q-11",
+      "locale": "pt-BR",
+      "text": "última mamada",
+      "expect": { "kind": "ask_last_feed" }
+    },
+    {
+      "id": "pt-q-12",
+      "locale": "pt-BR",
+      "text": "quanto ela mamou hoje",
+      "expect": { "kind": "ask_milk_today" }
+    },
+    {
+      "id": "pt-q-13",
+      "locale": "pt-BR",
+      "text": "faz quanto tempo que ela mamou",
+      "expect": { "kind": "ask_last_feed" }
+    },
+    {
+      "id": "pt-q-14",
+      "locale": "pt-BR",
+      "text": "quando ela tomou a última mamadeira",
+      "expect": { "kind": "ask_last_feed" }
+    },
+    {
+      "id": "pt-q-15",
+      "locale": "pt-BR",
+      "text": "quanto de leite hoje",
+      "expect": { "kind": "ask_milk_today" }
+    },
+
+    {
+      "id": "pt-time-01",
+      "locale": "pt-BR",
+      "text": "ontem ela dormiu às 8",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-02",
+      "locale": "pt-BR",
+      "text": "ela vai dormir",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-03",
+      "locale": "pt-BR",
+      "text": "ela dormiu bem",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-04",
+      "locale": "pt-BR",
+      "text": "ela dormiu a noite toda",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-05",
+      "locale": "pt-BR",
+      "text": "ela está quase dormindo",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-06",
+      "locale": "pt-BR",
+      "text": "acordou há 10 minutos",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-07",
+      "locale": "pt-BR",
+      "text": "acordou às 3",
+      "expect": { "outcome": "not_understood", "reason": "stray_number" }
+    },
+    {
+      "id": "pt-time-08",
+      "locale": "pt-BR",
+      "text": "acordou 3 vezes",
+      "expect": { "outcome": "not_understood", "reason": "time" }
+    },
+    {
+      "id": "pt-time-09",
+      "locale": "pt-BR",
+      "text": "ela ainda está dormindo",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-10",
+      "locale": "pt-BR",
+      "text": "ela quer mamar",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-11",
+      "locale": "pt-BR",
+      "text": "daqui a pouco vou dar a mamadeira de 120",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-12",
+      "locale": "pt-BR",
+      "text": "dormiu direito",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-13",
+      "locale": "pt-BR",
+      "text": "ela mamou no peito esquerdo",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-14",
+      "locale": "pt-BR",
+      "text": "acho que ela dormiu",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-15",
+      "locale": "pt-BR",
+      "text": "se ela acordar me avisa",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-16",
+      "locale": "pt-BR",
+      "text": "acordou 15h30",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-17",
+      "locale": "pt-BR",
+      "text": "ela sempre acorda cedo",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "pt-time-18",
+      "locale": "pt-BR",
+      "text": "hora de mamar",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+
+    {
+      "id": "pt-var-01",
+      "locale": "pt-BR",
+      "text": "ela acabou de dormir",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "pt-var-02",
+      "locale": "pt-BR",
+      "text": "acabou de acordar",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "pt-var-03",
+      "locale": "pt-BR",
+      "text": "ela está dormindo",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "pt-var-04",
+      "locale": "pt-BR",
+      "text": "ela tá acordada",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "pt-var-05",
+      "locale": "pt-BR",
+      "text": "adormeceu agora",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "pt-var-06",
+      "locale": "pt-BR",
+      "text": "começou a soneca",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "pt-var-07",
+      "locale": "pt-BR",
+      "text": "terminou a soneca",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "pt-var-08",
+      "locale": "pt-BR",
+      "text": "caiu no sono",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "pt-var-09",
+      "locale": "pt-BR",
+      "text": "lado direito",
+      "expect": { "kind": "nursing_start", "side": "right" }
+    },
+    {
+      "id": "pt-var-10",
+      "locale": "pt-BR",
+      "text": "esquerdo",
+      "expect": { "kind": "nursing_start", "side": "left" }
+    },
+    {
+      "id": "pt-var-11",
+      "locale": "pt-BR",
+      "text": "o direito",
+      "expect": { "kind": "nursing_start", "side": "right" }
+    },
+    {
+      "id": "pt-var-12",
+      "locale": "pt-BR",
+      "text": "começou a mamar",
+      "expect": { "kind": "nursing_start", "side": null }
+    },
+    {
+      "id": "pt-var-13",
+      "locale": "pt-BR",
+      "text": "amamentando no seio direito",
+      "expect": { "kind": "nursing_start", "side": "right" }
+    },
+    {
+      "id": "pt-var-14",
+      "locale": "pt-BR",
+      "text": "mamando",
+      "expect": { "kind": "nursing_start", "side": null }
+    },
+    {
+      "id": "pt-var-15",
+      "locale": "pt-BR",
+      "text": "terminou de mamar",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "pt-var-16",
+      "locale": "pt-BR",
+      "text": "largou o peito",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "pt-var-17",
+      "locale": "pt-BR",
+      "text": "fim da mamada",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "pt-var-18",
+      "locale": "pt-BR",
+      "text": "acabou de mamar",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "pt-var-19",
+      "locale": "pt-BR",
+      "text": "pare a mamada",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "pt-var-20",
+      "locale": "pt-BR",
+      "text": "ela fez xixi",
+      "expect": { "kind": "diaper", "diaper": "wet" }
+    },
+    {
+      "id": "pt-var-21",
+      "locale": "pt-BR",
+      "text": "fez cocô",
+      "expect": { "kind": "diaper", "diaper": "dirty" }
+    },
+    {
+      "id": "pt-var-22",
+      "locale": "pt-BR",
+      "text": "fralda suja",
+      "expect": { "kind": "diaper", "diaper": "dirty" }
+    },
+    {
+      "id": "pt-var-23",
+      "locale": "pt-BR",
+      "text": "fralda de xixi e cocô",
+      "expect": { "kind": "diaper", "diaper": "both" }
+    },
+    {
+      "id": "pt-var-24",
+      "locale": "pt-BR",
+      "text": "troquei a fralda de xixi",
+      "expect": { "kind": "diaper", "diaper": "wet" }
+    },
+    {
+      "id": "pt-var-25",
+      "locale": "pt-BR",
+      "text": "fralda bem molhada",
+      "expect": { "kind": "diaper", "diaper": "wet" }
+    },
+    {
+      "id": "pt-var-26",
+      "locale": "pt-BR",
+      "text": "fralda mista",
+      "expect": { "kind": "diaper", "diaper": "both" }
+    },
+    {
+      "id": "pt-var-27",
+      "locale": "pt-BR",
+      "text": "fez cocô e xixi",
+      "expect": { "kind": "diaper", "diaper": "both" }
+    },
+    {
+      "id": "pt-var-28",
+      "locale": "pt-BR",
+      "text": "ok lotties dormiu",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "pt-var-29",
+      "locale": "pt-BR",
+      "text": "foi dormir agora",
+      "expect": { "kind": "sleep_start" }
+    },
+
+    {
+      "id": "pt-none-01",
+      "locale": "pt-BR",
+      "text": "fralda",
+      "expect": { "outcome": "not_understood", "reason": "diaper_kind" }
+    },
+    {
+      "id": "pt-none-02",
+      "locale": "pt-BR",
+      "text": "fralda seca",
+      "expect": { "outcome": "not_understood", "reason": "diaper_kind" }
+    },
+    {
+      "id": "pt-none-03",
+      "locale": "pt-BR",
+      "text": "roupa molhada",
+      "expect": { "outcome": "not_understood", "reason": "no_intent" }
+    },
+    {
+      "id": "pt-none-04",
+      "locale": "pt-BR",
+      "text": "dormiu e acordou",
+      "expect": { "outcome": "not_understood", "reason": "conflict" }
+    },
+    {
+      "id": "pt-none-05",
+      "locale": "pt-BR",
+      "text": "fez xixi e dormiu",
+      "expect": { "outcome": "not_understood", "reason": "conflict" }
+    },
+    {
+      "id": "pt-none-06",
+      "locale": "pt-BR",
+      "text": "peito esquerdo e direito",
+      "expect": { "outcome": "not_understood", "reason": "conflict" }
+    },
+    {
+      "id": "pt-none-07",
+      "locale": "pt-BR",
+      "text": "parou de chorar",
+      "expect": { "outcome": "not_understood", "reason": "no_intent" }
+    },
+    {
+      "id": "pt-none-08",
+      "locale": "pt-BR",
+      "text": "mamada",
+      "expect": { "outcome": "not_understood", "reason": "no_intent" }
+    },
+    {
+      "id": "pt-none-09",
+      "locale": "pt-BR",
+      "text": "",
+      "expect": { "outcome": "not_understood", "reason": "empty" }
+    },
+    {
+      "id": "pt-none-10",
+      "locale": "pt-BR",
+      "text": "obrigado",
+      "expect": { "outcome": "not_understood", "reason": "no_intent" }
+    },
+    {
+      "id": "pt-none-11",
+      "locale": "pt-BR",
+      "text": "constructor",
+      "expect": { "outcome": "not_understood", "reason": "no_intent" }
+    },
+    {
+      "id": "pt-none-12",
+      "locale": "pt-BR",
+      "text": "mamando na mamadeira",
+      "expect": { "outcome": "not_understood", "reason": "conflict" }
+    },
+
+    {
+      "id": "pt-run-01",
+      "locale": "pt-BR",
+      "running": { "nursing": true },
+      "text": "parou",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "pt-run-02",
+      "locale": "pt-BR",
+      "running": { "sleep": true },
+      "text": "terminou",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "pt-run-03",
+      "locale": "pt-BR",
+      "running": { "nursing": true, "sleep": true },
+      "text": "parou",
+      "expect": { "outcome": "ambiguous" }
+    },
+    {
+      "id": "pt-run-04",
+      "locale": "pt-BR",
+      "text": "pronto",
+      "expect": { "outcome": "not_understood", "reason": "no_running" }
+    },
+    {
+      "id": "pt-run-05",
+      "locale": "pt-BR",
+      "running": { "sleep": true },
+      "text": "parou de mamar",
+      "expect": { "kind": "nursing_stop" }
+    },
+
+    {
+      "id": "en-num-01",
+      "locale": "en",
+      "text": "bottle of one hundred twenty",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null }
+    },
+    {
+      "id": "en-num-02",
+      "locale": "en",
+      "text": "a hundred and fifty ml bottle",
+      "expect": { "kind": "bottle", "amountMl": 150, "content": null }
+    },
+    {
+      "id": "en-num-03",
+      "locale": "en",
+      "text": "bottle of 4.5 ounces",
+      "expect": { "kind": "bottle", "amountMl": 133, "content": null }
+    },
+    {
+      "id": "en-num-04",
+      "locale": "en",
+      "text": "120ml bottle of breast milk",
+      "expect": { "kind": "bottle", "amountMl": 120, "content": "breast_milk" }
+    },
+    {
+      "id": "en-num-05",
+      "locale": "en",
+      "text": "she drank about 90 ml",
+      "expect": { "kind": "bottle", "amountMl": 90, "content": null }
+    },
+    {
+      "id": "en-num-06",
+      "locale": "en",
+      "text": "four ounce bottle",
+      "expect": { "kind": "bottle", "amountMl": 118, "content": null }
+    },
+    {
+      "id": "en-num-07",
+      "locale": "en",
+      "units": "us",
+      "text": "bottle of 5",
+      "expect": { "kind": "bottle", "amountMl": 148, "content": null }
+    },
+    {
+      "id": "en-num-08",
+      "locale": "en",
+      "text": "ninety ml of formula",
+      "expect": { "kind": "bottle", "amountMl": 90, "content": "formula" }
+    },
+    {
+      "id": "en-num-09",
+      "locale": "en",
+      "text": "two hundred ten ml bottle",
+      "expect": { "kind": "bottle", "amountMl": 210, "content": null }
+    },
+    {
+      "id": "en-num-10",
+      "locale": "en",
+      "units": "us",
+      "text": "a 4 fl oz bottle",
+      "expect": { "kind": "bottle", "amountMl": 118, "content": null }
+    },
+
+    {
+      "id": "en-range-01",
+      "locale": "en",
+      "text": "bottle 2000 ml",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "en-range-02",
+      "locale": "en",
+      "text": "bottle 1,000 ml",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "en-range-03",
+      "locale": "en",
+      "units": "us",
+      "text": "bottle 120",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "en-range-04",
+      "locale": "en",
+      "text": "bottle of twenty ounces",
+      "expect": { "outcome": "out_of_range" }
+    },
+    {
+      "id": "en-amb-01",
+      "locale": "en",
+      "text": "bottle one twenty",
+      "expect": { "outcome": "not_understood", "reason": "invalid_number" }
+    },
+    {
+      "id": "en-amb-02",
+      "locale": "en",
+      "text": "bottle",
+      "expect": { "outcome": "needs_amount" }
+    },
+    {
+      "id": "en-amb-03",
+      "locale": "en",
+      "text": "bottle of 90 or 120",
+      "expect": { "outcome": "not_understood" }
+    },
+
+    {
+      "id": "en-neg-01",
+      "locale": "en",
+      "text": "she didn't sleep",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "en-neg-02",
+      "locale": "en",
+      "text": "she hasn't woken up yet",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "en-neg-03",
+      "locale": "en",
+      "text": "she is not asleep",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "en-neg-04",
+      "locale": "en",
+      "text": "no poop",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "en-neg-05",
+      "locale": "en",
+      "text": "she didnt finish the bottle",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+    {
+      "id": "en-neg-06",
+      "locale": "en",
+      "text": "she won’t nurse on the left",
+      "expect": { "outcome": "not_understood", "reason": "negation" }
+    },
+
+    {
+      "id": "en-q-01",
+      "locale": "en",
+      "text": "did she wake up",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "en-q-02",
+      "locale": "en",
+      "text": "when did she fall asleep",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "en-q-03",
+      "locale": "en",
+      "text": "is she asleep",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "en-q-04",
+      "locale": "en",
+      "text": "she woke up?",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "en-q-05",
+      "locale": "en",
+      "text": "how many diapers today",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "en-q-06",
+      "locale": "en",
+      "text": "how much milk did she have yesterday",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "en-q-07",
+      "locale": "en",
+      "text": "when was the last feed",
+      "expect": { "kind": "ask_last_feed" }
+    },
+    {
+      "id": "en-q-08",
+      "locale": "en",
+      "text": "last feeding",
+      "expect": { "kind": "ask_last_feed" }
+    },
+    {
+      "id": "en-q-09",
+      "locale": "en",
+      "text": "how much did she drink today",
+      "expect": { "kind": "ask_milk_today" }
+    },
+    {
+      "id": "en-q-10",
+      "locale": "en",
+      "text": "how long since she ate",
+      "expect": { "kind": "ask_last_feed" }
+    },
+    {
+      "id": "en-q-11",
+      "locale": "en",
+      "text": "has she pooped",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+
+    {
+      "id": "en-time-01",
+      "locale": "en",
+      "text": "she will fall asleep soon",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-02",
+      "locale": "en",
+      "text": "she's going to sleep",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-03",
+      "locale": "en",
+      "text": "she woke up at 3",
+      "expect": { "outcome": "not_understood", "reason": "stray_number" }
+    },
+    {
+      "id": "en-time-04",
+      "locale": "en",
+      "text": "she woke up 10 minutes ago",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-05",
+      "locale": "en",
+      "text": "she's still asleep",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-06",
+      "locale": "en",
+      "text": "she slept well last night",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-07",
+      "locale": "en",
+      "text": "she's almost asleep",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-08",
+      "locale": "en",
+      "text": "she wants to nurse",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-09",
+      "locale": "en",
+      "text": "she fell asleep late",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-10",
+      "locale": "en",
+      "text": "she nursed on the left",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-11",
+      "locale": "en",
+      "text": "she's about to fall asleep",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+    {
+      "id": "en-time-12",
+      "locale": "en",
+      "text": "she woke up at 3:15",
+      "expect": { "outcome": "not_understood", "reason": "report" }
+    },
+
+    {
+      "id": "en-var-01",
+      "locale": "en",
+      "text": "she's asleep",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "en-var-02",
+      "locale": "en",
+      "text": "the baby is awake",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "en-var-03",
+      "locale": "en",
+      "text": "nap started",
+      "expect": { "kind": "sleep_start" }
+    },
+    { "id": "en-var-04", "locale": "en", "text": "nap over", "expect": { "kind": "sleep_end" } },
+    {
+      "id": "en-var-05",
+      "locale": "en",
+      "text": "she peed",
+      "expect": { "kind": "diaper", "diaper": "wet" }
+    },
+    {
+      "id": "en-var-06",
+      "locale": "en",
+      "text": "pee and poop",
+      "expect": { "kind": "diaper", "diaper": "both" }
+    },
+    {
+      "id": "en-var-07",
+      "locale": "en",
+      "text": "wet and dirty diaper",
+      "expect": { "kind": "diaper", "diaper": "both" }
+    },
+    {
+      "id": "en-var-08",
+      "locale": "en",
+      "text": "poopy diaper",
+      "expect": { "kind": "diaper", "diaper": "dirty" }
+    },
+    {
+      "id": "en-var-09",
+      "locale": "en",
+      "text": "right side",
+      "expect": { "kind": "nursing_start", "side": "right" }
+    },
+    {
+      "id": "en-var-10",
+      "locale": "en",
+      "text": "nursing on the left breast",
+      "expect": { "kind": "nursing_start", "side": "left" }
+    },
+    {
+      "id": "en-var-11",
+      "locale": "en",
+      "text": "done nursing",
+      "expect": { "kind": "nursing_stop" }
+    },
+    {
+      "id": "en-var-12",
+      "locale": "en",
+      "text": "she fell asleep right now",
+      "expect": { "kind": "sleep_start" }
+    },
+    {
+      "id": "en-var-13",
+      "locale": "en",
+      "text": "she just woke up",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "en-var-14",
+      "locale": "en",
+      "text": "diaper both",
+      "expect": { "kind": "diaper", "diaper": "both" }
+    },
+    {
+      "id": "en-var-15",
+      "locale": "en",
+      "text": "left",
+      "expect": { "kind": "nursing_start", "side": "left" }
+    },
+    {
+      "id": "en-var-16",
+      "locale": "en",
+      "text": "she went to sleep",
+      "expect": { "kind": "sleep_start" }
+    },
+
+    {
+      "id": "en-none-01",
+      "locale": "en",
+      "text": "diaper",
+      "expect": { "outcome": "not_understood", "reason": "diaper_kind" }
+    },
+    {
+      "id": "en-none-02",
+      "locale": "en",
+      "text": "dry diaper",
+      "expect": { "outcome": "not_understood", "reason": "diaper_kind" }
+    },
+    {
+      "id": "en-none-03",
+      "locale": "en",
+      "text": "what time is it",
+      "expect": { "outcome": "not_understood", "reason": "question" }
+    },
+    {
+      "id": "en-none-04",
+      "locale": "en",
+      "text": "she is crying a lot",
+      "expect": { "outcome": "not_understood", "reason": "no_intent" }
+    },
+    {
+      "id": "en-none-05",
+      "locale": "en",
+      "text": "she left the bottle",
+      "expect": { "outcome": "needs_amount" }
+    },
+    {
+      "id": "en-none-06",
+      "locale": "en",
+      "text": "breast milk",
+      "expect": { "outcome": "not_understood", "reason": "no_intent" }
+    },
+    {
+      "id": "en-run-01",
+      "locale": "en",
+      "running": { "sleep": true },
+      "text": "stop",
+      "expect": { "kind": "sleep_end" }
+    },
+    {
+      "id": "en-run-02",
+      "locale": "en",
+      "running": { "nursing": true },
+      "text": "done",
+      "expect": { "kind": "nursing_stop" }
+    }
+  ],
+  "nBest": [
+    {
+      "id": "nb-01",
+      "locale": "pt-BR",
+      "alternatives": ["mamadeira de 120 ml", "mamadeira de 20 ml"],
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null },
+      "index": 0
+    },
+    {
+      "id": "nb-02",
+      "locale": "pt-BR",
+      "alternatives": ["mama deira de 120", "mamadeira de 120"],
+      "expect": { "kind": "bottle", "amountMl": 120, "content": null },
+      "index": 1
+    },
+    {
+      "id": "nb-03",
+      "locale": "pt-BR",
+      "alternatives": ["não dormiu", "dormiu"],
+      "expect": { "outcome": "not_understood", "reason": "negation" },
+      "index": 0
+    },
+    {
+      "id": "nb-04",
+      "locale": "pt-BR",
+      "alternatives": ["mamadeira", "mamadeira 2"],
+      "expect": { "outcome": "needs_amount" },
+      "index": 0
+    },
+    {
+      "id": "nb-05",
+      "locale": "pt-BR",
+      "alternatives": ["que horas são", "que horas sono"],
+      "expect": { "outcome": "not_understood", "reason": "question" },
+      "index": 0
+    },
+    {
+      "id": "nb-06",
+      "locale": "pt-BR",
+      "alternatives": ["ela está chorando muito", "ela está chorando muita"],
+      "expect": { "outcome": "not_understood", "reason": "no_intent" },
+      "index": 0
+    },
+    {
+      "id": "nb-07",
+      "locale": "pt-BR",
+      "alternatives": [],
+      "expect": { "outcome": "not_understood", "reason": "empty" },
+      "index": null
+    },
+    {
+      "id": "nb-08",
+      "locale": "en",
+      "alternatives": ["bottle 1000 ml", "bottle 100 ml"],
+      "expect": { "outcome": "out_of_range" },
+      "index": 0
+    },
+    {
+      "id": "nb-09",
+      "locale": "pt-BR",
+      "alternatives": ["peixe esquerdo", "peito esquerdo"],
+      "expect": { "kind": "nursing_start", "side": "left" },
+      "index": 1
+    }
+  ]
+}

@@ -258,6 +258,13 @@ app can register; PKCE already blocks code interception).
   native push (section 7), widgets and quick actions (section 8), no web chrome inside the app (no install prompts, no
   "open in browser"), correct icons/splash/launch screen, keyboard and safe areas handled. Push and at least one
   widget should exist before the first iOS review.
+- **Microphone and speech recognition (experimental hands-free voice test, docs/design/49a-voice-lab.md)**: the phone
+  builds carry the `LottiesSpeech` plugin (Kotlin `speech/LottiesSpeechPlugin.kt` registered in `MainActivity`, Swift
+  `LottiesSpeechPlugin.swift` registered in `LottiesBridgeViewController`), Android `RECORD_AUDIO`, and the iOS
+  `NSMicrophoneUsageDescription` / `NSSpeechRecognitionUsageDescription` (English default in `Info.plist`, translated in
+  `en.lproj` / `pt-BR.lproj` `InfoPlist.strings`). The web code reaches it only behind `VITE_VOICE_LAB` (set in
+  `code/web/.env.native` only), `isNativeApp()` and the person's opt-in in Settings > Experimental; the permissions are
+  asked at the first tap to speak. On-device recognition only. Store notes: design 20 section 3 ("Hands-free voice test").
 - Icons and splash: generated from the brand icons (docs/design/icons, concept B) by `npm --prefix code/mobile run assets` (`code/mobile/scripts/generate-native-assets.mjs`, uses `sharp` from code/web; no new dependency). Android: legacy, round, adaptive foreground (background colour `#F5EFE4`) and monochrome (themed icons) mipmaps, pre-Android 12 `splash.png` per density, Android 12+ splash from `values/styles.xml` (`windowSplashScreenBackground` + the foreground icon; dark `#1B1814` in `values-night`). iOS: 1024 px opaque app icon, `Splash.imageset` with light and dark 2732 px images. Splash colours: light `#f5efe4`, dark `#1b1814` (the web first-paint colours). Not checked on a device: the glyph sits in the adaptive icon safe zone by construction (0.78 of the canvas, as the maskable art), look at it on a launcher first.
 
 ## 11. AGPL-3.0 and the App Store

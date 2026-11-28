@@ -10,6 +10,8 @@ import WidgetKit
 class LottiesBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(LottiesSharedPlugin())
+        // The experimental voice test's recogniser (docs/design/49a-voice-lab.md).
+        bridge?.registerPluginInstance(LottiesSpeechPlugin())
         bridge?.webView?.configuration.userContentController.addScriptMessageHandler(
             LottiesMessageHandler(), contentWorld: .page, name: "lotties")
         LottiesSilentPush.shared.webView = bridge?.webView

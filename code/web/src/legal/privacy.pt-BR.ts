@@ -18,6 +18,7 @@ export const privacyPtBR: PolicyDocument = {
           'O que você e as pessoas que você convida registram sobre o bebê, inclusive informações de saúde, como remédios e vacinas.',
           'O que o serviço precisa para funcionar: as configurações de lembretes, se você ativá-los, o token de push do app de iOS ou de Android enquanto ele mostra um widget do Lotties, e registros técnicos.',
           'Se você ligar o Monitor de choro: o microfone, analisado só no seu aparelho e nunca gravado; só ficam salvos os períodos de choro detectados.',
+          'Se você ligar o teste de voz mãos livres, experimental, em um app de celular: sua voz, pelo microfone, transformada em texto pelo reconhecimento de fala do próprio celular, no aparelho, só para testar o quanto o app entende comandos falados; o Lotties não grava nem envia o áudio. É opcional, fica desligado até você ligar, e você pode desligar quando quiser.',
           'Se você ligar a estimativa de descanso, que é opcional: seus horários de trabalho e da noite e o fuso horário; a estimativa é calculada quando você pede, aparece só para você e nunca é guardada.',
         ],
       },
@@ -185,6 +186,14 @@ export const privacyPtBR: PolicyDocument = {
               ],
             },
             {
+              id: 'handsFree',
+              cells: [
+                'Teste de voz mãos livres (opcional, experimental, apps de celular)',
+                'Só nos apps de iOS e Android: o teste de voz não está no app web. É um recurso experimental, desligado até você ligá-lo em Ajustes > Experimental > Mãos livres (teste de voz), e serve só para testar o quanto o app entende comandos falados. Ao ligar, nenhuma permissão é pedida: o app só pede o microfone e, no iPhone, o reconhecimento de fala quando você toca para falar e a permissão ainda não foi dada. O microfone só escuta depois que você toca para falar, até a frase terminar ou você cancelar; sair da tela ou do app também o desliga. O que você fala é transformado em texto pelo reconhecimento de fala do próprio celular, que o Lotties pede para funcionar no próprio aparelho (modo no aparelho); se o celular não consegue fazer isso no idioma, o app avisa e não usa um servidor no lugar. No Android, se o idioma estiver faltando, um botão nos detalhes técnicos do teste pode pedir ao serviço de fala do próprio celular que o baixe; esse serviço o busca no seu próprio fornecedor (por exemplo, o Google), e o Lotties não envia a ele nenhum áudio nem texto. O som nunca é gravado, guardado ou enviado pelo Lotties, nem para nós. O texto reconhecido fica na memória do app, nessa tela, até você sair dela; o que você fala em Experimentar nunca é guardado nem exportado. Nada do que você fala ali vira registro, e nenhum dado do bebê é lido ou alterado. No teste guiado, em que você lê frases de teste fixas, os resultados só saem do celular se você exportar o arquivo de resultados e escolher para onde enviá-lo. O arquivo tem as frases de teste, o texto que o celular reconheceu em cada uma (com as alternativas, a confiança e os tempos) e como o app o entendeu, o resumo, a versão do app e o que o celular informa sobre o reconhecimento de fala (plataforma, versão do sistema, idiomas, situação das permissões); nunca a sua conta, nenhum dado do bebê nem o que você falou em Experimentar. Usar é opcional: não usar não muda nada no resto do app. Você pode desligar quando quiser: é só desligar em Ajustes ou tirar a permissão do microfone (e, no iPhone, a do reconhecimento de fala) do Lotties nos ajustes do celular. Sair da conta também o desliga.',
+                'Para você testar, como recurso experimental, o quanto o app entende comandos falados. Nada dele é enviado aos nossos servidores.',
+              ],
+            },
+            {
               id: 'assistants',
               cells: [
                 'Assistente de voz (Alexa)',
@@ -228,7 +237,7 @@ export const privacyPtBR: PolicyDocument = {
         },
         {
           kind: 'note',
-          text: 'O Lotties não pede sua localização, seus contatos, a câmera nem as fotos. Ele só pede o microfone quando você liga o Monitor de choro em um aparelho, no app web, e só o usa enquanto essa página está aberta; o som nunca sai do aparelho. O app não tem ferramentas de publicidade, de análise de uso nem de relatório de falhas.',
+          text: 'O Lotties não pede sua localização, seus contatos, a câmera nem as fotos. No app web, ele só pede o microfone quando você liga o Monitor de choro em um aparelho, e só o usa enquanto essa página está aberta; o som nunca sai do aparelho. Nos apps de iOS e Android, o microfone (e, no iPhone, o reconhecimento de fala) é opcional e só é pedido se você ligar o teste de voz mãos livres, experimental, em Ajustes e depois tocar para falar; você pode desligá-lo quando quiser em Ajustes ou nos ajustes do celular. O app não tem ferramentas de publicidade, de análise de uso nem de relatório de falhas.',
         },
       ],
     },
@@ -496,6 +505,7 @@ export const privacyPtBR: PolicyDocument = {
             'Atualização dos widgets: o token de push de um aparelho é desativado quando você sai da conta nele, quando o app percebe que o último widget do Lotties foi tirado (ele confere toda vez que abre), quando a Apple ou o Google avisam que ele não funciona mais ou os envios para ele falham seguidamente, ou quando o app não o renova há 60 dias; tokens desativados são apagados 30 dias depois.',
             'Registro de acessos de médicos e convites: ficam com o bebê até ele ser excluído.',
             'Monitor de choro: o som nunca é guardado. Os períodos de choro que ele registra são registros comuns (acima); o consentimento fica no aparelho até você retirá-lo ou sair da conta.',
+            'Teste de voz mãos livres: o som nunca é guardado. O texto reconhecido fica na tela até você sair dela, e só sai do celular em um arquivo de resultados do teste guiado que você exporta. A escolha de ligá-lo fica guardada no aparelho até você desligar ou sair da conta.',
             'Registros técnicos (logs): só pelo tempo necessário para operar e proteger o serviço.',
             'Cópias do banco feitas antes de atualizações: apagadas quando não forem mais necessárias. Até lá, ainda contêm dados apagados nesse meio-tempo.',
             'No seu aparelho: até você sair da conta (o app então apaga a cópia) ou limpar os dados do app.',
@@ -516,7 +526,7 @@ export const privacyPtBR: PolicyDocument = {
             'A cada pedido, o servidor confere o seu papel naquele bebê e, para um médico, as seções compartilhadas. Notas privadas são filtradas no próprio banco de dados para todos, menos para quem as escreveu.',
             'Links de convite e os códigos dos lembretes são guardados apenas como resumos criptográficos irreversíveis (hashes).',
             'O app roda só o próprio código: sem scripts, fontes ou rastreadores de terceiros, o que é garantido por uma Política de Segurança de Conteúdo (CSP) rígida. O modelo de sons do Monitor de choro também vem do nosso próprio servidor.',
-            'Só as páginas do próprio Lotties podem usar o microfone (uma Política de Permissões), e só depois que você liga o Monitor de choro; o navegador mostra quando ele está em uso.',
+            'No app web, só as páginas do próprio Lotties podem usar o microfone (uma Política de Permissões), e só depois que você liga o Monitor de choro; o navegador mostra quando ele está em uso. Nos apps de iOS e Android, o microfone só é usado com a permissão do próprio celular, que você pode tirar quando quiser nos ajustes do celular.',
             'Limites de quantidade e de tamanho de pedidos; a conexão com a Alexa confere a assinatura da Amazon em cada pedido.',
             'O servidor usa uma conta de banco de dados com permissões limitadas e mantém senhas e chaves fora do código-fonte. Os logs do próprio app deixam de fora o que você escreve.',
             'O acesso de administrador aos servidores é restrito ao mantenedor. Só olhamos os dados guardados quando é preciso para operar o serviço, resolver um problema que você relatou ou cumprir a lei.',
@@ -573,6 +583,7 @@ export const privacyPtBR: PolicyDocument = {
             'Preferências e atalhos: idioma, tema, o bebê selecionado, botões fixados, cartões dispensados, valores e estimativas recentes e quantas vezes você abre cada item da Central (para ordenar seus atalhos).',
             'Um link de convite enquanto você faz login, por um instante (armazenamento de sessão).',
             'Se você usar o Monitor de choro: que você concordou neste aparelho (quando, e com qual versão do texto) e a sensibilidade escolhida. Nunca nenhum som.',
+            'Se você ligar o teste de voz mãos livres em um app de celular: que ele está ligado, até você desligar ou sair da conta. Nunca nenhum som nem texto reconhecido.',
             'Os arquivos do próprio app, para que ele abra offline. Nenhum registro fica nesse cache.',
           ],
         },

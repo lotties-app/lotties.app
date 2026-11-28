@@ -24,7 +24,8 @@
       "material": false,
       "date": "2026-11-03",
       "textDigest": "efc68548aa167ffb0f94bf40163a65fd0b9964ca56ac672bf9befca46e3c4b13"
-    },    {
+    },
+    {
       "version": "2026-11-06.1",
       "terms": "1",
       "privacyPolicy": "12",
@@ -71,6 +72,14 @@
       "material": false,
       "date": "2026-11-26",
       "textDigest": "3c2e856a2ee4d3d4199f3fea8ab2569e460d55060b474501f07902a2b0865507"
+    },
+    {
+      "version": "2026-11-28.1",
+      "terms": "1",
+      "privacyPolicy": "18",
+      "material": false,
+      "date": "2026-11-28",
+      "textDigest": "ea6c3157f4ed09897434bd423463f672e028c8e8ed89cb186e738d161df5c9fd"
     }
   ]
 }

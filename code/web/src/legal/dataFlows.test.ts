@@ -187,51 +187,194 @@ describe('the data flows behind the privacy policy', () => {
     }
   });
 
+  it('check every on-device flow below (a new sensor flow needs its own checks)', () => {
+    expect(ON_DEVICE_FLOWS.map((flow) => flow.id)).toEqual(['cryMonitor', 'handsFree']);
+  });
+
   describe.each(ON_DEVICE_FLOWS.map((flow) => [flow.id, flow] as const))(
-    'the on-device flow %s (docs/design/33 section 12)',
+    'the on-device flow %s (docs/design/33 sections 12 and 21)',
     (_, flow) => {
-      it('is opt-in, off by default, keeps the raw signal on the device and uses our own server', () => {
+      it('is opt-in, off by default, keeps the raw signal on the device and names only policy recipients', () => {
         expect(flow.trigger).toBe('optIn');
         expect(flow.defaultOn).toBe(false);
         expect(flow.rawSignal).toEqual({ stored: false, sent: false });
-        expect(flow.modelFrom).toBe('ownServer');
-        expect(flow.consentBy).toEqual(['Owner', 'Parent', 'Caregiver']);
+        expect(flow.permissions).toContain('microphone');
         expect(DATA_CATEGORY_IDS as readonly string[]).toContain(flow.dataCategory);
         for (const recipient of flow.recipients) expect(THIRD_PARTY_IDS).toContain(recipient);
       });
 
       it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
-        'is described in the %s policy: the sensor, on the device, never recorded, and what is saved',
+        'leaves no sentence in the %s policy that says the app does not ask for the microphone',
         (locale) => {
-          const document = POLICY_DOCUMENTS[locale];
-          const text = JSON.stringify(document);
-          const words = SENSOR_WORDS[locale];
-          // Its own row of "What we collect".
-          const row = JSON.stringify(dataRow(locale, flow.dataCategory));
-          expect(row).toMatch(words.sensor);
-          expect(row).toMatch(words.onDevice);
-          expect(row).toMatch(words.never);
-          expect(row).toMatch(words.saved);
-          // No sentence may still say the app never asks for the microphone.
-          expect(text).not.toMatch(words.neverAsks);
-          // The alert to the family goes through the push services, as the other notifications.
-          const push = JSON.stringify(recipientRow(locale, 'pushServices'));
-          expect(push).toMatch(words.alert);
-          // Its legal basis, its retention, its device storage and its limits are stated.
-          for (const id of [
-            'legal-bases',
-            'retention',
-            'device-storage',
-            'not-medical',
-            'security',
-          ] as const) {
-            expect(JSON.stringify(sectionOf(locale, id)), id).toMatch(words.name);
-          }
-          expect(JSON.stringify(sectionOf(locale, 'legal-bases'))).toMatch(/art\. 14, § ?1/);
+          expect(JSON.stringify(POLICY_DOCUMENTS[locale])).not.toMatch(
+            SENSOR_WORDS[locale].neverAsks,
+          );
         },
       );
     },
   );
+
+  describe.each(
+    ON_DEVICE_FLOWS.filter((flow) => flow.id === 'cryMonitor').map(
+      (flow) => [flow.id, flow] as const,
+    ),
+  )('the cry monitor flow %s (docs/design/33 section 12)', (_, flow) => {
+    it('uses our own server and is started by the roles that log for the baby', () => {
+      expect(flow.modelFrom).toBe('ownServer');
+      expect(flow.consentBy).toEqual(['Owner', 'Parent', 'Caregiver']);
+      expect(flow.derivedText).toBe('none');
+      expect(flow.platforms).toEqual(['web']);
+    });
+
+    it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
+      'is described in the %s policy: the sensor, on the device, never recorded, and what is saved',
+      (locale) => {
+        const document = POLICY_DOCUMENTS[locale];
+        const text = JSON.stringify(document);
+        const words = SENSOR_WORDS[locale];
+        // Its own row of "What we collect".
+        const row = JSON.stringify(dataRow(locale, flow.dataCategory));
+        expect(row).toMatch(words.sensor);
+        expect(row).toMatch(words.onDevice);
+        expect(row).toMatch(words.never);
+        expect(row).toMatch(words.saved);
+        // No sentence may still say the app never asks for the microphone.
+        expect(text).not.toMatch(words.neverAsks);
+        // The alert to the family goes through the push services, as the other notifications.
+        const push = JSON.stringify(recipientRow(locale, 'pushServices'));
+        expect(push).toMatch(words.alert);
+        // Its legal basis, its retention, its device storage and its limits are stated.
+        for (const id of [
+          'legal-bases',
+          'retention',
+          'device-storage',
+          'not-medical',
+          'security',
+        ] as const) {
+          expect(JSON.stringify(sectionOf(locale, id)), id).toMatch(words.name);
+        }
+        expect(JSON.stringify(sectionOf(locale, 'legal-bases'))).toMatch(/art\. 14, § ?1/);
+      },
+    );
+  });
+
+  /* The words the policy must use for the optional phone microphone of the hands-free mode (docs/design/33 section 21). */
+  const HANDS_FREE_WORDS: Readonly<Record<Locale, Record<string, RegExp>>> = {
+    en: {
+      name: /Hands-free voice test|hands-free voice test/,
+      sensor: /microphone/,
+      speech: /speech recognition/,
+      phones: /iOS and Android apps/,
+      noWeb: /not in the web app/,
+      experimental:
+        /experimental feature, off until you turn it on yourself in Settings > Experimental > Hands-free \(voice test\)/,
+      purpose: /used only to test how well the app understands spoken commands/,
+      noAskOnSwitch: /Turning it on asks for no permission/,
+      askOnTap: /only when you tap to speak and the permission was not given yet/,
+      onDevice: /on the phone itself \(on-device mode\)/,
+      noServer: /does not use a server instead/,
+      download: /Lotties sends it no audio and no text/,
+      never: /never recorded, stored or sent by Lotties/,
+      memory: /stays in the app's memory, on that screen, until you leave it/,
+      tryIt: /what you say in Try it is never saved or exported/,
+      export: /only if you export the results file yourself/,
+      exportHolds:
+        /the app version, and what the phone reports about its speech recognition \(platform, system version, languages, permission states\); never your account, any baby data or what you said in Try it/,
+      optional: /not using it changes nothing else in the app/,
+      off: /turn it off at any time/,
+      settings: /in the phone's settings/,
+      signOut: /Signing out turns it off too/,
+    },
+    'pt-BR': {
+      name: /Teste de voz mãos livres|teste de voz mãos livres/,
+      sensor: /microfone/,
+      speech: /reconhecimento de fala/,
+      phones: /apps de iOS e Android/,
+      noWeb: /não está no app web/,
+      experimental:
+        /recurso experimental, desligado até você ligá-lo em Ajustes > Experimental > Mãos livres \(teste de voz\)/,
+      purpose: /serve só para testar o quanto o app entende comandos falados/,
+      noAskOnSwitch: /Ao ligar, nenhuma permissão é pedida/,
+      askOnTap: /quando você toca para falar e a permissão ainda não foi dada/,
+      onDevice: /no próprio aparelho \(modo no aparelho\)/,
+      noServer: /não usa um servidor no lugar/,
+      download: /o Lotties não envia a ele nenhum áudio nem texto/,
+      never: /nunca é gravado, guardado ou enviado pelo Lotties/,
+      memory: /fica na memória do app, nessa tela, até você sair dela/,
+      tryIt: /o que você fala em Experimentar nunca é guardado nem exportado/,
+      export: /só saem do celular se você exportar o arquivo de resultados/,
+      exportHolds:
+        /a versão do app e o que o celular informa sobre o reconhecimento de fala \(plataforma, versão do sistema, idiomas, situação das permissões\); nunca a sua conta, nenhum dado do bebê nem o que você falou em Experimentar/,
+      optional: /não usar não muda nada no resto do app/,
+      off: /desligar quando quiser/,
+      settings: /nos ajustes do celular/,
+      signOut: /Sair da conta também o desliga/,
+    },
+  };
+
+  /* The app's own words that the policy row quotes (Settings path and the first mode), per language. */
+  const VOICE_TEST_UI: Readonly<Record<Locale, string>> = {
+    en: 'locales/en/voiceLab.json',
+    'pt-BR': 'locales/pt-BR/voiceLab.json',
+  };
+  const SETTINGS_WORD: Readonly<Record<Locale, string>> = { en: 'Settings', 'pt-BR': 'Ajustes' };
+  /* Wording of the test builds of the spike that must not come back (the feature ships in the published apps). */
+  const TEST_BUILD_WORDS: Readonly<Record<Locale, RegExp>> = {
+    en: /test versions?|test builds?/i,
+    'pt-BR': /versões de teste|versão de teste/i,
+  };
+
+  describe.each(
+    ON_DEVICE_FLOWS.filter((flow) => flow.id === 'handsFree').map(
+      (flow) => [flow.id, flow] as const,
+    ),
+  )('the hands-free flow %s (docs/design/33 section 21)', (_, flow) => {
+    it('is an experimental feature of the phone apps, uses the phone recogniser on the device and sends nothing', () => {
+      expect(flow.status).toBe('experimental');
+      expect(flow.platforms).toEqual(['android', 'ios']);
+      expect(flow.permissions).toEqual(['microphone', 'speechRecognition']);
+      expect(flow.modelFrom).toBe('phoneSystem');
+      expect(flow.consentBy).toBe('self');
+      expect(flow.derivedText).toBe('memoryUntilExported');
+      expect(flow.recipients).toEqual([]);
+    });
+
+    it.each(Object.keys(POLICY_DOCUMENTS) as Locale[])(
+      'is described in the %s policy: optional, experimental, on the device, never sent, how to turn it off',
+      (locale) => {
+        const words = HANDS_FREE_WORDS[locale];
+        const row = JSON.stringify(dataRow(locale, flow.dataCategory));
+        for (const [key, pattern] of Object.entries(words)) expect(row, key).toMatch(pattern);
+        // It names the switch and the first mode exactly as the app shows them.
+        const ui = JSON.parse(
+          readFileSync(resolve(__dirname, '..', 'i18n', VOICE_TEST_UI[locale]), 'utf8'),
+        ) as {
+          voiceLab: { settings: { section: string; switch: string }; modes: { try: string } };
+        };
+        expect(row).toContain(
+          `${SETTINGS_WORD[locale]} > ${ui.voiceLab.settings.section} > ${ui.voiceLab.settings.switch}`,
+        );
+        expect(row).toContain(ui.voiceLab.modes.try);
+        // Nothing in the policy still says it exists only in test versions.
+        expect(JSON.stringify(POLICY_DOCUMENTS[locale])).not.toMatch(TEST_BUILD_WORDS[locale]);
+        // The note under "What we collect" says where the microphone is asked, per platform.
+        const data = JSON.stringify(sectionOf(locale, 'data'));
+        for (const key of ['name', 'phones', 'settings'] as const)
+          expect(data, key).toMatch(words[key]);
+        // The summary, the retention and the security sections name it too.
+        const summary = JSON.stringify(POLICY_DOCUMENTS[locale].summary);
+        expect(summary).toMatch(words.name);
+        expect(summary).toMatch(words.sensor);
+        expect(JSON.stringify(sectionOf(locale, 'retention'))).toMatch(words.name);
+        expect(JSON.stringify(sectionOf(locale, 'security'))).toMatch(words.phones);
+      },
+    );
+  });
+
+  it('raised the policy version with the optional phone microphone (version 18 of 2026-11-28 or later)', () => {
+    expect(Number(PRIVACY_POLICY_VERSION)).toBeGreaterThanOrEqual(18);
+    expect(PRIVACY_POLICY_LAST_UPDATED >= '2026-11-28').toBe(true);
+  });
 
   /* The words the policy must use for the accuracy of the estimates (docs/design/33-privacy-audit.md section 20). */
   const DERIVED_WORDS: Readonly<Record<Locale, Record<string, RegExp>>> = {
@@ -239,7 +382,8 @@ describe('the data flows behind the privacy policy', () => {
       title: /Accuracy of the estimates/,
       ageBand: /age band/,
       realTime: /real time and the difference in minutes/,
-      answer: /answer to whether the estimate was right, although the app does not ask for one today/,
+      answer:
+        /answer to whether the estimate was right, although the app does not ask for one today/,
       notShown: /not shown in the app and are not part of the export file or the backup/,
       notCombined: /not combined with other families' records/,
       retention:
@@ -297,7 +441,14 @@ describe('the data flows behind the privacy policy', () => {
         (locale) => {
           const words = DERIVED_WORDS[locale];
           const row = JSON.stringify(dataRow(locale, flow.dataCategory));
-          for (const key of ['title', 'ageBand', 'realTime', 'answer', 'notShown', 'notCombined'] as const) {
+          for (const key of [
+            'title',
+            'ageBand',
+            'realTime',
+            'answer',
+            'notShown',
+            'notCombined',
+          ] as const) {
             expect(row, key).toMatch(words[key]);
           }
           expect(JSON.stringify(sectionOf(locale, 'retention'))).toMatch(words.retention);
@@ -333,7 +484,9 @@ describe('the data flows behind the privacy policy', () => {
       expect(JSON.stringify(dataRow(locale, 'widgetUpdates'))).toMatch(/Apple/);
       expect(JSON.stringify(dataRow(locale, 'widgetUpdates'))).toMatch(/Google/);
       expect(JSON.stringify(sectionOf(locale, 'retention'))).toMatch(stops);
-      expect(JSON.stringify(sectionOf(locale, 'transfers'))).toMatch(/Apple Push Notification service/);
+      expect(JSON.stringify(sectionOf(locale, 'transfers'))).toMatch(
+        /Apple Push Notification service/,
+      );
       expect(JSON.stringify(sectionOf(locale, 'transfers'))).toMatch(/Firebase Cloud Messaging/);
     },
   );

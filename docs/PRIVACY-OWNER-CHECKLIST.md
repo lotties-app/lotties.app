@@ -163,5 +163,25 @@ sound is analysed on that device and never recorded, stored or sent; only fussy 
 - [ ] **Not a safety device**: confirm the limits wording on the page, in the consent and in the policy ("not a baby
   monitor and not a safety device", "can miss crying or react to other sounds", "never rely on it").
 - [ ] **Store labels** (when the native apps offer it, docs/design/31 CD10): the native apps do not offer the monitor
-  and request no microphone permission today; the web app's on-device processing is not "collected"
-  (docs/design/20-store-readiness.md section 3).
+  (the phone apps ask for the microphone only for the experimental voice test, section 10); the web app's on-device
+  processing is not "collected" (docs/design/20-store-readiness.md section 3).
+
+## 10. Hands-free voice test, optional phone microphone (experimental, policy version 18 of 2026-11-28)
+
+The published iOS and Android apps carry the experimental voice test (docs/design/49a-voice-lab.md), off until the person
+turns it on in Settings > Experimental > Hands-free (voice test) after an explainer. It asks for the microphone and, on
+iPhone, speech recognition, only when the person taps to speak; recognition runs on the phone in on-device mode, Lotties
+never stores or sends the audio and nothing becomes an entry. Policy 18 says so (a minor change, still unpublished, edited
+in place on 2026-11-28 to drop "only in test versions"). Audit: `docs/design/33-privacy-audit.md` section 21.
+
+- [ ] **Store answers**: check Play Data safety and App Store App Privacy as listed in
+  `docs/design/20-store-readiness.md` section 3 ("Hands-free voice test") before the first phone release from `main` with
+  it; they were not changed.
+- [ ] **Store review**: App Store 2.2 (an "experimental" feature, never called beta, demo or test version) and 2.5.14
+  (listening indicator), Play prominent disclosure; add to the review notes how to reach it (Settings > Experimental).
+- [ ] **Purpose strings**: read the iOS microphone and speech recognition texts in both languages
+  (`code/mobile/ios/App/App/{en,pt-BR}.lproj/InfoPlist.strings`).
+- [ ] **Android recognition service**: decide whether handing the microphone to the phone's recognition service counts
+  as sharing with another app on the device (Play), design 49 section 3.4.
+- [ ] **Legal basis**: none is listed for it in the policy (nothing reaches Lotties); decide whether to add one in the
+  next material rewrite.

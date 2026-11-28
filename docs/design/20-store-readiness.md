@@ -98,11 +98,38 @@ docs/design/19-native-push.md, not built).
 the microphone when a family member starts the cry monitor; the audio is analysed on the device and never stored or
 sent, which is **not "collected"** for Apple's App Privacy nor Google's Data safety (on-device, ephemeral processing;
 docs/design/31-cry-detector-spike.md section 6). What it saves is an ordinary crying spell, already covered by the
-sleep and feeding logs ("Other Data" / "Health info") above. The native apps do not offer it and request no
-microphone permission today, so **none of the answers above change**. When the native shell gets it (doc 31 CD10):
+sleep and feeding logs ("Other Data" / "Health info") above. The native apps do not offer it, so its own answers do not
+change; the phone builds ask for the microphone only for the experimental hands-free voice test (below).
+When the native shell gets it (doc 31 CD10):
 add `NSMicrophoneUsageDescription` and `RECORD_AUDIO` (plus the foreground-service declaration on Android), keep
 "Audio Data: not collected" only if the native capture also never stores or sends audio, and review Apple 2.5.14 and
 Google's prominent disclosure and monitoring policies.
+
+**Hands-free voice test (experimental, in the published phone apps, off by default; docs/design/49a-voice-lab.md, audit
+section 21, policy 18 of 2026-11-28).** Owner decision of 2026-11-28: the test screen ships in the normal iOS and Android
+apps as an experimental feature that the person turns on in Settings > Experimental > Hands-free (voice test), after an
+explainer. Every phone build from `main` therefore declares the microphone (Android `RECORD_AUDIO`) and, on iOS, speech
+recognition (`NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription`, localised in en and pt-BR
+`InfoPlist.strings`; neither says "test build" or "beta"), asked for only when the person taps to speak inside the turned-on
+test, never at install, start or the switch. Recognition is on-device only (Android `createOnDeviceSpeechRecognizer`, iOS
+`requiresOnDeviceRecognition`); Lotties never stores or sends the audio, writes no entry, and the recognised text leaves
+the phone only in a guided-test results file the person exports. The web app has none of it. Policy 18 describes this.
+**The store answers were not changed here.** What the owner must check in the consoles before the first phone release
+from `main` with it:
+- Play Console, Data safety: "Audio: voice or sound recordings" stays "not collected" only for on-device processing; decide
+  whether handing the microphone to the phone's recognition service (another app on the device, often Google's) counts
+  as sharing (design 49 section 3.4); `RECORD_AUDIO` itself needs no declaration form (UNVERIFIED against today's Play
+  Console); read the Play Console inbox after the upload. Play's policies want prominent disclosure before access to
+  sensitive data that the user would not expect: the explainer dialog and the in-page "Nothing is recorded." line are
+  that disclosure (UNVERIFIED that Play reviewers consider the microphone here as needing more).
+- App Store Connect, App Privacy: "Audio Data" stays "not collected" for on-device recognition. Review guideline 2.2
+  (no betas, demos or trials in the App Store; test builds go through TestFlight): the feature is labelled "experimental",
+  never "beta", "demo" or "test version" of the app, and it is a complete, working part of the app (UNVERIFIED how a
+  reviewer reads an "experimental" screen; if questioned, the fallback is to hide it with `VITE_VOICE_LAB` off in the
+  App Store build). Guideline 2.5.14 (explicit consent and a clear visual or audible indication when recording or
+  listening): the app listens only after a tap, shows a bordered microphone state "Listening. Speak now." with Cancel
+  while listening, and iOS shows its own microphone indicator; it never records.
+- Both: re-check the age rating and the review notes (explain how to reach the feature: Settings > Experimental).
 
 **Community insights (planned, not built; docs/design/34-community-insights.md section 10).** The policy describes a
 future opt-in use of babies' records in pooled statistics as "not active yet". While it is off, **none of the answers
