@@ -42,9 +42,10 @@ const lengthMinutes = (event: BabyEvent, now: Date) =>
 /**
  * Drunk and prepared milk of the finished bottles, `null` when none has an amount. A running bottle
  * is left out (its amount is only what was prepared); a bottle with nothing drunk of a prepared
- * amount counts (prepared, not drunk). Breast, solids and pumping have no `method: bottle`.
+ * amount counts (prepared, not drunk). Breast, solids and pumping have no `method: bottle`. The
+ * Insights Day summary reads its feeding headline through this same rule (daySummary/daySummaryModel).
  */
-function milkFromBottles(feeds: readonly BabyEvent[]): MilkToday | null {
+export function milkFromBottles(feeds: readonly BabyEvent[]): MilkToday | null {
   let bottles = 0;
   const milk: MilkToday = { drunkMl: 0, preparedMl: 0 };
   for (const feed of feeds) {

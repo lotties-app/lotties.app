@@ -92,6 +92,9 @@ const DevNotificationsPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/NotificationsPreview'))
   : null;
 const DevInsightsPreview = import.meta.env.DEV ? lazy(() => import('./dev/InsightsPreview')) : null;
+const DevDaySummaryPreview = import.meta.env.DEV
+  ? lazy(() => import('./dev/DaySummaryPreview'))
+  : null;
 const DevFormulasPreview = import.meta.env.DEV ? lazy(() => import('./dev/FormulasPreview')) : null;
 const DevAppointmentsPreview = import.meta.env.DEV
   ? lazy(() => import('./dev/AppointmentsPreview'))
@@ -287,6 +290,16 @@ export function AppRoutes() {
           element={
             <Suspense fallback={null}>
               <DevInsightsPreview />
+            </Suspense>
+          }
+        />
+      )}
+      {DevDaySummaryPreview && (
+        <Route
+          path="/dev/day-summary"
+          element={
+            <Suspense fallback={null}>
+              <DevDaySummaryPreview />
             </Suspense>
           }
         />
