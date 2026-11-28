@@ -50,7 +50,7 @@ const follows = (a: Element, b: Element) =>
 const startBottle = () => putEvent(db, 'feeding', 6, null, { method: 'bottle', amount_ml: 120 });
 
 describe('the order of the Now screen', () => {
-  it('puts Running now first, then Quick log, then the state card, then the suggestions', async () => {
+  it('puts Running now first, then Quick log, Milk today, the state card, then the suggestions', async () => {
     pinClock(14);
     await seedNow(db);
     await seedMorning(db, 112);
@@ -60,9 +60,11 @@ describe('the order of the Now screen', () => {
     const running = await screen.findByRole('region', { name: 'Running timers' });
     const quickLog = screen.getByRole('region', { name: 'Quick log' });
     const state = screen.getByRole('region', { name: 'Current state' });
-    const today = await screen.findByRole('region', { name: /today/i });
+    const milk = screen.getByRole('region', { name: 'Milk today' });
+    const today = await screen.findByRole('region', { name: 'Today' });
     expect(follows(running, quickLog)).toBe(true);
-    expect(follows(quickLog, state)).toBe(true);
+    expect(follows(quickLog, milk)).toBe(true);
+    expect(follows(milk, state)).toBe(true);
     expect(follows(state, today)).toBe(true);
     expect(within(running).getByRole('heading', { name: 'Running now' })).toBeTruthy();
     expect(within(quickLog).getByRole('heading', { name: 'Quick log' })).toBeTruthy();

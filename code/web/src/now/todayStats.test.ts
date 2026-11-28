@@ -37,7 +37,7 @@ describe('todayStats', () => {
       lastNightMinutes: 9 * 60 + 50,
       naps: { count: 2, minutes: 75 + 40 },
       feeds: 2,
-      bottleMl: null,
+      milk: null,
       diapers: 2,
     });
   });
@@ -52,7 +52,7 @@ describe('todayStats', () => {
       lastNightMinutes: null,
       naps: { count: 1, minutes: 30 },
       feeds: 0,
-      bottleMl: null,
+      milk: null,
       diapers: 0,
     });
   });
@@ -68,7 +68,7 @@ describe('todayStats', () => {
       lastNightMinutes: null,
       naps: { count: 0, minutes: 0 },
       feeds: 0,
-      bottleMl: null,
+      milk: null,
       diapers: 0,
     });
     expect(hasTodayData(stats)).toBe(false);
@@ -92,7 +92,8 @@ describe('todayStats bottle total', () => {
       bottle(at(12), at(12), { amount_ml: 90, amount_drunk_ml: 200 }),
     ];
     const stats = todayStats(events, TYPES, NOW);
-    expect(stats.bottleMl).toBe(120 + 100 + 90);
+    expect(stats.milk?.drunkMl).toBe(120 + 100 + 90);
+    expect(stats.milk?.preparedMl).toBe(120 + 150 + 90);
     expect(stats.feeds).toBe(3);
   });
 
@@ -106,7 +107,7 @@ describe('todayStats bottle total', () => {
       logged(BREAST_PUMP_TYPE.id, at(11), at(11, 10), { amount_left_ml: 60, amount_ml: 120 }),
     ];
     const stats = todayStats(events, [...TYPES, BREAST_PUMP_TYPE], NOW);
-    expect(stats.bottleMl).toBe(190);
+    expect(stats.milk).toEqual({ drunkMl: 190, preparedMl: 190 });
     expect(stats.feeds).toBe(5);
   });
 
@@ -116,7 +117,7 @@ describe('todayStats bottle total', () => {
       bottle(at(14), null, { amount_ml: 150 }),
     ];
     const stats = todayStats(events, TYPES, NOW);
-    expect(stats.bottleMl).toBe(120);
+    expect(stats.milk).toEqual({ drunkMl: 120, preparedMl: 120 });
     expect(stats.feeds).toBe(2);
   });
 
@@ -131,7 +132,38 @@ describe('todayStats bottle total', () => {
       logged(FEEDING_TYPE.id, at(11), at(11, 15), { method: 'breast' }),
     ];
     const stats = todayStats(events, TYPES, NOW);
-    expect(stats.bottleMl).toBeNull();
+    expect(stats.milk).toBeNull();
     expect(stats.feeds).toBe(4);
+  });
+
+  it('counts a bottle with nothing drunk as prepared, not drunk', () => {
+    const events = [
+      bottle(at(7), at(7), { amount_ml: 120, amount_drunk_ml: 0 }),
+      bottle(at(9), at(9), { amount_ml: 100, amount_drunk_ml: 60 }),
+    ];
+    expect(todayStats(events, TYPES, NOW).milk).toEqual({ drunkMl: 60, preparedMl: 220 });
+  });
+
+  it('shows a bottle of only zero drunk as 0 drunk of what was prepared', () => {
+    const events = [bottle(at(7), at(7), { amount_ml: 120, amount_drunk_ml: 0 })];
+    expect(todayStats(events, TYPES, NOW).milk).toEqual({ drunkMl: 0, preparedMl: 120 });
+  });
+
+  it('counts a bottle with only a drunk amount in both numbers', () => {
+    const events = [
+      bottle(at(7), at(7), { amount_drunk_ml: 70 }),
+      bottle(at(9), at(9), { amount_ml: 100 }),
+    ];
+    expect(todayStats(events, TYPES, NOW).milk).toEqual({ drunkMl: 170, preparedMl: 170 });
+  });
+
+  it('never lets drunk exceed prepared', () => {
+    const events = [
+      bottle(at(7), at(7), { amount_ml: 90, amount_drunk_ml: 200 }),
+      bottle(at(8), at(8), { amount_drunk_ml: 40 }),
+      bottle(at(9), at(9), { amount_ml: 150, amount_drunk_ml: 30 }),
+    ];
+    const milk = todayStats(events, TYPES, NOW).milk;
+    expect(milk).toEqual({ drunkMl: 160, preparedMl: 280 });
   });
 });

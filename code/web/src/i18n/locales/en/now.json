@@ -260,6 +260,12 @@
       "bottleTotal": "{{volume}} drunk from bottles",
       "diapers": "Diapers"
     },
+    "milkToday": {
+      "title": "Milk today",
+      "drunk": "drunk",
+      "prepared": "prepared",
+      "notDrunk": "Not drunk: {{volume}}"
+    },
     "firstRun": {
       "title": "Log {{name}}'s first event",
       "body": "One tap is enough. You can fix the time right after.",
