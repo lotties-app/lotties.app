@@ -17,6 +17,7 @@ export const privacyEn: PolicyDocument = {
           'What you and the people you invite record about your baby, including health information such as medicines and vaccines.',
           'What the service needs to work: reminder settings if you turn reminders on, the push token of the iOS or Android app while it shows a Lotties widget, and technical logs.',
           'If you start the Cry monitor: the microphone, analysed only on your device and never recorded; only the crying spells it detects are saved.',
+          "If you use the hands-free mode in a phone app (today only in test versions): your voice, through the microphone, turned into text by the phone's own speech recognition on the phone; Lotties does not record or send the audio. It is optional, and you can turn it off at any time.",
           'If you turn on the optional rest estimate: your work and night windows and time zone; the estimate is worked out when you ask, shown only to you and never stored.',
         ],
       },
@@ -181,6 +182,14 @@ export const privacyEn: PolicyDocument = {
               ],
             },
             {
+              id: 'handsFree',
+              cells: [
+                'Hands-free mode (optional, phone apps, test versions only)',
+                "Only in the iOS and Android apps, and today only in test versions of them: the hands-free mode is not in the public versions of the apps or in the web app. If you choose to use it, the app asks for the microphone and, on iPhone, for speech recognition. The microphone listens only after you tap to speak, until your phrase ends or you cancel; leaving the app stops it too. What you say is turned into text by the phone's own speech recognition, which Lotties asks to run on the phone itself (on-device mode); if the phone cannot do that for the language, the app says so and does not use a server instead. The sound is never recorded, stored or sent by Lotties, not even to us. In the test versions, the recognised text stays in the app's memory, on that screen, until you leave it. Only the text of the fixed test phrases can leave the phone, and only if you export the results file yourself and choose where to send it. Nothing you say there becomes an entry, and no baby data is read. Using it is optional: not using it changes nothing else in the app. You can turn it off at any time: stop using it, or remove the microphone permission (and, on iPhone, the speech recognition permission) for Lotties in the phone's settings.",
+                'To try out, in test versions, logging by voice without touching the phone. Nothing from it is sent to our servers.',
+              ],
+            },
+            {
               id: 'assistants',
               cells: [
                 'Voice assistant (Alexa)',
@@ -224,7 +233,7 @@ export const privacyEn: PolicyDocument = {
         },
         {
           kind: 'note',
-          text: 'Lotties does not ask for your location, contacts, camera or photos. It asks for the microphone only when you start the Cry monitor on a device, in the web app, and uses it only while that page is open; the sound never leaves the device. The app contains no advertising, analytics or crash-reporting tools.',
+          text: "Lotties does not ask for your location, contacts, camera or photos. In the web app, it asks for the microphone only when you start the Cry monitor on a device, and uses it only while that page is open; the sound never leaves the device. In the iOS and Android apps, the microphone (and, on iPhone, speech recognition) is optional and asked for only if you choose to use the hands-free mode, which today exists only in test versions; you can turn it off at any time in the phone's settings. The app contains no advertising, analytics or crash-reporting tools.",
         },
       ],
     },
@@ -342,7 +351,7 @@ export const privacyEn: PolicyDocument = {
                   id: 'cloudflare',
                   cells: [
                     'Cloudflare (DNS and reverse proxy)',
-                    'All traffic to lotties.app and auth.lotties.app passes through Cloudflare\'s network before reaching our servers. Cloudflare sees your network address, the pages and API routes you request, and the encrypted content of those requests. It does not receive your account credentials or baby records in a form it can read beyond what HTTPS allows a proxy to see.',
+                    "All traffic to lotties.app and auth.lotties.app passes through Cloudflare's network before reaching our servers. Cloudflare sees your network address, the pages and API routes you request, and the encrypted content of those requests. It does not receive your account credentials or baby records in a form it can read beyond what HTTPS allows a proxy to see.",
                     'Always, whenever you use lotties.app.',
                   ],
                 },
@@ -492,6 +501,7 @@ export const privacyEn: PolicyDocument = {
             'Widget updates: the push token of a device is switched off when you sign out there, when the app finds its last Lotties widget removed (it checks each time it opens), when Apple or Google says it no longer works or sends to it keep failing, or when the app has not renewed it for 60 days; switched-off tokens are deleted 30 days later.',
             'Doctor access log and invites: kept with the baby until it is erased.',
             'Cry monitor: the sound is never kept. The crying spells it logs are ordinary records (above); its consent stays on the device until you withdraw it or sign out.',
+            'Hands-free mode: the sound is never kept. In the test versions, the recognised text stays on the screen until you leave it, and leaves the phone only in a results file you export yourself.',
             'Technical logs: only as long as needed to run and protect the service.',
             'Database copies made before updates: deleted when no longer needed. Until then they still contain data deleted in the meantime.',
             'On your device: until you sign out (the app then deletes its copy) or clear the app data.',
@@ -512,7 +522,7 @@ export const privacyEn: PolicyDocument = {
             'On every request the server checks your role on that baby and, for a doctor, the sections shared. Private notes are filtered out in the database itself for everyone but their author.',
             'Invite links and the codes inside reminders are stored only as one-way fingerprints (hashes).',
             "The app runs only its own code: no third-party scripts, fonts or trackers, enforced by a strict Content Security Policy. The Cry monitor's sound model also comes from our own server.",
-            "Only Lotties' own pages may use the microphone (a Permissions Policy), and only after you start the Cry monitor; your browser shows when it is in use.",
+            "In the web app, only Lotties' own pages may use the microphone (a Permissions Policy), and only after you start the Cry monitor; your browser shows when it is in use. In the iOS and Android apps, the microphone is used only with the phone's own permission, which you can remove at any time in the phone's settings.",
             "Limits on the number and size of requests; the Alexa connection checks Amazon's signature on every request.",
             "The server uses a database account with limited rights and keeps passwords and keys out of the source code. The app's own logs leave out what you write.",
             'Administrator access to the servers is limited to the maintainer. We look at stored data only when needed to run the service, solve a problem you reported or comply with the law.',
@@ -539,7 +549,7 @@ export const privacyEn: PolicyDocument = {
         {
           kind: 'list',
           items: [
-            'Cloudflare: DNS and reverse proxy for lotties.app and auth.lotties.app. All traffic passes through Cloudflare\'s network, which operates worldwide, including in the United States. Cloudflare sees your network address and the routes you request; the content is encrypted between your browser and our servers.',
+            "Cloudflare: DNS and reverse proxy for lotties.app and auth.lotties.app. All traffic passes through Cloudflare's network, which operates worldwide, including in the United States. Cloudflare sees your network address and the routes you request; the content is encrypted between your browser and our servers.",
             'Notifications: the push services of Google, Mozilla, Apple and Microsoft, which operate worldwide, including in the United States. They cannot read the content of reminders or alerts.',
             'Widget updates in the iOS and Android apps: Apple, which runs the Apple Push Notification service, and Google, which runs Firebase Cloud Messaging, both worldwide, including in the United States. The messages carry no content.',
             'Alexa: Amazon, which processes voice requests in its own data centers, including in the United States.',

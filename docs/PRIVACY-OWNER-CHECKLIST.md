@@ -165,3 +165,17 @@ sound is analysed on that device and never recorded, stored or sent; only fussy 
 - [ ] **Store labels** (when the native apps offer it, docs/design/31 CD10): the native apps do not offer the monitor
   and request no microphone permission today; the web app's on-device processing is not "collected"
   (docs/design/20-store-readiness.md section 3).
+
+## 10. Hands-free mode, optional phone microphone (test builds only, policy version 18 of 2026-11-28)
+
+The voice lab test build (docs/design/49a-voice-lab.md) asks for the microphone and, on iPhone, speech recognition, only
+when the tester taps Speak; recognition runs on the phone in on-device mode and Lotties never stores or sends the audio.
+Policy 18 says so (a minor change). Audit: `docs/design/33-privacy-audit.md` section 21.
+
+- [ ] **Store answers**: check Play Data safety and App Store App Privacy as listed in
+  `docs/design/20-store-readiness.md` section 3 ("Hands-free mode") before the build goes beyond internal testers; they
+  were not changed.
+- [ ] **Android recognition service**: decide whether handing the microphone to the phone's recognition service counts
+  as sharing with another app on the device (Play), design 49 section 3.4.
+- [ ] **Legal basis**: none is listed for it in the policy (nothing reaches Lotties); decide whether to add one in the
+  next material rewrite.
