@@ -48,7 +48,6 @@ import { FeedTraySheet } from './FeedTraySheet';
 import { FirstRun } from './FirstRun';
 import { FussyPatternSuggestion } from './FussyPatternCard';
 import { LogTiles } from './LogTiles';
-import { MilkTodayCard } from './MilkTodayCard';
 import { MedsTraySheet, type TrayReminder } from './MedsTraySheet';
 import { MoreSheet } from './MoreSheet';
 import { NightNow } from './NightNow';
@@ -372,7 +371,6 @@ function NowContent({
             onOpen={openTile}
           />
           {cryEntry}
-          <MilkTodayCard milk={stats.milk} />
           <StateCard
             model={model}
             babyId={baby.id}

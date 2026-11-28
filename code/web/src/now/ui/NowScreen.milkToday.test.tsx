@@ -11,8 +11,8 @@ import { BABY, nowApi, pinClock, putEvent, seedNow } from './nowKit';
 import { NowScreen } from './NowScreen';
 
 /*
- * The "Milk today" card on Now: below the quick-log tiles and the cry entry, above the state card;
- * the drunk number is the Feeds note's; hidden without a finished bottle amount, at night and on
+ * The "Milk today" card on Now: part of the Today section at the end of the screen, full width
+ * under the Today tiles (the quick log, cry entry and state card keep their places); the drunk number is the Feeds note's; hidden without a finished bottle amount, at night and on
  * the first run; shown to everyone who sees the Today strip.
  */
 
@@ -61,16 +61,21 @@ const terms = (region: HTMLElement) =>
     .map((term) => [term.textContent, term.nextElementSibling?.textContent]);
 
 describe('Milk today on Now', () => {
-  it('sits under the quick log and the cry entry, above the state card', async () => {
+  it('sits in the Today section under its tiles, after the state card', async () => {
     await seedBottles();
     await renderNow();
-    const milk = await screen.findByRole('region', { name: 'Milk today' });
+    const today = await screen.findByRole('region', { name: 'Today' });
+    const milk = within(today).getByRole('region', { name: 'Milk today' });
     const tiles = screen.getByRole('region', { name: 'Quick log' });
     const cry = screen.getByRole('button', { name: /crying/i });
     const state = screen.getByRole('region', { name: 'Current state' });
-    expect(isBefore(tiles, milk)).toBe(true);
-    expect(isBefore(cry, milk)).toBe(true);
-    expect(isBefore(milk, state)).toBe(true);
+    expect(isBefore(tiles, cry)).toBe(true);
+    expect(isBefore(cry, state)).toBe(true);
+    expect(isBefore(state, milk)).toBe(true);
+    const feeds = within(today).getByText('Feeds');
+    expect(isBefore(feeds, milk)).toBe(true);
+    expect(within(today).getByRole('heading', { name: 'Today' }).tagName).toBe('H2');
+    expect(within(milk).getByRole('heading', { name: 'Milk today' }).tagName).toBe('H3');
     expect(terms(milk)).toEqual([
       ['drunk', '210 ml'],
       ['prepared', '270 ml'],

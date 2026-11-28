@@ -5,6 +5,7 @@ import { RADIUS } from '../../theme/tokens';
 import { volumeText } from '../../units/display';
 import { palette } from '../../ui/form/styles';
 import { hasTodayData, type TodayStats } from '../todayStats';
+import { MilkTodayCard } from './MilkTodayCard';
 
 const MINUTE_MS = 60_000;
 /** One line of caption text; reserved in every tile so the tiles share one height. */
@@ -21,8 +22,10 @@ interface Stat {
 
 /**
  * "Today" strip: last night's sleep, naps (with their total length), feeds (with the volume drunk
- * from finished bottles, when any has an amount) and diapers as a few serif numbers. A value
- * without data is left out, and the whole strip is hidden when there is nothing to show.
+ * from finished bottles, when any has an amount) and diapers as a few serif numbers, then the
+ * "Milk today" card full width under the tiles (same gap), one section under the "Today" h2. A
+ * value without data is left out, and the whole section is hidden when there is nothing to show
+ * (no tile and no milk card).
  *
  * Layout: two by two, one row once the strip itself is 32rem wide (a container query, so the width
  * of the column counts, not the window). Each tile is a size container, so the value
@@ -30,7 +33,8 @@ interface Stat {
  */
 export function TodayStrip({ stats }: { stats: TodayStats }) {
   const { t } = useTranslation();
-  if (!hasTodayData(stats)) return null;
+  const hasTiles = hasTodayData(stats);
+  if (!hasTiles && stats.milk === null) return null;
   const items: Stat[] = [];
   if (stats.lastNightMinutes !== null) {
     items.push({
@@ -81,66 +85,71 @@ export function TodayStrip({ stats }: { stats: TodayStats }) {
       >
         {t('now.today.title')}
       </Typography>
-      <Box
-        component="dl"
-        sx={{
-          m: 0,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          '@container (min-width: 32rem)': { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' },
-          gap: 1.5,
-        }}
-      >
-        {items.map((item) => (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        {hasTiles && (
           <Box
-            key={item.key}
-            sx={(theme) => ({
-              p: 1.5,
-              minWidth: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 0.25,
-              containerType: 'inline-size',
-              borderRadius: `${RADIUS.tile}px`,
-              backgroundColor: palette(theme).surfaceRaised,
-            })}
+            component="dl"
+            sx={{
+              m: 0,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              '@container (min-width: 32rem)': { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' },
+              gap: 1.5,
+            }}
           >
-            <Typography
-              component="dt"
-              variant="caption"
-              color="text.secondary"
-              sx={{ lineHeight: 1.3 }}
-            >
-              {item.label}
-            </Typography>
-            <Typography
-              component="dd"
-              variant="h4"
-              sx={{
-                m: 0,
-                whiteSpace: 'nowrap',
-                lineHeight: 1.15,
-                fontVariantNumeric: 'tabular-nums',
-                fontSize: 'min(1.75rem, 19cqi)',
-              }}
-            >
-              {item.value}
-            </Typography>
-            {item.note ? (
-              <Typography
-                component="dd"
-                variant="caption"
-                color="text.secondary"
-                aria-label={item.noteLabel}
-                sx={{ m: 0, minHeight: NOTE_HEIGHT, lineHeight: 1.3, whiteSpace: 'nowrap' }}
+            {items.map((item) => (
+              <Box
+                key={item.key}
+                sx={(theme) => ({
+                  p: 1.5,
+                  minWidth: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 0.25,
+                  containerType: 'inline-size',
+                  borderRadius: `${RADIUS.tile}px`,
+                  backgroundColor: palette(theme).surfaceRaised,
+                })}
               >
-                {item.note}
-              </Typography>
-            ) : (
-              <Box aria-hidden sx={{ minHeight: NOTE_HEIGHT }} />
-            )}
+                <Typography
+                  component="dt"
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.3 }}
+                >
+                  {item.label}
+                </Typography>
+                <Typography
+                  component="dd"
+                  variant="h4"
+                  sx={{
+                    m: 0,
+                    whiteSpace: 'nowrap',
+                    lineHeight: 1.15,
+                    fontVariantNumeric: 'tabular-nums',
+                    fontSize: 'min(1.75rem, 19cqi)',
+                  }}
+                >
+                  {item.value}
+                </Typography>
+                {item.note ? (
+                  <Typography
+                    component="dd"
+                    variant="caption"
+                    color="text.secondary"
+                    aria-label={item.noteLabel}
+                    sx={{ m: 0, minHeight: NOTE_HEIGHT, lineHeight: 1.3, whiteSpace: 'nowrap' }}
+                  >
+                    {item.note}
+                  </Typography>
+                ) : (
+                  <Box aria-hidden sx={{ minHeight: NOTE_HEIGHT }} />
+                )}
+              </Box>
+            ))}
           </Box>
-        ))}
+        )}
+        <MilkTodayCard milk={stats.milk} />
       </Box>
     </Box>
   );
